@@ -83,6 +83,31 @@ vendor/bin/phpstan analyse
 XDEBUG_MODE=coverage php artisan test --coverage
 ```
 
+## Phase 3.5: Laravel Dusk Browser Testing (E2E)
+
+When UI, frontend components, or browser interactions are modified, run end-to-end browser tests:
+
+```bash
+php artisan dusk
+```
+
+If using Laravel Sail locally:
+
+```bash
+./vendor/bin/sail artisan dusk
+```
+
+Filter specific Dusk tests:
+
+```bash
+./vendor/bin/sail artisan dusk --filter=testName
+./vendor/bin/sail artisan dusk tests/Browser/LoginTest.php
+```
+
+- If a Dusk test fails, check failure artifacts in `tests/Browser/screenshots/` and `tests/Browser/console/`.
+- Ensure Chrome/Chromium drivers are updated (`php artisan dusk:chrome-driver`).
+
+
 ## Phase 4: Security and Dependency Checks
 
 ```bash

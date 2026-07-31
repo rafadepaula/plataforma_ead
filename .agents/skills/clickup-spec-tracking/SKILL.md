@@ -15,10 +15,10 @@ This skill establishes the mandatory workflow for AI agents and developers imple
 
 ## ClickUp Project Context
 
-- **Workspace:** Expand HUB / ERP Tech (`30949570`)
-- **ClickUp List Name:** `Plataforma EAD - Capacitação Eletricistas`
-- **ClickUp List ID:** `901328017986`
-- **List URL:** [ClickUp Board](https://app.clickup.com/30949570/v/l/li/901328017986)
+- **Workspace:** `90171427561`
+- **ClickUp List Name:** `Cursos`
+- **ClickUp List ID:** `901715628342`
+- **List URL:** [ClickUp Board](https://app.clickup.com/90171427561/v/l/2kza5jq9-317)
 
 ---
 
@@ -54,7 +54,7 @@ digraph clickup_tracking {
 
 ### 1. Locate Task Before Starting
 Before touching any code, find the task in ClickUp corresponding to the spec file:
-- Use `clickup_filter_tasks` with `list_ids=["901328017986"]` or search by spec key (e.g. `[SPEC-01]`).
+- Use `clickup_filter_tasks` with `list_ids=["901715628342"]` or search by spec key (e.g. `[SPEC-01]`).
 
 ### 2. Transition to `in progress`
 Immediately after starting work on a task:
@@ -103,6 +103,6 @@ Before marking a task complete:
 
 ## Common Mistakes & Troubleshooting
 
-1. **Incorrect List ID:** Always pass `list_id="901328017986"` for the Plataforma EAD project.
+1. **Incorrect List ID:** Always pass `list_id="901715628342"` for the Cursos project.
 2. **Missing Description Format:** Ensure task descriptions contain the spec reference (`spec/specs/XX-name.md`), acceptance criteria checklist, and requirement IDs (RFs, RNs, UCs).
 3. **Skipping Comments:** Do not silently update statuses; add explanatory comments via `clickup_create_comment` when transitioning tasks to `in review` or `done`.
