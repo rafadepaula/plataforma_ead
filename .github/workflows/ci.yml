@@ -53,6 +53,9 @@ jobs:
       - name: Check Code Coverage Threshold
         run: php scripts/check-coverage.php
 
+      - name: Check Skill Triads Inventory
+        run: php scripts/check-skills.php
+
       - name: Upload Coverage Artifact
         uses: actions/upload-artifact@v4
         with:
