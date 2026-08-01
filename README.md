@@ -1,58 +1,111 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Plataforma EAD Multitenant
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Plataforma de Ensino a Distância (EAD) Multi-organização desenvolvida em **Laravel 13** e **PHP 8.5**, projetada com arquitetura **Single-Database Multitenancy** (`org_id` + `OrgScope`), desenvolvimento orientado a testes (**TDD**) e testes end-to-end (**Laravel Dusk**).
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## 📐 Visão Geral & Arquitetura
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- **Multitenancy Single-Database**: Isolamento rigoroso de dados por organização através de `org_id` e Trait global `OrgScope`.
+- **Controle de Acesso em Níveis (Roles)**:
+  - `Admin`: Acesso global, gestão de organizações e impersonation.
+  - `Gestor`: Gestão da sua organização (cursos, módulos, lições, alunos, relatórios).
+  - `Aluno`: Acesso multi-organização a cursos matriculados, sala de aula e certificados.
+- **Frontend & UI**: Blade Components + Bootstrap 5.3 com Design System estruturado.
+- **TDD & Qualidade**: Cobertura de testes automatizados (PHPUnit/Pest) + Testes E2E de navegador com Laravel Dusk.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+---
 
-## Learning Laravel
+## 🗺️ Roadmap & Ordem Sistemática TDD
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+O desenvolvimento do sistema segue a ordem de dependências abaixo, priorizando a infraestrutura de testes na **Fase 1**:
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
-
-```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+```mermaid
+graph TD
+    S00[SPEC-00: Arquitetura, DB Multitenant & Guardrails] --> S01[SPEC-01: Infraestrutura TDD, Dusk E2E & CI/CD]
+    S01 --> S02[SPEC-02: Frontend Design System & Componentes Blade]
+    S02 --> S03[SPEC-03: Agentic Harness & Auto-Update Skills]
+    S03 --> S04[SPEC-04: Auth, Organizações, Impersonate & Usuários]
+    S04 --> S05[SPEC-05: Gestão de Cursos, Módulos & Lições]
+    S05 --> S06[SPEC-06: Convites Inteligentes & Matrículas Multi-Org]
+    S05 --> S07[SPEC-07: Experiência do Aluno, Sala de Aula & Progresso]
+    S07 --> S08[SPEC-08: Motor de Questionários & Provas]
+    S08 --> S09[SPEC-09: Certificados Multitenant & Validação Pública]
+    S05 --> S10[SPEC-10: Fórum de Discussão com Polling AJAX]
+    S04 --> S11[SPEC-11: Landing Page & Central de Ajuda 100% Telas]
+    S09 --> S12[SPEC-12: Dashboard Gerencial, Exportação CSV & Settings]
+    S06 --> S13[SPEC-13: Notificações Multitenant E-mail + In-App]
+    S09 --> S13
+    S10 --> S13
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+---
 
-## Contributing
+## 📚 Repositório de Especificações Técnicas (`spec/specs/`)
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+As especificações detalhadas de cada módulo encontram-se no diretório `spec/specs/`:
 
-## Code of Conduct
+1. **[`00-architecture-database-and-guardrails.md`](file:///home/rafael/projects/cursos/plataforma_ead/spec/specs/00-architecture-database-and-guardrails.md)**: Arquitetura Geral Multitenant, tabela `organizations`, esquema de banco de dados (19 tabelas), Trait `OrgScope`, Roles Spatie (`admin`, `gestor`, `aluno`), 95%+ de Cobertura e **Testes E2E com Laravel Dusk**.
+2. **[`01-testing-guardrails-dusk-e2e-and-ci-cd.md`](file:///home/rafael/projects/cursos/plataforma_ead/spec/specs/01-testing-guardrails-dusk-e2e-and-ci-cd.md)**: Infraestrutura TDD & Quality Gate CI/CD, configuração SQLite em memória, drivers Dusk E2E e script auditor de cobertura.
+3. **[`02-frontend-design-system-blade-components-and-layout.md`](file:///home/rafael/projects/cursos/plataforma_ead/spec/specs/02-frontend-design-system-blade-components-and-layout.md)**: Layout Master particionado, Design System CSS, Bootstrap 5.3 e catálogo de micro-componentes Blade.
+4. **[`03-agentic-harness-and-self-updating-skills.md`](file:///home/rafael/projects/cursos/plataforma_ead/spec/specs/03-agentic-harness-and-self-updating-skills.md)**: Agentic Harness & Protocolo de Auto-Update de Skills.
+5. **[`04-auth-profile-organizations-and-user-management.md`](file:///home/rafael/projects/cursos/plataforma_ead/spec/specs/04-auth-profile-organizations-and-user-management.md)**: Autenticação, Perfil, CRUD de Organizações, Impersonate Org pelo Admin e Gestão de Usuários com Importação CSV.
+6. **[`05-courses-modules-and-content-management.md`](file:///home/rafael/projects/cursos/plataforma_ead/spec/specs/05-courses-modules-and-content-management.md)**: Gestão Multitenant de Cursos, Módulos com reordenação AJAX e Lições Multimídia (Texto, Imagem, PDF, Vídeo YouTube).
+7. **[`06-smart-invitation-and-enrollment-system.md`](file:///home/rafael/projects/cursos/plataforma_ead/spec/specs/06-smart-invitation-and-enrollment-system.md)**: Links de Convite por Org, Auto-cadastro e Fluxo Adaptativo Multi-Org para Alunos.
+8. **[`07-student-learning-experience-and-progress.md`](file:///home/rafael/projects/cursos/plataforma_ead/spec/specs/07-student-learning-experience-and-progress.md)**: Área do Aluno "Meus Cursos", Sala de Aula, Players, Conclusão de Aulas e Middleware `EnsureStudentIsEnrolled`.
+9. **[`08-quizzes-and-evaluations-engine.md`](file:///home/rafael/projects/cursos/plataforma_ead/spec/specs/08-quizzes-and-evaluations-engine.md)**: Motor de Questionários, Player de Provas, Correção Automática, Retries e Gabarito Condicional.
+10. **[`09-certificates-and-public-verification.md`](file:///home/rafael/projects/cursos/plataforma_ead/spec/specs/09-certificates-and-public-verification.md)**: Regras de Liberação de Certificados, Geração de PDF com marca da Organização, Hash SHA-256 e Validação Pública Global (`/validar-certificado`).
+11. **[`10-course-discussion-forum.md`](file:///home/rafael/projects/cursos/plataforma_ead/spec/specs/10-course-discussion-forum.md)**: Fórum de Discussão do Curso por `org_id`, Sanitização XSS e Polling AJAX.
+12. **[`11-landing-page-and-contextual-help-center.md`](file:///home/rafael/projects/cursos/plataforma_ead/spec/specs/11-landing-page-and-contextual-help-center.md)**: Landing Page Pública, Central de Ajuda Integral (`<x-help-button key="..." />`) em 100% das telas.
+13. **[`12-admin-dashboard-analytics-and-system-settings.md`](file:///home/rafael/projects/cursos/plataforma_ead/spec/specs/12-admin-dashboard-analytics-and-system-settings.md)**: Dashboard Gerencial, Exportação CSV em Streaming $O(1)$ de RAM e Configurações Globais/Por Org.
+14. **[`13-notifications-and-alerts.md`](file:///home/rafael/projects/cursos/plataforma_ead/spec/specs/13-notifications-and-alerts.md)**: Notificações Multitenant (E-mail + In-App).
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Consulte também o estudo detalhado da arquitetura em **[`spec/docs/multitenancy.md`](file:///home/rafael/projects/cursos/plataforma_ead/spec/docs/multitenancy.md)**.
 
-## Security Vulnerabilities
+---
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## 🚫 Escopo Explícito (Fora de Alcance)
 
-## License
+- **Pagamentos / Billing / Assinatura**: Não existe módulo financeiro na plataforma. O campo `organizations.cnpj` é estritamente um dado cadastral/institucional (utilizado na identidade visual do certificado em SPEC-09).
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+---
+
+## 🚀 Como Executar o Projeto
+
+Este projeto utiliza **Laravel Sail** (Docker). Sempre execute os comandos através do Sail:
+
+### Subir os containers
+
+```bash
+vendor/bin/sail up -d
+```
+
+### Executar Migrações e Seeders
+
+```bash
+vendor/bin/sail artisan migrate --seed
+```
+
+### Executar Suíte de Testes (PHPUnit / Pest)
+
+```bash
+vendor/bin/sail artisan test
+```
+
+### Executar Testes E2E (Laravel Dusk)
+
+```bash
+vendor/bin/sail artisan dusk
+```
+
+### Checar Cobertura de Código
+
+```bash
+vendor/bin/sail php scripts/check-coverage.php
+```
+
+---
+
+## 📄 Licença
+
+Este projeto é um software proprietário/interno desenvolvido para a Plataforma EAD.
