@@ -1,7 +1,7 @@
 export const meta = {
   name: 'spec-task-implementer',
   description: 'Understand a spec task from spec/specs/, tech-refine it against the current codebase, implement it TDD-first via the laravel-tdd RED-GREEN-REFACTOR cycle and the laravel-dusk skill for browser flows, using PHPUnit classes per project convention, verify the full suite, loop code-reviewer until clean, then check the module skills for staleness.',
-  whenToUse: 'Run once per spec requirement, e.g. RF08 in 08-quizzes-and-evaluations-engine.md, to take it from spec text to reviewed, tested code with its skills kept in sync.',
+  whenToUse: 'Run once per spec requirement passed via args (spec file, optionally an RF task ref), to take it from spec text to reviewed, tested code with its skills kept in sync.',
   phases: [
     { title: 'Understand', detail: 'Read the spec task, extract requirements/business rules', model: 'sonnet' },
     { title: 'Tech-Refine', detail: 'Study current codebase, produce a 3-bucket implementation plan', model: 'sonnet' },
@@ -89,8 +89,27 @@ const REVIEW_SCHEMA = {
 }
 
 
-const SPEC_FILE = args?.specFile ?? '08-quizzes-and-evaluations-engine.md'
-const TASK_REF = args?.taskRef ?? 'RF08'
+let SPEC_FILE = null
+let TASK_REF = null
+
+if (args && typeof args === 'object') {
+  SPEC_FILE = args.specFile ?? null
+  TASK_REF = args.taskRef ?? null
+} else if (typeof args === 'string') {
+  const fileMatch = args.match(/(?:spec\/specs\/)?([\w-]+\.md)/)
+  if (fileMatch) SPEC_FILE = fileMatch[1]
+  const taskMatch = args.match(/\bRF\d+\b/i)
+  if (taskMatch) TASK_REF = taskMatch[0].toUpperCase()
+}
+
+if (!SPEC_FILE) {
+  throw new Error('No spec file resolved from args. Pass Workflow({ args: "spec/specs/00-architecture-database-and-guardrails.md" }) or { specFile, taskRef }. Refusing to silently default to a different spec.')
+}
+
+if (!TASK_REF) {
+  TASK_REF = `the entirety of ${SPEC_FILE} (no single RF task ref given in args)`
+}
+
 const MAX_REVIEW_ITERATIONS = 3
 
 log(`spec-task-implementer starting: ${SPEC_FILE} :: ${TASK_REF}`)
