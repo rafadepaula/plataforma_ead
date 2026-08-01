@@ -1,5 +1,6 @@
 <?php
 
+use App\Exceptions\CourseHasActiveEnrollmentsException;
 use App\Exceptions\UnresolvedOrgContextException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -46,6 +47,20 @@ return Application::configure(basePath: dirname(__DIR__))
             }
 
             return back()->withInput()->with('error', $message);
+        });
+
+        // SPEC-05 — a Course with at least one `active` `course_user`
+        // enrollment must never be soft-deleted out from under enrolled
+        // students. Same content-negotiation pattern as
+        // `UnresolvedOrgContextException` above.
+        $exceptions->render(function (CourseHasActiveEnrollmentsException $e, Request $request) {
+            $message = 'Não é possível excluir um Curso com matrículas ativas.';
+
+            if ($request->expectsJson()) {
+                return response()->json(['message' => $message], 422);
+            }
+
+            return back()->with('error', $message);
         });
 
         // SPEC-00 §5 — a `role:`-gated route hit by a guest (no

@@ -197,6 +197,17 @@ $browser->waitForReload(function (Browser $browser) {
 })->assertSee('Success');
 ```
 
+**Project note (native drag-and-drop):** Selenium/WebDriver does not dispatch
+genuine OS-level `dragstart`/`dragover`/`drop` events, so simulating a real
+HTML5 drag-and-drop in a Dusk test is unreliable and a common source of
+flaky failures in this codebase. When the feature under test exposes its
+drop-handling logic as a plain JS function (e.g. `window.ModuleReorder
+.persistOrder(list)` in SPEC-05's `ModuleReorder.js`), reorder the DOM nodes
+with `$browser->script()` and then invoke that function directly — the same
+call path a real `drop` event would trigger — rather than trying to fire
+synthetic drag events. See `courses-maintenance`'s "Diagnosing a Dusk
+Reorder Test That Times Out" section for the concrete example.
+
 ### 10. Common Assertions
 
 ```php

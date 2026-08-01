@@ -1,6 +1,9 @@
 <?php
 
+use App\Http\Controllers\CourseController;
 use App\Http\Controllers\ImpersonateOrgController;
+use App\Http\Controllers\LessonController;
+use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserImportController;
@@ -28,6 +31,20 @@ Route::middleware(['auth', 'role:admin|gestor'])->group(function (): void {
     Route::post('users/import/chunk', [UserImportController::class, 'chunk'])->name('users.import.chunk');
 
     Route::resource('users', UserController::class)->except(['show']);
+});
+
+// SPEC-05 §1 / RF06 & RF07 — Course/Module/Lesson CRUD + AJAX reorder,
+// restricted to Admin/Gestor (see the `courses-conventions` skill).
+Route::middleware(['auth', 'role:admin|gestor'])->group(function (): void {
+    Route::resource('courses', CourseController::class)->except(['show']);
+
+    Route::post('courses/{course}/modules/reorder', [ModuleController::class, 'reorder'])
+        ->name('modules.reorder');
+    Route::resource('courses.modules', ModuleController::class)->shallow()->except(['show']);
+
+    Route::post('modules/{module}/lessons/reorder', [LessonController::class, 'reorder'])
+        ->name('lessons.reorder');
+    Route::resource('modules.lessons', LessonController::class)->shallow()->except(['show']);
 });
 
 // SPEC-04 RF01/RF02 — Authentication + Password Reset (see the

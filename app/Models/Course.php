@@ -95,4 +95,25 @@ class Course extends Model
     {
         return $this->hasMany(ForumTopic::class);
     }
+
+    /**
+     * SPEC-05 — a Course may not be soft-deleted while a student still
+     * holds an `active` `course_user` enrollment (cancelled/completed
+     * enrollments do not block deletion). Checked by both `CoursePolicy`
+     * (so `Gate::authorize`/`@can` short-circuit) and the controller's
+     * explicit 422 guard.
+     */
+    public function hasActiveEnrollments(): bool
+    {
+        return $this->students()->wherePivot('status', 'active')->exists();
+    }
+
+    /**
+     * Inverse convenience helper for readability at call sites that guard
+     * the delete action (`if (! $course->canBeDeleted()) { ... }`).
+     */
+    public function canBeDeleted(): bool
+    {
+        return ! $this->hasActiveEnrollments();
+    }
 }
