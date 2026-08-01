@@ -117,51 +117,105 @@ Cada micro-componente Blade renderiza o markup exato dos arquivos `components/*.
 | `<x-ui.alert>` | Compor com barra full-width `background: var(--color-accent-100); color: var(--color-accent-800)` + ícone + texto + ação à direita (padrão do banner de impersonate, Tela 2) | Tela 2 do mockup | Ver §4.2.3. |
 | `<x-ui.stat-card>` | `.card.elev-sm` com `.card-kicker` (label da métrica) + valor grande (`font: var(--font-heading) 800 30px`) + `.card-meta` com `.tag.tag-accent` (delta) | Tela 2 do mockup | Confirmado — ver §4.2.4. |
 
-### **4.1. Gaps do Design System — resolvidos via mockup (Claude Design, projeto "Modernist system UI mockups", `projectId=a405d083-9548-4317-8df5-baa8dee6dca6`, arquivo `Plataforma EAD.dc.html`)**
+### **4.1. Gaps do Design System — resolvidos via mockup (`ds/page.html`)**
 
-Os 3 gaps abaixo, antes em aberto, foram resolvidos por mockups concretos de 6 telas (Login, Dashboard Admin, Vitrine de Componentes, Catálogo de Cursos, Player de Aula, Quiz). Nenhum introduz cor fora da paleta mono do Modernist.
+Os gaps de design antes em aberto foram integralmente resolvidos pelos mockups de alta fidelidade disponibilizados em `ds/page.html` (abrangendo 9 telas completas nos breakpoints **Mobile 390px**, **Tablet 768px** e **Desktop 1920px**, além do layout de Login/Convite). Nenhum introduz cor fora da paleta mono do Modernist.
 
-- **`<select>` estilizado — resolvido**: `<select class="input" style="appearance:none;-webkit-appearance:none;padding-right:32px">` dentro de um `<div style="position:relative">`, com um `<svg>` chevron posicionado `position:absolute;right:10px;top:50%;transform:translateY(-50%);pointer-events:none;opacity:0.6` por cima. Some a seta nativa do browser, usa o ícone Lucide `chevron-down` no lugar. Markup completo na Tela 3 do mockup.
-- **Paleta semântica — resolvida, sem cor nova**: os 4 status usados no mockup (Concluído/Live, Em andamento/Em revisão, Pendente/Rascunho, Vencido) mapeiam 1:1 para as 4 variantes de `.tag` já existentes — `tag-accent` (positivo), `tag-outline` (em progresso), `tag-neutral` (pendente/neutro), `tag-accent-2` (negativo/atrasado). Nenhum verde/amarelo/azul introduzido — resolve o gap mantendo o sistema mono. Aplicar esse mesmo mapeamento em matrícula (SPEC-07), resultado de prova (SPEC-08) e certificado (SPEC-09): aprovado/emitido = `tag-accent`, em andamento = `tag-outline`, pendente = `tag-neutral`, reprovado/revogado/vencido = `tag-accent-2`.
-- **Sidebar escura — resolvida, confirma a recomendação anterior**: `background: var(--color-neutral-900)`, texto inativo `var(--color-neutral-400)`, texto ativo `var(--color-neutral-100)`. Item ativo NÃO preenche o fundo inteiro — usa `border-left: 3px solid var(--color-accent)` + tint sutil `color-mix(in srgb, var(--color-accent) 18%, transparent)` como background do item. Rodapé da sidebar com versão/role em `var(--color-neutral-600)` sobre borda `var(--color-neutral-800)`.
+- **`<select>` estilizado — resolvido**: `<select class="input" style="appearance:none;-webkit-appearance:none;padding-right:32px">` dentro de um `<div style="position:relative">`, com um `<svg>` chevron posicionado `position:absolute;right:10px;top:50%;transform:translateY(-50%);pointer-events:none;opacity:0.6` por cima. Some a seta nativa do browser, usa o ícone Lucide `chevron-down` no lugar. Markup confirmado nos mockups.
+- **Paleta semântica — resolvida, sem cor nova**: os 4 status usados nos mockups (Concluído/Live/Ativo, Em andamento/Obrigatório/Única Escolha, Pendente/Rascunho/Inativo, Em Risco/Vencido) mapeiam 1:1 para as 4 variantes de `.tag` já existentes — `tag-accent` (positivo/ativo/publicado), `tag-outline` (em progresso/obrigatório), `tag-neutral` (pendente/rascunho/aluno), `tag-accent-2` (negativo/em risco/vencido). Nenhum verde/amarelo/azul introduzido — mantém o sistema mono.
+- **Sidebar escura e Menu Mobile — resolvidos**: 
+  - **Desktop**: `width: 236px` ou `240px`, `background: var(--color-neutral-900)`, texto inativo `var(--color-neutral-400)`, texto ativo `var(--color-neutral-100)` com `border-left: 3px solid var(--color-accent)` e tint `color-mix(in srgb, var(--color-accent) 18%, transparent)`.
+  - **Tablet**: Modo reduzido em `width: 64px`, exibindo apenas os ícones SVG Lucide centralizados.
+  - **Mobile**: Drawer deslizante de `width: 280px` com fundo `--color-neutral-900`, overlay com blur `color-mix(in srgb, var(--color-neutral-900) 55%, transparent)` e seções de navegação por role, mini-cursos e lembretes.
 
 ---
 
-## **4.2. Padrões de Tela Confirmados (mockup — 6 telas)**
+## **4.2. Padrões de Tela Confirmados (Mockups — 9 telas + Guest Layout)**
 
-### **4.2.1. Topbar (`<x-layout.topbar>`)**
+### **4.2.1. Menu Lateral Mobile — Drawer Aberto (`<x-layout.sidebar>`)**
+- **Mobile (390px)**: Drawer deslizante (`width: 280px; background: var(--color-neutral-900); shadow: var(--shadow-lg)`).
+- **Cabeçalho**: Nome da organização ("Conselho EAD") + ícone fechar `X` Lucide.
+- **Bloco de Usuário**: Avatar circular 32px com iniciais ("JP"), nome ("João Pereira") e role ("Aluno" / "Admin").
+- **Seções (Aluno)**: Navegação principal (Meus Cursos, Fórum, Certificados, Perfil), seção "Continuar estudando" (mini-cursos com barras de progresso 4px) e seção "Lembretes" (ícones Lucide `bell`/`clock` em `--color-accent`).
+- **Seções (Admin)**: Navegação por permissões Spatie (Dashboard, Alunos, Cursos e Módulos, Convites, Certificados, Relatórios, Configurações).
 
-`.nav` com: `.nav-brand` → campo de busca (`.input` com ícone de lupa SVG absoluto à esquerda, `padding-left:32px`) → botão de notificações (`.btn.btn-ghost.btn-icon`, ícone sino) → bloco de usuário (avatar circular 30px `background:var(--color-neutral-800);color:var(--color-neutral-100)` com iniciais, nome 13px/600, role 11px em `--color-neutral-600`, chevron down).
+### **4.2.2. Landing Page Pública (`route('landing')`)**
+- **Mobile (390px)**: Header `.nav` com botão hambúrguer, hero image grayscale `height: 150px`, headline `<h1>` (20px), parágrafo `.text-muted` e botões empilhados `.btn-block` ("Acessar Cursos" em `primary` e "Entrar" em `secondary`).
+- **Tablet (768px)**: Header com links "Sobre" e "Central de Ajuda", grid 2 colunas (`1fr 1fr`), tracinho accent 40px x 2px, hero image `height: 220px`.
+- **Desktop (1920px)**: Topbar com `padding: 16px 48px`, grid 2 colunas com alinhamento vertical centralizado (`gap: 56px`), tracinho accent 56px x 2px, headline `<h1>` em 44px (max-width 11ch), subtítulo 16px, botões lado a lado e hero image grayscale em `height: 340px`.
 
-### **4.2.2. Sidebar escura por role (`<x-layout.sidebar>`)**
+### **4.2.3. Meus Cursos — Visão Aluno (`route('student.courses.index')`)**
+- **Mobile (390px)**: Lista vertical em coluna única com `padding: 14px`, cards com capa grayscale `height: 90px`, kicker ("NR") e badge de status, progresso 5px e botão CTA `.btn-block` (30px altura).
+- **Tablet (768px)**: Sidebar reduzida 64px, grid 2 colunas (`gap: 16px`), capa `height: 110px`.
+- **Desktop (1920px)**: Sidebar 240px, topbar com perfil do aluno, cabeçalho `<h1>` ("Meus Cursos") com contador de matrículas, grid de 3 colunas (`repeat(3, 1fr); gap: 20px`), cards `.card.elev-sm` com capa grayscale `height: 150px`, barra de progresso `height: 6px` (`var(--color-accent)`) e botão CTA `.btn-primary.btn-block`.
 
-Largura fixa `236px`, fundo `--color-neutral-900`. Grupo com label uppercase 10px (`--color-neutral-600`). Cada item: ícone Lucide 16px + label, `padding:10px 20px`, cor/fundo/borda conforme estado ativo (§4.1). Rodapé fixo (`margin-top:auto`) com versão e role atual.
+### **4.2.4. Aula — Player de Vídeo (`route('student.lessons.show')`)**
+- **Mobile (390px)**: Topbar com botão voltar (`arrow-left`), player de vídeo com fundo `--color-neutral-900` (`height: 180px`), abas "Sobre", "Materiais" e "Fórum", e lista empilhada de lições.
+- **Tablet (768px)**: Player em `height: 280px`, lições dispostas em chips horizontais.
+- **Desktop (1920px)**: Layout split de 3 colunas/áreas:
+  - Sidebar esquerda (240px).
+  - Conteúdo central: Breadcrumbs (`Meus Cursos / NR10`), player de vídeo (`height: 380px`), título `<h2>`, metadados ("Módulo 1 · 10 min"), abas de apoio e texto descritivo (`max-width: 70ch`).
+  - Drawer/Sidebar direita (`280px; border-left: 2px solid var(--color-divider)`): Índice de lições do módulo com ícones SVG inline (`check` para concluída, `play` para atual com fundo/borda accent, `lock` para bloqueada).
 
-### **4.2.3. Banner de Impersonate (`<x-ui.alert variant="info">`, usado em SPEC-04 Impersonate Org)**
+### **4.2.5. Quiz de Avaliação (`route('student.quizzes.show')`)**
+- **Mobile (390px)**: Topbar com cronômetro ("06:12"), contador "Questão 2 de 6", barra de progresso 5px, título `<h4>` e opções radio em cards empilhados.
+- **Tablet (768px)**: Container centralizado de `520px`, opções radio `padding: 12px 14px`, botões "Anterior" (`ghost`) e "Próxima" (`primary`).
+- **Desktop (1920px)**: Topbar completa com título do curso e cronômetro, container central de `680px`:
+  - Header: "Questão 2 de 6" + `<x-ui.badge variant="outline">` ("Única escolha").
+  - Barra de progresso 6px.
+  - Pergunta `<h3>` em 20px 800.
+  - Opções radio expandidas: `.radio` com `padding: 14px 16px`, destacada em `border-color: var(--color-accent); background: var(--color-accent-100)` quando selecionada.
+  - Navegação inferior: `<x-ui.button variant="ghost">Anterior</x-ui.button>` à esquerda e `<x-ui.button variant="primary">Próxima questão</x-ui.button>` à direita.
 
-Barra full-width abaixo do topbar: `background:var(--color-accent-100);color:var(--color-accent-800)`, ícone de info + texto "Visualizando como **{nome}** ({role}) — modo impersonate ativo." + botão `.btn.btn-secondary` (borda/texto em `--color-accent-700/800`) alinhado à direita "Sair da visualização".
+### **4.2.6. Fórum de Discussão (`route('student.forum.index')`)**
+- **Mobile (390px)**: Lista vertical de cards com botão "+ Novo Tópico" no topo.
+- **Tablet (768px)**: Split-screen com lista de tópicos em 240px à esquerda e thread selecionada à direita.
+- **Desktop (1920px)**: Layout split avançado de 2 colunas principais:
+  - Coluna da esquerda (`320px; border-right: 2px solid var(--color-divider)`): Lista de tópicos com botão "+ Novo Tópico", badges de autor (`tag-neutral` Aluno / `tag-accent` Professor), título e contagem de respostas.
+  - Coluna da direita (flex 1; `padding: 28px 40px`): Pergunta principal em card com fundo `var(--color-accent-100)` e borda `var(--color-accent-300)`, thread de respostas com avatares e badges, e campo de resposta rápida com `<input class="input">` e botão primário.
 
-### **4.2.4. Stat cards do Dashboard (SPEC-12)**
+### **4.2.7. Dashboard Admin (`route('admin.dashboard')`)**
+- **Mobile (390px)**: Stat cards em grid 2 colunas (`font-size: 18px`), lista compacta de matrículas recentes.
+- **Tablet (768px)**: Stat cards em grid 4 colunas (`font-size: 20px`), lista com curso e badge de status.
+- **Desktop (1920px)**: Sidebar 220px, conteúdo `padding: 28px 40px`, headline `<h1>` ("Dashboard"):
+  - Grid de 4 Stat Cards (`<x-ui.stat-card>`): `.card.elev-sm` com kicker uppercase, valor de impacto em `font-size: 30px; font-weight: 800; font-family: var(--font-heading)` ("318", "142", "84%", "6") e delta percentual em `.tag.tag-accent` ("+4,2%").
+  - Tabela `<x-ui.table>` de matrículas recentes: Colunas Nome, Curso e Status (badged `tag-accent` "Nova", `tag-neutral` "Concluído", `tag-accent-2` "Em risco").
 
-Grid `repeat(4,1fr)`, cada card `.card.elev-sm` com `.card-kicker` (label), valor grande `font-family:var(--font-heading);font-weight:800;font-size:30px`, e `.card-meta` com `.tag.tag-accent` mostrando o delta ("+4,2%") + texto "vs. mês anterior".
+### **4.2.8. Gestão de Alunos (`route('admin.students.index')`)**
+- **Mobile (390px)**: Lista de linhas compactas com avatar 24px, nome e badge.
+- **Tablet (768px)**: Topbar com botões "Importar CSV" e "+ Novo", tabela de 3 colunas.
+- **Desktop (1920px)**: Topbar com busca integrada (`.input` com lupa SVG inline em `padding-left: 32px; width: 240px`), botão secundário com ícone `upload` ("Importar CSV") e botão primário ("+ Novo Aluno"). Tabela `<x-ui.table>` de 5 colunas: Nome, E-mail, Cursos matriculados, Status (`tag-accent` "Ativo" / `tag-neutral` "Inativo") e Ações ("Editar" em `.btn-ghost`).
 
-### **4.2.5. Card de curso (Catálogo, SPEC-05/07)**
+### **4.2.9. Gestão de Cursos e Módulos (`route('admin.courses.index')`)**
+- **Mobile (390px)**: Lista compacta com título e status.
+- **Tablet (768px)**: Grid 2 colunas de cards `.elev-sm` com metadados (módulos e carga horária).
+- **Desktop (1920px)**: Topbar com botão "+ Novo Curso". Tabela `<x-ui.table>` de 5 colunas com handle de reordenação `⠿` em `color: var(--color-neutral-500)`, Curso, Módulos, Carga horária e Status (`tag-accent` "Publicado" / `tag-neutral` "Rascunho").
 
-`.card.elev-sm` com `padding:0`: `<img class="grayscale">` (capa, `height:150px`) no topo, depois bloco `padding:14px 16px` com `.card-kicker` (categoria) + `.tag` de status alinhado à direita, `.card-title`, `.card-meta` (duração), barra de progresso (`height:6px;background:var(--color-neutral-200)` com fill `background:var(--color-accent)` na largura `{{ progress }}%`), e `.btn.btn-secondary.btn-block` como CTA ("Continuar"/"Iniciar"/"Revisar" conforme status).
-
-### **4.2.6. Player de aula (SPEC-07)**
-
-Vídeo: bloco `background:var(--color-neutral-900)` com botão play circular sobreposto (`border:2px solid var(--color-neutral-100)`, ícone play preenchido). Barra de progresso do curso no topbar (mesma barra 6px do card). Sidebar direita (320px) lista lições: ícone check (concluída)/play (atual, borda+bg `--color-accent`/`--color-accent-100`)/lock (bloqueada, `--color-neutral-500`).
-
-### **4.2.7. Quiz (SPEC-08)**
-
-Card centralizado 680px: contador "Questão N de 10" + `.tag.tag-outline` "Obrigatório", barra de progresso do quiz, pergunta em `<h3>`, opções como `.radio` expandido (padding 14px/16px, borda e fundo destacados quando selecionada: `border-color:var(--color-accent);background:var(--color-accent-100)`), navegação `.btn.btn-ghost` (Anterior) / `.btn.btn-primary` (Próxima) com ícones seta.
-
-### **4.2.8. Login/Convite (`layouts/guest.blade.php`)**
-
-Split 42%/58%: painel esquerdo escuro (`--color-neutral-900`) com marca, indicador `56px` de 2px accent, headline `<h1>` até 9 caracteres de largura, texto institucional, copyright no rodapé; painel direito claro (`--color-bg`) com formulário centralizado 380px (`.field` + `.input`, radio "manter conectado", `.btn.btn-primary.btn-block`, divisor "ou", `.btn.btn-secondary.btn-block` para SSO).
+### **4.2.10. Login e Convite (`layouts/guest.blade.php`)**
+- **Mobile (390px)**: Formulário em coluna única com fundo claro (`var(--color-bg)`).
+- **Desktop (1920px)**: Split-screen 42%/58%:
+  - Painel esquerdo escuro (42%, `--color-neutral-900`): Marca "Conselho EAD", tracinho accent 56px x 2px, headline `<h1>` (36px 800, max 9ch) "Acesse a plataforma", texto institucional e copyright.
+  - Painel direito claro (58%, `--color-bg`): Form centralizado 380px com `<h2>` ("Entrar na sua conta"), campos `.field` > `label` + `.input`, checkbox "Manter conectado", link "Esqueceu a senha?", `<x-ui.button variant="primary" block>`Entrar`</x-ui.button>`, divisor "OU" e botão SSO secundário.
 
 > Nota de implementação: `browser-window.jsx`, `image-slot.js` e `support.js` do projeto de mockup são só ferramental de preview do Claude Design (moldura de navegador falsa, placeholder de imagem drag-and-drop) — **não portar para o Blade real**. No Laravel, vídeo/thumbnail usam `<img>`/`<iframe>` reais (SPEC-05, SPEC-07), não o custom element `<image-slot>`.
+
+---
+
+### **4.3. Documentação de Suporte de Mockups por Tela (`spec/docs/mockups/*.md`)**
+
+Para garantir a completa autonomia de implementação por agentes de código e desenvolvedores, cada tela do design system gerado pelo Claude Design (`ds/page.html`) está detalhadamente documentada em arquivos individuais de especificação visual e comportamental em [`spec/docs/mockups/`](file:///home/rafael/projects/cursos/plataforma_ead/spec/docs/mockups/INDEX.md):
+
+1. **[Índice Geral de Mockups](file:///home/rafael/projects/cursos/plataforma_ead/spec/docs/mockups/INDEX.md)**: Mapeamento completo e diretrizes globais do Modernist Design System.
+2. **[01. Menu Lateral Mobile (Drawer Aberta)](file:///home/rafael/projects/cursos/plataforma_ead/spec/docs/mockups/01-menu-mobile.md)**: Drawer deslizante mobile (390px) para papeis Aluno e Admin.
+3. **[02. Landing Page Pública](file:///home/rafael/projects/cursos/plataforma_ead/spec/docs/mockups/02-landing-page.md)**: Estrutura responsiva pública com hero grid e ações de entrada.
+4. **[03. Meus Cursos (Visão Aluno)](file:///home/rafael/projects/cursos/plataforma_ead/spec/docs/mockups/03-meus-cursos.md)**: Catálogo do aluno matriculado, barras de progresso e badges semânticos.
+5. **[04. Aula — Player de Vídeo](file:///home/rafael/projects/cursos/plataforma_ead/spec/docs/mockups/04-aula-player.md)**: Player de vídeo YouTube, abas de apoio e drawer lateral de índice de lições.
+6. **[05. Quiz de Avaliação](file:///home/rafael/projects/cursos/plataforma_ead/spec/docs/mockups/05-quiz-avaliacao.md)**: Interface centralizada de avaliação com cronômetro e opções radio customizadas.
+7. **[06. Fórum de Discussão](file:///home/rafael/projects/cursos/plataforma_ead/spec/docs/mockups/06-forum-discussao.md)**: Layout split com lista de tópicos e thread de discussão por curso.
+8. **[07. Dashboard Admin](file:///home/rafael/projects/cursos/plataforma_ead/spec/docs/mockups/07-dashboard-admin.md)**: Stat cards com deltas de métricas e tabela de matrículas recentes.
+9. **[08. Gestão de Alunos](file:///home/rafael/projects/cursos/plataforma_ead/spec/docs/mockups/08-gestao-alunos.md)**: Tabela de gestão de usuários, busca integrada e ações de importação CSV.
+10. **[09. Gestão de Cursos e Módulos](file:///home/rafael/projects/cursos/plataforma_ead/spec/docs/mockups/09-gestao-cursos.md)**: Tabela de gestão de catálogo com handles de reordenação e alternância de rascunho/publicado.
+11. **[10. Login e Convite (Guest Layout)](file:///home/rafael/projects/cursos/plataforma_ead/spec/docs/mockups/10-login-convite.md)**: Layout split 42%/58% para autenticação e aceite de convites.
 
 ---
 

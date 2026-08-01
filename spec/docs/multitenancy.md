@@ -156,3 +156,17 @@ trait OrgScope
    - `notifications` -> herda org indiretamente via `notifiable` (usuário)
 
 > Esquema completo de colunas/tipos/índices/`onDelete` vive em `spec/specs/00-architecture-database-and-guardrails.md` §2.1 — este documento cobre apenas a decisão de arquitetura multitenant, não repete tipos de coluna.
+
+---
+
+## 6. Skills Agenticas de Manutenção (SPEC-03)
+
+Por exigência da `spec/specs/03-agentic-harness-and-self-updating-skills.md` (mínimo de 3 skills por feature), este módulo de multitenancy mantém as seguintes skills em `.agents/skills/`, que **devem** ser consultadas antes de qualquer alteração em `OrgScope`, `RolesEnum`, migrations/models org-scoped ou no fluxo de Impersonate Org, e **sobrescritas** logo após:
+
+- **`.agents/skills/tenancy-architecture/SKILL.md`** — visão geral do desenho multitenant, tabelas diretamente org-scoped vs. herdadas por cascata, papéis (`RolesEnum`) e Impersonate Org.
+- **`.agents/skills/tenancy-conventions/SKILL.md`** — padrões de código: como aplicar o trait `OrgScope` a um Model, convenção de migration para `org_id`/`onDelete`, tratamento global de `UnresolvedOrgContextException`, e convenções de factories/testes.
+- **`.agents/skills/tenancy-maintenance/SKILL.md`** — guia de debug (vazamento de dados entre Orgs, `org_id` ausente/errado), testes obrigatórios (`OrgScopeUnresolvedContextTest`, `OrgScopeTenantIsolationTest`, `OrgScopeImpersonateOrgTest`, `RolesMiddlewareTest`, `RolesEnumTest`) e edge cases conhecidos (FK `RESTRICT` de `users.org_id`, ausência de FK real em colunas pseudo-polimórficas, PK composta nullable de `system_settings`).
+
+O agente `.agents/agents/code-reviewer.md` trata essas 3 skills como checagem obrigatória sempre que a diff em revisão for org-scoped.
+
+> **Nota de sincronização (Bucket A pendente):** este documento e o trait `OrgScope` acima foram escritos contra o contrato de schema definido em `spec/specs/00-architecture-database-and-guardrails.md` §2/§3. Quando a Bucket A (migrations, Models Eloquent, trait `OrgScope` e `RolesEnum` de fato implementados em código) for mesclada, este documento e as 3 skills acima devem ser revisados/atualizados para refletir qualquer divergência entre o schema planejado e o schema efetivamente implementado, conforme o protocolo de auto-update da SPEC-03.
