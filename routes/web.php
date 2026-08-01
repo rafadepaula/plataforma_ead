@@ -1,7 +1,10 @@
 <?php
 
 use App\Http\Controllers\CourseController;
+use App\Http\Controllers\EnrollmentController;
 use App\Http\Controllers\ImpersonateOrgController;
+use App\Http\Controllers\InvitationController;
+use App\Http\Controllers\InvitationLinkController;
 use App\Http\Controllers\LessonController;
 use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\OrganizationController;
@@ -45,6 +48,37 @@ Route::middleware(['auth', 'role:admin|gestor'])->group(function (): void {
     Route::post('modules/{module}/lessons/reorder', [LessonController::class, 'reorder'])
         ->name('lessons.reorder');
     Route::resource('modules.lessons', LessonController::class)->shallow()->except(['show']);
+});
+
+// SPEC-06 RF03 & RF21 — Invitation Link management + manual enrollment
+// panels, restricted to Admin/Gestor (see the `invitations-conventions`
+// skill).
+Route::middleware(['auth', 'role:admin|gestor'])->group(function (): void {
+    Route::resource('courses.invitation-links', InvitationLinkController::class)
+        ->shallow()
+        ->only(['index', 'create', 'store', 'destroy']);
+
+    // Not a `Route::resource()` — `course_user` is a pivot with no
+    // `Enrollment` Eloquent model to route-bind (see `courses-architecture`),
+    // so `destroy` takes both `{course}` and `{user}` explicitly rather than
+    // a `shallow()` single-segment `{enrollment}`.
+    Route::get('courses/{course}/enrollments', [EnrollmentController::class, 'index'])
+        ->name('courses.enrollments.index');
+    Route::post('courses/{course}/enrollments', [EnrollmentController::class, 'store'])
+        ->name('courses.enrollments.store');
+    Route::delete('courses/{course}/enrollments/{user}', [EnrollmentController::class, 'destroy'])
+        ->name('courses.enrollments.destroy');
+});
+
+// SPEC-06 RF03/RN09 — public, unauthenticated Smart Invitation flow: a
+// student joins the platform (or authenticates into an already-existing
+// account, per the multi-org adaptive flow) purely from a
+// `/convite/{token}` link, with no prior session (see the
+// `invitations-architecture` skill).
+Route::middleware('guest')->group(function (): void {
+    Route::get('convite/{token}', [InvitationController::class, 'show'])->name('invitation.show');
+    Route::post('convite/check-email', [InvitationController::class, 'checkEmail'])->name('invitation.check-email');
+    Route::post('convite/{token}', [InvitationController::class, 'store'])->name('invitation.store');
 });
 
 // SPEC-04 RF01/RF02 — Authentication + Password Reset (see the
