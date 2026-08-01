@@ -12,11 +12,25 @@
             <directory>tests/Feature</directory>
         </testsuite>
     </testsuites>
+    <!--
+        SPEC-00 par.5 quality guardrail: the coverage gate below must report
+        at least 95.00 percent line coverage. Run it with:
+          XDEBUG_MODE=coverage vendor/bin/phpunit
+          php scripts/check-coverage.php
+        or simply "composer test-coverage".
+    -->
     <source>
         <include>
             <directory>app</directory>
         </include>
     </source>
+    <coverage>
+        <report>
+            <clover outputFile="storage/coverage/clover.xml"/>
+            <html outputDirectory="storage/coverage/html"/>
+            <text outputFile="php://stdout" showOnlySummary="true"/>
+        </report>
+    </coverage>
     <php>
         <env name="APP_ENV" value="testing"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>

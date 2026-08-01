@@ -1,0 +1,20 @@
+# SPEC-00 §1.2 — shared-hosting hardening for the public uploads directory.
+# This directory is exposed to the web via the `public/storage` symlink
+# (see `php artisan storage:link`). Uploaded files (certificates, lesson
+# PDFs/images, org logos, etc.) must never be listed or executed as code.
+
+# Disable directory listing.
+Options -Indexes
+
+# Deny execution of PHP (and related) scripts uploaded to this directory.
+<FilesMatch "\.(php|phar|php[3-8]?|phtml|pht)$">
+    Require all denied
+</FilesMatch>
+
+# Apache 2.2 fallback (hosts without mod_authz_core).
+<IfModule !mod_authz_core.c>
+    <FilesMatch "\.(php|phar|php[3-8]?|phtml|pht)$">
+        Order allow,deny
+        Deny from all
+    </FilesMatch>
+</IfModule>
