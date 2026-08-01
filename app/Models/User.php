@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Notifications\ResetPasswordNotification;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -38,6 +39,16 @@ class User extends Authenticatable
             'password' => 'hashed',
             'org_id' => 'integer',
         ];
+    }
+
+    /**
+     * Send the password reset notification (SPEC-04 RF02 — overridden to
+     * use the localized `ResetPasswordNotification` instead of the
+     * framework's default English copy).
+     */
+    public function sendPasswordResetNotification(#[\SensitiveParameter] $token): void
+    {
+        $this->notify(new ResetPasswordNotification($token));
     }
 
     /**

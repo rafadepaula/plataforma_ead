@@ -176,3 +176,36 @@ php artisan dusk
 Every Laravel feature → Test exists and failed first
 Otherwise → Not TDD
 ```
+
+## Project Note: Plataforma EAD Uses PHPUnit Classes, Not Pest
+
+This repo's `CLAUDE.md` mandates PHPUnit test classes ("If you see a test
+using Pest, convert it to PHPUnit") — every example above written as
+`test('...', function () { ... })` must be translated to a PHPUnit method
+before use here, e.g.:
+
+```php
+class LoginTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_authenticated_user_can_create_post(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->post('/posts', ['title' => 'My First Post', 'content' => 'Post content here'])
+            ->assertRedirect('/posts');
+
+        $this->assertDatabaseHas('posts', ['title' => 'My First Post', 'user_id' => $user->id]);
+    }
+}
+```
+
+Generate new tests with `vendor/bin/sail artisan make:test --phpunit {Name}`
+(see `laravel/core rules`), and run the narrowest test with
+`vendor/bin/sail artisan test --compact --filter=testName` — not the bare
+`php artisan test` commands shown elsewhere in this skill (this project runs
+everything through Sail). This note is intentionally narrow: the RED→GREEN→
+REFACTOR cycle and Laravel-specific patterns above still apply, only the
+test syntax and runner prefix differ for this codebase.

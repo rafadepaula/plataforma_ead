@@ -19,9 +19,11 @@ class LayoutRenderingTest extends DuskTestCase
     public function test_layout_rendering_topbar_sidebar_footer_and_zero_radius(): void
     {
         $this->browse(function (Browser $browser): void {
+            // Dusk's ElementResolver scopes every selector under a default
+            // 'body' prefix, so `assertPresent('body')` would resolve to the
+            // invalid selector 'body body' and always fail.
             $browser->visit('/')
-                ->assertPathIs('/')
-                ->assertPresent('body');
+                ->assertPathIs('/');
 
             // Verify zero-radius design system rule via computed style on target elements
             $radius = $browser->script("
