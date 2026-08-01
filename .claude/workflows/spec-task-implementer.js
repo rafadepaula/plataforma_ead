@@ -1,13 +1,13 @@
 export const meta = {
   name: 'spec-task-implementer',
-  description: 'Understand a spec task from spec/specs/, tech-refine it against the current codebase, implement it TDD-first via the laravel-tdd RED-GREEN-REFACTOR cycle and the laravel-dusk skill for browser flows, using PHPUnit classes per project convention, verify the full suite, loop code-reviewer until clean, then check the module skills for staleness.',
+  description: 'Understand a spec task from spec/specs/, tech-refine it against the current codebase, implement it TDD-first via the laravel-tdd RED-GREEN-REFACTOR cycle and the laravel-dusk skill for browser flows, using PHPUnit classes per project convention, verify the full suite, loop code-reviewer & validate-test-quality until clean, then check the module skills for staleness.',
   whenToUse: 'Run once per spec requirement passed via args (spec file, optionally an RF task ref), to take it from spec text to reviewed, tested code with its skills kept in sync.',
   phases: [
     { title: 'Understand', detail: 'Read the spec task, extract requirements/business rules', model: 'sonnet' },
     { title: 'Tech-Refine', detail: 'Study current codebase, produce a 3-bucket implementation plan', model: 'sonnet' },
     { title: 'Code', detail: '3 parallel agents, each applying laravel-tdd RED-GREEN-REFACTOR in PHPUnit, using laravel-dusk for any browser-facing bucket', model: 'sonnet' },
     { title: 'Test', detail: 'Run the full PHPUnit + Dusk suite via Sail, verify coverage per the laravel-tdd checklist', model: 'sonnet' },
-    { title: 'Review', detail: 'code-reviewer loop: fix CONFIRMED findings, re-review, capped iterations', model: 'sonnet' },
+    { title: 'Review', detail: 'code-reviewer & validate-test-quality loop: audit code & test efficacy, fix CONFIRMED findings, capped iterations', model: 'sonnet' },
     { title: 'Meta-Skill-Check', detail: 'Per SPEC-03, check the touched module skill triad for staleness against the code just merged and update it', model: 'sonnet' }
   ]
 }
@@ -212,6 +212,7 @@ while (iterations < MAX_REVIEW_ITERATIONS && budget.remaining() > 0) {
     [
       `Review the uncommitted diff implementing task "${TASK_REF}" from spec/specs/${SPEC_FILE}.`,
       `Trigger the laravel-best-practices, laravel-specialist, and laravel-verification skills as your normal process dictates (static analysis, lint, test verification, architectural audit).`,
+      `Trigger the validate-test-quality skill to audit all new/modified PHPUnit and Dusk tests against the 6 Pillars of Real Test Validation: SUT Integrity (0% SUT self-mocking), Assertion Meaningfulness (no tautological/weak factory checks), Mutation Resiliency, State Verification (database & response checks), Mandatory Fail-Path Testing (403, 422, exceptions, cross-tenant leaks), and Refactor Resilience. Any test quality defect, fake assertion, or missing failure path MUST be reported as a CONFIRMED finding.`,
       `Test run summary from the previous phase:`,
       JSON.stringify(testResults),
       `Report findings ranked most-severe first, each with a clear verdict (CONFIRMED or PLAUSIBLE). Empty findings array if the diff is clean.`
