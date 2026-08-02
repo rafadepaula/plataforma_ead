@@ -1,111 +1,142 @@
 # Plataforma EAD Multitenant
 
-Plataforma de Ensino a Distância (EAD) Multi-organização desenvolvida em **Laravel 13** e **PHP 8.5**, projetada com arquitetura **Single-Database Multitenancy** (`org_id` + `OrgScope`), desenvolvimento orientado a testes (**TDD**) e testes end-to-end (**Laravel Dusk**).
+A **Plataforma EAD Multitenant** é uma solução completa e escalável de Ensino a Distância (LMS - *Learning Management System*) desenvolvida em **Laravel 13** e **PHP 8.5**. Projetada para atender múltiplas organizações em uma arquitetura **Single-Database Multitenancy**, a plataforma oferece isolamento rigoroso de dados por instituição, gerenciamento completo de cursos e alunos, sala de aula virtual com suporte multimídia, motor de avaliações, emissão de certificados digitais autenticados e relatórios gerenciais.
 
 ---
 
-## 📐 Visão Geral & Arquitetura
+## 🎯 Propósito do Projeto
 
-- **Multitenancy Single-Database**: Isolamento rigoroso de dados por organização através de `org_id` e Trait global `OrgScope`.
-- **Controle de Acesso em Níveis (Roles)**:
-  - `Admin`: Acesso global, gestão de organizações e impersonation.
-  - `Gestor`: Gestão da sua organização (cursos, módulos, lições, alunos, relatórios).
-  - `Aluno`: Acesso multi-organização a cursos matriculados, sala de aula e certificados.
-- **Frontend & UI**: Blade Components + Bootstrap 5.3 com Design System estruturado.
-- **TDD & Qualidade**: Cobertura de testes automatizados (PHPUnit/Pest) + Testes E2E de navegador com Laravel Dusk.
+O objetivo do sistema é fornecer uma infraestrutura de EAD moderna, segura e de alta performance onde **múltiplas organizações (empresas, escolas ou instituições de ensino)** possam gerenciar de forma independente seus cursos, módulos, alunos e emissão de certificados, enquanto os **alunos** utilizam uma única conta para acessar treinamentos e conteúdos de diferentes organizações.
 
 ---
 
-## 🗺️ Roadmap & Ordem Sistemática TDD
+## ✨ Principais Funcionalidades
 
-O desenvolvimento do sistema segue a ordem de dependências abaixo, priorizando a infraestrutura de testes na **Fase 1**:
+### 🏢 1. Arquitetura Multitenant (Múltiplas Organizações)
+- **Isolamento de Dados em Banco Único (Single-Database)**: Segregação automática de dados por organização via `org_id` e escopo global (`OrgScope`).
+- **Suporte Multi-Org para Alunos**: O mesmo aluno pode se matricular e realizar cursos em diferentes organizações mantendo um único cadastro unificado.
+- **Impersonate Org**: Administradores globais podem alternar de contexto temporariamente para gerenciar o painel de qualquer organização.
 
-```mermaid
-graph TD
-    S00[SPEC-00: Arquitetura, DB Multitenant & Guardrails] --> S01[SPEC-01: Infraestrutura TDD, Dusk E2E & CI/CD]
-    S01 --> S02[SPEC-02: Frontend Design System & Componentes Blade]
-    S02 --> S03[SPEC-03: Agentic Harness & Auto-Update Skills]
-    S03 --> S04[SPEC-04: Auth, Organizações, Impersonate & Usuários]
-    S04 --> S05[SPEC-05: Gestão de Cursos, Módulos & Lições]
-    S05 --> S06[SPEC-06: Convites Inteligentes & Matrículas Multi-Org]
-    S05 --> S07[SPEC-07: Experiência do Aluno, Sala de Aula & Progresso]
-    S07 --> S08[SPEC-08: Motor de Questionários & Provas]
-    S08 --> S09[SPEC-09: Certificados Multitenant & Validação Pública]
-    S05 --> S10[SPEC-10: Fórum de Discussão com Polling AJAX]
-    S04 --> S11[SPEC-11: Landing Page & Central de Ajuda 100% Telas]
-    S09 --> S12[SPEC-12: Dashboard Gerencial, Exportação CSV & Settings]
-    S06 --> S13[SPEC-13: Notificações Multitenant E-mail + In-App]
-    S09 --> S13
-    S10 --> S13
-```
+### 📚 2. Gestão de Cursos e Conteúdo Multimídia
+- **Organização Modular**: Cursos estruturados em Módulos e Lições com reordenação dinâmica via AJAX.
+- **Conteúdo Diversificado**: Suporte a lições multimídia incluindo texto rico, imagens, documentos PDF e vídeos integrados via YouTube.
+- **Controle de Publicação e Exclusão**: Proteção contra exclusão acidental de cursos que possuem alunos com matrículas ativas.
 
----
+### 🎓 3. Sala de Aula Virtual & Experiência do Aluno
+- **Painel "Meus Cursos"**: Visão centralizada das matrículas do aluno em todas as organizações com progresso percentual em tempo real.
+- **Player de Aulas Inteligente**: Detecção automática de tempo assistido em vídeos e marcação de conclusão de aulas.
+- **Recálculo Dinâmico de Progresso**: Atualização síncrona do avanço no curso conforme a conclusão das lições.
 
-## 📚 Repositório de Especificações Técnicas (`spec/specs/`)
+### 📝 4. Motor de Avaliações & Questionários
+- **Diversidade de Questões**: Criação de provas com questões de Escolha Única, Múltipla Escolha, Verdadeiro/Falso e Questões Discursivas (Ensaios).
+- **Correção Mista**: Correção automatizada para questões objetivas e painel de correção manual para questões discursivas pelos gestores.
+- **Regras Configuráveis**: Definição de limite de tentativas, tempo limite com cronômetro em tempo real, nota mínima para aprovação e liberação condicional de gabarito.
 
-As especificações detalhadas de cada módulo encontram-se no diretório `spec/specs/`:
+### 📜 5. Emissão e Validação Pública de Certificados
+- **Geração Automática de PDF**: Emissão de certificados em PDF com layout customizado e identidade visual (marca/logo) da Organização correspondente.
+- **Validação Pública por Hash SHA-256**: Cada certificado gerado possui um código único e QR Code para verificação pública de autenticidade (`/validar-certificado`) sem necessidade de autenticação.
 
-1. **[`00-architecture-database-and-guardrails.md`](file:///home/rafael/projects/cursos/plataforma_ead/spec/specs/00-architecture-database-and-guardrails.md)**: Arquitetura Geral Multitenant, tabela `organizations`, esquema de banco de dados (19 tabelas), Trait `OrgScope`, Roles Spatie (`admin`, `gestor`, `aluno`), 95%+ de Cobertura e **Testes E2E com Laravel Dusk**.
-2. **[`01-testing-guardrails-dusk-e2e-and-ci-cd.md`](file:///home/rafael/projects/cursos/plataforma_ead/spec/specs/01-testing-guardrails-dusk-e2e-and-ci-cd.md)**: Infraestrutura TDD & Quality Gate CI/CD, configuração SQLite em memória, drivers Dusk E2E e script auditor de cobertura.
-3. **[`02-frontend-design-system-blade-components-and-layout.md`](file:///home/rafael/projects/cursos/plataforma_ead/spec/specs/02-frontend-design-system-blade-components-and-layout.md)**: Layout Master particionado, Design System CSS, Bootstrap 5.3 e catálogo de micro-componentes Blade.
-4. **[`03-agentic-harness-and-self-updating-skills.md`](file:///home/rafael/projects/cursos/plataforma_ead/spec/specs/03-agentic-harness-and-self-updating-skills.md)**: Agentic Harness & Protocolo de Auto-Update de Skills.
-5. **[`04-auth-profile-organizations-and-user-management.md`](file:///home/rafael/projects/cursos/plataforma_ead/spec/specs/04-auth-profile-organizations-and-user-management.md)**: Autenticação, Perfil, CRUD de Organizações, Impersonate Org pelo Admin e Gestão de Usuários com Importação CSV.
-6. **[`05-courses-modules-and-content-management.md`](file:///home/rafael/projects/cursos/plataforma_ead/spec/specs/05-courses-modules-and-content-management.md)**: Gestão Multitenant de Cursos, Módulos com reordenação AJAX e Lições Multimídia (Texto, Imagem, PDF, Vídeo YouTube).
-7. **[`06-smart-invitation-and-enrollment-system.md`](file:///home/rafael/projects/cursos/plataforma_ead/spec/specs/06-smart-invitation-and-enrollment-system.md)**: Links de Convite por Org, Auto-cadastro e Fluxo Adaptativo Multi-Org para Alunos.
-8. **[`07-student-learning-experience-and-progress.md`](file:///home/rafael/projects/cursos/plataforma_ead/spec/specs/07-student-learning-experience-and-progress.md)**: Área do Aluno "Meus Cursos", Sala de Aula, Players, Conclusão de Aulas e Middleware `EnsureStudentIsEnrolled`.
-9. **[`08-quizzes-and-evaluations-engine.md`](file:///home/rafael/projects/cursos/plataforma_ead/spec/specs/08-quizzes-and-evaluations-engine.md)**: Motor de Questionários, Player de Provas, Correção Automática, Retries e Gabarito Condicional.
-10. **[`09-certificates-and-public-verification.md`](file:///home/rafael/projects/cursos/plataforma_ead/spec/specs/09-certificates-and-public-verification.md)**: Regras de Liberação de Certificados, Geração de PDF com marca da Organização, Hash SHA-256 e Validação Pública Global (`/validar-certificado`).
-11. **[`10-course-discussion-forum.md`](file:///home/rafael/projects/cursos/plataforma_ead/spec/specs/10-course-discussion-forum.md)**: Fórum de Discussão do Curso por `org_id`, Sanitização XSS e Polling AJAX.
-12. **[`11-landing-page-and-contextual-help-center.md`](file:///home/rafael/projects/cursos/plataforma_ead/spec/specs/11-landing-page-and-contextual-help-center.md)**: Landing Page Pública, Central de Ajuda Integral (`<x-help-button key="..." />`) em 100% das telas.
-13. **[`12-admin-dashboard-analytics-and-system-settings.md`](file:///home/rafael/projects/cursos/plataforma_ead/spec/specs/12-admin-dashboard-analytics-and-system-settings.md)**: Dashboard Gerencial, Exportação CSV em Streaming $O(1)$ de RAM e Configurações Globais/Por Org.
-14. **[`13-notifications-and-alerts.md`](file:///home/rafael/projects/cursos/plataforma_ead/spec/specs/13-notifications-and-alerts.md)**: Notificações Multitenant (E-mail + In-App).
+### 🔗 6. Convites Inteligentes & Matrículas Adaptativas
+- **Links de Convite por Organização**: URLs personalizadas com controle de validade e limite de usos.
+- **Fluxo de Cadastro Adaptativo**: Reconhecimento automático de e-mail existente para matrícula simplificada sem duplicar contas.
+- **Importação em Lote**: Painel de matrículas manuais e importação massiva de alunos via arquivo CSV.
 
-Consulte também o estudo detalhado da arquitetura em **[`spec/docs/multitenancy.md`](file:///home/rafael/projects/cursos/plataforma_ead/spec/docs/multitenancy.md)**.
+### 💬 7. Fórum de Discussão Integrado
+- **Comunidade por Curso**: Espaço colaborativo de dúvidas e discussões entre alunos e instrutores, isolado por organização e curso.
+- **Segurança & Atualizações**: Sanitização rigorosa contra XSS e atualização de respostas em tempo real via polling AJAX.
+
+### 🔔 8. Notificações & Central de Ajuda Contextual
+- **Notificações In-App e por E-mail**: Alertas automáticos para convites, confirmação de matrícula, emissão de certificados e respostas no fórum.
+- **Central de Ajuda Integrada**: Botões contextuais de suporte (`<x-help-button />`) cobrindo 100% das telas da aplicação com fallback de artigos.
+
+### 📊 9. Painel Gerencial & Auditoria
+- **Dashboard de Analytics**: Métricas de engajamento, matrículas ativas, taxa de conclusão e certificados emitidos por organização.
+- **Exportação CSV em Streaming**: Relatórios de grande volume exportados com consumo constante de memória ($O(1)$ RAM).
+- **Auditoria do Sistema**: Logs de eventos de autenticação, mutações de dados e ações críticas com mascaramento de dados sensíveis.
 
 ---
 
-## 🚫 Escopo Explícito (Fora de Alcance)
+## 👥 Perfis de Acesso (Roles)
 
-- **Pagamentos / Billing / Assinatura**: Não existe módulo financeiro na plataforma. O campo `organizations.cnpj` é estritamente um dado cadastral/institucional (utilizado na identidade visual do certificado em SPEC-09).
+| Perfil | Descrição e Responsabilidades |
+|---|---|
+| **Admin** | Administrador Global da infraestrutura. Gerencia organizações, configura parâmetros globais do sistema e utiliza o recurso de *Impersonate* para gerenciar qualquer tenant. |
+| **Gestor** | Gestor da Organização. Possui controle completo sobre sua instituição: gestão de cursos, módulos, lições, provas, matrículas, relatórios e identidade dos certificados. |
+| **Aluno** | Usuário final da plataforma. Acessa seus cursos matriculados, assiste a aulas multimídia, realiza provas, participa dos fóruns e emite seus certificados. |
 
 ---
 
-## 🚀 Como Executar o Projeto
+## 🛠️ Stack Tecnológica
 
-Este projeto utiliza **Laravel Sail** (Docker). Sempre execute os comandos através do Sail:
+- **Backend Framework**: [Laravel 13](https://laravel.com) (PHP 8.5)
+- **Banco de Dados**: MySQL 8.0+ / MariaDB 10.4+ (Engine InnoDB, Single-Database Multitenancy via `OrgScope`)
+- **Autenticação & Permissões**: `spatie/laravel-permission` (Roles `admin`, `gestor`, `aluno`)
+- **Frontend & UI**: Blade Templates (SSR), Bootstrap 5.3, JavaScript (ES6+ / jQuery 3.7+)
+- **Gerador de PDF**: `barryvdh/laravel-dompdf`
+- **Ambiente de Desenvolvimento**: [Laravel Sail](https://laravel.com/docs/sail) (Docker)
+- **Suíte de Testes**: PHPUnit / Pest & [Laravel Dusk](https://laravel.com/docs/dusk) (E2E Browser Testing)
 
-### Subir os containers
+---
 
+## 🚀 Como Executar o Projeto Localmente
+
+O ambiente de desenvolvimento está configurado utilizando **Laravel Sail** (Docker).
+
+### 1. Pré-requisitos
+- Docker e Docker Compose instalados.
+
+### 2. Subir os Containers
 ```bash
 vendor/bin/sail up -d
 ```
 
-### Executar Migrações e Seeders
-
+### 3. Executar Migrações e Seeds do Banco de Dados
 ```bash
 vendor/bin/sail artisan migrate --seed
 ```
 
-### Executar Suíte de Testes (PHPUnit / Pest)
+### 4. Compilar Assets do Frontend
+```bash
+vendor/bin/sail npm run dev
+# ou para build de produção:
+vendor/bin/sail npm run build
+```
 
+---
+
+## 🧪 Qualidade & Suíte de Testes (TDD)
+
+O projeto foi desenvolvido sob metodologia **Test-Driven Development (TDD)** com alta cobertura de código e testes de navegação End-to-End.
+
+### Executar a Suíte de Testes (PHPUnit)
 ```bash
 vendor/bin/sail artisan test
 ```
 
-### Executar Testes E2E (Laravel Dusk)
-
+### Executar Testes E2E de Navegador (Laravel Dusk)
 ```bash
 vendor/bin/sail artisan dusk
 ```
 
-### Checar Cobertura de Código
-
+### Verificar Cobertura de Código
 ```bash
 vendor/bin/sail php scripts/check-coverage.php
 ```
 
 ---
 
+## 📖 Especificações Técnicas (Developers)
+
+Para desenvolvedores que desejam entender as especificações técnicas e a arquitetura detalhada de cada módulo, a documentação encontra-se no diretório [`spec/specs/`](file:///home/rafael/projects/cursos/plataforma_ead/spec/specs/README.md).
+
+---
+
+## 🚫 Escopo Explícito (Fora de Alcance)
+
+- **Pagamentos / Billing / Assinatura**: O sistema **não inclui módulo financeiro ou processamento de pagamentos**. O campo `cnpj` da tabela `organizations` é utilizado exclusivamente para identificação cadastral e institucional na emissão de certificados.
+
+---
+
 ## 📄 Licença
 
-Este projeto é um software proprietário/interno desenvolvido para a Plataforma EAD.
+Este repositório contém software proprietário desenvolvido para a Plataforma EAD. Todos os direitos reservados.
