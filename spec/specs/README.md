@@ -23,6 +23,8 @@ graph TD
     S06 --> S13[SPEC-13: Notificações Multitenant E-mail + In-App]
     S09 --> S13
     S10 --> S13
+    S01 --> S14[SPEC-14: Ambiente Dusk & Banco MySQL Dedicado]
+    S04 --> S15[SPEC-15: Logs de Auditoria & Monitoramento Multitenant]
 ```
 
 ---
@@ -43,6 +45,8 @@ graph TD
 12. **[`11-landing-page-and-contextual-help-center.md`](file:///home/rafael/projects/cursos/plataforma_ead/spec/specs/11-landing-page-and-contextual-help-center.md)**: Landing Page Pública, Central de Ajuda Integral com componente `<x-help-button key="..." />` cobrindo 100% das telas (RN05) com suporte a fallback de artigos.
 13. **[`12-admin-dashboard-analytics-and-system-settings.md`](file:///home/rafael/projects/cursos/plataforma_ead/spec/specs/12-admin-dashboard-analytics-and-system-settings.md)**: Dashboard Gerencial por Org, Central de Exportação CSV em Streaming $O(1)$ de RAM e Configurações Globais/Por Org.
 14. **[`13-notifications-and-alerts.md`](file:///home/rafael/projects/cursos/plataforma_ead/spec/specs/13-notifications-and-alerts.md)**: Notificações Multitenant (E-mail + In-App/sino), gatilhos fechados (convite enviado, certificado emitido, resposta de fórum, matrícula confirmada).
+15. **[`14-dusk-testing-environment-and-dedicated-database.md`](file:///home/rafael/projects/cursos/plataforma_ead/spec/specs/14-dusk-testing-environment-and-dedicated-database.md)**: Ambiente de Testes Laravel Dusk e Banco de Dados MySQL Dedicado (`testing`), isolando estritamente a base dev de resets ou migrações.
+16. **[`15-system-audit-logging-and-monitoring.md`](file:///home/rafael/projects/cursos/plataforma_ead/spec/specs/15-system-audit-logging-and-monitoring.md)**: Sistema de Logs de Auditoria e Monitoramento Multitenant, rastreamento automatizado de mutações Eloquent, eventos de autenticação (com redação de senhas `[REDACTED]`), ações críticas e expurgo agendado.
 
 ---
 
