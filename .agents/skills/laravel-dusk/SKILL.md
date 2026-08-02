@@ -208,6 +208,21 @@ call path a real `drop` event would trigger — rather than trying to fire
 synthetic drag events. See `courses-maintenance`'s "Diagnosing a Dusk
 Reorder Test That Times Out" section for the concrete example.
 
+**Project note (`script()` is not chainable):** `Browser::script()` returns
+the raw array of per-argument JS return values, not the fluent `Browser`
+instance — `$browser->script('...')->assertSee(...)` is a fatal error, not
+a no-op. Split it into its own statement:
+
+```php
+$browser->script('window.LessonPlayer.reportProgress(1, 540, 600)');
+$browser->waitForText('Concluída');
+```
+
+(seen in SPEC-07's `tests/Browser/VideoThresholdCompletionTest.php`, which
+drives `window.LessonPlayer.reportProgress()` directly for the same
+"synthetic event unreliable, call the JS function directly" reason as the
+drag-and-drop note above).
+
 ### 10. Common Assertions
 
 ```php

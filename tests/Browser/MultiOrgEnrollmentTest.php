@@ -56,7 +56,7 @@ class MultiOrgEnrollmentTest extends DuskTestCase
                 ->waitUntilMissing('@invitation-name')
                 ->type('@invitation-password', 'senha-correta')
                 ->press('Matricular-me')
-                ->waitForLocation('/')
+                ->waitForLocation('/meus-cursos')
                 ->assertAuthenticated();
         });
 

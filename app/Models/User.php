@@ -92,4 +92,20 @@ class User extends Authenticatable
     {
         return $this->hasMany(LessonProgress::class);
     }
+
+    /**
+     * SPEC-07 RF20 — used by `EnsureStudentIsEnrolled` to gate an Aluno's
+     * access to a Course's classroom/lesson/progress routes. Reads the
+     * `course_user` pivot bypassing `Course`'s `OrgScope` (mirrors
+     * `ProcessSmartInvitationAction`'s convention) — a `cancelled` status
+     * or no row at all is not an active/completed enrollment.
+     */
+    public function hasActiveOrCompletedEnrollment(Course $course): bool
+    {
+        return $this->courses()
+            ->withoutGlobalScopes()
+            ->wherePivot('course_id', $course->id)
+            ->wherePivotIn('status', ['active', 'completed'])
+            ->exists();
+    }
 }

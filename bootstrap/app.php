@@ -3,6 +3,7 @@
 use App\Exceptions\CourseHasActiveEnrollmentsException;
 use App\Exceptions\InvitationLinkInvalidException;
 use App\Exceptions\UnresolvedOrgContextException;
+use App\Http\Middleware\EnsureStudentIsEnrolled;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -28,6 +29,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => RoleMiddleware::class,
             'permission' => PermissionMiddleware::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,
+            // SPEC-07 RF20 — gates the student-facing classroom/lesson
+            // /progress routes behind an active/completed enrollment.
+            'student.enrolled' => EnsureStudentIsEnrolled::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

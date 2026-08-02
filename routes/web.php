@@ -1,13 +1,16 @@
 <?php
 
+use App\Http\Controllers\ClassroomController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\EnrollmentController;
 use App\Http\Controllers\ImpersonateOrgController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\InvitationLinkController;
 use App\Http\Controllers\LessonController;
+use App\Http\Controllers\LessonProgressController;
 use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\OrganizationController;
+use App\Http\Controllers\StudentCourseController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserImportController;
 use Illuminate\Support\Facades\Route;
@@ -79,6 +82,28 @@ Route::middleware('guest')->group(function (): void {
     Route::get('convite/{token}', [InvitationController::class, 'show'])->name('invitation.show');
     Route::post('convite/check-email', [InvitationController::class, 'checkEmail'])->name('invitation.check-email');
     Route::post('convite/{token}', [InvitationController::class, 'store'])->name('invitation.store');
+});
+
+// SPEC-07 RF19 — "Meus Cursos", the Aluno's own enrollments across every
+// Organization they belong to. `role:aluno` rather than
+// `student.enrolled` — this listing IS the enrollment data, with no
+// single `{course}`/`{lesson}` route parameter to gate (see
+// `StudentCourseController`).
+Route::middleware(['auth', 'role:aluno'])->group(function (): void {
+    Route::get('meus-cursos', [StudentCourseController::class, 'index'])->name('student.courses.index');
+});
+
+// SPEC-07 RF20 — the student-facing classroom/lesson/progress routes,
+// gated by `student.enrolled` (registered in `bootstrap/app.php`) rather
+// than `role:aluno`/`CoursePolicy`/`LessonPolicy`: distinct from the
+// Admin/Gestor `modules.lessons` management block above, this middleware
+// also allows Admin (unconditionally) and Gestor (same-org) to preview a
+// Course's classroom (see the `EnsureStudentIsEnrolled` middleware).
+Route::middleware(['auth', 'student.enrolled'])->group(function (): void {
+    Route::get('courses/{course}/classroom', [ClassroomController::class, 'show'])->name('classroom.show');
+    Route::get('lessons/{lesson}', [ClassroomController::class, 'showLesson'])->name('classroom.lesson');
+    Route::post('lessons/{lesson}/complete', [LessonProgressController::class, 'complete'])->name('lessons.complete');
+    Route::post('lessons/{lesson}/progress', [LessonProgressController::class, 'updateProgress'])->name('lessons.progress');
 });
 
 // SPEC-04 RF01/RF02 — Authentication + Password Reset (see the
