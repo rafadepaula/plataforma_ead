@@ -209,3 +209,22 @@ Generate new tests with `vendor/bin/sail artisan make:test --phpunit {Name}`
 everything through Sail). This note is intentionally narrow: the RED→GREEN→
 REFACTOR cycle and Laravel-specific patterns above still apply, only the
 test syntax and runner prefix differ for this codebase.
+
+## Project Note: Resolve Constructor-Injected Actions From the Container, Never `new X()`
+
+This codebase's single-purpose Action classes (e.g. `SubmitQuizAttemptAction`,
+`GradeEssayAnswerAction`) commonly take other Actions/services as
+constructor-promoted dependencies rather than being plain zero-arg classes.
+A test that instantiates one directly (`new SubmitQuizAttemptAction()`)
+will RED with "Too few arguments" the moment a dependency is added to the
+constructor — and silently keep working right up until that refactor, so
+it's an easy trap to fall into early and only discover much later. Always
+resolve Actions under test from the container instead:
+
+```php
+$action = app(SubmitQuizAttemptAction::class);
+```
+
+This also exercises the real Laravel binding/resolution path (catching a
+missing service-container binding as a test failure, not a production
+surprise), which a bare `new` never does.

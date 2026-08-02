@@ -3,6 +3,7 @@
 use App\Http\Controllers\ClassroomController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\EnrollmentController;
+use App\Http\Controllers\EssayGradingController;
 use App\Http\Controllers\ImpersonateOrgController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\InvitationLinkController;
@@ -10,7 +11,10 @@ use App\Http\Controllers\LessonController;
 use App\Http\Controllers\LessonProgressController;
 use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\OrganizationController;
+use App\Http\Controllers\QuizController;
+use App\Http\Controllers\QuizQuestionController;
 use App\Http\Controllers\StudentCourseController;
+use App\Http\Controllers\StudentQuizController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserImportController;
 use Illuminate\Support\Facades\Route;
@@ -51,6 +55,40 @@ Route::middleware(['auth', 'role:admin|gestor'])->group(function (): void {
     Route::post('modules/{module}/lessons/reorder', [LessonController::class, 'reorder'])
         ->name('lessons.reorder');
     Route::resource('modules.lessons', LessonController::class)->shallow()->except(['show']);
+});
+
+// SPEC-08 RF08 — Quiz (1:1 with a Lesson) + nested QuizQuestion/QuizOption
+// CRUD + reorder, restricted to Admin/Gestor (see the
+// `quizzes-conventions` skill). `quizzes.{create,store}` are reached via
+// `{lesson}` (mirroring `modules.lessons`' shallow nesting one level
+// further down); `{quiz}` alone resolves `edit`/`update`/`destroy`. There
+// is no `quiz-questions/create|edit` full-page screen — per
+// `quizzes/edit.blade.php`'s contract, Questions are authored via modals
+// on the parent Quiz's single edit screen, so `quiz-questions` is routed
+// explicitly (store/update/destroy/reorder only) rather than as a full
+// `Route::resource()`.
+Route::middleware(['auth', 'role:admin|gestor'])->group(function (): void {
+    Route::get('lessons/{lesson}/quiz/create', [QuizController::class, 'create'])->name('quizzes.create');
+    Route::post('lessons/{lesson}/quiz', [QuizController::class, 'store'])->name('quizzes.store');
+    Route::get('quizzes/{quiz}/edit', [QuizController::class, 'edit'])->name('quizzes.edit');
+    Route::put('quizzes/{quiz}', [QuizController::class, 'update'])->name('quizzes.update');
+    Route::delete('quizzes/{quiz}', [QuizController::class, 'destroy'])->name('quizzes.destroy');
+
+    Route::post('quizzes/{quiz}/quiz-questions', [QuizQuestionController::class, 'store'])
+        ->name('quiz-questions.store');
+    Route::post('quizzes/{quiz}/quiz-questions/reorder', [QuizQuestionController::class, 'reorder'])
+        ->name('quiz-questions.reorder');
+    Route::put('quiz-questions/{quiz_question}', [QuizQuestionController::class, 'update'])
+        ->name('quiz-questions.update');
+    Route::delete('quiz-questions/{quiz_question}', [QuizQuestionController::class, 'destroy'])
+        ->name('quiz-questions.destroy');
+
+    // SPEC-08 §2.1 — the Gestor's pending manual-grading queue + grade
+    // action, gated by `QuizAttemptPolicy` rather than a Course/Module
+    // /Lesson route parameter.
+    Route::get('quiz-attempts/pending', [EssayGradingController::class, 'pending'])->name('quiz-attempts.pending');
+    Route::get('quiz-attempts/{quizAttempt}', [EssayGradingController::class, 'show'])->name('quiz-attempts.show');
+    Route::post('quiz-attempts/{quizAttempt}/grade', [EssayGradingController::class, 'grade'])->name('quiz-attempts.grade');
 });
 
 // SPEC-06 RF03 & RF21 — Invitation Link management + manual enrollment
@@ -104,6 +142,16 @@ Route::middleware(['auth', 'student.enrolled'])->group(function (): void {
     Route::get('lessons/{lesson}', [ClassroomController::class, 'showLesson'])->name('classroom.lesson');
     Route::post('lessons/{lesson}/complete', [LessonProgressController::class, 'complete'])->name('lessons.complete');
     Route::post('lessons/{lesson}/progress', [LessonProgressController::class, 'updateProgress'])->name('lessons.progress');
+
+    // SPEC-08 RF09 — the Aluno's quiz-taking flow, nested under `{lesson}`
+    // (never a bare `{quiz}`) so `EnsureStudentIsEnrolled::resolveCourse()`
+    // keeps working unmodified (see the `quizzes-architecture` skill).
+    // `submit` is a distinct `/quiz/submit` suffix — not the same
+    // `POST lessons/{lesson}/quiz` URI as the Gestor's `quizzes.store`
+    // above — Laravel's route collection keys routes by method+URI, so an
+    // identical pair would silently overwrite one of the two named routes.
+    Route::get('lessons/{lesson}/quiz', [StudentQuizController::class, 'show'])->name('student.quizzes.show');
+    Route::post('lessons/{lesson}/quiz/submit', [StudentQuizController::class, 'submit'])->name('student.quizzes.submit');
 });
 
 // SPEC-04 RF01/RF02 — Authentication + Password Reset (see the

@@ -108,4 +108,21 @@ class User extends Authenticatable
             ->wherePivotIn('status', ['active', 'completed'])
             ->exists();
     }
+
+    /**
+     * SPEC-08 §1.3/RN04 — multiple attempts are always considered by
+     * their best score: `MAX(score_percentage)` across this student's
+     * `graded` attempts of the given Quiz (an `awaiting_manual_grading`
+     * or `in_progress` attempt is excluded — only a fully graded attempt
+     * counts). Returns `null` when the student has no graded attempt yet.
+     */
+    public function bestQuizScoreFor(Quiz $quiz): ?float
+    {
+        $best = $this->quizAttempts()
+            ->where('quiz_id', $quiz->id)
+            ->where('status', 'graded')
+            ->max('score_percentage');
+
+        return $best !== null ? (float) $best : null;
+    }
 }
