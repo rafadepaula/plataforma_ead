@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\CertificateController;
 use App\Http\Controllers\ClassroomController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\EnrollmentController;
@@ -11,6 +12,7 @@ use App\Http\Controllers\LessonController;
 use App\Http\Controllers\LessonProgressController;
 use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\OrganizationController;
+use App\Http\Controllers\PublicCertificateController;
 use App\Http\Controllers\QuizController;
 use App\Http\Controllers\QuizQuestionController;
 use App\Http\Controllers\StudentCourseController;
@@ -91,6 +93,21 @@ Route::middleware(['auth', 'role:admin|gestor'])->group(function (): void {
     Route::post('quiz-attempts/{quizAttempt}/grade', [EssayGradingController::class, 'grade'])->name('quiz-attempts.grade');
 });
 
+// SPEC-09 §1.2 / RF25 — Gestor/Admin per-course certificate list +
+// revocation + PDF download, restricted to Admin/Gestor (see the
+// `certificates-conventions` skill). Not a `Route::resource()` —
+// `certificates` has no `create`/`store`/`edit`/`update` staff-facing
+// screens (issuance is fully automatic via `IssueCertificateAction`), so
+// only `index`/`revoke`/`download` are routed explicitly.
+Route::middleware(['auth', 'role:admin|gestor'])->group(function (): void {
+    Route::get('courses/{course}/certificates', [CertificateController::class, 'index'])
+        ->name('courses.certificates.index');
+    Route::put('certificates/{certificate}/revoke', [CertificateController::class, 'revoke'])
+        ->name('certificates.revoke');
+    Route::get('certificates/{certificate}/download', [CertificateController::class, 'download'])
+        ->name('certificates.download');
+});
+
 // SPEC-06 RF03 & RF21 — Invitation Link management + manual enrollment
 // panels, restricted to Admin/Gestor (see the `invitations-conventions`
 // skill).
@@ -153,6 +170,16 @@ Route::middleware(['auth', 'student.enrolled'])->group(function (): void {
     Route::get('lessons/{lesson}/quiz', [StudentQuizController::class, 'show'])->name('student.quizzes.show');
     Route::post('lessons/{lesson}/quiz/submit', [StudentQuizController::class, 'submit'])->name('student.quizzes.submit');
 });
+
+// SPEC-09 §2 / RF17 — fully public, cross-tenant certificate validation.
+// Deliberately OUTSIDE any `auth`/`guest`/`role` group — unlike
+// `convite/*` below (which IS `guest`-gated, since an already
+// -authenticated visitor is redirected away from it), this route must
+// resolve identically for a fully anonymous visitor AND an already
+// -logged-in Admin/Gestor/Aluno alike, so no middleware applies at all
+// (see the `certificates-architecture` skill).
+Route::get('validar-certificado/{hash}', [PublicCertificateController::class, 'show'])
+    ->name('certificates.verify');
 
 // SPEC-04 RF01/RF02 — Authentication + Password Reset (see the
 // `auth-orgs-architecture` skill).

@@ -266,6 +266,21 @@ $browser->assertAuthenticated()
 - Can break when HTML structure changes
 - Use when you don't control the HTML
 
+### `assertSeeIn`/`waitForTextIn` Return CSS-Rendered Text, Not DOM Text
+
+Selenium's `getText()` (which backs `assertSee*`/`waitForText*`) returns the
+text as **rendered**, after CSS is applied — not the literal string in the
+HTML/DOM. A component styled with `text-transform: uppercase` (e.g. this
+project's `<x-ui.badge>`) will make `assertSeeIn('@status', 'Revogado')`
+fail/timeout even though the DOM literally contains `Revogado`, because the
+browser renders (and `getText()` returns) `"REVOGADO"`. Project example:
+`tests/Browser/CertificateRevocationTest.php` asserts against `'REVOGADO'`
+for exactly this reason. When a Dusk assertion on text content
+mysteriously times out but the page looks right in a screenshot, check the
+element's computed `text-transform`/`font-variant` CSS before assuming a
+timing/flakiness issue — assert against the transformed text, or assert on
+an underlying `data-*` attribute/value instead if the literal string matters.
+
 ### Waiting Strategies
 
 **Always wait explicitly** rather than using arbitrary pauses:
