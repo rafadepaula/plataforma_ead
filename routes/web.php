@@ -5,6 +5,10 @@ use App\Http\Controllers\ClassroomController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\EnrollmentController;
 use App\Http\Controllers\EssayGradingController;
+use App\Http\Controllers\ForumModerationController;
+use App\Http\Controllers\ForumReplyController;
+use App\Http\Controllers\ForumReportController;
+use App\Http\Controllers\ForumTopicController;
 use App\Http\Controllers\ImpersonateOrgController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\InvitationLinkController;
@@ -169,6 +173,51 @@ Route::middleware(['auth', 'student.enrolled'])->group(function (): void {
     // identical pair would silently overwrite one of the two named routes.
     Route::get('lessons/{lesson}/quiz', [StudentQuizController::class, 'show'])->name('student.quizzes.show');
     Route::post('lessons/{lesson}/quiz/submit', [StudentQuizController::class, 'submit'])->name('student.quizzes.submit');
+});
+
+// SPEC-10 §2/RF22/RF26 — the course discussion forum: Topic/Reply CRUD,
+// `since_id` AJAX polling, and the "Denunciar" report action, all nested
+// under `{course}` and gated by `student.enrolled` — mirrors the
+// `classroom.*`/`student.quizzes.*` block above's middleware choice since
+// forum access is enrollment-gated (RN10), not just role-gated (see the
+// `EnsureStudentIsEnrolled` middleware). `{topic}`/`{reply}` are plain
+// route parameters, not typed model bindings — see
+// `ForumTopicController`'s docblock for why. `forum-replies.fetch` is the
+// only route in this group carrying its own `throttle:60,1` (SPEC-10 §2),
+// scoped to just the polling endpoint rather than the whole group so
+// posting/editing/deleting are never throttled by it.
+Route::middleware(['auth', 'student.enrolled'])->prefix('courses/{course}/forum')->group(function (): void {
+    Route::get('/', [ForumTopicController::class, 'index'])->name('forum.index');
+    Route::get('/create', [ForumTopicController::class, 'create'])->name('forum.create');
+    Route::post('/', [ForumTopicController::class, 'store'])->name('forum.store');
+    Route::get('/topics/{topic}', [ForumTopicController::class, 'show'])->name('forum.show');
+    Route::put('/topics/{topic}', [ForumTopicController::class, 'update'])->name('forum.update');
+    Route::delete('/topics/{topic}', [ForumTopicController::class, 'destroy'])->name('forum.destroy');
+
+    Route::post('/topics/{topic}/replies', [ForumReplyController::class, 'store'])->name('forum-replies.store');
+    Route::put('/topics/{topic}/replies/{reply}', [ForumReplyController::class, 'update'])->name('forum-replies.update');
+    Route::delete('/topics/{topic}/replies/{reply}', [ForumReplyController::class, 'destroy'])->name('forum-replies.destroy');
+    Route::get('/topics/{topic}/replies/fetch', [ForumReplyController::class, 'fetchNew'])
+        ->middleware('throttle:60,1')
+        ->name('forum-replies.fetch');
+
+    Route::post('/report', [ForumReportController::class, 'store'])->name('forum-reports.store');
+});
+
+// SPEC-10 §2/§2.2/RF26 — Gestor/Admin-only forum moderation: the direct
+// pin toggle (independent of any report) and the pending-report queue's
+// dismiss/remove actions, restricted to `role:admin|gestor` rather than
+// `student.enrolled` (mirrors `quiz-attempts.pending`'s same role-gated,
+// Policy-scoped-within-the-controller convention above).
+Route::middleware(['auth', 'role:admin|gestor'])->group(function (): void {
+    Route::post('courses/{course}/forum/topics/{topic}/pin', [ForumTopicController::class, 'pin'])
+        ->name('forum.pin');
+
+    Route::get('forum/moderation', [ForumModerationController::class, 'index'])->name('forum-moderation.index');
+    Route::post('forum/moderation/{forumReport}/dismiss', [ForumModerationController::class, 'dismiss'])
+        ->name('forum-moderation.dismiss');
+    Route::post('forum/moderation/{forumReport}/remove', [ForumModerationController::class, 'remove'])
+        ->name('forum-moderation.remove');
 });
 
 // SPEC-09 §2 / RF17 — fully public, cross-tenant certificate validation.

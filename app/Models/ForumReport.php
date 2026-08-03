@@ -57,4 +57,21 @@ class ForumReport extends Model
     {
         return $this->belongsTo(User::class, 'reviewed_by');
     }
+
+    /**
+     * Resolves the `ForumTopic|ForumReply` this report targets.
+     * `postable_type`/`postable_id` carry no DB FK/morphTo, so this is
+     * the single place both are resolved — kept in sync with
+     * `ForumPostEdit::postable()`. `withTrashed()` is required: the
+     * reported post may already be soft-deleted by direct gestor/admin
+     * moderation before the report queue is reviewed (see the plan's
+     * edge cases) — the moderation UI must not crash resolving it.
+     */
+    public function postable(): ForumTopic|ForumReply|null
+    {
+        /** @var class-string<ForumTopic|ForumReply> $type */
+        $type = $this->postable_type;
+
+        return $type::withTrashed()->find($this->postable_id);
+    }
 }
