@@ -228,3 +228,27 @@ $action = app(SubmitQuizAttemptAction::class);
 This also exercises the real Laravel binding/resolution path (catching a
 missing service-container binding as a test failure, not a production
 surprise), which a bare `new` never does.
+
+## Project Note: Testing a "Mail Failure Must Not Roll Back the Transaction" Boundary
+
+Several modules (e.g. SPEC-13 notifications) wrap a `->notify()`/
+`Notification::send()` call site in `try/catch (Throwable) { Log::error(...) }`
+specifically so a mail transport failure never rolls back the DB write that
+already committed, nor 500s the request. `Mail::fake()`/`Notification::fake()`
+can't exercise this branch — they swallow the call instead of throwing. Use
+the `Notification` facade's own mock expectations to force the failure, and
+assert `Log::error()` was reached instead of a bubbled exception:
+
+```php
+Log::shouldReceive('error')->once();
+Notification::shouldReceive('send')->once()->andThrow(new \RuntimeException('SMTP indisponível'));
+
+// ...perform the action that triggers the notification...
+
+// then assert the triggering row still exists/committed, e.g.:
+$this->assertDatabaseHas('course_user', [...]);
+```
+
+See `tests/Feature/NotificationTriggersTest.php` for the full pattern
+(including the per-recipient variant, where `Notification::shouldReceive('send')`
+is asserted without `->once()` since it's called once per recipient in a loop).

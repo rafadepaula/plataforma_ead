@@ -17,6 +17,7 @@ use App\Http\Controllers\LandingPageController;
 use App\Http\Controllers\LessonController;
 use App\Http\Controllers\LessonProgressController;
 use App\Http\Controllers\ModuleController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\PublicCertificateController;
 use App\Http\Controllers\QuizController;
@@ -240,6 +241,20 @@ Route::middleware(['auth', 'role:admin|gestor'])->group(function (): void {
 
     Route::get('admin/settings', [SystemSettingController::class, 'edit'])->name('settings.edit');
     Route::put('admin/settings', [SystemSettingController::class, 'update'])->name('settings.update');
+});
+
+// SPEC-13 §Bucket 2 — the AJAX endpoints backing the topbar notification
+// bell. `DatabaseNotification` has no Policy/OrgScope of its own, so
+// `NotificationController` manually scopes every query to
+// `$request->user()->notifications()` rather than relying on a route-model
+// binding (see the `notifications-conventions` skill).
+Route::middleware('auth')->group(function (): void {
+    Route::get('notifications/unread-count', [NotificationController::class, 'unreadCount'])
+        ->name('notifications.unread-count');
+    Route::patch('notifications/read-all', [NotificationController::class, 'readAll'])
+        ->name('notifications.read-all');
+    Route::patch('notifications/{notification}/read', [NotificationController::class, 'read'])
+        ->name('notifications.read');
 });
 
 // SPEC-09 §2 / RF17 — fully public, cross-tenant certificate validation.

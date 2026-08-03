@@ -9,7 +9,10 @@ use App\Models\LessonProgress;
 use App\Models\Module;
 use App\Models\Quiz;
 use App\Models\User;
+use App\Notifications\CertificateIssuedNotification;
 use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 /**
  * SPEC-09 §1.1 — the certificate-eligibility engine, called synchronously
@@ -53,7 +56,7 @@ class IssueCertificateAction
         $validationHash = hash('sha256', $user->id.$course->id.$formattedIssuedAt.config('app.key'));
 
         try {
-            return Certificate::query()->firstOrCreate(
+            $certificate = Certificate::query()->firstOrCreate(
                 ['user_id' => $user->id, 'course_id' => $course->id],
                 ['validation_hash' => $validationHash, 'issued_at' => $issuedAt],
             );
@@ -63,6 +66,27 @@ class IssueCertificateAction
                 ->where('course_id', $course->id)
                 ->first();
         }
+
+        // SPEC-13 §2 gatilho 2 — only a genuine insert fires the
+        // notification; `firstOrCreate`'s idempotent re-fetch of an
+        // already-existing row (e.g. a later progress recalculation for a
+        // student who was already issued a certificate) must never
+        // re-notify. Per SPEC-13 §3/RN, a mail transport failure must
+        // never bubble up and roll back the caller's business transaction,
+        // so the send is wrapped in try/catch and logged rather than left
+        // to propagate.
+        if ($certificate->wasRecentlyCreated) {
+            try {
+                $user->notify(new CertificateIssuedNotification($certificate));
+            } catch (Throwable $exception) {
+                Log::error('Falha ao enviar notificação de certificado emitido.', [
+                    'certificate_id' => $certificate->id,
+                    'exception' => $exception->getMessage(),
+                ]);
+            }
+        }
+
+        return $certificate;
     }
 
     private function ruleSatisfied(CourseCompletionRule $rule, Course $course, User $user): bool

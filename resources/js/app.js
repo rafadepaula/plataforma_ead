@@ -6,6 +6,7 @@ import HttpClient from './modules/HttpClient';
 import LessonPlayer from './modules/LessonPlayer';
 import ModalManager from './modules/ModalManager';
 import ModuleReorder from './modules/ModuleReorder';
+import NotificationBell from './modules/NotificationBell';
 import NotificationService from './modules/NotificationService';
 import SmartInvitationForm from './modules/SmartInvitationForm';
 import QuizBuilder from './quiz-builder';
@@ -23,6 +24,7 @@ window.QuizTimer = new QuizTimer();
 window.ForumPolling = new ForumPolling(HttpClient);
 window.ForumReportModal = new ForumReportModal(HttpClient, NotificationService, ModalManager);
 window.ForumEditHistory = new ForumEditHistory(ModalManager);
+window.NotificationBell = new NotificationBell(HttpClient);
 
 document.addEventListener('DOMContentLoaded', () => {
     // JavaScript modules auto-bind DOM handlers upon load
@@ -35,4 +37,5 @@ document.addEventListener('DOMContentLoaded', () => {
     window.ForumPolling.init();
     window.ForumReportModal.init();
     window.ForumEditHistory.init();
+    window.NotificationBell.init();
 });

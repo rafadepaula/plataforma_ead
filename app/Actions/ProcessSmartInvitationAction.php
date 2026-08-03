@@ -3,6 +3,7 @@
 namespace App\Actions;
 
 use App\Enums\Permissions\RolesEnum;
+use App\Events\EnrollmentConfirmed;
 use App\Exceptions\InvitationLinkInvalidException;
 use App\Models\InvitationLink;
 use App\Models\User;
@@ -91,6 +92,8 @@ class ProcessSmartInvitationAction
                     'enrolled_at' => now(),
                     'status' => 'active',
                 ]);
+
+                EnrollmentConfirmed::dispatch($invitationLink->course()->withoutGlobalScopes()->firstOrFail(), $user);
             } elseif ($enrollment->pivot->status === 'cancelled') {
                 // A previously revoked enrollment (RF21) is reactivated
                 // rather than throwing on the `UNIQUE(user_id, course_id)`
@@ -99,6 +102,8 @@ class ProcessSmartInvitationAction
                     'status' => 'active',
                     'enrolled_at' => now(),
                 ]);
+
+                EnrollmentConfirmed::dispatch($invitationLink->course()->withoutGlobalScopes()->firstOrFail(), $user);
             }
 
             $invitationLink->increment('current_uses');
