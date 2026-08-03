@@ -3,6 +3,7 @@
 use App\Http\Controllers\CertificateController;
 use App\Http\Controllers\ClassroomController;
 use App\Http\Controllers\CourseController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EnrollmentController;
 use App\Http\Controllers\EssayGradingController;
 use App\Http\Controllers\ForumModerationController;
@@ -20,8 +21,10 @@ use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\PublicCertificateController;
 use App\Http\Controllers\QuizController;
 use App\Http\Controllers\QuizQuestionController;
+use App\Http\Controllers\ReportExportController;
 use App\Http\Controllers\StudentCourseController;
 use App\Http\Controllers\StudentQuizController;
+use App\Http\Controllers\SystemSettingController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserImportController;
 use Illuminate\Support\Facades\Route;
@@ -220,6 +223,23 @@ Route::middleware(['auth', 'role:admin|gestor'])->group(function (): void {
         ->name('forum-moderation.dismiss');
     Route::post('forum/moderation/{forumReport}/remove', [ForumModerationController::class, 'remove'])
         ->name('forum-moderation.remove');
+});
+
+// SPEC-12 — Admin/Gestor dashboard, CSV export, and org-level system
+// settings, restricted to `role:admin|gestor` (no dedicated Policy, see
+// `dashboard-conventions`). The `admin.dashboard` route name is
+// load-bearing: `components/layout/sidebar.blade.php` checks
+// `Route::has('admin.dashboard')` and silently degrades to a dead `#`
+// link if it is ever renamed.
+Route::middleware(['auth', 'role:admin|gestor'])->group(function (): void {
+    Route::get('admin/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
+
+    Route::get('admin/reports/{type}/export', [ReportExportController::class, 'stream'])
+        ->whereIn('type', ['enrollments', 'certificates'])
+        ->name('reports.export');
+
+    Route::get('admin/settings', [SystemSettingController::class, 'edit'])->name('settings.edit');
+    Route::put('admin/settings', [SystemSettingController::class, 'update'])->name('settings.update');
 });
 
 // SPEC-09 §2 / RF17 — fully public, cross-tenant certificate validation.
