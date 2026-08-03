@@ -118,20 +118,11 @@
             // its submit button — server-side `RevokeCertificateRequest`
             // (min:10) is still the authority, this is UX-only.
             //
-            // `x-ui.modal`'s backdrop ships with a static inline
-            // `display: flex` and relies on Alpine.js's `x-show="show"`
-            // to hide itself until opened — but Alpine.js is not actually
-            // installed in this project (no `alpinejs` dependency/CDN
-            // script anywhere), so every modal renders open by default.
-            // `window.ModalManager` (registered in `app.js`) correctly
-            // toggles `display` on open/close, but nothing sets the
-            // initial hidden state — so this page does it explicitly for
-            // its own modals rather than patching the shared component.
+            // The initial hidden state for `.dialog-backdrop` elements is
+            // handled globally by `ModalManager` (see
+            // `resources/js/modules/ModalManager.js`), so this only wires
+            // up the revoke-reason textarea/submit toggle.
             document.addEventListener('DOMContentLoaded', function () {
-                document.querySelectorAll('.dialog-backdrop').forEach(function (backdrop) {
-                    backdrop.style.display = 'none';
-                });
-
                 document.querySelectorAll('[data-revoke-form]').forEach(function (form) {
                     var textarea = form.querySelector('[data-revoke-reason]');
                     var submit = form.querySelector('[data-revoke-submit]');

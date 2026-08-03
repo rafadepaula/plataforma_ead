@@ -12,6 +12,7 @@ use App\Http\Controllers\ForumTopicController;
 use App\Http\Controllers\ImpersonateOrgController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\InvitationLinkController;
+use App\Http\Controllers\LandingPageController;
 use App\Http\Controllers\LessonController;
 use App\Http\Controllers\LessonProgressController;
 use App\Http\Controllers\ModuleController;
@@ -25,9 +26,10 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserImportController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('welcome');
-});
+// SPEC-11 / RF11 — public, unauthenticated Landing Page. Replaces the
+// Laravel default `welcome` stub; kept outside any `auth` middleware and
+// registered before `auth.php`'s routes.
+Route::get('/', [LandingPageController::class, 'show'])->name('landing.show');
 
 // SPEC-04 §2 / RF23 & UC18 — Organization CRUD + Impersonate Org, both
 // reserved to `role:admin` (see `auth-orgs-conventions` skill).

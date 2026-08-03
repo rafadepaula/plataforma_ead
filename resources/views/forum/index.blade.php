@@ -86,18 +86,4 @@
         </x-ui.modal>
     @endif
 
-    @push('scripts')
-        <script>
-            // `x-ui.modal`'s backdrop ships with a static inline `display:
-            // flex` and relies on Alpine.js's `x-show="show"` to hide
-            // itself, but Alpine.js is not installed in this project (see
-            // `resources/views/certificates/index.blade.php`'s same fix) —
-            // so this page hides its own modals explicitly on load.
-            document.addEventListener('DOMContentLoaded', function () {
-                document.querySelectorAll('.dialog-backdrop').forEach(function (backdrop) {
-                    backdrop.style.display = 'none';
-                });
-            });
-        </script>
-    @endpush
 @endsection
