@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\CertificateController;
 use App\Http\Controllers\ClassroomController;
 use App\Http\Controllers\CourseController;
@@ -44,6 +45,22 @@ Route::middleware(['auth', 'role:admin'])->group(function (): void {
         ->name('impersonate-org.store');
     Route::delete('impersonate-org', [ImpersonateOrgController::class, 'destroy'])
         ->name('impersonate-org.destroy');
+
+    // SPEC-15 §5/RF33 — Admin-side audit trail UI. See the `role:gestor`
+    // block below for the Gestor-side counterpart pointing at the same
+    // controller methods (see `audit-logs-conventions` for why these are
+    // two distinct route names/prefixes rather than one shared
+    // `role:admin|gestor` group).
+    Route::get('admin/audit-logs', [AuditLogController::class, 'index'])->name('admin.audit-logs.index');
+    Route::get('admin/audit-logs/export', [AuditLogController::class, 'export'])->name('admin.audit-logs.export');
+});
+
+// SPEC-15 §5/RF33 — Gestor-side audit trail UI, same controller as the
+// Admin block above. `AuditLog`'s `OrgScope` global scope restricts a
+// Gestor's query to their own `org_id` automatically.
+Route::middleware(['auth', 'role:gestor'])->group(function (): void {
+    Route::get('gestor/audit-logs', [AuditLogController::class, 'index'])->name('gestor.audit-logs.index');
+    Route::get('gestor/audit-logs/export', [AuditLogController::class, 'export'])->name('gestor.audit-logs.export');
 });
 
 // RF04/RF05 — Aluno/Gestor CRUD + chunked CSV import, restricted to

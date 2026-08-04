@@ -10,6 +10,7 @@ use App\Models\Module;
 use App\Models\Quiz;
 use App\Models\User;
 use App\Notifications\CertificateIssuedNotification;
+use App\Services\AuditService;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -83,6 +84,24 @@ class IssueCertificateAction
                     'certificate_id' => $certificate->id,
                     'exception' => $exception->getMessage(),
                 ]);
+            }
+
+            // SPEC-15 §3 — only a genuine issuance is audited, mirroring
+            // the notification's own `wasRecentlyCreated` guard above.
+            try {
+                AuditService::log(
+                    event: 'certificate.issued',
+                    orgId: $course->org_id ? (int) $course->org_id : null,
+                    userId: $user->id,
+                    payload: [
+                        'certificate_id' => $certificate->id,
+                        'user_id' => $user->id,
+                        'course_id' => $course->id,
+                        'validation_hash' => $certificate->validation_hash,
+                    ],
+                );
+            } catch (Throwable $exception) {
+                report($exception);
             }
         }
 
