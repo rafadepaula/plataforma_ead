@@ -1,0 +1,35 @@
+@extends('layouts.app')
+
+@section('content')
+    <x-ui.card title="Editar Usuário" kicker="Alunos & Gestores">
+        <form method="POST" action="{{ route('users.update', $user) }}" dusk="user-form">
+            @csrf
+            @method('PUT')
+
+            <div style="display: flex; flex-direction: column; gap: 20px; max-width: 560px;">
+                <x-ui.input name="name" label="Nome" required value="{{ old('name', $user->name) }}" />
+
+                <x-ui.input name="email" type="email" label="E-mail" required value="{{ old('email', $user->email) }}" />
+
+                <x-ui.input name="cpf" label="CPF" value="{{ old('cpf', $user->cpf) }}" hint="Opcional." />
+
+                <x-ui.select
+                    name="role"
+                    label="Papel"
+                    required
+                    :options="['aluno' => 'Aluno', 'gestor' => 'Gestor']"
+                    :selected="old('role', $user->getRoleNames()->first())"
+                />
+
+                <x-ui.input name="password" type="password" label="Nova Senha" hint="Deixe em branco para manter a senha atual." />
+
+                <x-ui.input name="password_confirmation" type="password" label="Confirmar Nova Senha" />
+            </div>
+
+            <div style="display: flex; gap: 12px; margin-top: 24px;">
+                <x-ui.button type="submit" dusk="user-submit">Salvar Alterações</x-ui.button>
+                <x-ui.button variant="secondary" href="{{ route('users.index') }}">Cancelar</x-ui.button>
+            </div>
+        </form>
+    </x-ui.card>
+@endsection

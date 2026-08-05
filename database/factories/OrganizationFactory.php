@@ -36,4 +36,14 @@ class OrganizationFactory extends Factory
             'status' => 'inactive',
         ]);
     }
+
+    /**
+     * Attach a unique, Brazilian-format CNPJ to the organization.
+     */
+    public function withCnpj(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'cnpj' => fake()->unique()->numerify('##.###.###/####-##'),
+        ]);
+    }
 }
