@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\InvitationLinkCreated;
 use App\Http\Requests\StoreInvitationLinkRequest;
 use App\Models\Course;
 use App\Models\InvitationLink;
@@ -47,11 +48,13 @@ class InvitationLinkController extends Controller
 
     public function store(StoreInvitationLinkRequest $request, Course $course): RedirectResponse
     {
-        $course->invitationLinks()->create([
+        $invitationLink = $course->invitationLinks()->create([
             ...$request->validated(),
             'token' => Str::random(64),
             'created_by' => $request->user()->id,
         ]);
+
+        InvitationLinkCreated::dispatch($invitationLink);
 
         return redirect()->route('courses.invitation-links.index', $course)
             ->with('success', 'Link de convite criado com sucesso.');

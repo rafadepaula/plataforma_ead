@@ -5,14 +5,18 @@
 @extends('layouts.guest')
 
 @section('content')
-    <div style="margin-bottom: 32px;">
-        <span style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-accent); font-weight: 700;">Convite</span>
-        <h1 style="font-family: var(--font-heading); font-weight: 800; font-size: 28px; margin: 8px 0 0;">
-            Matrícula em {{ $invitationLink->course->title }}
-        </h1>
-        <p style="font-size: 13px; color: var(--color-neutral-600); margin-top: 8px;">
-            Informe seu e-mail para continuar. Se você já tem conta na plataforma, basta confirmar sua senha.
-        </p>
+    <div style="margin-bottom: 32px; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;">
+        <div>
+            <span style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-accent); font-weight: 700;">Convite</span>
+            <h1 style="font-family: var(--font-heading); font-weight: 800; font-size: 28px; margin: 8px 0 0;">
+                Matrícula em {{ $invitationLink->course->title }}
+            </h1>
+            <p style="font-size: 13px; color: var(--color-neutral-600); margin-top: 8px;">
+                Informe seu e-mail para continuar. Se você já tem conta na plataforma, basta confirmar sua senha.
+            </p>
+        </div>
+
+        <x-help-button key="invitation.show" />
     </div>
 
     <form method="POST"

@@ -20,13 +20,14 @@ class ExampleSmokeTest extends DuskTestCase
 
     public function test_the_homepage_renders(): void
     {
+        // SPEC-11 / RF11 — `/` now serves the public Landing Page
+        // (`landing.show`), which displaced the Laravel default `welcome`
+        // stub this smoke test originally asserted against.
         $this->browse(function (Browser $browser): void {
             $browser->visit('/')
                 ->assertPathIs('/')
-                ->assertTitle(config('app.name'))
                 ->assertPresent('main')
-                ->assertSeeIn('h1', "Let's get started")
-                ->assertSee('Documentation');
+                ->assertSeeIn('h1', 'Capacitação técnica continuada, do jeito certo');
         });
     }
 
