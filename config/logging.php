@@ -123,6 +123,19 @@ return [
             'handler' => NullHandler::class,
         ],
 
+        // SPEC-15 — dedicated channel `AuditService` writes every audit
+        // event to, independent of the DB `audit_logs` copy. Rotation here
+        // is governed by `days` below, NOT by `audit.retention_days`
+        // (that config only governs the `audit-logs:prune` command's
+        // deletion of the DB rows).
+        'audit' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/audit.log'),
+            'level' => 'info',
+            'days' => 0,
+            'replace_placeholders' => true,
+        ],
+
         'emergency' => [
             'path' => storage_path('logs/laravel.log'),
         ],

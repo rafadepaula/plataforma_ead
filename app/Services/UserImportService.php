@@ -4,8 +4,10 @@ namespace App\Services;
 
 use App\Enums\Permissions\RolesEnum;
 use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Throwable;
 
 /**
  * RF05/RN09 — processes one CSV chunk (up to 50 rows, $O(1)$ RAM per
@@ -27,7 +29,7 @@ class UserImportService
      * @param  array<int, array{name?: string|null, email?: string|null, cpf?: string|null}>  $rows
      * @return array{created: int, enrolled: int, skipped: list<array{row: int, reason: string}>}
      */
-    public function importChunk(array $rows, int $courseId, int $orgId): array
+    public function importChunk(array $rows, int $courseId, int $orgId, ?string $fileName = null): array
     {
         $created = 0;
         $enrolled = 0;
@@ -66,6 +68,27 @@ class UserImportService
                 ]);
                 $enrolled++;
             }
+        }
+
+        // SPEC-15 §3 — `csv.import` is logged once per chunk request, since
+        // this service has no concept of a logical "import session" spanning
+        // the multiple 50-row chunks `CsvImporter.js` sends per upload (see
+        // `audit-logs-architecture`'s open question). Audit failures never
+        // block the import itself.
+        try {
+            AuditService::log(
+                event: 'csv.import',
+                orgId: $orgId,
+                userId: Auth::id(),
+                payload: [
+                    'total_processed' => count($rows),
+                    'success_count' => $created + $enrolled,
+                    'error_count' => count($skipped),
+                    'file_name' => $fileName,
+                ],
+            );
+        } catch (Throwable $e) {
+            report($e);
         }
 
         return ['created' => $created, 'enrolled' => $enrolled, 'skipped' => $skipped];

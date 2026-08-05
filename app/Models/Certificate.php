@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Traits\AuditableTrait;
 use Database\Factories\CertificateFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -15,7 +16,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Certificate extends Model
 {
     /** @use HasFactory<CertificateFactory> */
-    use HasFactory;
+    use AuditableTrait, HasFactory;
 
     /**
      * @var list<string>

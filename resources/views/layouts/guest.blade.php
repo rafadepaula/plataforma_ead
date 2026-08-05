@@ -35,7 +35,11 @@
         </div>
 
         {{-- Right Form Area --}}
-        <div style="flex: 1; background: var(--color-bg); display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 32px 24px; border-radius: 0px;">
+        <div style="flex: 1; background: var(--color-bg); display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 32px 24px; border-radius: 0px; position: relative;">
+            <div style="position: absolute; top: 16px; right: 16px;">
+                <x-help-button :key="Route::currentRouteName() ?? 'unknown'" />
+            </div>
+
             <div style="width: 380px; max-width: 100%;">
                 <x-layout.alerts />
                 {{ $slot ?? '' }}

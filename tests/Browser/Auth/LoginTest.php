@@ -32,7 +32,7 @@ class LoginTest extends DuskTestCase
                 ->type('@login-email', 'aluno@example.com')
                 ->type('@login-password', 'correct-password')
                 ->press('@login-submit')
-                ->waitForLocation('/')
+                ->waitForLocation('/meus-cursos')
                 ->assertAuthenticatedAs($user);
         });
     }
