@@ -26,8 +26,12 @@
 </head>
 <body class="antialiased" style="background: var(--color-bg); color: var(--color-text); font-family: var(--font-body); margin: 0; padding: 0; min-height: 100vh;">
     <div style="max-width: 640px; margin: 0 auto; padding: 48px 24px;">
-        <div style="margin-bottom: 24px; text-align: center;">
+        <div style="margin-bottom: 24px; text-align: center; position: relative;">
             <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-accent); font-weight: 700;">Validação Pública de Certificado</span>
+
+            <div style="position: absolute; top: -8px; right: 0;">
+                <x-help-button key="certificates.verify" />
+            </div>
         </div>
 
         @if($certificate->isRevoked())
@@ -74,5 +78,7 @@
             Hash de validação: {{ $certificate->validation_hash }}
         </p>
     </div>
+
+
 </body>
 </html>

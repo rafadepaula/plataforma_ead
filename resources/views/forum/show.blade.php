@@ -161,16 +161,4 @@
         </form>
     </x-ui.modal>
 
-    @push('scripts')
-        <script>
-            // Same Alpine.js-not-installed fix as `forum/index.blade.php`
-            // and `certificates/index.blade.php` — hide every modal
-            // backdrop on load since nothing else sets the initial state.
-            document.addEventListener('DOMContentLoaded', function () {
-                document.querySelectorAll('.dialog-backdrop').forEach(function (backdrop) {
-                    backdrop.style.display = 'none';
-                });
-            });
-        </script>
-    @endpush
 @endsection

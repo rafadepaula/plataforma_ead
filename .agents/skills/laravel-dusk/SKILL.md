@@ -470,6 +470,17 @@ php artisan dusk:chrome-driver --detect
 - Reset data in `setUp()` method
 - Check for transactions in application code
 
+**New JS module added but its behavior doesn't run in the browser (project-specific, hit in SPEC-15):**
+
+- Dusk drives the real compiled assets in `public/build`, not a live Vite
+  dev server — a newly created/edited `resources/js/modules/*.js` (and its
+  `resources/js/app.js` import) is invisible to Dusk until
+  `vendor/bin/sail npm run build` is re-run. Symptom: the feature works
+  when clicked manually in a browser with `npm run dev` running, but a
+  Dusk test against the same click silently no-ops (e.g. a modal never
+  opens). Rebuild assets before re-running a failing Dusk test that
+  exercises new/changed JS.
+
 ## Notes
 
 - Laravel Dusk uses ChromeDriver by default (no Selenium/JDK required)

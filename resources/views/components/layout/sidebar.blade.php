@@ -5,6 +5,17 @@
     $adminCoursesRoute = Route::has('admin.courses.index') ? route('admin.courses.index') : '#';
     $studentCoursesRoute = Route::has('student.courses.index') ? route('student.courses.index') : '#';
     $studentForumRoute = Route::has('student.forum.index') ? route('student.forum.index') : '#';
+
+    // SPEC-15 §5/RF33 — a Gestor-only account (no `admin` role) is routed
+    // to `gestor.audit-logs.index`; an Admin (or an Admin/Gestor dual-role
+    // account) is routed to `admin.audit-logs.index`. Both route names
+    // guard with `Route::has()` and degrade to a dead `#` link, matching
+    // every other entry in this file.
+    $isGestorOnlyUser = auth()->check() && auth()->user()->hasRole('gestor') && ! auth()->user()->hasRole('admin');
+    $auditLogsRoute = $isGestorOnlyUser
+        ? (Route::has('gestor.audit-logs.index') ? route('gestor.audit-logs.index') : '#')
+        : (Route::has('admin.audit-logs.index') ? route('admin.audit-logs.index') : '#');
+    $auditLogsActive = request()->routeIs('admin.audit-logs.*') || request()->routeIs('gestor.audit-logs.*');
 @endphp
 
 <div>
@@ -36,6 +47,14 @@
                    style="display: flex; align-items: center; gap: 12px; padding: 11px 20px; font-size: 13px; font-weight: 600; text-decoration: none; color: {{ request()->routeIs('admin.courses.*') ? 'var(--color-neutral-100)' : 'var(--color-neutral-400)' }}; border-left: 3px solid {{ request()->routeIs('admin.courses.*') ? 'var(--color-accent)' : 'transparent' }}; background: {{ request()->routeIs('admin.courses.*') ? 'color-mix(in srgb, var(--color-accent) 18%, transparent)' : 'transparent' }};">
                     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
                     <span>Cursos e Módulos</span>
+                </a>
+
+                <a href="{{ $auditLogsRoute }}"
+                   class="sidebar-item {{ $auditLogsActive ? 'active' : '' }}"
+                   dusk="sidebar-audit-logs-link"
+                   style="display: flex; align-items: center; gap: 12px; padding: 11px 20px; font-size: 13px; font-weight: 600; text-decoration: none; color: {{ $auditLogsActive ? 'var(--color-neutral-100)' : 'var(--color-neutral-400)' }}; border-left: 3px solid {{ $auditLogsActive ? 'var(--color-accent)' : 'transparent' }}; background: {{ $auditLogsActive ? 'color-mix(in srgb, var(--color-accent) 18%, transparent)' : 'transparent' }};">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12h6"></path><path d="M9 16h6"></path><path d="M9 8h1"></path><path d="M14 3v4a1 1 0 0 0 1 1h4"></path><path d="M5 3h9l5 5v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"></path></svg>
+                    <span>Auditoria</span>
                 </a>
             </nav>
         @endhasanyrole
@@ -109,6 +128,10 @@
                 <a href="{{ $adminDashboardRoute }}" class="sidebar-item {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}" style="display: flex; align-items: center; gap: 12px; padding: 11px 20px; font-size: 14px; color: {{ request()->routeIs('admin.dashboard') ? 'var(--color-neutral-100)' : 'var(--color-neutral-400)' }}; border-left: 3px solid {{ request()->routeIs('admin.dashboard') ? 'var(--color-accent)' : 'transparent' }}; background: {{ request()->routeIs('admin.dashboard') ? 'color-mix(in srgb, var(--color-accent) 18%, transparent)' : 'transparent' }}; text-decoration: none;">
                     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
                     <span>Dashboard</span>
+                </a>
+                <a href="{{ $auditLogsRoute }}" class="sidebar-item {{ $auditLogsActive ? 'active' : '' }}" dusk="sidebar-audit-logs-link-mobile" style="display: flex; align-items: center; gap: 12px; padding: 11px 20px; font-size: 14px; color: {{ $auditLogsActive ? 'var(--color-neutral-100)' : 'var(--color-neutral-400)' }}; border-left: 3px solid {{ $auditLogsActive ? 'var(--color-accent)' : 'transparent' }}; background: {{ $auditLogsActive ? 'color-mix(in srgb, var(--color-accent) 18%, transparent)' : 'transparent' }}; text-decoration: none;">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12h6"></path><path d="M9 16h6"></path><path d="M9 8h1"></path><path d="M14 3v4a1 1 0 0 0 1 1h4"></path><path d="M5 3h9l5 5v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"></path></svg>
+                    <span>Auditoria</span>
                 </a>
             @endhasanyrole
 
