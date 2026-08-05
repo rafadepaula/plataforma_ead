@@ -7,13 +7,16 @@ use App\Http\Requests\StoreLessonRequest;
 use App\Http\Requests\UpdateLessonRequest;
 use App\Models\Lesson;
 use App\Models\Module;
+use App\Services\AuditService;
 use App\Services\FileUploadService;
 use App\Services\YoutubeSanitizerService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
+use Throwable;
 
 /**
  * RF07 — Lesson CRUD, nested under a Module (`modules.lessons`, shallow —
@@ -82,6 +85,28 @@ class LessonController extends Controller
         Gate::authorize('delete', $lesson);
 
         $module = $lesson->module;
+
+        // SPEC-15 §3 — captured BEFORE the delete so title/id are
+        // available; see `CourseController::destroy()` for the
+        // `AuditableTrait` double-audit note.
+        try {
+            AuditService::log(
+                event: 'content.deleted',
+                orgId: $module->course?->org_id ? (int) $module->course->org_id : null,
+                userId: Auth::id(),
+                auditableType: $lesson->getMorphClass(),
+                auditableId: $lesson->id,
+                payload: [
+                    'model_type' => $lesson->getMorphClass(),
+                    'model_id' => $lesson->id,
+                    'title' => $lesson->title,
+                    'deleted_by' => Auth::id(),
+                ],
+            );
+        } catch (Throwable $e) {
+            report($e);
+        }
+
         // SPEC-00 — soft-delete only; `lesson_progress` rows must never be
         // cascade-purged by this action (see `courses-architecture`).
         $lesson->delete();

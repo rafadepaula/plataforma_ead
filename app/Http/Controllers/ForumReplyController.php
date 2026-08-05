@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Actions\DeleteForumPostAction;
 use App\Actions\EditForumPostAction;
+use App\Events\ForumReplyPosted;
 use App\Http\Requests\StoreForumReplyRequest;
 use App\Http\Requests\UpdateForumReplyRequest;
 use App\Models\Course;
@@ -43,11 +44,13 @@ class ForumReplyController extends Controller
         // Laravel resolves the policy registered for `ForumReply` instead.
         Gate::authorize('create', [ForumReply::class, $topicModel]);
 
-        ForumReply::query()->create([
+        $reply = ForumReply::query()->create([
             'topic_id' => $topicModel->id,
             'user_id' => $request->user()->id,
             'content' => $this->sanitizer->sanitize($request->validated('content')),
         ]);
+
+        ForumReplyPosted::dispatch($reply);
 
         return redirect()->route('forum.show', [$course, $topic])
             ->with('success', 'Resposta publicada com sucesso.');

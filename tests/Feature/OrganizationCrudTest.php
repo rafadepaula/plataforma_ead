@@ -67,6 +67,23 @@ class OrganizationCrudTest extends TestCase
         ]);
     }
 
+    public function test_slug_is_used_as_provided_when_explicitly_set_and_unique(): void
+    {
+        $this->actingAsAdmin();
+
+        $response = $this->post(route('organizations.store'), [
+            'name' => 'Instituto Gama',
+            'slug' => 'custom-gama-slug',
+            'status' => 'active',
+        ]);
+
+        $response->assertRedirect(route('organizations.index'));
+        $this->assertDatabaseHas('organizations', [
+            'name' => 'Instituto Gama',
+            'slug' => 'custom-gama-slug',
+        ]);
+    }
+
     public function test_slug_is_auto_generated_from_name_when_not_provided(): void
     {
         $this->actingAsAdmin();
