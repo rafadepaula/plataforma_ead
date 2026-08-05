@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Traits\AuditableTrait;
 use Database\Factories\ModuleFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -16,7 +17,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Module extends Model
 {
     /** @use HasFactory<ModuleFactory> */
-    use HasFactory, SoftDeletes;
+    use AuditableTrait, HasFactory, SoftDeletes;
 
     /**
      * @var list<string>

@@ -1,6 +1,9 @@
 <?php
 
+use App\Exceptions\CourseHasActiveEnrollmentsException;
+use App\Exceptions\InvitationLinkInvalidException;
 use App\Exceptions\UnresolvedOrgContextException;
+use App\Http\Middleware\EnsureStudentIsEnrolled;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -26,11 +29,20 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => RoleMiddleware::class,
             'permission' => PermissionMiddleware::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,
+            // SPEC-07 RF20 — gates the student-facing classroom/lesson
+            // /progress routes behind an active/completed enrollment.
+            'student.enrolled' => EnsureStudentIsEnrolled::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        // SPEC-06 — `request->expectsJson()` is included alongside the
+        // `api/*` prefix check so AJAX callers on ordinary web routes
+        // (e.g. `/convite/check-email`, `postJson()` calls against the
+        // Gestor panel's `courses.enrollments.store`) get a JSON 422/4xx
+        // body instead of Laravel's default redirect-back-with-flashed
+        // -errors behavior.
         $exceptions->shouldRenderJsonWhen(
-            fn (Request $request) => $request->is('api/*'),
+            fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
 
         // SPEC-00 §3 — an org-scoped model created with no resolvable
@@ -46,6 +58,34 @@ return Application::configure(basePath: dirname(__DIR__))
             }
 
             return back()->withInput()->with('error', $message);
+        });
+
+        // SPEC-05 — a Course with at least one `active` `course_user`
+        // enrollment must never be soft-deleted out from under enrolled
+        // students. Same content-negotiation pattern as
+        // `UnresolvedOrgContextException` above.
+        $exceptions->render(function (CourseHasActiveEnrollmentsException $e, Request $request) {
+            $message = 'Não é possível excluir um Curso com matrículas ativas.';
+
+            if ($request->expectsJson()) {
+                return response()->json(['message' => $message], 422);
+            }
+
+            return back()->with('error', $message);
+        });
+
+        // SPEC-06 RF03 — a `/convite/{token}` that cannot be resolved to a
+        // usable `InvitationLink` (not found/expired/exhausted/revoked)
+        // must never surface as a raw 404/500. Same content-negotiation
+        // pattern as `CourseHasActiveEnrollmentsException` above.
+        $exceptions->render(function (InvitationLinkInvalidException $e, Request $request) {
+            $message = 'Este link de convite é inválido, expirou ou já atingiu o limite de usos.';
+
+            if ($request->expectsJson()) {
+                return response()->json(['message' => $message], 404);
+            }
+
+            return response($message, 404);
         });
 
         // SPEC-00 §5 — a `role:`-gated route hit by a guest (no

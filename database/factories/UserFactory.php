@@ -2,6 +2,8 @@
 
 namespace Database\Factories;
 
+use App\Enums\Permissions\RolesEnum;
+use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
@@ -64,5 +66,30 @@ class UserFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'cpf' => fake()->unique()->numerify('###########'),
         ]);
+    }
+
+    /**
+     * RF04 — assign the `aluno` Spatie role after creation. Does not force
+     * `org_id`: an aluno may be `org_id = null` until enrolled via
+     * `course_user` (see `App\Models\User`'s docblock).
+     */
+    public function aluno(): static
+    {
+        return $this->afterCreating(function (User $user): void {
+            $user->assignRole(RolesEnum::ALUNO->value);
+        });
+    }
+
+    /**
+     * RF04 — assign the `gestor` Spatie role after creation. A gestor
+     * always carries an `org_id`; one is auto-created if not already set.
+     */
+    public function gestor(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'org_id' => $attributes['org_id'] ?? Organization::factory(),
+        ])->afterCreating(function (User $user): void {
+            $user->assignRole(RolesEnum::GESTOR->value);
+        });
     }
 }

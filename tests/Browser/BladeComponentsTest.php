@@ -19,9 +19,12 @@ class BladeComponentsTest extends DuskTestCase
     public function test_frontend_javascript_modules_registered_on_window(): void
     {
         $this->browse(function (Browser $browser): void {
+            // Dusk's ElementResolver scopes every selector under a default
+            // 'body' prefix, so `assertPresent('body')` would resolve to the
+            // invalid selector 'body body' and always fail; the JS check
+            // below already proves the page (and its body) rendered.
             $browser->visit('/')
-                ->assertPathIs('/')
-                ->assertPresent('body');
+                ->assertPathIs('/');
 
             $modulesLoaded = $browser->script("
                 return typeof window.HttpClient !== 'undefined'
@@ -42,8 +45,7 @@ class BladeComponentsTest extends DuskTestCase
     public function test_modal_component_open_and_close_interactions(): void
     {
         $this->browse(function (Browser $browser): void {
-            $browser->visit('/')
-                ->assertPresent('body');
+            $browser->visit('/');
 
             // Verify ModalManager module functions exist and can manage modal elements
             $hasModalManager = $browser->script("
