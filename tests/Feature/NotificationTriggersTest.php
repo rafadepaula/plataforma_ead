@@ -224,6 +224,13 @@ class NotificationTriggersTest extends TestCase
     public function test_a_mail_delivery_failure_does_not_roll_back_the_enrollment_it_was_triggered_by(): void
     {
         Log::shouldReceive('error')->once();
+        // SPEC-15 — `AuditService::log()` unconditionally writes to the
+        // `audit` Monolog channel (RN "duplo armazenamento") for the
+        // `enrollment` mutation this flow also triggers; this mock is a
+        // full replacement of the `Log` facade, so that channel write
+        // needs its own expectation or Mockery fails it as unexpected.
+        Log::shouldReceive('channel')->with('audit')->andReturnSelf();
+        Log::shouldReceive('info')->withAnyArgs();
         Notification::shouldReceive('send')->once()->andThrow(new \RuntimeException('SMTP indisponível'));
 
         $org = Organization::factory()->create();
@@ -247,6 +254,10 @@ class NotificationTriggersTest extends TestCase
     public function test_a_mail_delivery_failure_does_not_prevent_the_certificate_from_being_returned(): void
     {
         Log::shouldReceive('error')->once();
+        // SPEC-15 — see the note in the test above: `IssueCertificateAction`
+        // now also calls `AuditService::log()` for `certificate.issued`.
+        Log::shouldReceive('channel')->with('audit')->andReturnSelf();
+        Log::shouldReceive('info')->withAnyArgs();
 
         $org = Organization::factory()->create();
         $course = Course::factory()->create(['org_id' => $org->id]);
