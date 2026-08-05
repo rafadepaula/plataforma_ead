@@ -1,15 +1,20 @@
 @php
     use Illuminate\Support\Facades\Route;
-    $homeUrl = Route::has('student.courses.index') ? route('student.courses.index', [], false) : '#';
-    $loginUrl = Route::has('login') ? route('login') : '#';
-    $logoutUrl = Route::has('logout') ? route('logout') : '#';
+
+    // SPEC-17 — `$brandUrl`, `$loginUrl`, `$logoutUrl` are injected by
+    // `NavigationComposer`. The brand link was previously hardcoded to
+    // `student.courses.index` (always a dead `#` for an Admin/Gestor
+    // who lands on the dashboard) — it is now role-aware.
+    $homeUrl = $brandUrl ?? '/';
+    $loginUrl = $loginUrl ?? '#';
+    $logoutUrl = $logoutUrl ?? '#';
 @endphp
 
 <header class="nav" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 24px; background: var(--color-surface); border-bottom: 1px solid var(--color-divider); height: 60px; border-radius: 0px;">
     <div style="display: flex; align-items: center; gap: 16px;">
-        <button type="button" 
-                @click="sidebarOpen = !sidebarOpen" 
-                class="btn btn-ghost btn-icon d-lg-none" 
+        <button type="button"
+                @click="sidebarOpen = !sidebarOpen"
+                class="btn btn-ghost btn-icon d-lg-none"
                 aria-label="Abrir menu"
                 dusk="mobile-menu-button"
                 style="color: var(--color-text); padding: 6px; border-radius: 0px;">
