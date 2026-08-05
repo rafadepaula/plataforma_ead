@@ -62,10 +62,22 @@ not applied directly — scope through the parent relation instead):
 `modules` → `courses.org_id`, `lessons` → `modules` → `courses.org_id`,
 `quizzes`/`quiz_questions`/`quiz_options` → `lessons` → ... → `courses.org_id`,
 `certificates` → `course_id`/`user_id`, `course_user` (pivot — intentionally
-NOT org-scoped, since it is how a student enrolls across multiple orgs).
+NOT org-scoped, since it is how a student enrolls across multiple orgs),
+`forum_replies` → `forum_topics.org_id`.
 
 **Never org-scoped**: `users` (see above), `notifications` (polymorphic
 `notifiable`, org implied by the notifiable user).
+
+**Pseudo-polymorphic, no `org_id`, no FK at all** (integrity validated at
+the application layer only — not to be confused with cascade-inherited
+tables above, which do have a real parent FK): `forum_post_edits` and
+`forum_reports` (SPEC-10) both carry `postable_type`/`postable_id`
+pointing at a `ForumTopic`/`ForumReply` written as the model's FQCN, with
+no database foreign key on the pair; resolved exclusively via
+`$type::withTrashed()->find($id)` (see `forum-architecture`).
+`course_completion_rules.target_id` (SPEC-09) is the same pattern one
+column deep, pointing at `modules.id`/`quizzes.id` depending on
+`rule_type` (see `certificates-architecture`).
 
 Full column/type/index/`onDelete` definitions live in
 `spec/specs/00-architecture-database-and-guardrails.md` §2.1 — this skill does

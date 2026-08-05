@@ -209,3 +209,63 @@ Generate new tests with `vendor/bin/sail artisan make:test --phpunit {Name}`
 everything through Sail). This note is intentionally narrow: the RED→GREEN→
 REFACTOR cycle and Laravel-specific patterns above still apply, only the
 test syntax and runner prefix differ for this codebase.
+
+## Project Note: Resolve Constructor-Injected Actions From the Container, Never `new X()`
+
+This codebase's single-purpose Action classes (e.g. `SubmitQuizAttemptAction`,
+`GradeEssayAnswerAction`) commonly take other Actions/services as
+constructor-promoted dependencies rather than being plain zero-arg classes.
+A test that instantiates one directly (`new SubmitQuizAttemptAction()`)
+will RED with "Too few arguments" the moment a dependency is added to the
+constructor — and silently keep working right up until that refactor, so
+it's an easy trap to fall into early and only discover much later. Always
+resolve Actions under test from the container instead:
+
+```php
+$action = app(SubmitQuizAttemptAction::class);
+```
+
+This also exercises the real Laravel binding/resolution path (catching a
+missing service-container binding as a test failure, not a production
+surprise), which a bare `new` never does.
+
+## Project Note: Testing a "Mail Failure Must Not Roll Back the Transaction" Boundary
+
+Several modules (e.g. SPEC-13 notifications) wrap a `->notify()`/
+`Notification::send()` call site in `try/catch (Throwable) { Log::error(...) }`
+specifically so a mail transport failure never rolls back the DB write that
+already committed, nor 500s the request. `Mail::fake()`/`Notification::fake()`
+can't exercise this branch — they swallow the call instead of throwing. Use
+the `Notification` facade's own mock expectations to force the failure, and
+assert `Log::error()` was reached instead of a bubbled exception:
+
+```php
+Log::shouldReceive('error')->once();
+Notification::shouldReceive('send')->once()->andThrow(new \RuntimeException('SMTP indisponível'));
+
+// ...perform the action that triggers the notification...
+
+// then assert the triggering row still exists/committed, e.g.:
+$this->assertDatabaseHas('course_user', [...]);
+```
+
+See `tests/Feature/NotificationTriggersTest.php` for the full pattern
+(including the per-recipient variant, where `Notification::shouldReceive('send')`
+is asserted without `->once()` since it's called once per recipient in a loop).
+
+## Project Note: A Fully-Mocked `Log` Facade Breaks When New Code Adds a `Log::channel(...)` Call
+
+Some existing tests (e.g. two in `tests/Feature/NotificationTriggersTest.php`)
+fully mock the `Log` facade (`Log::shouldReceive(...)` with no fallback) to
+assert on a specific log call. `AuditService::log()` (SPEC-15) unconditionally
+calls `Log::channel('audit')->info(...)` on every `AuditLog`-observed model
+mutation and every explicit audit call site — so any pre-existing test that
+fully mocks `Log` and then exercises code path that now also triggers an
+audit write (e.g. `IssueCertificateAction` via `AuditableTrait` on
+`Certificate`) will fail with an unexpected-call error, not because the
+test's own assertion is wrong, but because a new module started using the
+same facade. When adding a new `Log::channel(...)` call site to
+already-audited code, grep existing tests for `Log::shouldReceive`/
+`Log::spy` and add a matching `Log::shouldReceive('channel')->with('audit')->andReturnSelf()`
+(or equivalent) expectation rather than assuming the new call is invisible
+to old mocks.

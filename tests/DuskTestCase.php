@@ -9,6 +9,25 @@ use Illuminate\Support\Collection;
 use Laravel\Dusk\TestCase as BaseTestCase;
 use PHPUnit\Framework\Attributes\BeforeClass;
 
+/**
+ * SPEC-14 / RN13 — dev-DB isolation for the Dusk suite.
+ *
+ * `vendor/bin/sail dusk` (Laravel\Dusk\Console\DuskCommand) natively backs
+ * up the running `.env`, swaps in `.env.dusk.{app.environment}` — which
+ * resolves to `.env.dusk.local` for the default `local` environment,
+ * pointing DB_DATABASE at the dedicated `testing` MySQL database — and
+ * restores the original `.env` once the suite finishes. That swap happens
+ * entirely outside this class, before PHPUnit boots the test process, so
+ * DuskTestCase itself must NOT read `.env`, connect to the database, or
+ * otherwise assume a particular DB_DATABASE here: doing so would run ahead
+ * of (or fight) Dusk's own environment swap and risk touching the
+ * `plataforma_ead` dev database instead of `testing`.
+ *
+ * Every concrete test in tests/Browser/* is responsible for its own
+ * `DatabaseMigrations` (or `DatabaseTruncation`) trait, which is what
+ * actually confines migrations/truncation to whichever database the
+ * swapped `.env` resolved to.
+ */
 abstract class DuskTestCase extends BaseTestCase
 {
     /**

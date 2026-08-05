@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Traits\AuditableTrait;
 use App\Models\Traits\OrgScope;
 use Database\Factories\CourseFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -14,7 +15,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Course extends Model
 {
     /** @use HasFactory<CourseFactory> */
-    use HasFactory, OrgScope, SoftDeletes;
+    use AuditableTrait, HasFactory, OrgScope, SoftDeletes;
 
     /**
      * @var list<string>
@@ -115,5 +116,34 @@ class Course extends Model
     public function canBeDeleted(): bool
     {
         return ! $this->hasActiveEnrollments();
+    }
+
+    /**
+     * SPEC-07 RF20 — total published Lessons across this Course's
+     * (non-soft-deleted) Modules, used as the denominator of the
+     * student-progress percentage. `Module`/`Lesson` both carry
+     * `SoftDeletes`, so a deleted Module/Lesson is excluded automatically
+     * by their own global scope.
+     */
+    public function publishedLessonsCountFor(): int
+    {
+        return Lesson::query()
+            ->where('is_published', true)
+            ->whereHas('module', fn ($query) => $query->where('course_id', $this->id))
+            ->count();
+    }
+
+    /**
+     * SPEC-07 RF20 — count of this Course's published Lessons the given
+     * User has completed (`lesson_progress.is_completed = true`), used as
+     * the numerator of the student-progress percentage.
+     */
+    public function completedLessonsCountFor(User $user): int
+    {
+        return Lesson::query()
+            ->where('is_published', true)
+            ->whereHas('module', fn ($query) => $query->where('course_id', $this->id))
+            ->whereHas('progress', fn ($query) => $query->where('user_id', $user->id)->where('is_completed', true))
+            ->count();
     }
 }
