@@ -4,15 +4,17 @@ namespace App\Models;
 
 use App\Models\Traits\OrgScope;
 use Database\Factories\ForumTopicFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ForumTopic extends Model
 {
     /** @use HasFactory<ForumTopicFactory> */
-    use HasFactory, OrgScope;
+    use HasFactory, OrgScope, SoftDeletes;
 
     /**
      * @var list<string>
@@ -35,7 +37,20 @@ class ForumTopic extends Model
         return [
             'is_pinned' => 'boolean',
             'edited_at' => 'datetime',
+            'deleted_at' => 'datetime',
         ];
+    }
+
+    /**
+     * SPEC-10 §2 — pinned topics surface first in the per-course topic
+     * list, most-recent-first within each group.
+     *
+     * @param  Builder<ForumTopic>  $query
+     * @return Builder<ForumTopic>
+     */
+    public function scopePinnedFirst(Builder $query): Builder
+    {
+        return $query->orderByDesc('is_pinned')->orderByDesc('created_at');
     }
 
     /**
