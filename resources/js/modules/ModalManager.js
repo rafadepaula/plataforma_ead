@@ -11,10 +11,28 @@ export class ModalManager {
         if (typeof window === 'undefined' || typeof document === 'undefined') return;
 
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', () => this.bindGlobalEvents());
+            document.addEventListener('DOMContentLoaded', () => {
+                this.hideBackdropsOnLoad();
+                this.bindGlobalEvents();
+            });
         } else {
+            this.hideBackdropsOnLoad();
             this.bindGlobalEvents();
         }
+    }
+
+    /**
+     * `x-ui.modal`'s backdrop ships with a static inline `display: flex`
+     * and relies on Alpine.js's `x-show="show"` to hide itself until
+     * opened — but Alpine.js is not installed in this project, so every
+     * modal would otherwise render open by default. This hides every
+     * backdrop once on load so pages don't need to duplicate this fix
+     * in their own inline `@push('scripts')` blocks.
+     */
+    hideBackdropsOnLoad() {
+        document.querySelectorAll('.dialog-backdrop').forEach((backdrop) => {
+            backdrop.style.display = 'none';
+        });
     }
 
     bindGlobalEvents() {
