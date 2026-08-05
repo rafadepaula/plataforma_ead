@@ -7,10 +7,13 @@ use App\Http\Requests\StoreModuleRequest;
 use App\Http\Requests\UpdateModuleRequest;
 use App\Models\Course;
 use App\Models\Module;
+use App\Services\AuditService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
+use Throwable;
 
 /**
  * RF06 — Module CRUD, nested under a Course (`courses.modules`, shallow —
@@ -66,6 +69,28 @@ class ModuleController extends Controller
         Gate::authorize('delete', $module);
 
         $course = $module->course;
+
+        // SPEC-15 §3 — captured BEFORE the delete so title/id are
+        // available; see `CourseController::destroy()` for the
+        // `AuditableTrait` double-audit note.
+        try {
+            AuditService::log(
+                event: 'content.deleted',
+                orgId: $course->org_id ? (int) $course->org_id : null,
+                userId: Auth::id(),
+                auditableType: $module->getMorphClass(),
+                auditableId: $module->id,
+                payload: [
+                    'model_type' => $module->getMorphClass(),
+                    'model_id' => $module->id,
+                    'title' => $module->title,
+                    'deleted_by' => Auth::id(),
+                ],
+            );
+        } catch (Throwable $e) {
+            report($e);
+        }
+
         $module->delete();
 
         return redirect()->route('courses.modules.index', $course)

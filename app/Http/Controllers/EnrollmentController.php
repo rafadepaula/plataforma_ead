@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\EnrollmentConfirmed;
 use App\Http\Requests\StoreEnrollmentRequest;
 use App\Models\Course;
 use App\Models\User;
@@ -55,6 +56,13 @@ class EnrollmentController extends Controller
                 'status' => 'active',
             ]);
         }
+
+        // `StoreEnrollmentRequest`'s `unique(course_user, status = active)`
+        // rule already guarantees this branch is only ever reached on a
+        // brand-new pivot row or a reactivated (previously `cancelled`)
+        // one — never an already-active, unchanged enrollment — so it is
+        // always safe to notify here without double-notifying.
+        EnrollmentConfirmed::dispatch($course, User::query()->findOrFail($userId));
 
         return redirect()->route('courses.enrollments.index', $course)
             ->with('success', 'Aluno matriculado com sucesso.');

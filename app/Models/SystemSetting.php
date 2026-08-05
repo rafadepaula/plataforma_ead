@@ -4,8 +4,10 @@ namespace App\Models;
 
 use Database\Factories\SystemSettingFactory;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Crypt;
 
 /**
  * Directly org-scoped, with a composite primary key `(setting_key, org_id)`.
@@ -31,6 +33,14 @@ class SystemSetting extends Model
      * Sentinel `org_id` used for globally-scoped settings.
      */
     public const GLOBAL_ORG_ID = 0;
+
+    /**
+     * `setting_key`s whose `setting_value` holds credential material and
+     * must never be persisted in plaintext (see `dashboard-architecture`).
+     *
+     * @var list<string>
+     */
+    private const ENCRYPTED_KEYS = ['smtp_password'];
 
     public $incrementing = false;
 
@@ -62,6 +72,32 @@ class SystemSetting extends Model
         return [
             'org_id' => 'integer',
         ];
+    }
+
+    /**
+     * Transparently encrypts/decrypts `setting_value` for
+     * `ENCRYPTED_KEYS` (currently just `smtp_password`) so credential
+     * material is never persisted in plaintext, while every other
+     * `setting_key` (logo path, SMTP host/port/username, signature, …)
+     * passes through untouched.
+     *
+     * @return Attribute<string|null, string|null>
+     */
+    protected function settingValue(): Attribute
+    {
+        return Attribute::make(
+            get: fn (?string $value): ?string => $value !== null && $this->isEncryptedKey()
+                ? Crypt::decryptString($value)
+                : $value,
+            set: fn (?string $value): ?string => $value !== null && $this->isEncryptedKey()
+                ? Crypt::encryptString($value)
+                : $value,
+        );
+    }
+
+    private function isEncryptedKey(): bool
+    {
+        return in_array($this->getAttribute('setting_key'), self::ENCRYPTED_KEYS, true);
     }
 
     /**

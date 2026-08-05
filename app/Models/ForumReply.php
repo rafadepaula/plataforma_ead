@@ -6,6 +6,7 @@ use Database\Factories\ForumReplyFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * Cascade-inherited: org is implied by `topic.org_id`. Do NOT apply
@@ -14,7 +15,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class ForumReply extends Model
 {
     /** @use HasFactory<ForumReplyFactory> */
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     /**
      * @var list<string>
@@ -33,6 +34,7 @@ class ForumReply extends Model
     {
         return [
             'edited_at' => 'datetime',
+            'deleted_at' => 'datetime',
         ];
     }
 
