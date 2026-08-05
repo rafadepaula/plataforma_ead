@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Enums\Permissions\RolesEnum;
 use App\Models\Organization;
 use App\Models\User;
+use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 /**
@@ -202,6 +203,29 @@ class UserCrudTest extends TestCase
         $aluno->refresh();
         $this->assertSame('Nome Atualizado', $aluno->name);
         $this->assertSame('novo.email@example.com', $aluno->email);
+    }
+
+    public function test_gestor_can_update_an_alunos_password(): void
+    {
+        $org = Organization::factory()->create();
+        $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
+
+        $aluno = User::factory()->create(['org_id' => $org->id, 'password' => bcrypt('old-password')]);
+        $aluno->assignRole(RolesEnum::ALUNO->value);
+        $originalHash = $aluno->password;
+
+        $response = $this->put("/users/{$aluno->id}", [
+            'name' => $aluno->name,
+            'email' => $aluno->email,
+            'role' => RolesEnum::ALUNO->value,
+            'password' => 'brand-new-password',
+            'password_confirmation' => 'brand-new-password',
+        ]);
+
+        $response->assertRedirect(route('users.index'));
+        $aluno->refresh();
+        $this->assertNotSame($originalHash, $aluno->password);
+        $this->assertTrue(Hash::check('brand-new-password', $aluno->password));
     }
 
     public function test_gestor_can_delete_an_aluno_in_their_own_org(): void

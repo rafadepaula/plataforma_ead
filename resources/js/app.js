@@ -1,3 +1,4 @@
+import AuditLogDiffModal from './modules/AuditLogDiffModal';
 import CsvImporter from './modules/CsvImporter';
 import ForumEditHistory from './modules/ForumEditHistory';
 import ForumPolling from './modules/ForumPolling';
@@ -25,6 +26,7 @@ window.ForumPolling = new ForumPolling(HttpClient);
 window.ForumReportModal = new ForumReportModal(HttpClient, NotificationService, ModalManager);
 window.ForumEditHistory = new ForumEditHistory(ModalManager);
 window.NotificationBell = new NotificationBell(HttpClient);
+window.AuditLogDiffModal = new AuditLogDiffModal(ModalManager);
 
 document.addEventListener('DOMContentLoaded', () => {
     // JavaScript modules auto-bind DOM handlers upon load
@@ -38,4 +40,5 @@ document.addEventListener('DOMContentLoaded', () => {
     window.ForumReportModal.init();
     window.ForumEditHistory.init();
     window.NotificationBell.init();
+    window.AuditLogDiffModal.init();
 });

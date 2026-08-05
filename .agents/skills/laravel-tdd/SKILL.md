@@ -252,3 +252,20 @@ $this->assertDatabaseHas('course_user', [...]);
 See `tests/Feature/NotificationTriggersTest.php` for the full pattern
 (including the per-recipient variant, where `Notification::shouldReceive('send')`
 is asserted without `->once()` since it's called once per recipient in a loop).
+
+## Project Note: A Fully-Mocked `Log` Facade Breaks When New Code Adds a `Log::channel(...)` Call
+
+Some existing tests (e.g. two in `tests/Feature/NotificationTriggersTest.php`)
+fully mock the `Log` facade (`Log::shouldReceive(...)` with no fallback) to
+assert on a specific log call. `AuditService::log()` (SPEC-15) unconditionally
+calls `Log::channel('audit')->info(...)` on every `AuditLog`-observed model
+mutation and every explicit audit call site — so any pre-existing test that
+fully mocks `Log` and then exercises code path that now also triggers an
+audit write (e.g. `IssueCertificateAction` via `AuditableTrait` on
+`Certificate`) will fail with an unexpected-call error, not because the
+test's own assertion is wrong, but because a new module started using the
+same facade. When adding a new `Log::channel(...)` call site to
+already-audited code, grep existing tests for `Log::shouldReceive`/
+`Log::spy` and add a matching `Log::shouldReceive('channel')->with('audit')->andReturnSelf()`
+(or equivalent) expectation rather than assuming the new call is invisible
+to old mocks.

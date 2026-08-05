@@ -88,6 +88,23 @@ class EssayManualGradingTest extends TestCase
         ]);
     }
 
+    public function test_grading_skips_an_answer_id_that_does_not_belong_to_the_attempt(): void
+    {
+        [$attempt, $essayQuestion, $org] = $this->attemptAwaitingGrading();
+        $gestor = $this->gestorFor($org);
+
+        $essayAnswer = $attempt->answers()->where('question_id', $essayQuestion->id)->firstOrFail();
+
+        $graded = app(GradeEssayAnswerAction::class)->execute($attempt, $gestor, [
+            ['answer_id' => 999999, 'is_correct' => true],
+        ]);
+
+        // The bogus answer_id is silently skipped; the real essay answer
+        // remains ungraded, so the attempt is not finalized.
+        $this->assertSame('awaiting_manual_grading', $graded->status);
+        $this->assertNull($graded->answers()->find($essayAnswer->id)->graded_at);
+    }
+
     public function test_finalization_only_happens_once_every_essay_answer_of_the_attempt_is_graded(): void
     {
         $org = Organization::factory()->create();

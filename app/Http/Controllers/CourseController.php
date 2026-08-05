@@ -6,9 +6,12 @@ use App\Exceptions\CourseHasActiveEnrollmentsException;
 use App\Http\Requests\StoreCourseRequest;
 use App\Http\Requests\UpdateCourseRequest;
 use App\Models\Course;
+use App\Services\AuditService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
+use Throwable;
 
 /**
  * RF06 — Course CRUD, reserved to `role:admin|gestor` (see `routes/web.php`
@@ -88,6 +91,29 @@ class CourseController extends Controller
         // `CoursePolicy::delete()` is still the final word on whether this
         // Course may actually be deleted.
         Gate::authorize('delete', $course);
+
+        // SPEC-15 §3 — `content.deleted` is captured BEFORE the delete so
+        // the title/id are available; `Course` also carries `AuditableTrait`
+        // (Bucket A), which independently fires a generic `course.deleted`
+        // event from the same mutation — both are recorded under their own
+        // event names per spec §3's "Gestão Conteúdo" row.
+        try {
+            AuditService::log(
+                event: 'content.deleted',
+                orgId: $course->org_id ? (int) $course->org_id : null,
+                userId: Auth::id(),
+                auditableType: $course->getMorphClass(),
+                auditableId: $course->id,
+                payload: [
+                    'model_type' => $course->getMorphClass(),
+                    'model_id' => $course->id,
+                    'title' => $course->title,
+                    'deleted_by' => Auth::id(),
+                ],
+            );
+        } catch (Throwable $e) {
+            report($e);
+        }
 
         $course->delete();
 
