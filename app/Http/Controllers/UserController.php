@@ -7,11 +7,14 @@ use App\Http\Controllers\Concerns\ResolvesOrgContext;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Models\User;
+use App\Services\AuditService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Hash;
+use Throwable;
 
 /**
  * RF04 — Aluno/Gestor CRUD, scoped to the acting user's tenant context.
@@ -86,8 +89,32 @@ class UserController extends Controller
             $data['password'] = Hash::make($data['password']);
         }
 
+        $oldStatus = $user->getOriginal('status');
+
         $user->update($data);
         $user->syncRoles([$role]);
+
+        // SPEC-15 §3 — `user.status_changed` is a critical-action event
+        // distinct from `AuditableTrait`'s generic `user.updated` mutation
+        // row (which already fires on every `update()` call); it is only
+        // recorded when `status` actually changed, not on every edit.
+        if (array_key_exists('status', $data) && $data['status'] !== $oldStatus) {
+            try {
+                AuditService::log(
+                    event: 'user.status_changed',
+                    orgId: $user->org_id ? (int) $user->org_id : null,
+                    userId: Auth::id(),
+                    payload: [
+                        'user_id' => $user->id,
+                        'old_status' => $oldStatus,
+                        'new_status' => $data['status'],
+                        'reason' => $request->input('reason'),
+                    ],
+                );
+            } catch (Throwable $e) {
+                report($e);
+            }
+        }
 
         return redirect()->route('users.index')->with('success', 'Usuário atualizado com sucesso.');
     }

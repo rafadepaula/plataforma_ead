@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Traits\AuditableTrait;
 use App\Models\Traits\OrgScope;
 use Database\Factories\CourseFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -14,7 +15,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Course extends Model
 {
     /** @use HasFactory<CourseFactory> */
-    use HasFactory, OrgScope, SoftDeletes;
+    use AuditableTrait, HasFactory, OrgScope, SoftDeletes;
 
     /**
      * @var list<string>

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\CertificateController;
 use App\Http\Controllers\ClassroomController;
 use App\Http\Controllers\CourseController;
@@ -17,6 +18,7 @@ use App\Http\Controllers\LandingPageController;
 use App\Http\Controllers\LessonController;
 use App\Http\Controllers\LessonProgressController;
 use App\Http\Controllers\ModuleController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\PublicCertificateController;
 use App\Http\Controllers\QuizController;
@@ -43,6 +45,22 @@ Route::middleware(['auth', 'role:admin'])->group(function (): void {
         ->name('impersonate-org.store');
     Route::delete('impersonate-org', [ImpersonateOrgController::class, 'destroy'])
         ->name('impersonate-org.destroy');
+
+    // SPEC-15 §5/RF33 — Admin-side audit trail UI. See the `role:gestor`
+    // block below for the Gestor-side counterpart pointing at the same
+    // controller methods (see `audit-logs-conventions` for why these are
+    // two distinct route names/prefixes rather than one shared
+    // `role:admin|gestor` group).
+    Route::get('admin/audit-logs', [AuditLogController::class, 'index'])->name('admin.audit-logs.index');
+    Route::get('admin/audit-logs/export', [AuditLogController::class, 'export'])->name('admin.audit-logs.export');
+});
+
+// SPEC-15 §5/RF33 — Gestor-side audit trail UI, same controller as the
+// Admin block above. `AuditLog`'s `OrgScope` global scope restricts a
+// Gestor's query to their own `org_id` automatically.
+Route::middleware(['auth', 'role:gestor'])->group(function (): void {
+    Route::get('gestor/audit-logs', [AuditLogController::class, 'index'])->name('gestor.audit-logs.index');
+    Route::get('gestor/audit-logs/export', [AuditLogController::class, 'export'])->name('gestor.audit-logs.export');
 });
 
 // RF04/RF05 — Aluno/Gestor CRUD + chunked CSV import, restricted to
@@ -240,6 +258,20 @@ Route::middleware(['auth', 'role:admin|gestor'])->group(function (): void {
 
     Route::get('admin/settings', [SystemSettingController::class, 'edit'])->name('settings.edit');
     Route::put('admin/settings', [SystemSettingController::class, 'update'])->name('settings.update');
+});
+
+// SPEC-13 §Bucket 2 — the AJAX endpoints backing the topbar notification
+// bell. `DatabaseNotification` has no Policy/OrgScope of its own, so
+// `NotificationController` manually scopes every query to
+// `$request->user()->notifications()` rather than relying on a route-model
+// binding (see the `notifications-conventions` skill).
+Route::middleware('auth')->group(function (): void {
+    Route::get('notifications/unread-count', [NotificationController::class, 'unreadCount'])
+        ->name('notifications.unread-count');
+    Route::patch('notifications/read-all', [NotificationController::class, 'readAll'])
+        ->name('notifications.read-all');
+    Route::patch('notifications/{notification}/read', [NotificationController::class, 'read'])
+        ->name('notifications.read');
 });
 
 // SPEC-09 §2 / RF17 — fully public, cross-tenant certificate validation.

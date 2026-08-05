@@ -4,7 +4,9 @@ namespace App\Actions;
 
 use App\Models\Certificate;
 use App\Models\User;
+use App\Services\AuditService;
 use Illuminate\Validation\ValidationException;
+use Throwable;
 
 /**
  * SPEC-09 §1.2 — the certificate revocation write path. Authorization
@@ -38,6 +40,21 @@ class RevokeCertificateAction
             'revoked_by' => $revoker->id,
             'revoke_reason' => $reason,
         ]);
+
+        try {
+            AuditService::log(
+                event: 'certificate.revoked',
+                orgId: $certificate->course?->org_id ? (int) $certificate->course->org_id : null,
+                userId: $revoker->id,
+                payload: [
+                    'certificate_id' => $certificate->id,
+                    'validation_hash' => $certificate->validation_hash,
+                    'revocation_reason' => $reason,
+                ],
+            );
+        } catch (Throwable $e) {
+            report($e);
+        }
 
         return $certificate;
     }

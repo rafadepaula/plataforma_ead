@@ -45,6 +45,7 @@ class UserImportController extends Controller
             rows: $request->validated('rows'),
             courseId: $course->id,
             orgId: $orgId,
+            fileName: $request->validated('filename'),
         );
 
         return response()->json($result);
