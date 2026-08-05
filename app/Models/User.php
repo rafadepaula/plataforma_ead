@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Models\Traits\AuditableTrait;
 use App\Notifications\ResetPasswordNotification;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -25,7 +26,7 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, HasRoles, Notifiable;
+    use AuditableTrait, HasFactory, HasRoles, Notifiable;
 
     /**
      * Get the attributes that should be cast.
@@ -91,5 +92,38 @@ class User extends Authenticatable
     public function lessonProgress(): HasMany
     {
         return $this->hasMany(LessonProgress::class);
+    }
+
+    /**
+     * SPEC-07 RF20 — used by `EnsureStudentIsEnrolled` to gate an Aluno's
+     * access to a Course's classroom/lesson/progress routes. Reads the
+     * `course_user` pivot bypassing `Course`'s `OrgScope` (mirrors
+     * `ProcessSmartInvitationAction`'s convention) — a `cancelled` status
+     * or no row at all is not an active/completed enrollment.
+     */
+    public function hasActiveOrCompletedEnrollment(Course $course): bool
+    {
+        return $this->courses()
+            ->withoutGlobalScopes()
+            ->wherePivot('course_id', $course->id)
+            ->wherePivotIn('status', ['active', 'completed'])
+            ->exists();
+    }
+
+    /**
+     * SPEC-08 §1.3/RN04 — multiple attempts are always considered by
+     * their best score: `MAX(score_percentage)` across this student's
+     * `graded` attempts of the given Quiz (an `awaiting_manual_grading`
+     * or `in_progress` attempt is excluded — only a fully graded attempt
+     * counts). Returns `null` when the student has no graded attempt yet.
+     */
+    public function bestQuizScoreFor(Quiz $quiz): ?float
+    {
+        $best = $this->quizAttempts()
+            ->where('quiz_id', $quiz->id)
+            ->where('status', 'graded')
+            ->max('score_percentage');
+
+        return $best !== null ? (float) $best : null;
     }
 }

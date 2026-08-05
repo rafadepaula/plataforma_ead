@@ -208,6 +208,21 @@ call path a real `drop` event would trigger — rather than trying to fire
 synthetic drag events. See `courses-maintenance`'s "Diagnosing a Dusk
 Reorder Test That Times Out" section for the concrete example.
 
+**Project note (`script()` is not chainable):** `Browser::script()` returns
+the raw array of per-argument JS return values, not the fluent `Browser`
+instance — `$browser->script('...')->assertSee(...)` is a fatal error, not
+a no-op. Split it into its own statement:
+
+```php
+$browser->script('window.LessonPlayer.reportProgress(1, 540, 600)');
+$browser->waitForText('Concluída');
+```
+
+(seen in SPEC-07's `tests/Browser/VideoThresholdCompletionTest.php`, which
+drives `window.LessonPlayer.reportProgress()` directly for the same
+"synthetic event unreliable, call the JS function directly" reason as the
+drag-and-drop note above).
+
 ### 10. Common Assertions
 
 ```php
@@ -250,6 +265,21 @@ $browser->assertAuthenticated()
 - `.class-name`, `#id`, `div > button`
 - Can break when HTML structure changes
 - Use when you don't control the HTML
+
+### `assertSeeIn`/`waitForTextIn` Return CSS-Rendered Text, Not DOM Text
+
+Selenium's `getText()` (which backs `assertSee*`/`waitForText*`) returns the
+text as **rendered**, after CSS is applied — not the literal string in the
+HTML/DOM. A component styled with `text-transform: uppercase` (e.g. this
+project's `<x-ui.badge>`) will make `assertSeeIn('@status', 'Revogado')`
+fail/timeout even though the DOM literally contains `Revogado`, because the
+browser renders (and `getText()` returns) `"REVOGADO"`. Project example:
+`tests/Browser/CertificateRevocationTest.php` asserts against `'REVOGADO'`
+for exactly this reason. When a Dusk assertion on text content
+mysteriously times out but the page looks right in a screenshot, check the
+element's computed `text-transform`/`font-variant` CSS before assuming a
+timing/flakiness issue — assert against the transformed text, or assert on
+an underlying `data-*` attribute/value instead if the literal string matters.
 
 ### Waiting Strategies
 
@@ -439,6 +469,17 @@ php artisan dusk:chrome-driver --detect
 - Use `DatabaseTruncation` trait
 - Reset data in `setUp()` method
 - Check for transactions in application code
+
+**New JS module added but its behavior doesn't run in the browser (project-specific, hit in SPEC-15):**
+
+- Dusk drives the real compiled assets in `public/build`, not a live Vite
+  dev server — a newly created/edited `resources/js/modules/*.js` (and its
+  `resources/js/app.js` import) is invisible to Dusk until
+  `vendor/bin/sail npm run build` is re-run. Symptom: the feature works
+  when clicked manually in a browser with `npm run dev` running, but a
+  Dusk test against the same click silently no-ops (e.g. a modal never
+  opens). Rebuild assets before re-running a failing Dusk test that
+  exercises new/changed JS.
 
 ## Notes
 
