@@ -25,6 +25,7 @@ graph TD
     S10 --> S13
     S01 --> S14[SPEC-14: Ambiente Dusk & Banco MySQL Dedicado]
     S04 --> S15[SPEC-15: Logs de Auditoria & Monitoramento Multitenant]
+    S00 --> S16[SPEC-16: Povoamento DB Seeders por Ambiente]
 ```
 
 ---
@@ -47,6 +48,7 @@ graph TD
 14. **[`13-notifications-and-alerts.md`](file:///home/rafael/projects/cursos/plataforma_ead/spec/specs/13-notifications-and-alerts.md)**: Notificações Multitenant (E-mail + In-App/sino), gatilhos fechados (convite enviado, certificado emitido, resposta de fórum, matrícula confirmada).
 15. **[`14-dusk-testing-environment-and-dedicated-database.md`](file:///home/rafael/projects/cursos/plataforma_ead/spec/specs/14-dusk-testing-environment-and-dedicated-database.md)**: Ambiente de Testes Laravel Dusk e Banco de Dados MySQL Dedicado (`testing`), isolando estritamente a base dev de resets ou migrações.
 16. **[`15-system-audit-logging-and-monitoring.md`](file:///home/rafael/projects/cursos/plataforma_ead/spec/specs/15-system-audit-logging-and-monitoring.md)**: Sistema de Logs de Auditoria e Monitoramento Multitenant, rastreamento automatizado de mutações Eloquent, eventos de autenticação (com redação de senhas `[REDACTED]`), ações críticas e expurgo agendado.
+17. **[`16-database-seeders-and-environment-seeding.md`](file:///home/rafael/projects/cursos/plataforma_ead/spec/specs/16-database-seeders-and-environment-seeding.md)**: Povoamento Automatizado do Banco de Dados (Database Seeders) por Ambiente com Isolamento Multitenant, Idempotência (`firstOrCreate`/`updateOrCreate`), Padrão Laravel de Seeding Modular e Supressão de Eventos.
 
 ---
 
