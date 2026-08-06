@@ -7,6 +7,7 @@ use App\Models\Lesson;
 use App\Models\Module;
 use App\Models\Organization;
 use App\Models\User;
+use App\Services\YoutubeSanitizerService;
 use Illuminate\Database\Seeder;
 
 class CourseSeeder extends Seeder
@@ -49,7 +50,7 @@ class CourseSeeder extends Seeder
                         [
                             'type' => 'content',
                             'content_text' => 'Aprenda como estruturar aplicações multitenant isoladas por org_id no Laravel.',
-                            'youtube_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+                            'youtube_url' => app(YoutubeSanitizerService::class)->sanitize('https://www.youtube.com/watch?v=dQw4w9WgXcQ'),
                             'order_index' => 1,
                             'is_published' => true,
                         ]
@@ -117,7 +118,7 @@ class CourseSeeder extends Seeder
                         [
                             'type' => 'content',
                             'content_text' => 'Configurando containers com Laravel Sail para ambiente dev.',
-                            'youtube_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+                            'youtube_url' => app(YoutubeSanitizerService::class)->sanitize('https://www.youtube.com/watch?v=dQw4w9WgXcQ'),
                             'order_index' => 1,
                             'is_published' => true,
                         ]
