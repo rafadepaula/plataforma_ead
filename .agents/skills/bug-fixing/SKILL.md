@@ -90,11 +90,11 @@ Use `bug-fixing` whenever you are assigned to fix a bug that has a specification
 - **Mandatory TDD Cycle Steps**:
     1. **RED Phase (Write Failing Test)**:
        - Write a PHPUnit test class (extending `Tests\TestCase`) or Dusk Browser test class (extending `DuskTestCase`) that reproduces the exact failure steps from `BUG-{id}-{slug}.md`.
-       - Run test: `vendor/bin/sail artisan test --filter={reproductionTestMethod}` (or `vendor/bin/sail artisan dusk --filter={reproductionTestMethod}`).
+       - Run target test with filter: `vendor/bin/sail artisan test --filter={reproductionTestMethod}` (or for browser tests: `vendor/bin/sail artisan dusk --filter={reproductionTestMethod}`).
        - **VERIFY FAILURE**: Confirm the test fails with the expected error/exception (not a syntax/setup error).
     2. **GREEN Phase (Minimal Code Fix)**:
        - Write the minimal code in the target fix files to resolve the root cause.
-       - Re-run test: `vendor/bin/sail artisan test --filter={reproductionTestMethod}`.
+       - Re-run target test with filter: `vendor/bin/sail artisan test --filter={reproductionTestMethod}` (or `vendor/bin/sail artisan dusk --filter={reproductionTestMethod}`).
        - **VERIFY PASS**: Confirm the reproduction test now passes completely.
     3. **REFACTOR Phase**:
        - Clean up any temporary debug lines or code smells while keeping tests green.
@@ -104,17 +104,22 @@ Use `bug-fixing` whenever you are assigned to fix a bug that has a specification
 
 ### Phase 4: Test & Regression Suite Verification (`spec-tester-agent`)
 
-- **Objective**: Run full test suites to verify fix and ensure zero regressions across tenant, role, or feature boundaries.
+- **Objective**: Run focused tests related to the bug first, then full test suites to verify fix and ensure zero regressions across tenant, role, or feature boundaries.
 - **Subagent**: Invoke `spec-tester-agent`.
 - **Verification Commands**:
     ```bash
-    # 1. Run the reproduction test
+    # 1. Run the reproduction test and bug-related tests first using filters/file paths
     vendor/bin/sail artisan test --filter={reproductionTestMethod}
+    # For Dusk (if UI bug): run specific test file or filter
+    vendor/bin/sail artisan dusk {reproductionTestFile} --filter={reproductionTestMethod}
 
-    # 2. Run full feature test suite
+    # 2. Run related feature test suite or module scope
+    vendor/bin/sail artisan test tests/Feature/{RelatedModule}Test.php
+
+    # 3. Run full feature test suite for regression check
     vendor/bin/sail artisan test --compact
 
-    # 3. Run browser tests if UI bug
+    # 4. Run browser tests suite if UI bug
     vendor/bin/sail artisan dusk:chrome-driver --detect
     vendor/bin/sail artisan dusk
     ```
