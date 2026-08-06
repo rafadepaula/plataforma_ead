@@ -1,7 +1,7 @@
 export const meta = {
   name: 'spec-task-implementer',
   description: 'Understand a spec task from spec/specs/, tech-refine it against the current codebase, implement it TDD-first via the laravel-tdd RED-GREEN-REFACTOR cycle and the laravel-dusk skill for browser flows, using PHPUnit classes per project convention, verify the full suite, loop code-reviewer, validate-test-quality & spec-usecase-test-checker until clean, then check the module skills for staleness.',
-  whenToUse: 'Run once per spec requirement passed via args (spec file, optionally an RF task ref), to take it from spec text to reviewed, tested code with its skills kept in sync.',
+  whenToUse: 'Run once per spec requirement passed via args - spec file, optionally an RF task ref - to take it from spec text to reviewed, tested code with its skills kept in sync.',
   phases: [
     { title: 'Understand', detail: 'Read the spec task, extract requirements/business rules', model: 'sonnet' },
     { title: 'Tech-Refine', detail: 'Study current codebase, produce a 3-bucket implementation plan', model: 'sonnet' },
