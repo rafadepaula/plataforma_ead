@@ -7,7 +7,7 @@ description: Use when initiating a new feature specification or clarifying under
 
 ## Overview
 
-`spec-grill-me` orchestrates a systematic `/grill-me` interview session to extract 100% of business rules (RN), functional requirements (RF), database schema impact, security controls, roles, and edge cases for a feature. It formats the resulting specification into a new `.md` file in `spec/specs/` adhering strictly to the project's multitenant spec pattern, naming conventions, and testing guardrails.
+`spec-grill-me` orchestrates a systematic `/grill-me` interview session to extract 100% of business rules (RN), functional requirements (RF), database schema impact, security controls, roles, and edge cases for a feature. It formats the resulting specification into a new `.md` file in `spec/specs/` adhering strictly to the project's multitenant spec pattern, naming conventions, and testing guardrails. Additionally, it invokes the **`usecases-maintenance`** skill to generate all associated Use Case documents in `spec/docs/usecases/`, sync `spec/docs/usecases/index.md`, and update the master specification in `spec/docs/full_spec.md`.
 
 ---
 
@@ -20,12 +20,12 @@ Use `spec-grill-me` whenever:
 
 ---
 
-## The 4-Phase Spec Generation Pipeline
+## The 5-Phase Spec Generation Pipeline
 
 ```
 [Phase 1: Index & Context Discovery] ──► [Phase 2: Grill-Me Interactive Interview]
                                                             │
-[Phase 4: README Index Sync] ◄── [Phase 3: Spec Markdown File Creation]
+[Phase 5: Use Cases & Full Spec Sync] ◄── [Phase 4: README Sync] ◄── [Phase 3: Spec Markdown File Creation]
 ```
 
 ---
@@ -34,8 +34,8 @@ Use `spec-grill-me` whenever:
 
 1. **Inspect `spec/specs/`**:
    - Scan `spec/specs/` to list all existing spec files.
-   - Identify the highest numerical prefix `XX` (e.g., `13-notifications-and-alerts.md` → highest index is `13`).
-   - Assign the next sequential index `NEXT_INDEX = XX + 1` formatted with leading zero (e.g., `14`).
+   - Identify the highest numerical prefix `XX` (e.g., `17-dynamic-navigation-menu-and-access-control.md` → highest index is `17`).
+   - Assign the next sequential index `NEXT_INDEX = XX + 1` formatted with leading zero (e.g., `18`).
    - Determine the target filename: `spec/specs/{NEXT_INDEX}-{kebab-feature-name}.md`.
 
 2. **Project Architecture Guardrails (Baseline Context)**:
@@ -127,11 +127,36 @@ Update `spec/specs/README.md`:
 
 ---
 
+### Phase 5: Use Cases & Full Spec Synchronization (`usecases-maintenance`)
+
+Invoking **`usecases-maintenance`** (see `usecases-maintenance` SKILL.md) is mandatory whenever a spec is created or updated:
+
+1. **Generate Detailed Use Cases (`spec/docs/usecases/UCxx-*.md`)**:
+   - For every functional requirement (`RFxx`) and business rule (`RNyy`) introduced in the spec, create or update individual Use Case markdown files following the 7-section standard.
+   - Enforce the cardinal rule: Every `RF` MUST be linked to at least one `RN`, and every `RN` MUST be linked to `RF` and `UC`.
+   - Document step-by-step user interactions, routes, Form Requests, validations, DOM/AJAX updates, and exception flows.
+
+2. **Update Master Use Cases Index (`spec/docs/usecases/index.md`)**:
+   - Add new UCs to the module catalogue with clickable Markdown links (`file:///...`).
+   - Update the **Matriz Completa de Rastreabilidade Cruzada** (RF vs RN vs UC).
+   - Update the **Matriz de Cobertura de Regras de Negócio** (RN vs RF vs UC).
+
+3. **Update Master System Specification (`spec/docs/full_spec.md`)**:
+   - **Section 2 (DB Schema)**: Update table list / schemas if new tables or columns were introduced.
+   - **Section 3 (Matriz de Requisitos Funcionais - RF)**: Append new RFs with their linked RNs and UCs.
+   - **Section 5 (Regras de Negócio - RN)**: Append new RNs with their linked RFs and UCs.
+   - **Section 6 (Mapeamento de Casos de Uso)**: Append new UCs with relative file links.
+   - **Section 7 (Matriz de Rastreabilidade)**: Synchronize the triple traceability matrix.
+
+---
+
 ## Checklist for Completing a Spec
 
 - [ ] Next sequential index `XX` correctly identified from existing files in `spec/specs/`.
 - [ ] Interactive `/grill-me` session completed using `ask_question` with recommended options.
-- [ ] All 100% of RF, RN, Roles, DB schema, Services, Security, and Edge Cases documented.
-- [ ] Target file `spec/specs/XX-kebab-name.md` created matching project spec format.
+- [ ] All 100% of RF, RN, Roles, DB schema, Services, Security, and Edge Cases documented in `spec/specs/XX-kebab-name.md`.
 - [ ] Harness skill triad (`{feature}-architecture`, `{feature}-conventions`, `{feature}-maintenance`) included in Section 4.
 - [ ] `spec/specs/README.md` updated with Mermaid graph node and spec list entry.
+- [ ] **`usecases-maintenance` executed**: Use Case files `spec/docs/usecases/UCxx-*.md` created/updated for all new requirements.
+- [ ] `spec/docs/usecases/index.md` updated with new UCs and traceability matrices.
+- [ ] `spec/docs/full_spec.md` updated with new RFs, RNs, UCs, DB Schema, and traceability matrix.
