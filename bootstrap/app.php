@@ -4,6 +4,7 @@ use App\Exceptions\CourseHasActiveEnrollmentsException;
 use App\Exceptions\InvitationLinkInvalidException;
 use App\Exceptions\UnresolvedOrgContextException;
 use App\Http\Middleware\EnsureStudentIsEnrolled;
+use App\Http\Middleware\RedirectIfAuthenticated;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -32,6 +33,10 @@ return Application::configure(basePath: dirname(__DIR__))
             // SPEC-07 RF20 — gates the student-facing classroom/lesson
             // /progress routes behind an active/completed enrollment.
             'student.enrolled' => EnsureStudentIsEnrolled::class,
+            // BUG-001 — custom role-aware guest redirect (replaces the
+            // framework default that falls back to `/` when no `home`
+            // route exists).
+            'guest' => RedirectIfAuthenticated::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

@@ -23,7 +23,33 @@ class LoginTest extends TestCase
         $admin = User::factory()->create(['org_id' => null]);
         $admin->assignRole(RolesEnum::ADMIN->value);
 
-        $this->actingAs($admin)->get('/login')->assertRedirect('/');
+        $this->actingAs($admin)->get('/login')->assertRedirect(route('admin.dashboard'));
+    }
+
+    public function test_authenticated_gestor_is_redirected_away_from_login_screen(): void
+    {
+        $gestor = User::factory()->gestor()->create();
+
+        $this->actingAs($gestor)->get('/login')->assertRedirect(route('admin.dashboard'));
+    }
+
+    public function test_authenticated_aluno_is_redirected_away_from_login_screen(): void
+    {
+        $aluno = User::factory()->aluno()->create();
+
+        $this->actingAs($aluno)->get('/login')->assertRedirect(route('student.courses.index'));
+    }
+
+    public function test_authenticated_user_with_intended_url_is_redirected_to_intended_from_login(): void
+    {
+        $aluno = User::factory()->aluno()->create();
+
+        // Set an intended URL in the session, then visit /login while authenticated.
+        // The middleware should redirect to the intended URL (priority over role-based home).
+        $this->actingAs($aluno)
+            ->withSession(['url.intended' => '/some-protected-page'])
+            ->get('/login')
+            ->assertRedirect('/some-protected-page');
     }
 
     public function test_user_can_login_with_valid_credentials(): void

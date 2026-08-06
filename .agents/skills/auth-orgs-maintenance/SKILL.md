@@ -133,6 +133,23 @@ another Org's user, not a 404 (the row exists, route-model-binding finds it —
 authorization is what fails). See `auth-orgs-conventions` for the shared
 `Gate::authorize()` pattern this policy plugs into.
 
+## `UserHomeResolver` -- Must Stay in Sync When Roles Change (BUG-001)
+
+`App\Services\UserHomeResolver::resolve()` is the single source of truth for
+role-based post-login and guest-guard redirects. If a new role is added to
+`RolesEnum` that needs its own dashboard destination, **this method must be
+updated** -- otherwise the new role falls through to the `student.courses.index`
+branch (the default/catch-all). Both `AuthenticatedSessionController::store()`
+and `RedirectIfAuthenticated` middleware delegate to this resolver, so changing
+it in one place covers both code paths.
+
+After updating `UserHomeResolver::resolve()`, run:
+```bash
+vendor/bin/sail artisan test --filter=LoginTest
+```
+The tests in `tests/Feature/Auth/LoginTest.php` assert role-specific redirect
+targets and will catch a missed update.
+
 ## Auto-Update Protocol (SPEC-03)
 
 Per `spec/specs/03-agentic-harness-and-self-updating-skills.md`: any change to

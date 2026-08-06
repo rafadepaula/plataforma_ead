@@ -53,10 +53,11 @@ POST /reset-password            -> NewPasswordController::store            (Pass
 All six routes live in `routes/auth.php`, required from `routes/web.php`
 (kept out of `routes/web.php` itself so the auth surface stays reviewable in
 one file). The `login`/`forgot-password`/`reset-password/{token}` GET routes
-sit behind Laravel's built-in `guest` middleware alias; `logout` sits behind
-`auth`. Both aliases are framework defaults — `bootstrap/app.php`'s
-`$middleware->alias([...])` call only *adds* the Spatie role aliases, it does
-not replace the framework's own (`auth`, `guest`, ...).
+sit behind the `guest` middleware alias; `logout` sits behind `auth`. The
+`auth` alias remains the framework default, but `guest` is **overridden** in
+`bootstrap/app.php` (BUG-001 fix) to point to `App\Http\Middleware\RedirectIfAuthenticated`,
+which provides role-aware redirect targets via `UserHomeResolver` instead of
+the framework default that falls back to `/` when no `home` route exists.
 
 ## `status=active` Gate (RF01)
 
@@ -83,19 +84,26 @@ framework. Cleared on a successful attempt.
 
 ## Post-Login Redirect (Role-Based)
 
-`AuthenticatedSessionController::redirectPathFor()` sends `admin`/`gestor` to
+`App\Services\UserHomeResolver::resolve()` is the **single source of truth**
+for where any authenticated user should land. It sends `admin`/`gestor` to
 `admin.dashboard` and everyone else (`aluno`) to `student.courses.index` —
-**if those named routes exist**. Later SPEC-04/other-spec buckets own those
-dashboards; until they land, every role safely falls back to `/`
-(`Route::has()` guard, mirrors the same pattern already used in
-`resources/views/components/layout/{topbar,sidebar}.blade.php`). Do not hardcode
-a URL here — always add a new role destination behind a `Route::has()` check
-so this controller keeps working before its downstream route exists.
+**if those named routes exist** (via `Route::has()` guard, with `/` fallback).
+Both `AuthenticatedSessionController::store()` (post-login redirect) and
+`RedirectIfAuthenticated` middleware (guest-guard redirect) delegate to this
+service, so the logic is never duplicated or drifted between callers.
+
+Do not hardcode a URL here — always add a new role destination behind a
+`Route::has()` check so this resolver keeps working before its downstream
+route exists. When adding a new role, update `UserHomeResolver::resolve()`
+(see `auth-orgs-maintenance`).
 
 `redirect()->intended()` is used so a guest bounced to `/login` by the
 `auth` middleware (or by the `UnauthorizedException` guest-redirect in
 `bootstrap/app.php`) returns to the page they originally asked for, instead
-of always landing on the role's default destination.
+of always landing on the role's default destination. The `RedirectIfAuthenticated`
+middleware also uses `redirect()->intended()`, so the intended URL is honored
+both on explicit login and when the `guest` guard intercepts an already-
+authenticated user visiting `/login`.
 
 ## Password Reset (RF02) — Single-Use Token via SMTP
 

@@ -207,3 +207,30 @@ rather than passing raw overrides at every call site:
 Organization::factory()->inactive()->create();
 Organization::factory()->withCnpj()->create();
 ```
+
+## Guest Middleware Override and Role-Aware Redirect
+
+The framework's default `guest` middleware alias (`Illuminate\Auth\Middleware\RedirectIfAuthenticated`) is overridden in `bootstrap/app.php` to point to `App\Http\Middleware\RedirectIfAuthenticated`, which uses `App\Services\UserHomeResolver` to provide role-aware redirect targets.
+
+When an authenticated user visits `/login`, `/forgot-password`, or `/reset-password/{token}` (routes gated by the `guest` middleware), the custom middleware resolves the user's role home via `UserHomeResolver::resolve()` and redirects there, honoring any `url.intended` in the session.
+
+**Key convention:** All role-based redirect logic lives in `UserHomeResolver::resolve()` -- never duplicate it in controllers or middleware. Both `AuthenticatedSessionController::store()` and the `RedirectIfAuthenticated` middleware delegate to this single service via `app(UserHomeResolver::class)->resolve($user)`. If a new role needs a different destination, update only `UserHomeResolver::resolve()`.
+
+## `UserHomeResolver` -- Single Source of Truth for Role Home
+
+```php
+// app/Services/UserHomeResolver.php
+class UserHomeResolver
+{
+    public function resolve(User $user): string
+    {
+        if ($user->hasAnyRole([RolesEnum::ADMIN->value, RolesEnum::GESTOR->value])) {
+            return Route::has('admin.dashboard') ? route('admin.dashboard') : '/';
+        }
+
+        return Route::has('student.courses.index') ? route('student.courses.index') : '/';
+    }
+}
+```
+
+Callers always use `app(UserHomeResolver::class)->resolve($user)` (container resolution, not manual instantiation).
