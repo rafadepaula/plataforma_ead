@@ -116,4 +116,74 @@ class UserManagementTest extends DuskTestCase
             'status' => 'active',
         ]);
     }
+
+    public function test_gestor_can_revoke_a_student_enrollment(): void
+    {
+        $org = Organization::factory()->create();
+        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor->assignRole(RolesEnum::GESTOR->value);
+        $aluno = User::factory()->create(['org_id' => $org->id, 'name' => 'Aluno Matriculado']);
+        $aluno->assignRole(RolesEnum::ALUNO->value);
+        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course->students()->attach($aluno->id, ['enrolled_at' => now(), 'status' => 'active']);
+
+        $this->browse(function (Browser $browser) use ($gestor, $aluno, $course): void {
+            $browser->loginAs($gestor)
+                ->visit(route('courses.enrollments.index', $course))
+                ->waitFor('@revoke-enrollment-'.$aluno->id)
+                ->click('@revoke-enrollment-'.$aluno->id)
+                ->waitForText('Matrícula revogada com sucesso.')
+                ->assertSee('Matrícula revogada com sucesso.')
+                ->assertSee('Aluno Matriculado')
+                ->assertMissing('@revoke-enrollment-form-'.$aluno->id);
+        });
+
+        $this->assertDatabaseHas('course_user', [
+            'course_id' => $course->id,
+            'user_id' => $aluno->id,
+            'status' => 'cancelled',
+        ]);
+    }
+
+    public function test_creating_a_user_with_a_duplicate_email_is_rejected(): void
+    {
+        $gestor = User::factory()->gestor()->create();
+        User::factory()->aluno()->create([
+            'org_id' => $gestor->org_id,
+            'email' => 'duplicado@example.com',
+        ]);
+
+        $this->browse(function (Browser $browser) use ($gestor): void {
+            $browser->loginAs($gestor)
+                ->visit(route('users.create'))
+                ->waitFor('@user-form')
+                ->type('name', 'Aluno Duplicado')
+                ->type('email', 'duplicado@example.com')
+                ->type('cpf', '98765432100')
+                ->select('role', 'aluno')
+                ->type('password', 'password')
+                ->type('password_confirmation', 'password')
+                ->press('Criar Usuário')
+                ->assertPathIs('/users/create')
+                ->assertSee('The email has already been taken.');
+        });
+
+        $this->assertDatabaseCount('users', 2);
+    }
+
+    public function test_gestor_cannot_edit_a_user_from_another_organization(): void
+    {
+        $orgA = Organization::factory()->create();
+        $orgB = Organization::factory()->create();
+        $gestorA = User::factory()->create(['org_id' => $orgA->id]);
+        $gestorA->assignRole(RolesEnum::GESTOR->value);
+        $alunoB = User::factory()->create(['org_id' => $orgB->id]);
+        $alunoB->assignRole(RolesEnum::ALUNO->value);
+
+        $this->browse(function (Browser $browser) use ($gestorA, $alunoB): void {
+            $browser->loginAs($gestorA)
+                ->visit(route('users.edit', $alunoB))
+                ->assertSee('403');
+        });
+    }
 }
