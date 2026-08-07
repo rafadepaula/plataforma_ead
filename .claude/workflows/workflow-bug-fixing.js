@@ -1,5 +1,5 @@
 export const meta = {
-  name: 'bug-fixing',
+  name: 'workflow-bug-fixing',
   description: 'Resolve a bug in spec/bugs/BUG-id-slug.md: understand it, then fix it TDD-first with a PHPUnit unit/integration test, or a Dusk test if it is a UI bug.',
   whenToUse: 'Run once per bug that has a specification file in spec/bugs/, passing the bug report path via args, for example bugReportFile equal to spec/bugs/BUG-001-quiz-score-calculation.md.',
   phases: [

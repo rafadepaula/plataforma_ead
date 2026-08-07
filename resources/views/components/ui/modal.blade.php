@@ -21,7 +21,7 @@
      x-cloak
      @keydown.escape.window="if ({{ $dismissable ? 'true' : 'false' }}) {{ $showBinding }} = false"
      class="dialog-backdrop"
-     style="position: fixed; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center; padding: 20px; background: color-mix(in srgb, var(--color-neutral-900) 65%, transparent); backdrop-filter: blur(2px);">
+     style="position: fixed; inset: 0; z-index: 100; display: none; align-items: center; justify-content: center; padding: 20px; background: color-mix(in srgb, var(--color-neutral-900) 65%, transparent); backdrop-filter: blur(2px);">
     
     <div id="{{ $modalId }}"
          class="dialog" 

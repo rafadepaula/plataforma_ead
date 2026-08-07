@@ -22,12 +22,11 @@ export class ModalManager {
     }
 
     /**
-     * `x-ui.modal`'s backdrop ships with a static inline `display: flex`
-     * and relies on Alpine.js's `x-show="show"` to hide itself until
-     * opened — but Alpine.js is not installed in this project, so every
-     * modal would otherwise render open by default. This hides every
-     * backdrop once on load so pages don't need to duplicate this fix
-     * in their own inline `@push('scripts')` blocks.
+     * `x-ui.modal`'s backdrop now ships closed (inline `display: none`), so
+     * modals are hidden by the markup itself and never flash on first paint —
+     * Alpine.js is not installed in this project, so its `x-show`/`x-cloak`
+     * attributes are inert. This remains as a defensive sweep for any legacy
+     * backdrop markup that still renders visible by default.
      */
     hideBackdropsOnLoad() {
         document.querySelectorAll('.dialog-backdrop').forEach((backdrop) => {

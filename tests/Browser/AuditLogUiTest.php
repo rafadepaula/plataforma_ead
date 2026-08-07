@@ -72,6 +72,31 @@ class AuditLogUiTest extends DuskTestCase
         });
     }
 
+    public function test_diff_modal_does_not_open_automatically_when_page_loads(): void
+    {
+        $org = Organization::factory()->create();
+        $admin = User::factory()->create(['org_id' => null]);
+        $admin->assignRole(RolesEnum::ADMIN->value);
+        $target = User::factory()->create(['org_id' => $org->id]);
+
+        $log = $this->seedLog(
+            $org,
+            $target,
+            'course.updated',
+            ['title' => 'Título Antigo'],
+            ['title' => 'Título Novo'],
+        );
+
+        $this->browse(function (Browser $browser) use ($admin, $log): void {
+            $browser->loginAs($admin)
+                ->visit(route('admin.audit-logs.index'))
+                ->waitFor('@audit-logs-index')
+                ->waitFor('@audit-log-row-'.$log->id)
+                ->assertSee('Logs de Auditoria')
+                ->assertMissing('#audit-diff-modal');
+        });
+    }
+
     public function test_admin_can_filter_by_event_category_and_paginate(): void
     {
         $org = Organization::factory()->create();
