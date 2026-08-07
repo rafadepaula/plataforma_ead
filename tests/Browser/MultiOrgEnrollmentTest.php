@@ -76,4 +76,146 @@ class MultiOrgEnrollmentTest extends DuskTestCase
             'status' => 'active',
         ]);
     }
+
+    public function test_a_new_user_can_register_and_enroll_through_an_invitation_link(): void
+    {
+        $orgB = Organization::factory()->create();
+        $courseB = Course::factory()->create(['org_id' => $orgB->id, 'is_published' => true]);
+        $gestorB = User::factory()->create(['org_id' => $orgB->id]);
+        $gestorB->assignRole(RolesEnum::GESTOR->value);
+        $invitationLink = InvitationLink::factory()->create([
+            'org_id' => $orgB->id,
+            'course_id' => $courseB->id,
+            'created_by' => $gestorB->id,
+        ]);
+
+        $this->browse(function (Browser $browser) use ($invitationLink): void {
+            $browser->visit('/convite/'.$invitationLink->token)
+                ->waitFor('@invitation-form')
+                ->assertVisible('@invitation-name')
+                ->type('@invitation-email', 'novo.aluno@example.com')
+                ->click('@invitation-name') // blur the e-mail field to trigger the AJAX check
+                ->pause(500) // no existing account is found — the form must stay expanded
+                ->assertVisible('@invitation-name')
+                ->type('@invitation-name', 'Novo Aluno')
+                ->type('@invitation-cpf', '123.456.789-00')
+                ->type('@invitation-password', 'senha-segura-123')
+                ->type('@invitation-password-confirmation', 'senha-segura-123')
+                ->press('Matricular-me')
+                ->waitForLocation('/meus-cursos')
+                ->assertAuthenticated();
+        });
+
+        $user = User::where('email', 'novo.aluno@example.com')->first();
+
+        $this->assertDatabaseHas('users', [
+            'email' => 'novo.aluno@example.com',
+            'org_id' => $orgB->id,
+        ]);
+        $this->assertDatabaseHas('course_user', [
+            'user_id' => $user->id,
+            'course_id' => $courseB->id,
+            'status' => 'active',
+        ]);
+        $this->assertDatabaseHas('invitation_links', [
+            'id' => $invitationLink->id,
+            'current_uses' => 1,
+        ]);
+    }
+
+    public function test_an_expired_invitation_link_is_rejected(): void
+    {
+        $orgB = Organization::factory()->create();
+        $courseB = Course::factory()->create(['org_id' => $orgB->id, 'is_published' => true]);
+        $gestorB = User::factory()->create(['org_id' => $orgB->id]);
+        $gestorB->assignRole(RolesEnum::GESTOR->value);
+        $invitationLink = InvitationLink::factory()->expired()->create([
+            'org_id' => $orgB->id,
+            'course_id' => $courseB->id,
+            'created_by' => $gestorB->id,
+        ]);
+
+        $this->browse(function (Browser $browser) use ($invitationLink): void {
+            $browser->visit('/convite/'.$invitationLink->token)
+                ->assertSee('Este link de convite é inválido, expirou ou já atingiu o limite de usos.');
+        });
+    }
+
+    public function test_a_revoked_invitation_link_is_rejected(): void
+    {
+        $orgB = Organization::factory()->create();
+        $courseB = Course::factory()->create(['org_id' => $orgB->id, 'is_published' => true]);
+        $gestorB = User::factory()->create(['org_id' => $orgB->id]);
+        $gestorB->assignRole(RolesEnum::GESTOR->value);
+        $invitationLink = InvitationLink::factory()->revoked()->create([
+            'org_id' => $orgB->id,
+            'course_id' => $courseB->id,
+            'created_by' => $gestorB->id,
+        ]);
+
+        $this->browse(function (Browser $browser) use ($invitationLink): void {
+            $browser->visit('/convite/'.$invitationLink->token)
+                ->assertSee('Este link de convite é inválido, expirou ou já atingiu o limite de usos.');
+        });
+    }
+
+    public function test_an_exhausted_invitation_link_is_rejected(): void
+    {
+        $orgB = Organization::factory()->create();
+        $courseB = Course::factory()->create(['org_id' => $orgB->id, 'is_published' => true]);
+        $gestorB = User::factory()->create(['org_id' => $orgB->id]);
+        $gestorB->assignRole(RolesEnum::GESTOR->value);
+        $invitationLink = InvitationLink::factory()->exhausted()->create([
+            'org_id' => $orgB->id,
+            'course_id' => $courseB->id,
+            'created_by' => $gestorB->id,
+        ]);
+
+        $this->browse(function (Browser $browser) use ($invitationLink): void {
+            $browser->visit('/convite/'.$invitationLink->token)
+                ->assertSee('Este link de convite é inválido, expirou ou já atingiu o limite de usos.');
+        });
+    }
+
+    public function test_an_existing_user_with_a_wrong_password_is_not_enrolled(): void
+    {
+        $orgA = Organization::factory()->create();
+        $courseA = Course::factory()->create(['org_id' => $orgA->id]);
+        $student = User::factory()->create([
+            'org_id' => $orgA->id,
+            'email' => 'multiorg@example.com',
+            'password' => Hash::make('senha-correta'),
+        ]);
+        $student->assignRole(RolesEnum::ALUNO->value);
+        $courseA->students()->attach($student->id, ['enrolled_at' => now(), 'status' => 'active']);
+
+        $orgB = Organization::factory()->create();
+        $courseB = Course::factory()->create(['org_id' => $orgB->id, 'is_published' => true]);
+        $gestorB = User::factory()->create(['org_id' => $orgB->id]);
+        $gestorB->assignRole(RolesEnum::GESTOR->value);
+        $invitationLink = InvitationLink::factory()->create([
+            'org_id' => $orgB->id,
+            'course_id' => $courseB->id,
+            'created_by' => $gestorB->id,
+        ]);
+
+        $this->browse(function (Browser $browser) use ($invitationLink): void {
+            $browser->visit('/convite/'.$invitationLink->token)
+                ->waitFor('@invitation-form')
+                ->assertVisible('@invitation-name')
+                ->type('@invitation-email', 'multiorg@example.com')
+                ->click('@invitation-name') // blur the e-mail field to trigger the AJAX check
+                ->waitFor('@invitation-existing-account-hint')
+                ->waitUntilMissing('@invitation-name')
+                ->type('@invitation-password', 'senha-errada')
+                ->press('Matricular-me')
+                ->assertSee('Senha incorreta para o e-mail informado.')
+                ->assertGuest();
+        });
+
+        $this->assertDatabaseMissing('course_user', [
+            'user_id' => $student->id,
+            'course_id' => $courseB->id,
+        ]);
+    }
 }
