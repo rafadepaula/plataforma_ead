@@ -80,4 +80,62 @@ class EssayGradingScreenTest extends DuskTestCase
                 ->assertSee('Nenhuma correção pendente.');
         });
     }
+
+    public function test_gestor_can_create_a_quiz_via_the_ui(): void
+    {
+        $org = Organization::factory()->create();
+        $course = Course::factory()->create(['org_id' => $org->id]);
+        $module = Module::factory()->for($course)->create();
+        $lesson = Lesson::factory()->for($module)->create(['type' => 'quiz', 'is_published' => true]);
+
+        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor->assignRole(RolesEnum::GESTOR->value);
+
+        $title = 'Quiz de Avaliação Final';
+        $minScore = '70';
+
+        $this->browse(function (Browser $browser) use ($gestor, $lesson, $title, $minScore): void {
+            $browser->loginAs($gestor)
+                ->visit(route('quizzes.create', $lesson))
+                ->waitFor('@quiz-form')
+                ->type('@quiz-title-input', $title)
+                ->clear('@quiz-min-score')
+                ->type('@quiz-min-score', $minScore)
+                ->press('@quiz-submit')
+                ->waitForText('Questionário criado com sucesso.');
+        });
+
+        $this->assertDatabaseHas('quizzes', [
+            'lesson_id' => $lesson->id,
+            'title' => $title,
+            'min_score_percentage' => $minScore,
+        ]);
+    }
+
+    public function test_a_single_choice_question_without_a_correct_option_is_rejected(): void
+    {
+        $org = Organization::factory()->create();
+        $course = Course::factory()->create(['org_id' => $org->id]);
+        $module = Module::factory()->for($course)->create();
+        $lesson = Lesson::factory()->for($module)->create(['type' => 'quiz', 'is_published' => true]);
+        $quiz = Quiz::factory()->create(['lesson_id' => $lesson->id]);
+
+        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor->assignRole(RolesEnum::GESTOR->value);
+
+        $this->browse(function (Browser $browser) use ($gestor, $quiz): void {
+            $browser->loginAs($gestor)
+                ->visit(route('quizzes.edit', $quiz))
+                ->click('@new-question')
+                ->waitFor('@question-form-create')
+                ->type('@question-text-create', 'Questão sem opção correta marcada.')
+                ->select('@question-type-create', 'single_choice')
+                ->type('@option-text-create-0', 'Opção A')
+                ->type('@option-text-create-1', 'Opção B')
+                ->press('@question-submit-create')
+                ->waitForText('Questões de escolha única devem ter exatamente 1 opção correta.');
+        });
+
+        $this->assertDatabaseCount('quiz_questions', 0);
+    }
 }
