@@ -49,4 +49,30 @@ class HelpCenterDuskTest extends DuskTestCase
                 ->assertSee('Aqui você encontra todos os cursos em que está matriculado.');
         });
     }
+
+    public function test_the_help_button_falls_back_to_the_global_article(): void
+    {
+        /** @var User $student */
+        $student = User::factory()->create(['org_id' => null]);
+        $student->assignRole(RolesEnum::ALUNO->value);
+
+        HelpArticle::factory()->global()->create([
+            'target_page_key' => 'student.courses.index',
+            'title' => 'Artigo global de fallback',
+            'content' => 'Conteúdo global exibido quando não há artigo específico da organização.',
+        ]);
+
+        $this->browse(function (Browser $browser) use ($student): void {
+            $browser->loginAs($student)
+                ->visit(route('student.courses.index'))
+                ->waitFor('@help-button-student.courses.index')
+                // See the docblock above for why this wait is required
+                // before clicking the trigger button.
+                ->waitUntilMissing('.dialog-backdrop')
+                ->click('@help-button-student.courses.index')
+                ->waitFor('@help-article-content-student.courses.index')
+                ->assertSeeIn('.dialog-title', 'Artigo global de fallback')
+                ->assertSeeIn('@help-article-content-student.courses.index', 'Conteúdo global exibido quando não há artigo específico da organização.');
+        });
+    }
 }

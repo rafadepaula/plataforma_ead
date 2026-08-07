@@ -41,4 +41,30 @@ class ExampleSmokeTest extends DuskTestCase
                 ->assertAuthenticatedAs($user);
         });
     }
+
+    public function test_the_landing_page_renders_its_sections_and_calls_to_action(): void
+    {
+        // SPEC-11 / RF11 — public Landing Page (`landing.show`), rendered
+        // as a GUEST (no loginAs). Asserts the base dusk selectors, the
+        // exact section headings, and that the login CTAs point to the
+        // `login` route. Also asserts the contextual help button
+        // (`<x-help-button key="landing" />`) is present — it renders
+        // `disabled` when no article is seeded, so only presence is
+        // asserted, never that it opens a modal.
+        $this->browse(function (Browser $browser): void {
+            $browser->visit('/')
+                ->assertPathIs('/')
+                ->assertPresent('main')
+                ->assertVisible('@landing-headline')
+                ->assertVisible('@landing-login-link')
+                ->assertVisible('@landing-cta-login')
+                ->assertPresent('@help-button-landing')
+                ->assertAttribute('@landing-login-link', 'href', route('login'))
+                ->assertAttribute('@landing-cta-login', 'href', route('login'))
+                ->assertSee('Cursos e Trilhas')
+                ->assertSee('Provas Interativas')
+                ->assertSee('Certificados Oficiais')
+                ->assertSee('Recebeu um convite?');
+        });
+    }
 }
