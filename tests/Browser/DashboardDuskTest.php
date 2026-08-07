@@ -4,6 +4,7 @@ namespace Tests\Browser;
 
 use App\Models\Course;
 use App\Models\Organization;
+use App\Models\SystemSetting;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Laravel\Dusk\Browser;
@@ -118,6 +119,57 @@ class DashboardDuskTest extends DuskTestCase
                 ->waitForReload()
                 ->visit(route('settings.edit'))
                 ->assertInputValue('signature', 'Diretoria Pedagógica — Minha Org');
+        });
+    }
+
+    public function test_settings_are_scoped_to_the_global_row_for_an_admin_and_to_the_org_row_for_a_gestor(): void
+    {
+        $org = Organization::factory()->create();
+
+        $admin = User::factory()->create(['org_id' => null]);
+        $admin->assignRole('admin');
+
+        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor->assignRole('gestor');
+
+        $this->browse(function (Browser $browser) use ($admin, $gestor): void {
+            $browser->loginAs($admin)
+                ->visit(route('settings.edit'))
+                ->waitFor('@settings-form')
+                ->type('smtp_host', 'smtp.global.example')
+                ->click('@settings-submit')
+                ->waitForText('Configurações salvas com sucesso.');
+
+            $browser->loginAs($gestor)
+                ->visit(route('settings.edit'))
+                ->waitFor('@settings-form')
+                ->type('smtp_host', 'smtp.org.example')
+                ->click('@settings-submit')
+                ->waitForText('Configurações salvas com sucesso.');
+        });
+
+        $this->assertDatabaseHas('system_settings', [
+            'setting_key' => 'smtp_host',
+            'org_id' => SystemSetting::GLOBAL_ORG_ID,
+            'setting_value' => 'smtp.global.example',
+        ]);
+
+        $this->assertDatabaseHas('system_settings', [
+            'setting_key' => 'smtp_host',
+            'org_id' => $org->id,
+            'setting_value' => 'smtp.org.example',
+        ]);
+    }
+
+    public function test_an_unknown_report_type_returns_404(): void
+    {
+        $admin = User::factory()->create(['org_id' => null]);
+        $admin->assignRole('admin');
+
+        $this->browse(function (Browser $browser) use ($admin): void {
+            $browser->loginAs($admin)
+                ->visit('/admin/reports/invalido/export')
+                ->assertSee('404');
         });
     }
 }
