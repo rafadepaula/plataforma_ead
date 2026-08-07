@@ -5,6 +5,7 @@ namespace Tests\Browser\Auth;
 use App\Enums\Permissions\RolesEnum;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
@@ -131,6 +132,65 @@ class LoginTest extends DuskTestCase
                 ->type('@login-password', 'new-password-123')
                 ->press('@login-submit')
                 ->waitForLocation('/meus-cursos')
+                ->assertAuthenticatedAs($user);
+        });
+    }
+
+    public function test_invalid_password_reset_token_is_rejected(): void
+    {
+        $user = User::factory()->create([
+            'email' => 'reset-invalid@example.com',
+            'password' => bcrypt('old-password'),
+        ]);
+        $user->assignRole(RolesEnum::ALUNO->value);
+
+        $this->browse(function (Browser $browser): void {
+            $browser->visit(route('password.reset', 'token-totalmente-invalido'))
+                ->assertPresent('@reset-password-form')
+                ->type('@reset-password-email', 'reset-invalid@example.com')
+                ->type('@reset-password-password', 'new-password-123')
+                ->type('@reset-password-password-confirmation', 'new-password-123')
+                ->press('@reset-password-submit')
+                ->waitForText('This password reset token is invalid.');
+        });
+
+        $this->assertTrue(Hash::check('old-password', $user->fresh()->password));
+    }
+
+    public function test_admin_is_redirected_to_the_admin_dashboard_after_login(): void
+    {
+        $user = User::factory()->create([
+            'org_id' => null,
+            'email' => 'admin@example.com',
+            'password' => bcrypt('correct-password'),
+        ]);
+        $user->assignRole(RolesEnum::ADMIN->value);
+
+        $this->browse(function (Browser $browser) use ($user): void {
+            $browser->visit('/login')
+                ->assertPresent('@login-form')
+                ->type('@login-email', 'admin@example.com')
+                ->type('@login-password', 'correct-password')
+                ->press('@login-submit')
+                ->waitForLocation('/admin/dashboard')
+                ->assertAuthenticatedAs($user);
+        });
+    }
+
+    public function test_gestor_is_redirected_to_the_admin_dashboard_after_login(): void
+    {
+        $user = User::factory()->gestor()->create([
+            'email' => 'gestor@example.com',
+            'password' => bcrypt('correct-password'),
+        ]);
+
+        $this->browse(function (Browser $browser) use ($user): void {
+            $browser->visit('/login')
+                ->assertPresent('@login-form')
+                ->type('@login-email', 'gestor@example.com')
+                ->type('@login-password', 'correct-password')
+                ->press('@login-submit')
+                ->waitForLocation('/admin/dashboard')
                 ->assertAuthenticatedAs($user);
         });
     }

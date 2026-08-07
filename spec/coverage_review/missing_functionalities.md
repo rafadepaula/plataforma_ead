@@ -7,3 +7,4 @@
 | UC02 | E-mail/CPF duplicado retorna HTTP 422 | ProfileTest.php | `ProfileUpdateRequest` (unique email/cpf) | Form Request inexistente (feature ausente) | 🔴 CRÍTICO |
 | UC02 | Senha atual incorreta retorna erro de validação | ProfileTest.php | `current_password` rule em `PasswordUpdateRequest` | Feature ausente | 🔴 CRÍTICO |
 | UC02 | Usuário não-autenticado retorna redirect /login | ProfileTest.php | middleware `auth` em rota `/profile` | Rota inexistente — nada a proteger | 🔴 CRÍTICO |
+| UC04 | Inativar usuário (Admin/Gestor) | UserManagementTest.php | controle `status` em `resources/views/users/edit.blade.php` | `UpdateUserRequest` aceita `status` (`in:active,inactive`) e `UserController::update()` audita `user.status_changed`, mas a view não expõe nenhum controle — 0 ocorrências de "status" em `resources/views/users/`. Único caminho de UI é "Remover" (soft delete). | 🟡 IMPORTANTE |
