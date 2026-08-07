@@ -4,6 +4,7 @@ namespace Tests\Browser;
 
 use App\Enums\Permissions\RolesEnum;
 use App\Models\Course;
+use App\Models\ForumPostEdit;
 use App\Models\ForumTopic;
 use App\Models\Organization;
 use App\Models\User;
@@ -116,5 +117,92 @@ class ForumDuskTest extends DuskTestCase
         });
 
         $this->assertDatabaseHas('forum_topics', ['id' => $topic->id, 'is_pinned' => true]);
+    }
+
+    public function test_the_edit_history_modal_shows_previous_versions_of_a_topic(): void
+    {
+        $org = Organization::factory()->create();
+        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $student = $this->enrolledStudent($course);
+
+        $topic = ForumTopic::factory()->for($course)->for($student)->create([
+            'org_id' => $course->org_id,
+            'title' => 'Tópico com histórico de edição',
+            'content' => 'Conteúdo atual do tópico.',
+            // `_edit-history-modal.blade.php` only renders the badge/modal
+            // when `$topic->edited_at` is present (`forum/show.blade.php`
+            // passes `'editedAt' => $topic->edited_at`) — there is no UI to
+            // edit a topic, so the history row and this timestamp are
+            // written directly, mirroring `EditForumPostAction`'s fields.
+            'edited_at' => now(),
+        ]);
+
+        $edit = ForumPostEdit::factory()->create([
+            'postable_type' => ForumTopic::class,
+            'postable_id' => $topic->id,
+            'editor_user_id' => $student->id,
+            'previous_content' => 'Conteúdo original antes da edição.',
+            'edited_at' => now(),
+        ]);
+
+        $this->browse(function (Browser $browser) use ($student, $course, $topic, $edit): void {
+            $browser->loginAs($student)
+                ->visit(route('forum.show', [$course, $topic]))
+                ->waitFor('@edit-history-trigger-edit-history-topic-'.$topic->id)
+                ->click('@edit-history-trigger-edit-history-topic-'.$topic->id)
+                ->waitFor('@edit-history-entry-'.$edit->id)
+                ->assertSee('Conteúdo original antes da edição.');
+        });
+    }
+
+    public function test_a_student_who_is_not_enrolled_cannot_access_the_course_forum(): void
+    {
+        $org = Organization::factory()->create();
+        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+
+        /** @var User $notEnrolledStudent */
+        $notEnrolledStudent = User::factory()->create(['org_id' => $org->id]);
+        $notEnrolledStudent->assignRole(RolesEnum::ALUNO->value);
+
+        $this->browse(function (Browser $browser) use ($notEnrolledStudent, $course): void {
+            $browser->loginAs($notEnrolledStudent)
+                ->visit(route('forum.index', $course))
+                ->assertSee('403');
+        });
+    }
+
+    /**
+     * RN14 — `ForumContentSanitizerService::sanitize()` is a bare
+     * `trim(strip_tags($content))`: it strips the `<script>...</script>`
+     * *tags* but not the text between them, so submitting
+     * `<script>alert('xss')</script>Texto legítimo` through the UI
+     * persists `alert('xss')Texto legítimo` (no `<script>` substring, no
+     * executable element — just inert text) and Blade's default `{{ }}`
+     * escaping renders it as plain text in `@dusk="topic-content"`.
+     */
+    public function test_script_tags_submitted_through_the_forum_ui_are_sanitized(): void
+    {
+        $org = Organization::factory()->create();
+        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $student = $this->enrolledStudent($course);
+
+        $this->browse(function (Browser $browser) use ($student, $course): void {
+            $browser->loginAs($student)
+                ->visit(route('forum.create', $course))
+                ->waitFor('@new-topic-form')
+                ->type('title', 'Tópico com script malicioso')
+                ->type('content', "<script>alert('xss')</script>Texto legítimo")
+                ->click('@new-topic-submit')
+                ->waitForText('Tópico com script malicioso')
+                ->assertSee('Texto legítimo')
+                ->assertScript(
+                    "document.querySelectorAll('[dusk=\"topic-content\"] script').length",
+                    0
+                );
+        });
+
+        $topic = ForumTopic::query()->where('course_id', $course->id)->firstOrFail();
+
+        $this->assertStringNotContainsString('<script>', $topic->content);
     }
 }
