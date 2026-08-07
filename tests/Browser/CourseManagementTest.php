@@ -120,4 +120,28 @@ class CourseManagementTest extends DuskTestCase
                 ->assertSee('403');
         });
     }
+
+    public function test_a_course_with_active_enrollments_cannot_be_deleted(): void
+    {
+        $org = Organization::factory()->create();
+        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor->assignRole(RolesEnum::GESTOR->value);
+        $course = Course::factory()->create(['org_id' => $org->id]);
+
+        $aluno = User::factory()->create(['org_id' => $org->id]);
+        $aluno->assignRole(RolesEnum::ALUNO->value);
+        $course->students()->attach($aluno->id, ['enrolled_at' => now(), 'status' => 'active']);
+
+        $this->browse(function (Browser $browser) use ($gestor, $course): void {
+            $browser->loginAs($gestor)
+                ->visit(route('courses.index'))
+                ->waitFor('@delete-course-'.$course->id)
+                ->click('@delete-course-'.$course->id)
+                ->waitForLocation('/courses')
+                ->assertSee('Não é possível excluir um Curso com matrículas ativas.');
+        });
+
+        $this->assertNotSoftDeleted($course);
+        $this->assertDatabaseHas('courses', ['id' => $course->id, 'deleted_at' => null]);
+    }
 }
