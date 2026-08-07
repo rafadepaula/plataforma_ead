@@ -126,4 +126,33 @@ class StudentQuizAttemptTest extends DuskTestCase
                 ->assertMissing('@quiz-attempt-form');
         });
     }
+
+    public function test_the_answer_key_is_shown_when_show_correct_answers_is_enabled(): void
+    {
+        $org = Organization::factory()->create();
+        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $module = Module::factory()->for($course)->create();
+        $lesson = Lesson::factory()->for($module)->create(['type' => 'quiz', 'is_published' => true]);
+        $quiz = Quiz::factory()->for($lesson)->create(['show_correct_answers' => true]);
+
+        $question = QuizQuestion::factory()->for($quiz)->singleChoice()->create([
+            'question_text' => 'Qual é a capital do Brasil?',
+        ]);
+        $correctOption = QuizOption::factory()->for($question, 'question')->correct()->create(['option_text' => 'Brasília']);
+        QuizOption::factory()->for($question, 'question')->incorrect()->create(['option_text' => 'São Paulo']);
+
+        $student = User::factory()->create(['org_id' => null]);
+        $student->assignRole(RolesEnum::ALUNO->value);
+        $course->students()->attach($student->id, ['enrolled_at' => now(), 'status' => 'active']);
+
+        QuizAttempt::factory()->for($quiz)->for($student)->graded()->create();
+
+        $this->browse(function (Browser $browser) use ($student, $lesson, $correctOption): void {
+            $browser->loginAs($student)
+                ->visit(route('student.quizzes.show', $lesson))
+                ->waitFor('@quiz-answer-key')
+                ->assertSee('Gabarito')
+                ->assertSeeIn('@answer-key-option-'.$correctOption->id, '(resposta correta)');
+        });
+    }
 }
