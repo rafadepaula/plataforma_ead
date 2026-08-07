@@ -27,6 +27,8 @@ graph TD
     S04 --> S15[SPEC-15: Logs de Auditoria & Monitoramento Multitenant]
     S00 --> S16[SPEC-16: Povoamento DB Seeders por Ambiente]
     S02 --> S17[SPEC-17: Menu de Navegação Dinâmico & Controle de Acesso]
+    S04 --> S18[SPEC-18: Gestão de Perfil do Usuário]
+    S15 --> S18
 ```
 
 ---
@@ -51,6 +53,7 @@ graph TD
 16. **[`15-system-audit-logging-and-monitoring.md`](file:///home/rafael/projects/cursos/plataforma_ead/spec/specs/15-system-audit-logging-and-monitoring.md)**: Sistema de Logs de Auditoria e Monitoramento Multitenant, rastreamento automatizado de mutações Eloquent, eventos de autenticação (com redação de senhas `[REDACTED]`), ações críticas e expurgo agendado.
 17. **[`16-database-seeders-and-environment-seeding.md`](file:///home/rafael/projects/cursos/plataforma_ead/spec/specs/16-database-seeders-and-environment-seeding.md)**: Povoamento Automatizado do Banco de Dados (Database Seeders) por Ambiente com Isolamento Multitenant, Idempotência (`firstOrCreate`/`updateOrCreate`), Padrão Laravel de Seeding Modular e Supressão de Eventos.
 18. **[`17-dynamic-navigation-menu-and-access-control.md`](file:///home/rafael/projects/cursos/plataforma_ead/spec/specs/17-dynamic-navigation-menu-and-access-control.md)**: Menu de Navegação Dinâmico e Controle de Acesso por Role com Isolamento Multitenant, arquitetura desacoplada via `NavigationRegistry`, `NavigationService` e `NavigationComposer`, filtragem estrita por permissões e destaque por sub-rotas.
+19. **[`18-user-profile-management.md`](file:///home/rafael/projects/cursos/plataforma_ead/spec/specs/18-user-profile-management.md)**: Gestão de Perfil do Usuário (UC02) — auto-atualização de nome/e-mail/CPF e troca de senha com confirmação da senha atual, `App\Rules\Cpf` com dígito verificador aplicada uniformemente ao sistema, invalidação das demais sessões via `Auth::logoutOtherDevices()` e `org_id`/`status` imutáveis por este endpoint (RN08/RN12).
 
 
 ---

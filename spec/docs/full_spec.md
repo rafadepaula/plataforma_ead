@@ -127,7 +127,7 @@ O objetivo deste projeto é o desenvolvimento de uma plataforma de **Ensino a Di
 | **RF01** | Autenticação | Login via e-mail/senha bcrypt com sanitização de sessão e redirecionamento por perfil. | RN08, RN12, RN14 | UC01, UC02 |
 | **RF02** | Recuperação de Senha | Enviar e-mail de redefinição de senha com token temporário de uso único via SMTP. | RN13, RN14 | UC01 |
 | **RF03** | Auto-cadastro e Convite | Auto-cadastro de novo aluno ou vínculo de aluno existente via `invitation_links` sem duplicidade. | RN08, RN09, RN12, RN14 | UC06 |
-| **RF04** | Gestão de Alunos/Gestores | Admin/Gestor cadastrar, listar, buscar, editar e inativar/ativar alunos e gestores. | RN08, RN12, RN14 | UC02, UC04 |
+| **RF04** | Gestão de Alunos/Gestores | Admin/Gestor cadastrar, listar, buscar, editar e inativar/ativar alunos e gestores. | RN08, RN12, RN14, RN17 | UC02, UC04 |
 | **RF05** | Importação em Lote CSV | Upload de arquivo CSV com processamento assíncrono/chunked via `UserImportService`. | RN08, RN12, RN14 | UC05 |
 | **RF06** | Gestão de Cursos e Módulos | Criar, editar, reordenar por drag-and-drop AJAX e soft-deletar Cursos e Módulos com guard de matrículas. | RN08, RN11, RN12, RN14 | UC07 |
 | **RF07** | Conteúdo Multimídia | Cadastrar aulas com Rich Text, Imagem, PDF e Vídeo YouTube sanitizado via `YouTubeSanitizerService`. | RN08, RN12, RN14 | UC08 |
@@ -157,6 +157,7 @@ O objetivo deste projeto é o desenvolvimento de uma plataforma de **Ensino a Di
 | **RF31** | Auditoria Mutações Eloquent | Interceptar automaticamente mutações (`AuditableTrait` / `AuditObserver`) e gravar em `audit_logs`. | RN14 | UC20 |
 | **RF32** | Auditoria Ações Críticas LGPD | Registrar eventos críticos com mascaramento `[REDACTED]` de senhas em logs e arquivos Monolog. | RN14 | UC20 |
 | **RF33** | Painel Auditoria & Expurgo | Tela de consulta de auditorias com modal de diff JSON e expurgo agendado via `audit-logs:prune`. | RN14 | UC20 |
+| **RF34** | Perfil do Usuário | Auto-atualização de nome/e-mail/CPF e troca de senha com confirmação da senha atual, invalidando as demais sessões. | RN08, RN12, RN14, RN17 | UC02 |
 
 ---
 
@@ -193,6 +194,7 @@ O objetivo deste projeto é o desenvolvimento de uma plataforma de **Ensino a Di
 | **RN13** | **Isolamento de Falha de E-mail:** Envio de e-mail envolvido em `try/catch` para garantir que falhas SMTP jamais causem rollback na transação principal de banco. | RF02, RF16, RF22, RF25 | UC01, UC06, UC13, UC15, UC19 |
 | **RN14** | **Mascaramento e Retenção de Auditoria:** Eventos de autenticação mascaram senhas como `[REDACTED]`. Retenção por `AUDIT_LOG_RETENTION_DAYS=365` limpa via `audit-logs:prune`. | RF01, RF02, RF03, RF04, RF05, RF06, RF07, RF08, RF09, RF10, RF15, RF16, RF17, RF18, RF21, RF22, RF23, RF24, RF25, RF27, RF28, RF31, RF32, RF33 | UC01, UC02, UC03, UC04, UC05, UC06, UC07, UC08, UC10, UC11, UC12, UC13, UC14, UC15, UC17, UC18, UC19, UC20 |
 | **RN15** | **Preservação de Histórico no Fórum:** Edições em tópicos/respostas geram snapshots imutáveis em `forum_post_edits` acessíveis publicamente. | RF22, RF30 | UC15 |
+| **RN17** | **Validação de CPF por Dígito Verificador:** Todo CPF informado é validado por checksum módulo 11 via `App\Rules\Cpf`, rejeitando sequências de dígitos idênticos. Aplicada uniformemente em perfil, CRUD de usuários e convite; deliberadamente ausente da importação CSV, onde a linha inválida é pulada em vez de derrubar o lote. | RF01, RF03, RF04, RF34 | UC02, UC04, UC06 |
 | **RN16** | **Povoamento Idempotente de Seeders:** O `DatabaseSeeder` executa de forma idempotente (`firstOrCreate`/`updateOrCreate`) e impede a geração de dados fictícios em produção. | RF29 | UC22 |
 
 ---

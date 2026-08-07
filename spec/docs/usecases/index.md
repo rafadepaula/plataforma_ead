@@ -12,7 +12,7 @@ Este diretório contém a documentação exata de todos os **Casos de Uso (UC01 
 
 ### **Módulo 1: Autenticação, Perfil e Multitenancy**
 1. **[`UC01 — Autenticar, Encerrar Sessão e Recuperar Senha`](file:///home/rafael/projects/cursos/plataforma_ead/spec/docs/usecases/UC01-autenticacao-logout-e-recuperacao-de-senha.md)** *(RF01, RF02 | RN08, RN12, RN13, RN14)*
-2. **[`UC02 — Gestão de Perfil do Usuário`](file:///home/rafael/projects/cursos/plataforma_ead/spec/docs/usecases/UC02-gestao-de-perfil-do-usuario.md)** *(RF01, RF04 | RN08, RN12, RN14)*
+2. **[`UC02 — Gestão de Perfil do Usuário`](file:///home/rafael/projects/cursos/plataforma_ead/spec/docs/usecases/UC02-gestao-de-perfil-do-usuario.md)** *(RF01, RF04, RF34 | RN08, RN12, RN14, RN17)*
 3. **[`UC03 — Gestão de Organizações e Impersonate Org`](file:///home/rafael/projects/cursos/plataforma_ead/spec/docs/usecases/UC03-gestao-de-organizacoes-e-impersonate-org.md)** *(RF23, RF24 | RN12, RN14)*
 4. **[`UC04 — Gestão de Usuários e Matrículas Manuais`](file:///home/rafael/projects/cursos/plataforma_ead/spec/docs/usecases/UC04-gestao-de-usuarios-e-matriculas-manuais.md)** *(RF04, RF21 | RN08, RN12, RN14)*
 5. **[`UC05 — Importação em Lote de Usuários via CSV`](file:///home/rafael/projects/cursos/plataforma_ead/spec/docs/usecases/UC05-importacao-em-lote-de-usuarios-via-csv.md)** *(RF05 | RN08, RN12, RN14)*
@@ -52,9 +52,10 @@ Este diretório contém a documentação exata de todos os **Casos de Uso (UC01 
 | Requisito Funcional (RF) | Regras de Negócio Vinculadas (RN) | Casos de Uso Associados (UC) |
 | :--- | :--- | :--- |
 | **RF01** (Autenticação) | RN08, RN12, RN14 | UC01, UC02 |
+| **RF34** (Perfil do Usuário) | RN08, RN12, RN14, RN17 | UC02 |
 | **RF02** (Recuperação de Senha) | RN13, RN14 | UC01 |
 | **RF03** (Convites Adaptativos) | RN08, RN09, RN12, RN14 | UC06 |
-| **RF04** (Gestão Usuários) | RN08, RN12, RN14 | UC02, UC04 |
+| **RF04** (Gestão Usuários) | RN08, RN12, RN14, RN17 | UC02, UC04 |
 | **RF05** (Importação CSV) | RN08, RN12, RN14 | UC05 |
 | **RF06** (Cursos e Módulos) | RN08, RN11, RN12, RN14 | UC07 |
 | **RF07** (Conteúdo Multimídia) | RN08, RN12, RN14 | UC08 |
@@ -106,4 +107,5 @@ Este diretório contém a documentação exata de todos os **Casos de Uso (UC01 
 | **RN13** (Isolamento E-mail try/catch) | RF02, RF16, RF22, RF25 | UC01, UC06, UC13, UC15, UC19 |
 | **RN14** (Mascaramento LGPD & Retenção Auditoria) | RF01, RF02, RF03, RF04, RF05, RF06, RF07, RF08, RF09, RF10, RF15, RF16, RF17, RF18, RF21, RF22, RF23, RF24, RF25, RF27, RF28, RF31, RF32, RF33 | UC01, UC02, UC03, UC04, UC05, UC06, UC07, UC08, UC10, UC11, UC12, UC13, UC14, UC15, UC17, UC18, UC19, UC20 |
 | **RN15** (Histórico Edições Fórum) | RF22, RF30 | UC15 |
+| **RN17** (Validação de CPF por Dígito Verificador) | RF01, RF03, RF04, RF34 | UC02, UC04, UC06 |
 | **RN16** (Idempotência & Seeders) | RF29 | UC22 |
