@@ -207,9 +207,20 @@ class MultiOrgEnrollmentTest extends DuskTestCase
                 ->click('@invitation-name') // blur the e-mail field to trigger the AJAX check
                 ->waitFor('@invitation-existing-account-hint')
                 ->waitUntilMissing('@invitation-name')
+                // `SmartInvitationForm` binds BOTH a blur handler (fires
+                // immediately) and a 400ms-debounced `input` handler, so a
+                // second `checkEmail` is still pending when the collapse
+                // completes. Submitting before it settles lets it re-run
+                // `toggleFields` mid-navigation and restore `required` on
+                // the hidden `password_confirmation`, which silently blocks
+                // the submit. Outwait the debounce.
+                ->pause(700)
                 ->type('@invitation-password', 'senha-errada')
                 ->press('Matricular-me')
-                ->assertSee('Senha incorreta para o e-mail informado.')
+                // `waitForText`, not `assertSee`: the submit triggers a full
+                // page reload back to `/convite/{token}` with the error
+                // flashed, and asserting immediately races that navigation.
+                ->waitForText('Senha incorreta para o e-mail informado.')
                 ->assertGuest();
         });
 
