@@ -52,6 +52,13 @@ For every response the user provides, you MUST immediately use your code search 
 2. Find existing failure/success logs or Dusk/PHPUnit tests for the affected feature.
 3. Identify exact line numbers, DB queries, and failure branches.
 
+### Rule 4: Dusk Test Is Conditional, Never Automatic
+A Dusk E2E test is part of the plan ONLY when both are true:
+1. The bug is a UI/browser bug (visual rendering, JS interaction, drag-and-drop, modal, AJAX polling — something a PHPUnit request test cannot exercise).
+2. No existing test already covers this scenario. Search `tests/Browser/` and `tests/Feature/` for the affected feature before proposing a new Dusk test; if a test already reproduces (or would catch) this bug, reference that existing test instead of asking for a new one.
+
+If the bug is a backend/logic bug, or an existing test already covers it, the Test Specification Plan MUST NOT include a Dusk test.
+
 ### Rule 3: Output File Contract
 Every bug report MUST be written to `spec/bugs/BUG-{id}-{slug}.md` using `write_to_file`.
 
@@ -133,13 +140,14 @@ The generated file MUST adhere strictly to the following structure:
   - Assert response status (e.g. 422 or 403).
   - Assert database missing / model state.
 
-### Browser Test (Laravel Dusk - if UI bug):
+### Browser Test (Laravel Dusk):
+Include this subsection ONLY if the bug is a UI/browser bug AND no existing test already covers it (see Rule 4). Otherwise write: "Not applicable — [backend bug, covered by PHPUnit above / already covered by existing test `tests/Browser/...`]."
 - **Test File:** `tests/Browser/CourseUiTest.php`
 - **Selectors to interact with:** `dusk="submit-course-btn"`, `dusk="error-alert"`
 
 ## 6. Acceptance Criteria for Fix Verification
 - [ ] Fix passes PHPUnit test `tests/Feature/...`
-- [ ] Fix passes Dusk E2E test `tests/Browser/...`
+- [ ] Fix passes Dusk E2E test `tests/Browser/...` (only if a Dusk test was included in section 5)
 - [ ] No regression introduced in related tenant/auth scopes.
 ```
 
