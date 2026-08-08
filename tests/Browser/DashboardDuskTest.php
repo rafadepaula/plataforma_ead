@@ -115,8 +115,12 @@ class DashboardDuskTest extends DuskTestCase
                 ->visit(route('settings.edit'))
                 ->waitFor('@settings-form')
                 ->type('signature', 'Diretoria Pedagógica — Minha Org')
-                ->click('@settings-submit')
-                ->waitForReload()
+                // `waitForReload()` must WRAP the action, not follow it: on
+                // its own it starts polling for the current node to go stale
+                // only after the click, so a reload that lands first is never
+                // observed and it times out. This was flaky in the full suite
+                // and passed in isolation for exactly that reason.
+                ->waitForReload(fn (Browser $b) => $b->click('@settings-submit'))
                 ->visit(route('settings.edit'))
                 ->assertInputValue('signature', 'Diretoria Pedagógica — Minha Org');
         });
