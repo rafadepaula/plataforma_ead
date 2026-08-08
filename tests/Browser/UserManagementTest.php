@@ -73,21 +73,74 @@ class UserManagementTest extends DuskTestCase
         ]);
     }
 
-    /**
-     * BLOQUEADO — funcionalidade ausente na UI.
-     *
-     * `UpdateUserRequest` aceita `status` (`sometimes|in:active,inactive`) e
-     * `UserController::update()` registra o evento `user.status_changed`,
-     * mas `resources/views/users/edit.blade.php` não expõe nenhum controle
-     * de `status` (0 ocorrências de "status" em `resources/views/users/`).
-     * Não há caminho de UI para inativar um usuário — apenas "Remover"
-     * (soft delete via `users.destroy`).
-     *
-     * @see spec/coverage_review/missing_functionalities.md
-     */
     public function test_gestor_can_deactivate_a_user_via_the_ui(): void
     {
-        $this->markTestSkipped('UI ausente: sem controle de status em users/edit.blade.php.');
+        $gestor = User::factory()->gestor()->create();
+        $aluno = User::factory()->aluno()->create([
+            'org_id' => $gestor->org_id,
+            'name' => 'Aluno Para Inativar',
+            'status' => 'active',
+        ]);
+
+        $this->browse(function (Browser $browser) use ($gestor, $aluno): void {
+            $browser->loginAs($gestor)
+                ->visit(route('users.edit', $aluno))
+                ->waitFor('@user-form')
+                ->select('@user-status-select', 'inactive')
+                ->type('@user-status-reason', 'Aluno solicitou o encerramento do acesso.')
+                ->press('Salvar Alterações')
+                ->waitForText('Usuário atualizado com sucesso.')
+                ->waitFor('@user-status-'.$aluno->id)
+                // `<x-ui.badge>` carries `text-transform: uppercase`, and
+                // Selenium's getText() returns the rendered (transformed)
+                // text — so the badge reads INATIVO, not Inativo.
+                ->assertSeeIn('@user-status-'.$aluno->id, 'INATIVO');
+        });
+
+        $this->assertDatabaseHas('users', [
+            'id' => $aluno->id,
+            'status' => 'inactive',
+        ]);
+
+        $this->assertDatabaseHas('audit_logs', [
+            'event' => 'user.status_changed',
+        ]);
+    }
+
+    public function test_a_deactivated_user_cannot_login(): void
+    {
+        $gestor = User::factory()->gestor()->create();
+        $aluno = User::factory()->aluno()->create([
+            'org_id' => $gestor->org_id,
+            'email' => 'aluno.inativado@example.com',
+            'password' => bcrypt('correct-password'),
+            'status' => 'active',
+        ]);
+
+        $this->browse(function (Browser $browser) use ($gestor, $aluno): void {
+            $browser->loginAs($gestor)
+                ->visit(route('users.edit', $aluno))
+                ->waitFor('@user-form')
+                ->select('@user-status-select', 'inactive')
+                ->type('@user-status-reason', 'Desligamento da organização.')
+                ->press('Salvar Alterações')
+                ->waitForText('Usuário atualizado com sucesso.')
+                ->logout();
+        });
+
+        $this->browse(function (Browser $browser): void {
+            $browser->visit('/login')
+                ->type('@login-email', 'aluno.inativado@example.com')
+                ->type('@login-password', 'correct-password')
+                ->press('@login-submit')
+                ->waitForText('These credentials do not match our records.')
+                ->assertGuest();
+        });
+
+        $this->assertDatabaseHas('users', [
+            'id' => $aluno->id,
+            'status' => 'inactive',
+        ]);
     }
 
     public function test_gestor_can_manually_enroll_a_student_in_a_course(): void
