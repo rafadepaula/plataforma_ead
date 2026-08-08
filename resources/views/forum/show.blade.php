@@ -20,6 +20,7 @@
                                 `since_id` starting point for `ForumPolling.js`.
 
     Expected routes (Bucket 2 contract):
+      - `forum.edit`              GET    .../topics/{topic}/edit
       - `forum.update`            PUT    .../topics/{topic}
       - `forum.destroy`           DELETE .../topics/{topic}
       - `forum.pin`               POST   .../topics/{topic}/pin
@@ -67,6 +68,15 @@
                     data-modal-target="report-modal"
                     dusk="report-topic-{{ $topic->id }}"
                 >Denunciar</button>
+
+                @if($canEditTopic)
+                    <a
+                        href="{{ route('forum.edit', [$course, $topic]) }}"
+                        class="btn btn-ghost"
+                        style="border-radius: 0px; padding: 4px 10px; font-size: 11px;"
+                        dusk="edit-topic-{{ $topic->id }}"
+                    >Editar</a>
+                @endif
 
                 @if($canPin)
                     <form method="POST" action="{{ route('forum.pin', [$course, $topic]) }}" dusk="pin-form-{{ $topic->id }}">

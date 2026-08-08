@@ -21,7 +21,7 @@ use Illuminate\Support\Facades\Gate;
 /**
  * SPEC-10 §2/RF22 — per-course `ForumTopic` list (`index`), creation
  * (`create`/`store`), thread view (`show`), edit/delete
- * (`update`/`destroy`), and the Gestor/Admin-only pin toggle (`pin`).
+ * (`edit`/`update`/`destroy`), and the Gestor/Admin-only pin toggle (`pin`).
  * Sits behind `student.enrolled` for every action except `pin` (see
  * `routes/web.php`'s `role:admin|gestor` group).
  *
@@ -141,6 +141,16 @@ class ForumTopicController extends Controller
             'canModerate' => $this->isGestorOrAdminForCourse($user, $courseModel),
             'lastReplyId' => (int) ($replies->max('id') ?? 0),
         ]);
+    }
+
+    public function edit(Request $request, int $course, int $topic): View
+    {
+        $courseModel = $this->resolveCourse($course);
+        $topicModel = $this->resolveTopic($topic, $courseModel);
+
+        Gate::authorize('update', $topicModel);
+
+        return view('forum.edit', ['course' => $courseModel, 'topic' => $topicModel]);
     }
 
     public function update(UpdateForumTopicRequest $request, int $course, int $topic): RedirectResponse

@@ -213,6 +213,7 @@ Route::middleware(['auth', 'student.enrolled'])->prefix('courses/{course}/forum'
     Route::get('/', [ForumTopicController::class, 'index'])->name('forum.index');
     Route::get('/create', [ForumTopicController::class, 'create'])->name('forum.create');
     Route::post('/', [ForumTopicController::class, 'store'])->name('forum.store');
+    Route::get('/topics/{topic}/edit', [ForumTopicController::class, 'edit'])->name('forum.edit');
     Route::get('/topics/{topic}', [ForumTopicController::class, 'show'])->name('forum.show');
     Route::put('/topics/{topic}', [ForumTopicController::class, 'update'])->name('forum.update');
     Route::delete('/topics/{topic}', [ForumTopicController::class, 'destroy'])->name('forum.destroy');
