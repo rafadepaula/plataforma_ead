@@ -75,4 +75,27 @@ class HelpCenterDuskTest extends DuskTestCase
                 ->assertSeeIn('@help-article-content-student.courses.index', 'Conteúdo global exibido quando não há artigo específico da organização.');
         });
     }
+
+    public function test_the_help_button_shows_a_placeholder_when_no_article_exists(): void
+    {
+        /** @var User $student */
+        $student = User::factory()->create(['org_id' => null]);
+        $student->assignRole(RolesEnum::ALUNO->value);
+
+        // No `HelpArticle` seeded for `student.courses.index` — the
+        // button must still be active and open a placeholder modal
+        // instead of rendering disabled/inert.
+        $this->browse(function (Browser $browser) use ($student): void {
+            $browser->loginAs($student)
+                ->visit(route('student.courses.index'))
+                ->waitFor('@help-button-student.courses.index')
+                // See the docblock above for why this wait is required
+                // before clicking the trigger button.
+                ->waitUntilMissing('.dialog-backdrop')
+                ->click('@help-button-student.courses.index')
+                ->waitFor('@help-placeholder-content-student.courses.index')
+                ->assertSeeIn('.dialog-title', 'Ajuda')
+                ->assertSeeIn('@help-placeholder-content-student.courses.index', 'Estamos preparando');
+        });
+    }
 }

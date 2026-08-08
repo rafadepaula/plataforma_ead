@@ -77,7 +77,7 @@ class HelpCenterTest extends TestCase
         $response->assertSee('Conteúdo de ajuda para o Aluno.');
     }
 
-    public function test_help_button_renders_inert_when_no_article_exists_for_the_screen(): void
+    public function test_help_button_renders_placeholder_when_no_article_exists_for_the_screen(): void
     {
         $this->actingAsAdmin();
 
@@ -86,10 +86,9 @@ class HelpCenterTest extends TestCase
         $response->assertOk();
 
         // Scoped to the specific help-button element (rather than a bare
-        // `assertSee('disabled')` anywhere on the page) so this stays
-        // resilient to unrelated `disabled` inputs/buttons elsewhere on
-        // the screen and only passes when *this* button actually renders
-        // the inert/disabled branch.
+        // `assertSee()` anywhere on the page) so this stays resilient to
+        // unrelated buttons elsewhere on the screen and only passes when
+        // *this* button actually renders the active placeholder branch.
         preg_match(
             '/<button[^>]*dusk="help-button-organizations\.index"[^>]*>/',
             $response->getContent(),
@@ -97,6 +96,9 @@ class HelpCenterTest extends TestCase
         );
 
         $this->assertNotEmpty($matches, 'help-button-organizations.index element not found in response.');
-        $this->assertStringContainsString('disabled', $matches[0]);
+        $this->assertStringNotContainsString('disabled', $matches[0]);
+
+        $response->assertSee('help-placeholder-content-organizations.index', false);
+        $response->assertSee('Estamos preparando');
     }
 }

@@ -4,9 +4,13 @@
     `/convite/*`, `/validar-certificado/*`). The `HelpButton` component
     class already resolved `$article` (org-specific > global > null) —
     this view only renders. When `$article` is null (no content authored
-    yet for this screen's `key`), the icon renders inert/disabled per
-    RN05's "100% coverage may outpace content authoring" edge case: never
-    a broken modal, never a 500.
+    yet for this screen's `key`), RN05's "100% coverage may outpace
+    content authoring" edge case still applies, but a disabled/inert
+    button gives the user zero feedback when clicked — it just looks
+    broken. Instead this branch renders an ACTIVE button that opens a
+    placeholder modal ("Estamos preparando o conteúdo de ajuda desta
+    tela."), satisfying the original "never a broken modal, never a 500"
+    guarantee while still telling the user something happened.
 --}}
 @php
     $modalId = 'help-modal-'.str($key)->slug();
@@ -41,10 +45,10 @@
     <button
         type="button"
         class="btn btn-ghost btn-icon"
-        aria-label="Ajuda indisponível"
-        disabled
+        aria-label="Ajuda"
+        data-modal-target="{{ $modalId }}"
         dusk="help-button-{{ $key }}"
-        style="color: var(--color-neutral-400); border-radius: 0px; cursor: not-allowed;"
+        style="color: var(--color-text); border-radius: 0px;"
     >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="10"></circle>
@@ -52,4 +56,14 @@
             <line x1="12" y1="17" x2="12.01" y2="17"></line>
         </svg>
     </button>
+
+    <x-ui.modal id="{{ $modalId }}" title="Ajuda" size="md">
+        <div dusk="help-placeholder-content-{{ $key }}" style="white-space: pre-wrap; font-size: 14px; line-height: 1.6;">
+            Estamos preparando o conteúdo de ajuda desta tela.
+        </div>
+
+        <x-slot:actions>
+            <button type="button" class="btn btn-ghost" data-modal-dismiss="true" style="border-radius: 0px;">Fechar</button>
+        </x-slot:actions>
+    </x-ui.modal>
 @endif
