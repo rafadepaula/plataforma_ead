@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\Permissions\RolesEnum;
+use App\Models\Certificate;
 use App\Models\Course;
 use App\Models\Lesson;
 use App\Models\LessonProgress;
@@ -45,11 +46,25 @@ class ClassroomController extends Controller
 
         $enrollment = $user->courses()->withoutGlobalScopes()->where('courses.id', $course->id)->first();
 
+        // UC13 — the "Certificado indisponível. X%" classroom banner:
+        // `null` here means the student sees the unavailable-with-progress
+        // message; a found row (issued, regardless of `rule_type`s beyond
+        // `all_lessons`) means they see the download link instead. Reuses
+        // this same `$progressPercentage` for the message — never a
+        // separately-computed aggregate of the Course's completion rules
+        // (see `IssueCertificateAction`'s docblock: rules are AND'd, not
+        // averaged into a percentage of their own).
+        $certificate = Certificate::query()
+            ->where('user_id', $user->id)
+            ->where('course_id', $course->id)
+            ->first();
+
         return view('classroom.show', [
             'course' => $course,
             'modules' => $modules,
             'completedLessonIds' => $completedLessonIds,
             'progressPercentage' => (int) ($enrollment->pivot->progress_percentage ?? 0),
+            'certificate' => $certificate,
         ]);
     }
 

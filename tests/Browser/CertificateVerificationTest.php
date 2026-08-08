@@ -92,4 +92,33 @@ class CertificateVerificationTest extends DuskTestCase
                 ->assertSee('404');
         });
     }
+
+    /**
+     * UC13 — the Aluno's classroom shows "Certificado indisponível. X%"
+     * (RN-implied, see `ClassroomController::show()`) when no `Certificate`
+     * row exists yet for the student/course pair, reusing the exact same
+     * `course_user.progress_percentage` the progress bar already shows —
+     * never a separately-computed value.
+     */
+    public function test_student_without_a_certificate_sees_the_unavailable_banner_with_progress(): void
+    {
+        $org = Organization::factory()->create();
+        $course = Course::factory()->create(['org_id' => $org->id, 'title' => 'Curso Sem Certificado Dusk']);
+        $student = User::factory()->create(['org_id' => null]);
+        $student->assignRole('aluno');
+
+        $course->students()->attach($student->id, [
+            'enrolled_at' => Carbon::now(),
+            'status' => 'active',
+            'progress_percentage' => 45,
+        ]);
+
+        $this->browse(function (Browser $browser) use ($student, $course): void {
+            $browser->loginAs($student)
+                ->visit(route('classroom.show', $course))
+                ->waitFor('@certificate-unavailable')
+                ->assertSeeIn('@certificate-unavailable', 'Certificado indisponível. 45%')
+                ->assertMissing('@download-certificate');
+        });
+    }
 }

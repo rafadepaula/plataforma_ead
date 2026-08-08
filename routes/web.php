@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\CertificateController;
 use App\Http\Controllers\ClassroomController;
+use App\Http\Controllers\CourseCompletionRuleController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EnrollmentController;
@@ -131,6 +132,26 @@ Route::middleware(['auth', 'role:admin|gestor'])->group(function (): void {
         ->name('courses.certificates.index');
     Route::put('certificates/{certificate}/revoke', [CertificateController::class, 'revoke'])
         ->name('certificates.revoke');
+
+    // UC13 — the Gestor/Admin's Course-level completion-rule CRUD
+    // (`index`/`store`/`destroy` only, see `CourseCompletionRuleController`'s
+    // docblock). Mirrors `courses.enrollments.*`'s nesting-under-`{course}`
+    // pattern one block above.
+    Route::get('courses/{course}/completion-rules', [CourseCompletionRuleController::class, 'index'])
+        ->name('courses.completion-rules.index');
+    Route::post('courses/{course}/completion-rules', [CourseCompletionRuleController::class, 'store'])
+        ->name('courses.completion-rules.store');
+    Route::delete('courses/{course}/completion-rules/{completion_rule}', [CourseCompletionRuleController::class, 'destroy'])
+        ->name('courses.completion-rules.destroy');
+});
+
+// UC13 — `certificates.download` sits outside the `role:admin|gestor`
+// group above: unlike `index`/`revoke`, download is also reachable by the
+// Aluno who OWNS the certificate (their "Certificado indisponível. X%"
+// classroom banner turns into a download link once issued). Plain `auth`
+// here; `CertificateController::download()`'s internal check still
+// enforces staff-role-or-owner, so a non-owner Aluno remains blocked.
+Route::middleware('auth')->group(function (): void {
     Route::get('certificates/{certificate}/download', [CertificateController::class, 'download'])
         ->name('certificates.download');
 });

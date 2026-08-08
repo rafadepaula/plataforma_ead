@@ -60,7 +60,7 @@ class CertificateController extends Controller
 
     public function download(Certificate $certificate): Response
     {
-        $this->authorizeStaffAccess($certificate);
+        $this->authorizeDownloadAccess($certificate);
 
         return $this->certificatePdfService->generate($certificate)
             ->download("certificado-{$certificate->validation_hash}.pdf");
@@ -76,12 +76,24 @@ class CertificateController extends Controller
      * `CertificatePolicy::parentCourse()` does: `Certificate` carries no
      * scope of its own, so a cross-org Gestor must see the REAL owning
      * Course to be correctly denied, not `null`.
+     *
+     * UC13 — also grants the Aluno who OWNS the certificate (`user_id`
+     * match), since `certificates.download` sits behind plain `auth` (see
+     * `routes/web.php`) to let the classroom's "baixar certificado" link
+     * work for the student themselves, without opening the door to any
+     * other Aluno's certificate.
      */
-    private function authorizeStaffAccess(Certificate $certificate): void
+    private function authorizeDownloadAccess(Certificate $certificate): void
     {
         $user = request()->user();
 
-        abort_unless($user?->hasAnyRole([RolesEnum::ADMIN->value, RolesEnum::GESTOR->value]), 403);
+        abort_unless($user, 403);
+
+        if ((int) $user->id === (int) $certificate->user_id) {
+            return;
+        }
+
+        abort_unless($user->hasAnyRole([RolesEnum::ADMIN->value, RolesEnum::GESTOR->value]), 403);
 
         if ($user->hasRole(RolesEnum::GESTOR->value)) {
             $course = $certificate->course()->withoutGlobalScopes()->firstOrFail();

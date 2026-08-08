@@ -22,6 +22,7 @@
                 </td>
                 <td style="padding: 12px 16px; display: flex; gap: 8px;">
                     <x-ui.button variant="secondary" size="sm" href="{{ route('courses.modules.index', $course) }}" dusk="manage-modules-{{ $course->id }}">Módulos</x-ui.button>
+                    <x-ui.button variant="secondary" size="sm" href="{{ route('courses.completion-rules.index', $course) }}" dusk="manage-completion-rules-{{ $course->id }}">Regras de Conclusão</x-ui.button>
                     <x-ui.button variant="secondary" size="sm" href="{{ route('courses.edit', $course) }}" dusk="edit-course-{{ $course->id }}">Editar</x-ui.button>
 
                     <form method="POST" action="{{ route('courses.destroy', $course) }}" dusk="delete-form-{{ $course->id }}">

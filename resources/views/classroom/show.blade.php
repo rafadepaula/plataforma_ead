@@ -11,6 +11,9 @@
       - `$completedLessonIds` array<int> of this student's completed
                                `lesson_progress.lesson_id` for this Course.
       - `$progressPercentage` int, mirrors `course_user.progress_percentage`.
+      - `$certificate`        UC13 — `?Certificate` for this student/course
+                               pair (`null` until `IssueCertificateAction`
+                               issues one).
 --}}
 
 @section('content')
@@ -31,6 +34,16 @@
         <div style="background: var(--color-neutral-200); height: 10px; border-radius: 0px; overflow: hidden;">
             <div style="background: var(--color-accent); height: 100%; width: {{ (int) $progressPercentage }}%;" dusk="course-progress-bar"></div>
         </div>
+    </div>
+
+    <div style="margin-bottom: 24px;">
+        @if($certificate)
+            <x-ui.button href="{{ route('certificates.download', $certificate) }}" dusk="download-certificate">Baixar Certificado</x-ui.button>
+        @else
+            <div dusk="certificate-unavailable" style="padding: 12px 16px; border: 1px solid var(--color-divider); background: var(--color-surface); font-size: 13px; color: var(--color-neutral-600);">
+                Certificado indisponível. {{ (int) $progressPercentage }}%
+            </div>
+        @endif
     </div>
 
     @forelse($modules as $module)
