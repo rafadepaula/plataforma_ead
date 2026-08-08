@@ -11,7 +11,7 @@ Cada método foi executado isoladamente com `vendor/bin/sail artisan dusk --filt
 | 5 | UC02 | Não-autenticado redirect /login | — | — | ❌ FEATURE AUSENTE |
 | 6 | UC04 | Criar usuário | `test_gestor_can_create_a_user_via_the_ui` | UserManagementTest.php | ✅ PASS |
 | 7 | UC04 | Editar usuário | `test_gestor_can_edit_a_user_via_the_ui` | UserManagementTest.php | ✅ PASS |
-| 8 | UC04 | Inativar usuário | `test_gestor_can_deactivate_a_user_via_the_ui` | UserManagementTest.php | ⏭️ SKIPPED — UI ausente |
+| 8 | UC04 | Inativar usuário | `test_gestor_can_deactivate_a_user_via_the_ui` | UserManagementTest.php | ✅ PASS — UI implementada |
 | 9 | UC04 | Matricular aluno | `test_gestor_can_manually_enroll_a_student_in_a_course` | UserManagementTest.php | ✅ PASS |
 | 10 | UC04 | Remover matrícula | `test_gestor_can_revoke_a_student_enrollment` | UserManagementTest.php | ✅ PASS |
 | 11 | UC04 | E-mail duplicado rejeitado | `test_creating_a_user_with_a_duplicate_email_is_rejected` | UserManagementTest.php | ✅ PASS |
@@ -31,21 +31,21 @@ Cada método foi executado isoladamente com `vendor/bin/sail artisan dusk --filt
 | 24 | UC08 | URL YouTube inválida | `test_an_invalid_youtube_url_is_rejected` | LessonMultimediaTest.php | ✅ PASS |
 | 25 | UC08 | Edição de lição | `test_gestor_can_edit_an_existing_lesson` | LessonMultimediaTest.php | ✅ PASS |
 | 26 | UC07 | Guard RN11 exclusão de curso | `test_a_course_with_active_enrollments_cannot_be_deleted` | CourseManagementTest.php | ✅ PASS |
-| 27 | UC05 | Cabeçalho inválido → alerta JS | — | — | ❌ FEATURE AUSENTE |
-| 28 | UC05 | Sem colunas obrigatórias → "Cabeçalho inválido" | — | — | ❌ FEATURE AUSENTE |
+| 27 | UC05 | Cabeçalho inválido → alerta JS | `test_a_csv_with_an_invalid_header_is_rejected_before_upload` | MultiTenantStudentImportTest.php | ✅ PASS — validação implementada |
+| 28 | UC05 | Sem colunas obrigatórias → "Cabeçalho inválido" | `test_a_csv_missing_a_required_column_is_rejected` | MultiTenantStudentImportTest.php | ✅ PASS — validação implementada |
 | 29 | UC05 | E-mail duplicado no CSV | `test_a_duplicate_email_in_the_csv_reuses_the_existing_user` | MultiTenantStudentImportTest.php | ✅ PASS |
 | 30 | UC05 | Admin sem impersonate (RN12) | `test_an_admin_without_an_impersonated_org_cannot_open_the_csv_import_screen` | MultiTenantStudentImportTest.php | ✅ PASS |
 | 31 | UC03 | UnresolvedOrgContextException (RN12) | `test_an_admin_without_an_impersonated_org_cannot_create_a_course` | ImpersonateOrgTest.php | ✅ PASS |
 | 32 | UC11 | Criação de questionário via UI | `test_gestor_can_create_a_quiz_via_the_ui` | EssayGradingScreenTest.php | ✅ PASS |
 | 33 | UC11 | Quiz sem opção correta | `test_a_single_choice_question_without_a_correct_option_is_rejected` | EssayGradingScreenTest.php | ✅ PASS |
-| 34 | UC12 | Cronômetro expirado auto-submete | — | — | ❌ FEATURE AUSENTE (divergência de design) |
+| 34 | UC12 | Cronômetro expirado | `test_an_expired_quiz_timer_shows_the_time_is_up_state_without_submitting` | StudentQuizAttemptTest.php | ✅ PASS — auto-submit descartado por decisão; estado "Tempo esgotado" coberto |
 | 35 | UC12 | Gabarito (RN04) | `test_the_answer_key_is_shown_when_show_correct_answers_is_enabled` | StudentQuizAttemptTest.php | ✅ PASS |
-| 36 | UC13 | Regras de conclusão via UI | — | — | ❌ FEATURE AUSENTE |
-| 37 | UC13 | "Certificado indisponível. X%" | — | — | ❌ FEATURE AUSENTE |
-| 38 | UC15 | Edição de tópico + histórico | `test_the_edit_history_modal_shows_previous_versions_of_a_topic` | ForumDuskTest.php | ⚠️ PARCIAL — histórico coberto, edição via UI ausente |
+| 36 | UC13 | Regras de conclusão via UI | `CourseCompletionRuleTest` (Dusk + Feature) | CourseCompletionRuleTest.php | ✅ PASS — CRUD implementado |
+| 37 | UC13 | "Certificado indisponível. X%" | `test_student_without_a_certificate_sees_the_unavailable_banner_with_progress` | CertificateVerificationTest.php | ✅ PASS — aviso implementado |
+| 38 | UC15 | Edição de tópico + histórico | `test_an_author_can_edit_a_topic_and_the_history_records_the_previous_version` | ForumDuskTest.php | ✅ PASS — tela de edição implementada |
 | 39 | UC15 | Aluno não matriculado 403 | `test_a_student_who_is_not_enrolled_cannot_access_the_course_forum` | ForumDuskTest.php | ✅ PASS |
 | 40 | UC15 | Sanitização XSS (RN14) | `test_script_tags_submitted_through_the_forum_ui_are_sanitized` | ForumDuskTest.php | ✅ PASS |
-| 41 | UC16 | Chave sem artigo → "Estamos preparando..." | — | — | ❌ FEATURE AUSENTE (divergência de design) |
+| 41 | UC16 | Chave sem artigo → "Estamos preparando..." | `test_the_help_button_shows_a_placeholder_when_no_article_exists` | HelpCenterDuskTest.php | ✅ PASS — placeholder implementado |
 | 42 | UC16 | Fallback org → global (RN05) | `test_the_help_button_falls_back_to_the_global_article` | HelpCenterDuskTest.php | ✅ PASS (após 1 correção) |
 | 43 | UC16 | Landing page com assertions | `test_the_landing_page_renders_its_sections_and_calls_to_action` | ExampleSmokeTest.php | ✅ PASS |
 | 44 | UC17 | Tipo de relatório inválido → 404 | `test_an_unknown_report_type_returns_404` | DashboardDuskTest.php | ✅ PASS |
