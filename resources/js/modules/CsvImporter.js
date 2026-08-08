@@ -9,6 +9,7 @@ export class CsvImporter {
     constructor(httpClient) {
         this.httpClient = httpClient;
         this.chunkSize = 50;
+        this.requiredColumns = ['name', 'email'];
     }
 
     init() {
@@ -43,6 +44,20 @@ export class CsvImporter {
         }
 
         const text = await this.readFileAsText(file);
+        const header = this.extractHeader(text);
+
+        const missingColumns = this.requiredColumns.filter((column) => !header.includes(column));
+        if (missingColumns.length > 0) {
+            this.showResults(
+                form,
+                `Cabeçalho inválido: coluna(s) obrigatória(s) ausente(s) [${missingColumns.join(', ')}]. `
+                    + `Cabeçalho esperado: ${this.requiredColumns.join(', ')} (cpf opcional). `
+                    + `Cabeçalho encontrado: ${header.length > 0 ? header.join(', ') : '(vazio)'}.`,
+                'error'
+            );
+            return;
+        }
+
         const rows = this.parseCsv(text);
 
         if (rows.length === 0) {
@@ -91,15 +106,35 @@ export class CsvImporter {
     }
 
     /**
+     * Splits raw CSV text into non-blank lines, ignoring the header row.
+     */
+    splitLines(text) {
+        return text.split(/\r\n|\n|\r/).map((line) => line.trim()).filter((line) => line.length > 0);
+    }
+
+    /**
+     * Normalizes the CSV header row (trim + lowercase each column) so it
+     * can be validated and matched against `requiredColumns` before any
+     * row is parsed or sent to the server. Returns an empty array when
+     * the file has no lines at all.
+     */
+    extractHeader(text) {
+        const lines = this.splitLines(text);
+        if (lines.length === 0) return [];
+
+        return lines[0].split(',').map((column) => column.trim().toLowerCase());
+    }
+
+    /**
      * Minimal manual CSV parser (no external dependency): splits on
      * newlines, then columns on commas. Assumes a header row of
      * `name,email,cpf` (cpf optional) and ignores blank lines.
      */
     parseCsv(text) {
-        const lines = text.split(/\r\n|\n|\r/).map((line) => line.trim()).filter((line) => line.length > 0);
+        const lines = this.splitLines(text);
         if (lines.length === 0) return [];
 
-        const header = lines[0].split(',').map((column) => column.trim().toLowerCase());
+        const header = this.extractHeader(text);
         const rows = [];
 
         for (let i = 1; i < lines.length; i++) {

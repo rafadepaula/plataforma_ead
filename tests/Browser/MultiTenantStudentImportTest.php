@@ -115,4 +115,64 @@ class MultiTenantStudentImportTest extends DuskTestCase
                 ->assertMissing('[dusk="csv-import-form"]');
         });
     }
+
+    public function test_a_csv_with_an_invalid_header_is_rejected_before_upload(): void
+    {
+        $org = Organization::factory()->create();
+        $course = Course::factory()->create(['org_id' => $org->id]);
+
+        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor->assignRole(RolesEnum::GESTOR->value);
+
+        $usersCountBefore = User::count();
+
+        $csvPath = tempnam(sys_get_temp_dir(), 'csv_import_').'.csv';
+        file_put_contents($csvPath, "nome,e-mail\nMaria Aluna,maria.aluna@example.com\n");
+
+        $this->browse(function (Browser $browser) use ($gestor, $course, $csvPath): void {
+            $browser->loginAs($gestor)
+                ->visit(route('users.import.create'))
+                ->waitFor('[dusk="csv-import-form"]')
+                ->select('@csv-course-select', (string) $course->id)
+                ->attach('@csv-file-input', $csvPath)
+                ->press('@csv-import-submit')
+                ->waitFor('[dusk="csv-import-results"]', 15)
+                ->assertSeeIn('[dusk="csv-import-results"]', 'Cabeçalho inválido');
+        });
+
+        unlink($csvPath);
+
+        $this->assertDatabaseCount('users', $usersCountBefore);
+        $this->assertSame(0, $course->fresh()->students()->count());
+    }
+
+    public function test_a_csv_missing_a_required_column_is_rejected(): void
+    {
+        $org = Organization::factory()->create();
+        $course = Course::factory()->create(['org_id' => $org->id]);
+
+        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor->assignRole(RolesEnum::GESTOR->value);
+
+        $usersCountBefore = User::count();
+
+        $csvPath = tempnam(sys_get_temp_dir(), 'csv_import_').'.csv';
+        file_put_contents($csvPath, "name,cpf\nMaria Aluna,12345678900\n");
+
+        $this->browse(function (Browser $browser) use ($gestor, $course, $csvPath): void {
+            $browser->loginAs($gestor)
+                ->visit(route('users.import.create'))
+                ->waitFor('[dusk="csv-import-form"]')
+                ->select('@csv-course-select', (string) $course->id)
+                ->attach('@csv-file-input', $csvPath)
+                ->press('@csv-import-submit')
+                ->waitFor('[dusk="csv-import-results"]', 15)
+                ->assertSeeIn('[dusk="csv-import-results"]', 'Cabeçalho inválido');
+        });
+
+        unlink($csvPath);
+
+        $this->assertDatabaseCount('users', $usersCountBefore);
+        $this->assertSame(0, $course->fresh()->students()->count());
+    }
 }
