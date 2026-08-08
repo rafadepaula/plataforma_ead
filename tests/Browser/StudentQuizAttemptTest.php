@@ -127,6 +127,57 @@ class StudentQuizAttemptTest extends DuskTestCase
         });
     }
 
+    /**
+     * The cosmetic `[data-quiz-timer]` countdown seeds `data-started-at`
+     * from the page's own render time (see `quizzes-conventions` —
+     * `StudentQuizController::show()` never creates a `QuizAttempt` up
+     * front, so there is no persisted `started_at` to key a real countdown
+     * off of). To exercise the "already expired" state without sleeping
+     * the test for a real `time_limit_minutes` minute, this pushes the
+     * container's `data-started-at` into the past via the browser and
+     * re-invokes the already-bound `window.QuizTimer.bind()` (exposed by
+     * `resources/js/app.js`) — the same code path a real expiry runs,
+     * just re-triggered with a deadline that is already behind `now()`.
+     */
+    public function test_an_expired_quiz_timer_shows_the_time_is_up_state_without_submitting(): void
+    {
+        $org = Organization::factory()->create();
+        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $module = Module::factory()->for($course)->create();
+        $lesson = Lesson::factory()->for($module)->create(['type' => 'quiz', 'is_published' => true]);
+        $quiz = Quiz::factory()->for($lesson)->create(['time_limit_minutes' => 1]);
+
+        $question = QuizQuestion::factory()->for($quiz)->singleChoice()->create();
+        QuizOption::factory()->for($question, 'question')->correct()->create();
+        QuizOption::factory()->for($question, 'question')->incorrect()->create();
+
+        $student = User::factory()->create(['org_id' => null]);
+        $student->assignRole(RolesEnum::ALUNO->value);
+        $course->students()->attach($student->id, ['enrolled_at' => now(), 'status' => 'active']);
+
+        $this->browse(function (Browser $browser) use ($student, $lesson): void {
+            $browser->loginAs($student)
+                ->visit(route('student.quizzes.show', $lesson))
+                ->waitFor('@quiz-timer')
+                ->assertPresent('@quiz-attempt-form');
+
+            $browser->script(
+                "var container = document.querySelector('[data-quiz-timer]');"
+                .'container.setAttribute("data-started-at", new Date(Date.now() - 999999999).toISOString());'
+                .'if (window.QuizTimer && window.QuizTimer.intervalId) { clearInterval(window.QuizTimer.intervalId); }'
+                .'window.QuizTimer.bind();'
+            );
+
+            $browser->waitForText('Tempo esgotado')
+                ->assertPresent('@quiz-attempt-form');
+        });
+
+        $this->assertDatabaseMissing('quiz_attempts', [
+            'quiz_id' => $quiz->id,
+            'user_id' => $student->id,
+        ]);
+    }
+
     public function test_the_answer_key_is_shown_when_show_correct_answers_is_enabled(): void
     {
         $org = Organization::factory()->create();
