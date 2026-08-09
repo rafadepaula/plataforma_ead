@@ -27,6 +27,7 @@ class DatabaseSeeder extends Seeder
             RolesAndPermissionsSeeder::class,
             AdminSeeder::class,
             SystemSettingSeeder::class,
+            HelpArticleSeeder::class,
         ]);
 
         // 2. Production Safety Gate
