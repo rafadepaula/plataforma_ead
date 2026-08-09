@@ -59,6 +59,10 @@
                     </div>
                 </div>
 
+                <a href="{{ route('profile.edit') }}" class="btn btn-ghost" dusk="topbar-profile-link" style="padding: 4px 8px; font-size: 12px; color: var(--color-neutral-600); border-radius: 0px;">
+                    Meu Perfil
+                </a>
+
                 <form method="POST" action="{{ $logoutUrl }}" style="margin-left: 4px;">
                     @csrf
                     <button type="submit" class="btn btn-ghost" style="padding: 4px 8px; font-size: 12px; color: var(--color-neutral-600); border-radius: 0px;" title="Sair">

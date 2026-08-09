@@ -23,6 +23,14 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // SPEC-18 RF34/RN14 — required for `Auth::logoutOtherDevices()`
+        // (see `PasswordController`) to actually have an effect: this
+        // appends `Illuminate\Session\Middleware\AuthenticateSession` to
+        // the `web` group, which compares the session's cached password
+        // hash against the DB on every request and force-logs-out any
+        // session left stale by a password change.
+        $middleware->authenticateSessions();
+
         // SPEC-00 §4 — `spatie/laravel-permission`'s route middleware
         // aliases, matched against `RolesEnum` values (see the
         // `tenancy-conventions` skill for usage).

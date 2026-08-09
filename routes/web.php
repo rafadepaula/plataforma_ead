@@ -21,6 +21,8 @@ use App\Http\Controllers\LessonProgressController;
 use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OrganizationController;
+use App\Http\Controllers\PasswordController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicCertificateController;
 use App\Http\Controllers\QuizController;
 use App\Http\Controllers\QuizQuestionController;
@@ -154,6 +156,20 @@ Route::middleware(['auth', 'role:admin|gestor'])->group(function (): void {
 Route::middleware('auth')->group(function (): void {
     Route::get('certificates/{certificate}/download', [CertificateController::class, 'download'])
         ->name('certificates.download');
+});
+
+// SPEC-18 UC02 / RF34 — self-service profile management, available to any
+// authenticated user regardless of role (no `role:` restriction, unlike
+// most groups in this file). `password.update` is throttled like the
+// existing `routes/auth.php` login/reset endpoints; it must not collide
+// with `password.store`, which belongs to the public password-reset flow
+// in `routes/auth.php`.
+Route::middleware('auth')->group(function (): void {
+    Route::get('profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::put('profile/password', [PasswordController::class, 'update'])
+        ->middleware('throttle:6,1')
+        ->name('password.update');
 });
 
 // SPEC-06 RF03 & RF21 — Invitation Link management + manual enrollment
