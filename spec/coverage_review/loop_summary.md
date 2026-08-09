@@ -68,7 +68,22 @@ Dois falsos verdes / falsos vermelhos que valem registro, porque ambos se repete
 
 ---
 
+## Estado final da suíte
+
+`vendor/bin/sail artisan dusk` — **103 testes, 103 passando, 288 assertions**. A suíte saiu de 93 para 103 testes ao longo das duas fases.
+
 ## Pendências conhecidas
 
-* **UC02 / SPEC-18** — implementar quando liberado.
-* **`DashboardDuskTest::test_gestor_persists_a_settings_override_via_the_edit_screen`** — flake pré-existente, não introduzido por este trabalho: falha na suíte completa com "Waited 5 seconds for page reload", passa isolado. Não investigado.
+* **UC02 / SPEC-18** — implementar quando liberado. É a única lacuna aberta.
+
+## Flake do Dashboard: era bug de teste, não de ambiente
+
+`DashboardDuskTest::test_gestor_persists_a_settings_override_via_the_edit_screen` foi registrado antes como "flake pré-existente". Não era ambiente: `waitForReload()` estava sendo chamado **depois** de `click()`. Sem callback, ele só começa a esperar o nó atual ficar stale após o clique já ter disparado — se o reload chega primeiro, a mudança nunca é observada e estoura em 5s. Por isso falhava na suíte completa e passava isolado.
+
+Corrigido para a forma que envolve a ação:
+
+```php
+->waitForReload(fn (Browser $b) => $b->click('@settings-submit'))
+```
+
+Vale como regra geral para o projeto: `waitForReload()` sempre envolve a ação que dispara a navegação, nunca vem depois dela.
