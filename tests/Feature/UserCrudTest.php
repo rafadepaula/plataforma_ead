@@ -185,6 +185,24 @@ class UserCrudTest extends TestCase
         $this->delete("/users/{$aluno->id}")->assertForbidden();
     }
 
+    public function test_creating_a_user_with_a_checksum_invalid_cpf_is_rejected(): void
+    {
+        $org = Organization::factory()->create();
+        $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
+
+        $response = $this->post('/users', [
+            'name' => 'Novo Aluno',
+            'email' => 'aluno.cpf.invalido@example.com',
+            'role' => RolesEnum::ALUNO->value,
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+            'cpf' => '111.444.777-36',
+        ]);
+
+        $response->assertSessionHasErrors('cpf');
+        $this->assertFalse(User::where('email', 'aluno.cpf.invalido@example.com')->exists());
+    }
+
     public function test_gestor_can_update_an_aluno_in_their_own_org(): void
     {
         $org = Organization::factory()->create();
@@ -226,6 +244,25 @@ class UserCrudTest extends TestCase
         $aluno->refresh();
         $this->assertNotSame($originalHash, $aluno->password);
         $this->assertTrue(Hash::check('brand-new-password', $aluno->password));
+    }
+
+    public function test_updating_a_user_with_a_checksum_invalid_cpf_is_rejected(): void
+    {
+        $org = Organization::factory()->create();
+        $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
+
+        $aluno = User::factory()->create(['org_id' => $org->id, 'cpf' => null]);
+        $aluno->assignRole(RolesEnum::ALUNO->value);
+
+        $response = $this->put("/users/{$aluno->id}", [
+            'name' => $aluno->name,
+            'email' => $aluno->email,
+            'role' => RolesEnum::ALUNO->value,
+            'cpf' => '111.444.777-36',
+        ]);
+
+        $response->assertSessionHasErrors('cpf');
+        $this->assertNull($aluno->fresh()->cpf);
     }
 
     public function test_gestor_can_delete_an_aluno_in_their_own_org(): void

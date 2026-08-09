@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Enums\Permissions\RolesEnum;
 use App\Models\User;
+use App\Rules\Cpf;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -27,7 +28,7 @@ class StoreUserRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')],
-            'cpf' => ['nullable', 'string', 'max:14', Rule::unique('users', 'cpf')],
+            'cpf' => ['nullable', 'string', 'max:14', new Cpf, Rule::unique('users', 'cpf')],
             'role' => ['required', Rule::in([RolesEnum::ALUNO->value, RolesEnum::GESTOR->value])],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ];

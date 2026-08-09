@@ -98,7 +98,7 @@ class SmartInvitationTest extends TestCase
         $response = $this->post('/convite/'.$invitationLink->token, [
             'name' => 'Aluno Novo',
             'email' => 'novo@example.com',
-            'cpf' => '12345678900',
+            'cpf' => '12345678909',
             'password' => 'password123',
             'password_confirmation' => 'password123',
         ]);
@@ -178,7 +178,7 @@ class SmartInvitationTest extends TestCase
         $this->post('/convite/'.$invitationLink->token, [
             'name' => 'Primeiro',
             'email' => 'primeiro@example.com',
-            'cpf' => '12345678900',
+            'cpf' => '12345678909',
             'password' => 'password123',
             'password_confirmation' => 'password123',
         ])->assertRedirect();
@@ -214,7 +214,7 @@ class SmartInvitationTest extends TestCase
         $this->post('/convite/'.$invitationLink->token, [
             'name' => 'Aluno',
             'email' => 'aluno@example.com',
-            'cpf' => '12345678900',
+            'cpf' => '12345678909',
             'password' => 'password123',
             'password_confirmation' => 'password123',
         ])->assertNotFound();
@@ -256,7 +256,7 @@ class SmartInvitationTest extends TestCase
         $this->post('/convite/'.$invitationLink->token, [
             'name' => 'Aluno',
             'email' => 'aluno-curso-nao-publicado@example.com',
-            'cpf' => '12345678900',
+            'cpf' => '12345678909',
             'password' => 'password123',
             'password_confirmation' => 'password123',
         ])->assertNotFound();

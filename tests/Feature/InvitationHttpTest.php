@@ -90,7 +90,7 @@ class InvitationHttpTest extends TestCase
         $response = $this->post(route('invitation.store', $invitationLink->token), [
             'name' => 'Aluno Novo',
             'email' => 'aluno-novo@example.com',
-            'cpf' => '12345678900',
+            'cpf' => '12345678909',
             'password' => 'password123',
             'password_confirmation' => 'password123',
         ]);
@@ -105,6 +105,27 @@ class InvitationHttpTest extends TestCase
         ]);
         $this->assertSame($user->id, Auth::id());
         $this->assertSame(1, $invitationLink->fresh()->current_uses);
+    }
+
+    public function test_store_rejects_a_checksum_invalid_cpf_for_a_new_user(): void
+    {
+        $org = Organization::factory()->create();
+        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $invitationLink = InvitationLink::factory()->for($course)->create([
+            'org_id' => $org->id,
+            'created_by' => User::factory()->create(['org_id' => $org->id])->id,
+        ]);
+
+        $this->post(route('invitation.store', $invitationLink->token), [
+            'name' => 'Aluno Novo',
+            'email' => 'aluno-cpf-invalido@example.com',
+            'cpf' => '111.444.777-36',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+        ])->assertSessionHasErrors('cpf');
+
+        $this->assertFalse(User::where('email', 'aluno-cpf-invalido@example.com')->exists());
+        $this->assertGuest();
     }
 
     public function test_store_authenticates_an_existing_user_without_duplicating_the_account(): void

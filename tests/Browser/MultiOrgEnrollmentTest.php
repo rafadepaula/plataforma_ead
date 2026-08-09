@@ -98,7 +98,7 @@ class MultiOrgEnrollmentTest extends DuskTestCase
                 ->pause(500) // no existing account is found — the form must stay expanded
                 ->assertVisible('@invitation-name')
                 ->type('@invitation-name', 'Novo Aluno')
-                ->type('@invitation-cpf', '123.456.789-00')
+                ->type('@invitation-cpf', '123.456.789-09')
                 ->type('@invitation-password', 'senha-segura-123')
                 ->type('@invitation-password-confirmation', 'senha-segura-123')
                 ->press('Matricular-me')

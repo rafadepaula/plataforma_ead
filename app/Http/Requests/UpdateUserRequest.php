@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Enums\Permissions\RolesEnum;
 use App\Models\User;
+use App\Rules\Cpf;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -32,7 +33,7 @@ class UpdateUserRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($target->id)],
-            'cpf' => ['nullable', 'string', 'max:14', Rule::unique('users', 'cpf')->ignore($target->id)],
+            'cpf' => ['nullable', 'string', 'max:14', new Cpf, Rule::unique('users', 'cpf')->ignore($target->id)],
             'role' => ['required', Rule::in([RolesEnum::ALUNO->value, RolesEnum::GESTOR->value])],
             'password' => ['nullable', 'string', 'min:8', 'confirmed'],
             // SPEC-15 §3 — optional status toggle; when present and

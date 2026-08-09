@@ -27,7 +27,7 @@ class UserManagementTest extends DuskTestCase
                 ->waitFor('@user-form')
                 ->type('name', 'Aluno Dusk')
                 ->type('email', 'aluno.dusk@example.com')
-                ->type('cpf', '12345678901')
+                ->type('cpf', '98765432100')
                 ->select('role', 'aluno')
                 ->type('password', 'password')
                 ->type('password_confirmation', 'password')
@@ -40,7 +40,7 @@ class UserManagementTest extends DuskTestCase
         $this->assertDatabaseHas('users', [
             'name' => 'Aluno Dusk',
             'email' => 'aluno.dusk@example.com',
-            'cpf' => '12345678901',
+            'cpf' => '98765432100',
             'org_id' => $gestor->org_id,
         ]);
     }

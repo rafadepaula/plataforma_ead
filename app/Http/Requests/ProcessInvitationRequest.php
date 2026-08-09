@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\User;
+use App\Rules\Cpf;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -33,7 +34,7 @@ class ProcessInvitationRequest extends FormRequest
         return [
             'email' => ['required', 'string', 'email', 'max:255'],
             'name' => [Rule::requiredIf(! $emailExists), 'nullable', 'string', 'max:255'],
-            'cpf' => ['nullable', 'string', 'max:14'],
+            'cpf' => ['nullable', 'string', 'max:14', new Cpf],
             'password' => $emailExists
                 ? ['required', 'string']
                 : ['required', 'string', 'min:8', 'confirmed'],
