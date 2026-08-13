@@ -148,6 +148,11 @@ Este documento cobre apenas o preview **server-side do logo já persistido**. Se
 - [ ] `vendor/bin/sail bin pint --dirty --format agent` limpo.
 
 ## Resolution Status
-- **Status:** OPEN — revalidado em 2026-08-13 contra a árvore pós-migração (commit `3088d99`). Veredicto: **AINDA VÁLIDO**, com escopo levemente ampliado para absorver a dívida de convenção do campo de upload.
-- **Reproduction Tests:** —
-- **Fixed In Files:** —
+- **Status:** FIXED (commit `2449b5e`) — inclui a dívida de convenção do campo de upload, migrado para `<x-ui.input type="file">`, e a criação do symlink `public/storage`, que estava ausente no ambiente.
+- **Reproduction Tests:** `tests/Feature/OrganizationCrudTest.php`, `tests/Browser/OrganizationCrudTest.php`
+- **Fixed In Files:** `resources/views/organizations/_form.blade.php`
+
+> **Desvio consciente do §110:** o preview carrega `.org-logo`, apesar de o documento
+> pedir para não reutilizar a classe. Na prática o `.grayscale` só é aplicado na topbar,
+> na sidebar e no slot `image` de `<x-ui.card>`, e o preview vive no `card-body` — a
+> classe hoje é marcador defensivo, não altera o render e não introduz `!important` novo.

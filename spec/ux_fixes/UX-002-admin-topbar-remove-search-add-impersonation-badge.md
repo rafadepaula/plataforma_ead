@@ -119,6 +119,6 @@ Direção da correção (vocabulário Bootstrap 5.3 — zero `style=`, zero clas
 - [ ] `vendor/bin/sail bin pint --dirty --format agent` limpo.
 
 ## Resolution Status
-- **Status:** OPEN
-- **Reproduction Tests:** —
-- **Fixed In Files:** —
+- **Status:** FIXED (commit `749678e`)
+- **Reproduction Tests:** `tests/Browser/Navigation/AdminTopbarTest.php`, `tests/Feature/ImpersonateOrgTest.php`
+- **Fixed In Files:** `resources/views/components/layout/topbar.blade.php`, `app/Services/Navigation/ImpersonationContext.php` (novo), `app/Services/Navigation/NavigationRegistry.php`, `app/Http/View/Composers/NavigationComposer.php`, `app/Http/Controllers/ImpersonateOrgController.php`, `app/Http/Controllers/OrganizationController.php`, `app/Providers/AppServiceProvider.php`, `resources/views/organizations/index.blade.php`
