@@ -1,5 +1,7 @@
 # UX-003: Remoção de Organização é executada imediatamente, sem modal de confirmação
 
+> **Revalidado em 2026-08-13 (pós-migração Bootstrap 5.3, commit 3088d99):** AINDA VÁLIDO, com o trabalho redefinido. Os componentes `<x-ui.confirm-modal>` e `<x-ui.delete-button>` **já existem** e já são usados em 4 outras telas, mas `organizations/index.blade.php` deliberadamente **não** os usa — o submit segue direto, por decisão registrada em comentário no próprio Blade (`:46-49`), para não quebrar `OrganizationCrudTest`. A correção deixou de ser "construir o modal" e passou a ser "adotar o componente existente **e** atualizar o contrato do teste Dusk".
+
 ## 1. Executive Summary & Impact
 - **ID:** UX-003
 - **Severity:** High (ação destrutiva sem confirmação, a um clique de distância)
@@ -32,48 +34,88 @@
 - **Route Name / URL:** `organizations.index` (`GET /organizations`) e `organizations.destroy` (`DELETE /organizations/{organization}`) — `routes/web.php:45` (`Route::resource('organizations', ...)->except(['show'])`, sob `middleware(['auth','role:admin'])` em `routes/web.php:44`).
 - **Controller / Action:** `App\Http\Controllers\OrganizationController@destroy` — `app/Http/Controllers/OrganizationController.php:79-90` (soft delete deliberado: `users.org_id` é `ON DELETE RESTRICT`).
 - **Policy / Auth Gate:** `App\Policies\OrganizationPolicy@delete` (via `Gate::authorize('delete', $organization)`).
-- **Blade View / Component:**
-  - `resources/views/organizations/index.blade.php:44-48` — o `<form>` de remoção que hoje submete direto.
-  - `resources/views/components/ui/modal.blade.php` — componente de modal existente, a reutilizar.
+- **Blade View / Component (pós-Bootstrap 5.3):**
+  - `resources/views/organizations/index.blade.php:46-54` — o comentário da decisão + o `<form>` de remoção que hoje submete direto (o botão em `:53` já é `<x-ui.button type="submit" variant="ghost" size="sm" class="text-danger link-danger" dusk="delete-organization-{id}">`).
+  - `resources/views/components/ui/delete-button.blade.php` — **existe**: emite o par botão + modal irmãos, com `data-bs-toggle="modal"` / `data-bs-target="#{$modalId}"` (`:36-40`) e delega ao `<x-ui.confirm-modal>` (`:42-48`). O `$attributes->merge()` cai no **botão** (`:40`), então o `dusk="delete-organization-{id}"` da tela continua chegando no lugar certo.
+  - `resources/views/components/ui/confirm-modal.blade.php` — **existe**: `.modal fade` puro, sem `.show` e sem `style=` (nasce fechado; ver o comentário em `:1-11`), com o `<form>` `POST` + `@method('DELETE')` embutido (`:58-67`) e os seletores `dusk="confirm-modal-{id}"` (`:29`), `-close` (`:42`), `-cancel` (`:56`), `-confirm` (`:66`).
   - `resources/views/components/layout/alerts.blade.php` — onde a mensagem de sucesso aparece.
-- **JS:** `resources/js/modules/ModalManager.js` (`open()`, `close()`, contrato `[data-modal-target]` / `[data-modal-dismiss]`), registrado em `resources/js/app.js:18` como `window.ModalManager`.
+  - Precedentes de adoção já em produção: `resources/views/users/index.blade.php`, `certificates/index.blade.php`, `courses/invitation-links/index.blade.php`, `courses/enrollments/index.blade.php`.
+- **JS: nenhum.** `resources/js/modules/ModalManager.js` **foi deletado** na migração; abertura/fechamento são 100% declarativos via `bootstrap.Modal` (`data-bs-toggle` / `data-bs-dismiss`). Não escrever uma linha de JS para esta correção.
+- **Teste que trava a adoção:** `tests/Browser/OrganizationCrudTest.php:56-72` — `test_admin_can_soft_delete_an_organization_via_the_ui()`.
 - **Model:** `App\Models\Organization`
 
 ## 4. Root Cause Analysis (apresentação / markup)
-Não há falha de backend: `OrganizationController@destroy` autoriza, faz soft delete e redireciona com flash — corretamente. O que falta é uma etapa de confirmação na camada de apresentação:
+Não há falha de backend: `OrganizationController@destroy` autoriza, faz soft delete e redireciona com flash — corretamente. O que falta é uma etapa de confirmação na camada de apresentação. O estado atual, verificado em 2026-08-13:
 
 ```blade
-{{-- resources/views/organizations/index.blade.php:44-48 --}}
+{{-- resources/views/organizations/index.blade.php:46-54 --}}
+{{-- Submit direto, sem `<x-ui.delete-button>`: `OrganizationCrudTest`
+     clica `@delete-organization-{id}` e espera o redirect imediato.
+     Adotar o modal de confirmação aqui é mudança de contrato de
+     teste, agendada para a Fase 7 junto com as demais exclusões. --}}
 <form method="POST" action="{{ route('organizations.destroy', $organization) }}" dusk="delete-form-{{ $organization->id }}">
     @csrf
     @method('DELETE')
-    <button type="submit" class="btn btn-ghost" dusk="delete-organization-{{ $organization->id }}">Remover</button>
+    <x-ui.button type="submit" variant="ghost" size="sm" class="text-danger link-danger" dusk="delete-organization-{{ $organization->id }}">Remover</x-ui.button>
 </form>
 ```
 
-O `<button type="submit">` dispara o `DELETE` no primeiro clique. Não há `confirm()`, não há modal, não há segundo passo.
+Ou seja: a causa raiz mudou de natureza. **Não falta mais infraestrutura** — falta *adotá-la*, e a barreira declarada é o contrato do teste Dusk. O `<button type="submit">` dispara o `DELETE` no primeiro clique; não há `confirm()`, não há modal, não há segundo passo.
 
-A infraestrutura necessária já existe e deve ser reaproveitada, sem novos componentes:
-- `resources/views/components/ui/modal.blade.php` renderiza o backdrop **fechado** por padrão (`style="display: none"` inline) — importante, porque Alpine.js **não** está instalado neste projeto e os atributos `x-data`/`x-show`/`@click` do componente são inertes (ver comentário em `resources/js/modules/ModalManager.js:27`).
-- `ModalManager` já delega cliques globalmente: `[data-modal-target="<id>"]` abre e `[data-modal-dismiss]` fecha (`resources/js/modules/ModalManager.js`, `bindGlobalEvents()`), e o botão de fechar do próprio `x-ui.modal` já carrega `data-modal-dismiss="true"`.
+A infraestrutura pronta, a ser reaproveitada sem criar nenhum componente novo:
+- `<x-ui.delete-button>` (`resources/views/components/ui/delete-button.blade.php`) emite botão + `<x-ui.confirm-modal>` como **irmãos**, com o gatilho declarativo `data-bs-toggle="modal"` / `data-bs-target="#{$modalId}"` (`:36-40`). Props: `action` (obrigatória), `label`, `id`, `title`, `message`, `size`, `confirmLabel`.
+- `<x-ui.confirm-modal>` (`resources/views/components/ui/confirm-modal.blade.php`) já embute o `<form method="POST">` + `@csrf` + `@method('DELETE')` (`:58-67`) e nasce fechado — `.modal fade` sem `.show` e **sem `style=`** (`:29-33`), o que fecha de uma vez o risco descrito em `spec/bugs/BUG-003-modal-state-always-open.md`.
+- Sem `id` explícito, o `$modalId` é derivado de `sha1($action)` (`delete-button.blade.php:31`), o que gera um id estável mas ilegível. Para ter seletores Dusk previsíveis, **passar `id` explicitamente**.
 
 Direção da correção:
-1. Trocar o `type="submit"` do botão da linha por um gatilho `type="button"` com `data-modal-target` apontando para o id do modal daquela Organização.
-2. Renderizar um `<x-ui.modal>` por linha (ou um único modal parametrizado por JS, se a listagem crescer) contendo o nome da Organização e, no slot `actions`, o `<form>` `DELETE` real com o botão "Remover" e um botão "Cancelar" com `data-modal-dismiss`.
-3. Cancelar não deve emitir flash message nem navegar — apenas fechar o modal (comportamento já entregue por `ModalManager.close()`).
-4. Sobre "remover a organização da tabela": o fluxo atual é full-page redirect, e após o `destroy()` a listagem é recarregada já sem a linha — o critério é satisfeito sem introduzir AJAX. Uma remoção otimista via JS não é necessária e não deve ser implementada aqui.
-5. Não alterar `OrganizationController@destroy` — o soft delete e o `->with('success', ...)` permanecem como estão.
+1. Substituir o `<form>` de `index.blade.php:50-54` (e o comentário de `:46-49`) por uma única chamada:
+
+```blade
+<x-ui.delete-button
+    id="confirm-delete-organization-{{ $organization->id }}"
+    :action="route('organizations.destroy', $organization)"
+    title="Remover Organização"
+    :message="'Remover a Organização \"'.$organization->name.'\" também tira do ar seus usuários, cursos e certificados. Esta ação não poderá ser desfeita.'"
+    dusk="delete-organization-{{ $organization->id }}" />
+```
+
+   O `dusk="delete-organization-{id}"` pousa no **botão** (via `$attributes->merge()` em `delete-button.blade.php:40`), preservando o seletor. Os seletores do modal passam a ser `@confirm-modal-confirm-delete-organization-{id}`, `…-cancel`, `…-close`. Nenhuma classe nova, nenhum `style=`, nenhum JS.
+2. O `dusk="delete-form-{{ $organization->id }}"` do `<form>` externo **desaparece**: o form real agora vive dentro do `<x-ui.confirm-modal>` e não recebe `dusk`. Verificar com `grep -rn 'delete-form-' tests/` antes de remover; hoje nenhum teste o usa.
+3. Cancelar não emite flash message nem navega — apenas fecha o modal, comportamento entregue pelo `data-bs-dismiss="modal"` do `<x-ui.button variant="ghost">` em `confirm-modal.blade.php:54-56`.
+4. **Atualizar o contrato do teste Dusk** — `tests/Browser/OrganizationCrudTest.php`, método `test_admin_can_soft_delete_an_organization_via_the_ui()` (`:56-72`). As linhas `:65-68` hoje são:
+
+```php
+->waitFor('@delete-organization-'.$organization->id)
+->click('@delete-organization-'.$organization->id)
+->waitForLocation('/organizations')
+->assertDontSee('Organização Removível');
+```
+
+   Devem passar a abrir o modal e só então confirmar:
+
+```php
+->waitFor('@delete-organization-'.$organization->id)
+->click('@delete-organization-'.$organization->id)
+->waitFor('#confirm-delete-organization-'.$organization->id.'.show')
+->click('@confirm-modal-confirm-delete-organization-'.$organization->id.'-confirm')
+->waitForLocation('/organizations')
+->assertDontSee('Organização Removível');
+```
+
+   O `.show` é o estado que o `bootstrap.Modal` aplica ao abrir — esperar por ele (e não só pela presença do `.modal`) evita clicar num diálogo ainda em transição. O `assertSoftDeleted($organization)` de `:71` permanece.
+5. Acrescentar ao mesmo arquivo um caso de **cancelamento**, hoje inexistente: clicar em "Remover", clicar em `@confirm-modal-…-cancel`, aguardar o fechamento e asseverar `assertNotSoftDeleted($organization)` + `@organization-row-{id}` ainda presente.
+6. Sobre "remover a organização da tabela": o fluxo é full-page redirect e, após o `destroy()`, a listagem recarrega já sem a linha — o critério é satisfeito sem AJAX. Remoção otimista via JS não deve ser implementada aqui.
+7. Não alterar `OrganizationController@destroy` — o soft delete e o `->with('success', ...)` permanecem como estão.
 
 ## 5. Test Specification Plan (TDD Blueprint)
 - **Feature test (PHPUnit):** `tests/Feature/OrganizationCrudTest.php` (arquivo existente — acrescentar casos)
   - `GET /organizations` renderiza, para cada Organização listada, o gatilho de modal e o formulário `DELETE` correspondente.
   - `DELETE /organizations/{id}` continua removendo (soft delete) e redirecionando com a flash `success` (não-regressão).
   - gestor/aluno recebem 403 em `organizations.destroy` (não-regressão do `role:admin`).
-- **Browser test (Dusk):** `tests/Browser/OrganizationDeleteTest.php`
-  - `dusk="delete-organization-{id}"`: clicar abre o modal (`waitFor('[dusk="delete-organization-modal-{id}"]')`) e a Organização **ainda existe** no banco.
-  - `dusk="cancel-delete-organization-{id}"`: clicar fecha o modal, nenhuma mensagem de sucesso é exibida (`assertDontSee('Organização removida com sucesso')`) e `dusk="organization-row-{id}"` continua na tabela.
-  - `dusk="confirm-delete-organization-{id}"`: clicar remove a Organização, exibe "Organização removida com sucesso." e `assertMissing('[dusk="organization-row-{id}"]')`.
-  - o modal nunca aparece no carregamento inicial da página (`assertMissing` do backdrop antes de qualquer clique) — ver `spec/bugs/BUG-003-modal-state-always-open.md`.
+- **Browser test (Dusk):** `tests/Browser/OrganizationCrudTest.php` — **arquivo existente, contrato a alterar** (não criar um `OrganizationDeleteTest.php` novo; o fluxo de exclusão já é coberto ali).
+  - `test_admin_can_soft_delete_an_organization_via_the_ui()` (`:56-72`): reescrever `:65-68` para abrir o modal antes de confirmar (snippet na §4.4). `assertSoftDeleted` preservado.
+  - **novo** `test_admin_can_cancel_the_organization_deletion()`: clicar `@delete-organization-{id}`, aguardar `#confirm-delete-organization-{id}.show`, clicar `@confirm-modal-confirm-delete-organization-{id}-cancel`, `waitUntilMissing('.modal-backdrop')`, então `assertVisible('@organization-row-{id}')`, `assertDontSee('Organização removida com sucesso')` e `$this->assertNotSoftDeleted($organization)`.
+  - **novo** o modal nunca aparece no carregamento inicial: `assertMissing('.modal.show')` e `assertMissing('.modal-backdrop')` antes de qualquer clique — ver `spec/bugs/BUG-003-modal-state-always-open.md`. Esta asserção é barata porque `<x-ui.confirm-modal>` não emite `.show` nem `style=` (`confirm-modal.blade.php:29-33`).
 
 ## 6. Acceptance Criteria for Fix Verification
 - [ ] Clicar em "Remover" abre um modal de confirmação e **não** remove nada.

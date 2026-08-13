@@ -1,5 +1,7 @@
 # BUG-001: `GET /login` enquanto autenticado redireciona para a Landing Page pública (`/`) em vez da home do role
 
+> **Revalidado em 2026-08-13 (pós-migração Bootstrap 5.3, commit 3088d99):** JÁ CORRIGIDO — o alias `guest` aponta para `App\Http\Middleware\RedirectIfAuthenticated` ([bootstrap/app.php:47](file:///home/rafael/projects/cursos/plataforma_ead/bootstrap/app.php#L47)), que redireciona via `redirect()->intended($home)` com `UserHomeResolver` ([RedirectIfAuthenticated.php:40-44](file:///home/rafael/projects/cursos/plataforma_ead/app/Http/Middleware/RedirectIfAuthenticated.php#L40-L44)). A migração Bootstrap não tocou em rotas/middlewares e não reintroduziu o defeito: `vendor/bin/sail artisan test --compact tests/Feature/Auth/LoginTest.php` → 12 passed / 35 assertions em 2026-08-13.
+
 ## 1. Executive Summary & Impact
 - **ID:** BUG-001
 - **Severity:** High
@@ -46,25 +48,42 @@ Acting as admin → GET /login → 302 Location: /        ← BUG
   - Aluno → `/`
 
 ## 3. Codebase & Architectural Mapping
-- **Route Name / URL:** `login` (`GET /login`)
-- **Route Registration:** [routes/auth.php:10-13](file:///home/rafael/projects/cursos/plataforma_ead/routes/auth.php#L10-L13) — envolvido em `Route::middleware('guest')`.
-- **Middleware Alias Ausente:** [bootstrap/app.php:30-40](file:///home/rafael/projects/cursos/plataforma_ead/bootstrap/app.php#L30-L40) — registra apenas `role`, `permission`, `role_or_permission`, `student.enrolled`. **Não** registra alias `guest` e **não** aponta para nenhum `App\Http\Middleware\RedirectIfAuthenticated` customizado.
-- **Middleware Conflitado:** `app/Http/Middleware/RedirectIfAuthenticated.php` **não existe** no projeto (confirmado via `find`). Logo o Laravel resolve `'guest'` para o alias default do framework (`Illuminate\Auth\Middleware\RedirectIfAuthenticated`), cujo `redirectTo()` padrão retorna `Route::has('home') ? route('home') : '/home'` (fallback final `/`). Como não há rota `home` nem `dashboard` nomeada (a rota existente chama-se `admin.dashboard`, não `dashboard`), e `LandingPageController` está registrada em `/`, o fallback cai em `/`.
-- **Controller / Action:** `App\Http\Controllers\Auth\AuthenticatedSessionController::create` ([AuthenticatedSessionController.php:23-28](file:///home/rafael/projects/cursos/plataforma_ead/app/Http/Controllers/Auth/AuthenticatedSessionController.php#L23-L28)) — apenas renderiza `view('auth.login')`. Nunca é alcançado por usuário autenticado porque o middleware `guest` intercepta antes.
-- **Lógica de Redirect Correta (já existe, mas privada):** `AuthenticatedSessionController::redirectPathFor()` ([AuthenticatedSessionController.php:54-61](file:///home/rafael/projects/cursos/plataforma_ead/app/Http/Controllers/Auth/AuthenticatedSessionController.php#L54-L61)) — retorna `route('admin.dashboard')` para admin/gestor e `route('student.courses.index')` para aluno, com fallback defensivo `/` se as rotas não existirem. **É privada e só é usada por `store()`, nunca pelo middleware `guest`.**
-- **Logout (impacto secundário, não parte deste bug):** `AuthenticatedSessionController::destroy()` ([AuthenticatedSessionController.php:43](file:///home/rafael/projects/cursos/plataforma_ead/app/Http/Controllers/Auth/AuthenticatedSessionController.php#L43)) retorna `redirect('/')` de propósito (logout deve voltar para a vitrine). **Não alterar** neste fix.
+
+**Estado ATUAL verificado (2026-08-13, pós-Bootstrap 5.3):**
+- **Route Name / URL:** `login` (`GET /login`) — confirmado em `vendor/bin/sail artisan route:list --except-vendor`: `GET|HEAD login → login › Auth\AuthenticatedSessionController@create`.
+- **Route Registration:** [routes/auth.php:10-12](file:///home/rafael/projects/cursos/plataforma_ead/routes/auth.php#L10-L12) — ainda dentro de `Route::middleware('guest')->group(...)` ([routes/auth.php:9](file:///home/rafael/projects/cursos/plataforma_ead/routes/auth.php#L9)). Inalterado pela migração.
+- **Middleware Alias (corrigido):** [bootstrap/app.php:47](file:///home/rafael/projects/cursos/plataforma_ead/bootstrap/app.php#L47) — `'guest' => RedirectIfAuthenticated::class`, com o comentário `// BUG-001 — custom role-aware guest redirect`.
+- **Middleware Customizado (existe):** [app/Http/Middleware/RedirectIfAuthenticated.php:25-47](file:///home/rafael/projects/cursos/plataforma_ead/app/Http/Middleware/RedirectIfAuthenticated.php#L25-L47) — resolve o usuário pelos guards (fallback `web`, linha 36) e retorna `redirect()->intended($home)` (linha 43), honrando `url.intended`.
+- **Fonte de verdade do destino:** [app/Services/UserHomeResolver.php:20-27](file:///home/rafael/projects/cursos/plataforma_ead/app/Services/UserHomeResolver.php#L20-L27) — admin/gestor → `route('admin.dashboard')`, demais → `route('student.courses.index')`, com fallback `/` guardado por `Route::has()`.
+- **Controller / Action:** `AuthenticatedSessionController::create` ([AuthenticatedSessionController.php:21-24](file:///home/rafael/projects/cursos/plataforma_ead/app/Http/Controllers/Auth/AuthenticatedSessionController.php#L21-L24)) — renderiza `view('auth.login')` apenas para guests.
+- **Mesma fonte de verdade no `store()`:** [AuthenticatedSessionController.php:35-37](file:///home/rafael/projects/cursos/plataforma_ead/app/Http/Controllers/Auth/AuthenticatedSessionController.php#L35-L37) — `app(UserHomeResolver::class)->resolve(...)` + `redirect()->intended($home)`. Sem drift entre login POST e o guard do GET.
+- **Logout (preservado):** [AuthenticatedSessionController.php:54](file:///home/rafael/projects/cursos/plataforma_ead/app/Http/Controllers/Auth/AuthenticatedSessionController.php#L54) — segue `redirect('/')` (mais `session()->forget('active_org_id')` na linha 49).
+- **Blade View:** `resources/views/auth/login.blade.php` — reescrita para Bootstrap 5.3 na migração, mas irrelevante para este bug (nunca é alcançada por usuário autenticado).
+
+**Estado no momento do report original (histórico, não mais verdadeiro):**
+- `bootstrap/app.php` registrava apenas `role`, `permission`, `role_or_permission`, `student.enrolled`; sem alias `guest`.
+- `app/Http/Middleware/RedirectIfAuthenticated.php` não existia, então o Laravel resolvia `'guest'` para `Illuminate\Auth\Middleware\RedirectIfAuthenticated`, cujo `redirectTo()` cai em `/` na ausência de rota `home`/`dashboard`.
+- A lógica role-aware existia apenas em `AuthenticatedSessionController::redirectPathFor()`, privada e usada só por `store()`.
 - **Roles Enum:** [app/Enums/Permissions/RolesEnum.php](file:///home/rafael/projects/cursos/plataforma_ead/app/Enums/Permissions/RolesEnum.php) — valores `admin`, `gestor`, `aluno`.
 - **Blade View:** `resources/views/auth/login.blade.php` (não está em causa; é só o destino do `create()` quando não autenticado).
 
 ## 4. Root Cause Technical Analysis
-- **Failure Branch:** `routes/auth.php:10` registra `Route::get('login', ...)->middleware('guest')`. Em `bootstrap/app.php` o alias `'guest'` **não é sobrescrito**, então o Laravel cai no `Illuminate\Auth\Middleware\RedirectIfAuthenticated` default. Esse middleware default, ao detectar `Auth::check() === true`, retorna `redirect()->guest($this->redirectTo($request))`, e seu `redirectTo()` default avalia:
+
+> **Revalidação 2026-08-13:** a causa raiz abaixo é **histórica** — foi eliminada pelo par
+> [bootstrap/app.php:47](file:///home/rafael/projects/cursos/plataforma_ead/bootstrap/app.php#L47) +
+> [RedirectIfAuthenticated.php:40-44](file:///home/rafael/projects/cursos/plataforma_ead/app/Http/Middleware/RedirectIfAuthenticated.php#L40-L44).
+> A migração Bootstrap 5.3 (commit 3088d99) tocou apenas views/SCSS/JS e não reabriu o caminho de
+> falha: o alias `guest` segue registrado e o teste que cristalizava o bug já afirma o comportamento
+> correto ([tests/Feature/Auth/LoginTest.php:26](file:///home/rafael/projects/cursos/plataforma_ead/tests/Feature/Auth/LoginTest.php#L26) — `assertRedirect(route('admin.dashboard'))`).
+
+- **Failure Branch (histórico):** `routes/auth.php:10` registra `Route::get('login', ...)->middleware('guest')`. Em `bootstrap/app.php` o alias `'guest'` **não é sobrescrito**, então o Laravel cai no `Illuminate\Auth\Middleware\RedirectIfAuthenticated` default. Esse middleware default, ao detectar `Auth::check() === true`, retorna `redirect()->guest($this->redirectTo($request))`, e seu `redirectTo()` default avalia:
   ```php
   return Route::has('home') ? route('home') : config('app.url', '/home');
   // sem rota 'home' e sem fallback explícito => cai em '/'
   ```
   O projeto **não tem** rota nomeada `home` nem `dashboard` (tem `admin.dashboard` + `student.courses.index`), e o `/` é a Landing Page pública. Resultado: 302 para `/`.
 - **Por que `store()` funciona corretamente:** `store()` chama explicitamente `redirect()->intended($this->redirectPathFor($user))`, que (a) honra `url.intended` na sessão se houver, e (b) usa fallback role-aware. O `GET /login` (interceptado pelo middleware) **não** passa por essa lógica.
-- **Teste que cristaliza o bug:** [tests/Feature/Auth/LoginTest.php:19-25](file:///home/rafael/projects/cursos/plataforma_ead/tests/Feature/Auth/LoginTest.php#L19-L25):
+- **Teste que cristalizava o bug (já atualizado no fix):** hoje [tests/Feature/Auth/LoginTest.php:21-27](file:///home/rafael/projects/cursos/plataforma_ead/tests/Feature/Auth/LoginTest.php#L21-L27) afirma `assertRedirect(route('admin.dashboard'))`. A versão original, que afirmava o comportamento incorreto, era:
   ```php
   public function test_authenticated_admin_is_redirected_away_from_login_screen(): void
   {
@@ -134,19 +153,21 @@ Adicionar um teste E2E que cobre o fluxo do usuário real (acessa `/login` manua
   - **Selectors:** não há interação com formulário; usa `loginAs()` + `visit('/login')` + `waitForLocation`. Sem seletores `dusk=` novos necessários.
 
 ## 6. Acceptance Criteria for Fix Verification
-- [ ] Existe `app/Http/Middleware/RedirectIfAuthenticated.php` (criado via `vendor/bin/sail artisan make:middleware`).
-- [ ] `bootstrap/app.php` registra alias `'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class` no array `$middleware->alias([...])`.
-- [ ] `AuthenticatedSessionController::redirectPathFor()` foi extraído para um local reutilizável (service/trait/method público) e **ambos** `store()` e o novo middleware chamam a mesma fonte de verdade (sem drift).
-- [ ] `GET /login` autenticado **sem** `url.intended` redireciona para a home do role (admin/gestor → `/admin/dashboard`, aluno → `/meus-cursos`).
-- [ ] `GET /login` autenticado **com** `url.intended` na sessão redireciona para a URL intended.
-- [ ] Logout (`POST /logout`) **continua** retornando `redirect('/')` (não regressar).
-- [ ] `vendor/bin/sail artisan test --compact --filter=LoginTest` passa (Feature + Dusk), incluindo o teste atualizado em `tests/Feature/Auth/LoginTest.php:19`.
-- [ ] `vendor/bin/sail artisan test --compact tests/Feature/Auth/LoginTest.php` e `tests/Browser/Auth/LoginTest.php` verdes.
-- [ ] Rodar `vendor/bin/sail artisan test --compact` completo após fix para confirmar ausência de regressões (middleware `guest` é usado em poucas rotas — `login`/`forgot-password`/`reset-password` — confirmar que essas continuam acessíveis a guests).
-- [ ] Executar `vendor/bin/sail bin pint --dirty --format agent` para conformidade de estilo.
+(reverificados em 2026-08-13 contra o código atual)
+
+- [x] Existe `app/Http/Middleware/RedirectIfAuthenticated.php` — confirmado em `app/Http/Middleware/RedirectIfAuthenticated.php:16`.
+- [x] `bootstrap/app.php` registra alias `'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class` — `bootstrap/app.php:47`.
+- [x] A lógica de destino foi extraída para `App\Services\UserHomeResolver` (`app/Services/UserHomeResolver.php:20`) e **ambos** `AuthenticatedSessionController::store()` (`:35`) e o middleware (`:41`) a consomem — sem drift.
+- [x] `GET /login` autenticado **sem** `url.intended` redireciona para a home do role — coberto por `tests/Feature/Auth/LoginTest.php:21,29,36` (admin/gestor → `/admin/dashboard`, aluno → `/meus-cursos`).
+- [x] `GET /login` autenticado **com** `url.intended` na sessão redireciona para a URL intended — `tests/Feature/Auth/LoginTest.php:43-52`.
+- [x] Logout (`POST /logout`) **continua** retornando `redirect('/')` — `AuthenticatedSessionController.php:54`, coberto por `tests/Feature/Auth/LoginTest.php:149-155`.
+- [x] `vendor/bin/sail artisan test --compact tests/Feature/Auth/LoginTest.php` verde — **12 passed / 35 assertions** (execução de 2026-08-13, pós-migração Bootstrap).
+- [ ] **Lacuna remanescente (não bloqueante):** não existe teste Dusk cobrindo "usuário autenticado visita `/login`". `tests/Browser/Auth/LoginTest.php` cobre login/logout/reset e o redirect **pós-login** (`:160`, `:180`), mas não o guard do `GET /login`. Não executado nesta revalidação (Dusk fora de escopo).
+- [x] Rotas `guest` (`login`/`forgot-password`/`reset-password`) continuam acessíveis a guests — `test_login_screen_can_be_rendered` (`tests/Feature/Auth/LoginTest.php:16`) verde.
 
 ## Resolution Status
-- **Status:** RESOLVED
+- **Status:** RESOLVED (revalidado em 2026-08-13, pós-migração Bootstrap 5.3 / commit 3088d99 — sem regressão)
+- **Como provar:** `vendor/bin/sail artisan test --compact tests/Feature/Auth/LoginTest.php` → 12 passed, 35 assertions.
 - **Reproduction Tests:** `tests/Feature/Auth/LoginTest.php`
   - `test_authenticated_admin_is_redirected_away_from_login_screen`
   - `test_authenticated_gestor_is_redirected_away_from_login_screen`
@@ -157,3 +178,4 @@ Adicionar um teste E2E que cobre o fluxo do usuário real (acessa `/login` manua
   - `app/Http/Middleware/RedirectIfAuthenticated.php` (created)
   - `bootstrap/app.php` (modified — registered `guest` alias)
   - `app/Http/Controllers/Auth/AuthenticatedSessionController.php` (modified — uses UserHomeResolver)
+- **Impacto da migração Bootstrap 5.3:** nenhum. O commit 3088d99 alterou apenas views/SCSS/módulos JS; `routes/auth.php`, `bootstrap/app.php`, o middleware e o `UserHomeResolver` permanecem intactos. A view `auth/login.blade.php` foi reescrita em Bootstrap, mas só é renderizada para guests.
