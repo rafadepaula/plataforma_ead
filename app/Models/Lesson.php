@@ -3,7 +3,9 @@
 namespace App\Models;
 
 use App\Models\Traits\AuditableTrait;
+use App\Services\YoutubeSanitizerService;
 use Database\Factories\LessonFactory;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -44,6 +46,37 @@ class Lesson extends Model
             'order_index' => 'integer',
             'is_published' => 'boolean',
         ];
+    }
+
+    /**
+     * BUG-002 — the 11-char YouTube video id resolved from `youtube_url`,
+     * regardless of the stored form (`embed/`, `watch?v=`, `youtu.be/`), or
+     * `null` when the column is empty or holds something that is not a
+     * recognizable YouTube link. Consumers must branch on `null` instead of
+     * assuming the stored value is already sanitized.
+     *
+     * @return Attribute<?string, never>
+     */
+    protected function youtubeVideoId(): Attribute
+    {
+        return Attribute::get(
+            fn (): ?string => app(YoutubeSanitizerService::class)->extractVideoId($this->youtube_url)
+        );
+    }
+
+    /**
+     * BUG-002 — the canonical, embeddable `https://www.youtube.com/embed/{id}`
+     * URL, or `null` when no video id can be resolved. YouTube refuses to be
+     * framed from any other URL form, so this is the only value a consumer may
+     * put in an `<iframe src>`.
+     *
+     * @return Attribute<?string, never>
+     */
+    protected function youtubeEmbedUrl(): Attribute
+    {
+        return Attribute::get(
+            fn (): ?string => app(YoutubeSanitizerService::class)->tryCanonicalize($this->youtube_url)
+        );
     }
 
     /**

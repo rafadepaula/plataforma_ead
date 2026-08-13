@@ -12,6 +12,7 @@ use Database\Seeders\CourseSeeder;
 use Database\Seeders\OrganizationSeeder;
 use Database\Seeders\UserSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class LessonYoutubeEmbedRenderingTest extends TestCase
@@ -86,6 +87,71 @@ class LessonYoutubeEmbedRenderingTest extends TestCase
 
         // Assert data-video-id contains the real 11-char video ID (not "watch")
         $response->assertSee('data-video-id="dQw4w9WgXcQ"', false);
+    }
+
+    /**
+     * BUG-002 — the consumer must not trust the stored format: a legacy
+     * `watch?v=` row (written before the sanitizer existed, or by a direct
+     * `UPDATE`) must still render an embeddable `src` and the real 11-char
+     * video id, never `data-video-id="watch"`.
+     */
+    public function test_student_lesson_view_normalizes_legacy_watch_urls_at_render_time(): void
+    {
+        $lesson = $this->publishedVideoLessonFor('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
+
+        $response = $this->get(route('classroom.lesson', $lesson));
+
+        $response->assertOk();
+        $response->assertSee('src="https://www.youtube.com/embed/dQw4w9WgXcQ?rel=0', false);
+        $response->assertSee('data-video-id="dQw4w9WgXcQ"', false);
+        $response->assertDontSee('data-video-id="watch"', false);
+    }
+
+    /**
+     * BUG-002 — when no video id can be resolved from the stored value, the
+     * view must degrade explicitly (visible notice, no player wiring) instead
+     * of emitting an iframe YouTube will refuse to frame.
+     */
+    public function test_student_lesson_view_degrades_when_video_id_cannot_be_resolved(): void
+    {
+        $lesson = $this->publishedVideoLessonFor('https://vimeo.com/123456789');
+
+        $response = $this->get(route('classroom.lesson', $lesson));
+
+        $response->assertOk();
+        $response->assertSee('dusk="video-unavailable-'.$lesson->id.'"', false);
+        $response->assertDontSee('<iframe', false);
+        $response->assertDontSee('data-youtube-player', false);
+        $response->assertSee('dusk="video-player-'.$lesson->id.'"', false);
+    }
+
+    /**
+     * Creates a published video lesson with the given raw stored value
+     * (bypassing every sanitizing write path) and authenticates an enrolled
+     * ALUNO for the request.
+     */
+    private function publishedVideoLessonFor(string $storedYoutubeUrl): Lesson
+    {
+        $org = Organization::factory()->create();
+        $course = Course::factory()->create(['org_id' => $org->id]);
+        $module = Module::factory()->for($course)->create();
+        $lesson = Lesson::factory()->for($module)->create([
+            'type' => 'content',
+            'is_published' => true,
+        ]);
+
+        DB::table('lessons')->where('id', $lesson->id)->update(['youtube_url' => $storedYoutubeUrl]);
+
+        $aluno = User::factory()->create(['org_id' => null]);
+        $aluno->assignRole(RolesEnum::ALUNO->value);
+        $aluno->courses()->attach($course->id, [
+            'status' => 'active',
+            'enrolled_at' => now(),
+        ]);
+
+        $this->actingAs($aluno);
+
+        return $lesson->fresh();
     }
 
     /**

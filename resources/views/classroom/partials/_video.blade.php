@@ -1,8 +1,12 @@
 {{--
-    SPEC-07 RF20 — video lesson. `youtube_url` is already persisted in
-    sanitized embed form by `YoutubeSanitizerService` (SPEC-05), e.g.
-    `https://www.youtube.com/embed/dQw4w9WgXcQ`, so the video id is simply
-    the last path segment.
+    SPEC-07 RF20 — video lesson. BUG-002: this view no longer trusts the
+    stored format. `youtube_url` *should* already be in sanitized embed form
+    (`YoutubeSanitizerService`, SPEC-05), but nothing in the database enforces
+    that, so the video id is resolved through `Lesson::$youtube_video_id` —
+    which accepts `embed/`, `watch?v=` and `youtu.be/` alike and returns
+    `null` for anything unrecognizable. When it is `null` we degrade to an
+    explicit notice instead of emitting an `<iframe>` YouTube would refuse to
+    frame (and a bogus `data-video-id` that would break progress tracking).
 
     `resources/js/modules/LessonPlayer.js` progressively enhances this
     static `<iframe>` into a YouTube IFrame API player (`data-youtube-player`
@@ -17,25 +21,42 @@
 --}}
 
 @php
-    $videoId = basename(parse_url($lesson->youtube_url, PHP_URL_PATH));
+    $videoId = $lesson->youtube_video_id;
+    $embedUrl = $lesson->youtube_embed_url;
 @endphp
 
-<div class="ratio ratio-16x9 bg-black mb-4">
+{{--
+    The 16:9 black box only makes sense around a real player; the degraded
+    branch is plain flow content. The video-player dusk selector stays on the
+    same single element in both branches — it is a test contract and must never
+    be duplicated across an `@if`.
+--}}
+<div @class(['mb-4', 'ratio ratio-16x9 bg-black' => $videoId !== null])>
     <div
         id="youtube-player-{{ $lesson->id }}"
-        data-youtube-player
-        data-lesson-id="{{ $lesson->id }}"
-        data-video-id="{{ $videoId }}"
-        data-progress-url="{{ route('lessons.progress', $lesson) }}"
+        @if($videoId !== null)
+            data-youtube-player
+            data-lesson-id="{{ $lesson->id }}"
+            data-video-id="{{ $videoId }}"
+            data-progress-url="{{ route('lessons.progress', $lesson) }}"
+        @endif
         dusk="video-player-{{ $lesson->id }}"
     >
-        {{-- Fallback restricted embed (no-JS / before the IFrame API takes over) --}}
-        <iframe
-            src="{{ $lesson->youtube_url }}?rel=0&modestbranding=1&controls=1"
-            class="w-100 h-100 border-0"
-            allow="autoplay; encrypted-media"
-            allowfullscreen
-        ></iframe>
+        @if($videoId !== null)
+            {{-- Fallback restricted embed (no-JS / before the IFrame API takes over) --}}
+            <iframe
+                src="{{ $embedUrl }}?rel=0&modestbranding=1&controls=1"
+                class="w-100 h-100 border-0"
+                allow="autoplay; encrypted-media"
+                allowfullscreen
+            ></iframe>
+        @else
+            <x-ui.alert variant="warning" dusk="video-unavailable-{{ $lesson->id }}" class="mb-0">
+                <span class="fw-semibold d-block">Vídeo indisponível</span>
+                Não foi possível reconhecer o endereço do vídeo desta aula. Avise o
+                responsável pelo curso para que o link do YouTube seja corrigido.
+            </x-ui.alert>
+        @endif
     </div>
 </div>
 
@@ -50,7 +71,9 @@
     <x-ui.badge variant="accent" data-completion-badge dusk="lesson-completed-badge" @class(['d-none' => ! ($isCompleted ?? false)])>
         Concluída
     </x-ui.badge>
-    <span class="small text-body-secondary" data-progress-hint>
-        O progresso é salvo automaticamente ao assistir o vídeo.
-    </span>
+    @if($videoId !== null)
+        <span class="small text-body-secondary" data-progress-hint>
+            O progresso é salvo automaticamente ao assistir o vídeo.
+        </span>
+    @endif
 </div>

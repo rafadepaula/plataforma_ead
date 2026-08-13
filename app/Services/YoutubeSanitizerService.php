@@ -34,4 +34,36 @@ class YoutubeSanitizerService
 
         return 'https://www.youtube.com/embed/'.$matches[1];
     }
+
+    /**
+     * BUG-002 — non-throwing counterpart of `sanitize()`: returns the 11-char
+     * video id for any supported form (`watch?v=`, `embed/`, `youtu.be/`), or
+     * `null` when the value is empty/unrecognizable. Used by consumers that
+     * must degrade gracefully (the classroom player) and by the data
+     * normalization migration, which must leave unrecognizable rows intact
+     * rather than blowing up mid-batch.
+     */
+    public function extractVideoId(?string $url): ?string
+    {
+        if ($url === null || trim($url) === '') {
+            return null;
+        }
+
+        if (! preg_match(self::PATTERN, trim($url), $matches)) {
+            return null;
+        }
+
+        return $matches[1];
+    }
+
+    /**
+     * Non-throwing canonicalization: the `embed/{id}` URL for any supported
+     * input, or `null` when the value cannot be resolved to a video id.
+     */
+    public function tryCanonicalize(?string $url): ?string
+    {
+        $videoId = $this->extractVideoId($url);
+
+        return $videoId === null ? null : 'https://www.youtube.com/embed/'.$videoId;
+    }
 }
