@@ -1,15 +1,13 @@
 @extends('layouts.guest')
 
 @section('content')
-    <div style="margin-bottom: 24px;">
-        <span style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-accent); font-weight: 700;">Recuperação de senha</span>
-        <h1 style="font-family: var(--font-heading); font-weight: 800; font-size: 26px; margin: 8px 0 0;">Esqueceu sua senha?</h1>
-        <p style="font-size: 13px; color: var(--color-neutral-600); margin-top: 8px; line-height: 1.5;">
-            Informe o e-mail da sua conta e enviaremos um link de uso único para redefinir sua senha.
-        </p>
-    </div>
+    <x-layout.page-header
+        kicker="Recuperação de senha"
+        title="Esqueceu sua senha?"
+        subtitle="Informe o e-mail da sua conta e enviaremos um link de uso único para redefinir sua senha."
+    />
 
-    <form method="POST" action="{{ route('password.email') }}" dusk="forgot-password-form" style="display: flex; flex-direction: column; gap: 16px;">
+    <form method="POST" action="{{ route('password.email') }}" dusk="forgot-password-form">
         @csrf
 
         <x-ui.input
@@ -24,10 +22,12 @@
 
         <x-ui.button type="submit" block dusk="forgot-password-submit">Enviar link de redefinição</x-ui.button>
 
-        <a href="{{ route('login') }}"
-           dusk="back-to-login-link"
-           style="font-size: 13px; text-align: center; color: var(--color-accent); text-decoration: none; font-weight: 600;">
-            Voltar para o login
-        </a>
+        <div class="text-center mt-4x">
+            <a href="{{ route('login') }}"
+               dusk="back-to-login-link"
+               class="small fw-semibold text-primary text-decoration-none">
+                Voltar para o login
+            </a>
+        </div>
     </form>
 @endsection

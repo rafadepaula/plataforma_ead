@@ -2,40 +2,64 @@
 
 @section('content')
     <x-ui.card title="Importar Alunos via CSV" kicker="Alunos & Gestores">
-        <p style="font-size: 13px; color: var(--color-neutral-600); margin: 0 0 20px;">
+        <p class="small text-body-secondary mb-4">
             O arquivo é processado em lotes de 50 linhas diretamente no navegador — cada lote é
             enviado separadamente, sem limite de tamanho de arquivo no servidor. Cabeçalhos
             esperados: <code>name,email,cpf</code> (a coluna <code>cpf</code> é opcional).
         </p>
 
-        <form dusk="csv-import-form" data-chunk-url="{{ route('users.import.chunk') }}" style="display: flex; flex-direction: column; gap: 20px; max-width: 560px;">
-            <x-ui.select
-                name="course_id"
-                label="Curso de Destino"
-                required
-                :options="$courses->pluck('title', 'id')->all()"
-                dusk="csv-course-select"
-            />
+        <form dusk="csv-import-form" data-chunk-url="{{ route('users.import.chunk') }}" class="max-w-560">
+            <x-ui.field-stack>
+                <x-ui.select
+                    name="course_id"
+                    label="Curso de Destino"
+                    required
+                    :options="$courses->pluck('title', 'id')->all()"
+                    dusk="csv-course-select"
+                />
 
-            <div class="field" style="display: flex; flex-direction: column; gap: 6px;">
-                <label for="csv-file" style="font-size: 13px; font-weight: 600; color: var(--color-text);">Arquivo CSV</label>
-                <input type="file" id="csv-file" name="csv_file" accept=".csv,text/csv" dusk="csv-file-input"
-                       style="border-radius: 0px; border: 1px solid var(--color-divider); padding: 8px 12px; background: var(--color-surface); color: var(--color-text);" />
-            </div>
-
-            <div dusk="csv-import-progress-wrapper" style="display: none; flex-direction: column; gap: 6px;">
-                <div style="width: 100%; height: 8px; background: var(--color-divider); border-radius: 0px;">
-                    <div dusk="csv-import-progress-bar" style="width: 0%; height: 100%; background: var(--color-accent); transition: width 0.2s ease;"></div>
+                <div class="mb-3">
+                    <label for="csv-file" class="form-label">Arquivo CSV</label>
+                    <input type="file" id="csv-file" name="csv_file" accept=".csv,text/csv"
+                           class="form-control" dusk="csv-file-input">
                 </div>
-                <span dusk="csv-import-progress-text" style="font-size: 12px; color: var(--color-neutral-600);"></span>
+            </x-ui.field-stack>
+
+            {{--
+                Estado oculto = utility `.d-none` (nunca `style.display`, nunca o
+                atributo nativo `hidden`: o Reboot do Bootstrap emite
+                `[hidden] { display: none !important }` e venceria uma declaração
+                inline sem `!important`).
+
+                Contrato para `resources/js/modules/CsvImporter.js`:
+                  - revelar   → wrapper.classList.remove('d-none')
+                  - progresso → [dusk="csv-import-progress-bar"] (ou
+                                [data-progress-bar]) recebe style.width, e o
+                                wrapper .progress mantém aria-valuenow sincronizado.
+            --}}
+            <div dusk="csv-import-progress-wrapper" class="d-none mb-3">
+                <x-ui.progress
+                    :value="0"
+                    height="8"
+                    label="Progresso da importação"
+                    class="mb-2"
+                    dusk="csv-import-progress"
+                />
+                <span dusk="csv-import-progress-text" class="small text-body-secondary"></span>
             </div>
 
-            <div dusk="csv-import-results" style="display: none; font-size: 13px;"></div>
+            {{--
+                Idem: `CsvImporter.js` revela com classList.remove('d-none') e
+                sinaliza erro com a classe utilitária `.text-primary` (o accent
+                #ec3013 do tema, mesma cor do antigo var(--color-accent)),
+                removendo-a no caminho de sucesso.
+            --}}
+            <div dusk="csv-import-results" class="d-none small"></div>
 
-            <div style="display: flex; gap: 12px;">
+            <x-ui.form-actions>
                 <x-ui.button type="submit" dusk="csv-import-submit">Iniciar Importação</x-ui.button>
                 <x-ui.button variant="secondary" href="{{ route('users.index') }}">Voltar</x-ui.button>
-            </div>
+            </x-ui.form-actions>
         </form>
     </x-ui.card>
 @endsection

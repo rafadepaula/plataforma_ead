@@ -15,21 +15,25 @@
 @extends('layouts.app')
 
 @section('content')
-    <x-ui.card title="Editar Tópico" kicker="{{ $course->title }} / Fórum">
-        <form method="POST" action="{{ route('forum.update', [$course, $topic]) }}" dusk="edit-topic-form">
-            @csrf
-            @method('PUT')
+    <x-layout.page-header kicker="{{ $course->title }} / Fórum" title="Editar Tópico" />
 
-            <div style="display: flex; flex-direction: column; gap: 20px; max-width: 640px;">
-                <x-ui.input name="title" label="Título" required value="{{ old('title', $topic->title) }}" dusk="edit-topic-title" />
+    <div class="row">
+        <div class="col-12 col-lg-8">
+            <x-ui.card>
+                <form method="POST" action="{{ route('forum.update', [$course, $topic]) }}" dusk="edit-topic-form">
+                    @csrf
+                    @method('PUT')
 
-                <x-ui.input type="textarea" name="content" label="Conteúdo" required value="{{ old('content', $topic->content) }}" dusk="edit-topic-content" />
-            </div>
+                    <x-ui.input name="title" label="Título" required value="{{ old('title', $topic->title) }}" dusk="edit-topic-title" />
 
-            <div style="display: flex; gap: 12px; margin-top: 24px;">
-                <x-ui.button type="submit" dusk="edit-topic-submit">Salvar Alterações</x-ui.button>
-                <x-ui.button variant="secondary" href="{{ route('forum.show', [$course, $topic]) }}">Cancelar</x-ui.button>
-            </div>
-        </form>
-    </x-ui.card>
+                    <x-ui.input type="textarea" name="content" label="Conteúdo" required value="{{ old('content', $topic->content) }}" rows="8" dusk="edit-topic-content" />
+
+                    <div class="d-flex flex-wrap gap-3 mt-4">
+                        <x-ui.button type="submit" dusk="edit-topic-submit">Salvar Alterações</x-ui.button>
+                        <x-ui.button variant="secondary" href="{{ route('forum.show', [$course, $topic]) }}">Cancelar</x-ui.button>
+                    </div>
+                </form>
+            </x-ui.card>
+        </div>
+    </div>
 @endsection

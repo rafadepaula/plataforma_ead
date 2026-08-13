@@ -18,7 +18,8 @@
  *   button to POST `lessons.complete`.
  *
  * Both paths reflect `is_completed` in the UI without a reload by toggling
- * `[data-mark-complete-url]` (hide) and `[data-completion-badge]` (show).
+ * Bootstrap's `.d-none` utility on `[data-mark-complete-url]` (hide) and
+ * `[data-completion-badge]` (show).
  */
 export class LessonPlayer {
     constructor(httpClient, notificationService) {
@@ -158,19 +159,18 @@ export class LessonPlayer {
     reflectCompletion(data) {
         if (!data || !data.is_completed) return;
 
+        // Visibility is expressed with Bootstrap's `.d-none` utility on both
+        // sides (Blade renders the initial state, this toggles it). Neither
+        // the native `hidden` attribute nor `style.display` works here:
+        // Bootstrap's Reboot emits `[hidden] { display: none !important }`,
+        // and an author `!important` rule beats an inline declaration that
+        // lacks it — so a `style.display` reveal would silently no-op.
         document.querySelectorAll('[data-mark-complete-url]').forEach((button) => {
-            button.hidden = true;
+            button.classList.add('d-none');
         });
 
-        // `x-ui.badge` bakes `display: inline-flex` into its own inline
-        // `style`, and the Blade partials express the initial hidden
-        // state as an explicit `style="display:none;"` override (a plain
-        // `hidden` attribute can't win against an inline style already on
-        // the element) — reveal it the same way, by writing `display`
-        // directly, rather than toggling the (here, ineffective) `hidden`
-        // DOM property.
         document.querySelectorAll('[data-completion-badge]').forEach((badge) => {
-            badge.style.display = 'inline-flex';
+            badge.classList.remove('d-none');
         });
     }
 

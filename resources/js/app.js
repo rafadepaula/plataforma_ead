@@ -1,44 +1,47 @@
-import AuditLogDiffModal from './modules/AuditLogDiffModal';
-import CsvImporter from './modules/CsvImporter';
-import ForumEditHistory from './modules/ForumEditHistory';
-import ForumPolling from './modules/ForumPolling';
-import ForumReportModal from './modules/ForumReportModal';
-import HttpClient from './modules/HttpClient';
-import LessonPlayer from './modules/LessonPlayer';
-import ModalManager from './modules/ModalManager';
-import ModuleReorder from './modules/ModuleReorder';
-import NotificationBell from './modules/NotificationBell';
-import NotificationService from './modules/NotificationService';
-import SmartInvitationForm from './modules/SmartInvitationForm';
-import QuizBuilder from './quiz-builder';
-import QuizTimer from './quiz-timer';
+// -----------------------------------------------------------------------------
+// Entrypoint. Estável por design: adicionar/remover um módulo NÃO toca este
+// arquivo — edite `modules/index.js`. Isso elimina a serialização de PRs em
+// torno de um arquivo compartilhado.
+// -----------------------------------------------------------------------------
 
-window.HttpClient = HttpClient;
-window.ModalManager = ModalManager;
-window.NotificationService = NotificationService;
-window.CsvImporter = new CsvImporter(HttpClient);
-window.ModuleReorder = new ModuleReorder(HttpClient, NotificationService);
-window.SmartInvitationForm = new SmartInvitationForm(HttpClient, NotificationService);
-window.LessonPlayer = new LessonPlayer(HttpClient, NotificationService);
-window.QuizBuilder = new QuizBuilder(NotificationService);
-window.QuizTimer = new QuizTimer();
-window.ForumPolling = new ForumPolling(HttpClient);
-window.ForumReportModal = new ForumReportModal(HttpClient, NotificationService, ModalManager);
-window.ForumEditHistory = new ForumEditHistory(ModalManager);
-window.NotificationBell = new NotificationBell(HttpClient);
-window.AuditLogDiffModal = new AuditLogDiffModal(ModalManager);
+// Bootstrap COMPLETO (com Popper). Necessário para que os listeners de
+// data-api (`data-bs-toggle`, `data-bs-dismiss`) sejam registrados: cada
+// componente só responde a data-attributes se seu módulo tiver sido avaliado.
+// Verificado em node_modules/bootstrap/js/dist/modal.js:284 e alert.js:79.
+import * as bootstrap from 'bootstrap/dist/js/bootstrap.bundle.min.js';
 
-document.addEventListener('DOMContentLoaded', () => {
-    // JavaScript modules auto-bind DOM handlers upon load
-    window.CsvImporter.init();
-    window.ModuleReorder.init();
-    window.SmartInvitationForm.init();
-    window.LessonPlayer.init();
-    window.QuizBuilder.init();
-    window.QuizTimer.init();
-    window.ForumPolling.init();
-    window.ForumReportModal.init();
-    window.ForumEditHistory.init();
-    window.NotificationBell.init();
-    window.AuditLogDiffModal.init();
-});
+import registry from './modules/index.js';
+
+// `window.bootstrap` é o contrato que a suíte Dusk usa para dirigir modais e
+// toasts programaticamente (`bootstrap.Modal.getOrCreateInstance(...)`).
+window.bootstrap = bootstrap;
+
+// Tooltip e Popover são opt-in por decisão de performance do Bootstrap:
+// `data-bs-toggle="tooltip"` NÃO auto-inicializa. Init explícito aqui.
+const initOptIns = () => {
+    document.querySelectorAll('[data-bs-toggle="tooltip"]')
+        .forEach((el) => bootstrap.Tooltip.getOrCreateInstance(el));
+    document.querySelectorAll('[data-bs-toggle="popover"]')
+        .forEach((el) => bootstrap.Popover.getOrCreateInstance(el));
+};
+
+const boot = () => {
+    initOptIns();
+
+    Object.entries(registry).forEach(([name, instance]) => {
+        window[name] = instance;
+        if (typeof instance.init === 'function') {
+            try {
+                instance.init();
+            } catch (error) {
+                console.error(`[app] falha ao inicializar ${name}`, error);
+            }
+        }
+    });
+};
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot);
+} else {
+    boot();
+}

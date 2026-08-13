@@ -32,16 +32,17 @@
             @csrf
             @method('PUT')
 
-            <div style="display: flex; flex-direction: column; gap: 20px; max-width: 640px;">
+            <x-ui.field-stack class="max-w-640">
                 <x-ui.input name="title" label="Título" required value="{{ $quiz->title }}" dusk="quiz-title-input" />
 
                 <x-ui.input type="textarea" name="instructions" label="Instruções" value="{{ $quiz->instructions }}" />
 
-                <div class="field" style="display: flex; align-items: center; gap: 8px;">
-                    <input type="checkbox" id="allow_retries" name="allow_retries" value="1"
-                           @checked(old('allow_retries', $quiz->allow_retries)) style="width: 16px; height: 16px;" dusk="quiz-allow-retries" />
-                    <label for="allow_retries" style="font-size: 13px; font-weight: 600; color: var(--color-text);">Permitir novas tentativas</label>
-                </div>
+                <x-ui.checkbox
+                    name="allow_retries"
+                    label="Permitir novas tentativas"
+                    :checked="$quiz->allow_retries"
+                    dusk="quiz-allow-retries"
+                />
 
                 <x-ui.input
                     type="number"
@@ -61,11 +62,12 @@
                     dusk="quiz-time-limit"
                 />
 
-                <div class="field" style="display: flex; align-items: center; gap: 8px;">
-                    <input type="checkbox" id="show_correct_answers" name="show_correct_answers" value="1"
-                           @checked(old('show_correct_answers', $quiz->show_correct_answers)) style="width: 16px; height: 16px;" dusk="quiz-show-correct-answers" />
-                    <label for="show_correct_answers" style="font-size: 13px; font-weight: 600; color: var(--color-text);">Exibir gabarito ao aluno após envio</label>
-                </div>
+                <x-ui.checkbox
+                    name="show_correct_answers"
+                    label="Exibir gabarito ao aluno após envio"
+                    :checked="$quiz->show_correct_answers"
+                    dusk="quiz-show-correct-answers"
+                />
 
                 <x-ui.input
                     type="number"
@@ -75,22 +77,22 @@
                     value="{{ $quiz->min_score_percentage }}"
                     dusk="quiz-min-score"
                 />
-            </div>
+            </x-ui.field-stack>
 
-            <div style="display: flex; gap: 12px; margin-top: 24px;">
+            <x-ui.form-actions>
                 <x-ui.button type="submit" dusk="quiz-submit">Salvar Alterações</x-ui.button>
                 <x-ui.button variant="secondary" href="{{ route('modules.lessons.index', $quiz->lesson->module) }}">Cancelar</x-ui.button>
-            </div>
+            </x-ui.form-actions>
         </form>
     </x-ui.card>
 
-    <div style="margin-top: 24px;">
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
-            <h2 style="font-family: var(--font-heading); font-weight: 800; font-size: 18px; margin: 0;">Questões</h2>
-            <x-ui.button data-modal-target="question-create-modal" dusk="new-question">Nova Questão</x-ui.button>
+    <div class="mt-4">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3x mb-3x">
+            <h2 class="h5 mb-0">Questões</h2>
+            <x-ui.button data-bs-toggle="modal" data-bs-target="#question-create-modal" dusk="new-question">Nova Questão</x-ui.button>
         </div>
 
-        <p style="font-size: 12px; color: var(--color-neutral-600); margin-bottom: 12px;">
+        <p class="small text-body-secondary mb-3x">
             Arraste as questões para reordená-las. A nova ordem é salva automaticamente.
         </p>
 

@@ -5,32 +5,37 @@
 @extends('layouts.app')
 
 @section('content')
-    <x-ui.card title="Novo Link de Convite" kicker="{{ $course->title }}">
-        <form method="POST" action="{{ route('courses.invitation-links.store', $course) }}" dusk="invitation-link-form">
-            @csrf
+    {{-- `col-lg-6` substitui o antigo `max-width: 480px` do bloco de campos. --}}
+    <div class="row">
+        <div class="col-12 col-lg-6">
+            <x-ui.card title="Novo Link de Convite" kicker="{{ $course->title }}">
+                <form method="POST" action="{{ route('courses.invitation-links.store', $course) }}" dusk="invitation-link-form">
+                    @csrf
 
-            <div style="display: flex; flex-direction: column; gap: 20px; max-width: 480px;">
-                <x-ui.input
-                    type="number"
-                    name="max_uses"
-                    label="Máximo de usos"
-                    hint="Deixe em branco para permitir usos ilimitados."
-                    value="{{ old('max_uses') }}"
-                />
+                    <x-ui.field-stack>
+                        <x-ui.input
+                            type="number"
+                            name="max_uses"
+                            label="Máximo de usos"
+                            hint="Deixe em branco para permitir usos ilimitados."
+                            value="{{ old('max_uses') }}"
+                        />
 
-                <x-ui.input
-                    type="datetime-local"
-                    name="expires_at"
-                    label="Expira em"
-                    hint="Deixe em branco para nunca expirar."
-                    value="{{ old('expires_at') }}"
-                />
-            </div>
+                        <x-ui.input
+                            type="datetime-local"
+                            name="expires_at"
+                            label="Expira em"
+                            hint="Deixe em branco para nunca expirar."
+                            value="{{ old('expires_at') }}"
+                        />
+                    </x-ui.field-stack>
 
-            <div style="display: flex; gap: 12px; margin-top: 24px;">
-                <x-ui.button type="submit" dusk="invitation-link-submit">Gerar Link</x-ui.button>
-                <x-ui.button variant="secondary" href="{{ route('courses.invitation-links.index', $course) }}">Cancelar</x-ui.button>
-            </div>
-        </form>
-    </x-ui.card>
+                    <x-ui.form-actions>
+                        <x-ui.button type="submit" dusk="invitation-link-submit">Gerar Link</x-ui.button>
+                        <x-ui.button variant="secondary" href="{{ route('courses.invitation-links.index', $course) }}">Cancelar</x-ui.button>
+                    </x-ui.form-actions>
+                </form>
+            </x-ui.card>
+        </div>
+    </div>
 @endsection

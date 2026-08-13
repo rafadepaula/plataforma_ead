@@ -89,9 +89,9 @@ export class QuizBuilder {
         const hint = document.querySelector(`[data-essay-hint="${suffix}"]`);
         const addButton = document.querySelector(`[data-add-option-btn="${suffix}"]`);
 
-        if (container) container.style.display = isEssay ? 'none' : 'flex';
-        if (hint) hint.style.display = isEssay ? 'block' : 'none';
-        if (addButton) addButton.style.display = isTrueFalse ? 'none' : 'inline-flex';
+        if (container) container.classList.toggle('d-none', isEssay);
+        if (hint) hint.classList.toggle('d-none', !isEssay);
+        if (addButton) addButton.classList.toggle('d-none', isTrueFalse);
 
         const list = document.querySelector(`[data-options-list="${suffix}"]`);
         if (!list) return;
@@ -111,7 +111,7 @@ export class QuizBuilder {
             // alongside `type=essay`, which `UpdateQuizQuestionRequest`'s
             // `'prohibited'` rule on `options` rejects.
             if (hiddenIdInput) hiddenIdInput.disabled = isEssay;
-            if (removeButton) removeButton.style.display = isTrueFalse || isEssay ? 'none' : 'inline-flex';
+            if (removeButton) removeButton.classList.toggle('d-none', isTrueFalse || isEssay);
         });
     }
 

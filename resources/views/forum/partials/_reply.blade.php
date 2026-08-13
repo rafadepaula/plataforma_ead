@@ -17,10 +17,11 @@
     $isReplyAuthor = auth()->id() === $reply->user_id;
     $replyHistory = $replyEditHistories[$reply->id] ?? collect();
 @endphp
-<div style="padding: 14px 16px; border: 1px solid var(--color-divider); background: var(--color-surface); margin-bottom: 10px;" dusk="reply-{{ $reply->id }}" data-reply-id="{{ $reply->id }}">
-    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
-        <div style="font-size: 12px; color: var(--color-neutral-600);">
-            <strong style="color: var(--color-text);">{{ $reply->user->name }}</strong>
+<div class="forum-reply card mb-2" dusk="reply-{{ $reply->id }}" data-reply-id="{{ $reply->id }}">
+    <div class="card-body py-3">
+    <div class="d-flex align-items-center justify-content-between mb-1">
+        <div class="small text-body-secondary">
+            <strong class="text-body">{{ $reply->user->name }}</strong>
             — {{ $reply->created_at->format('d/m/Y H:i') }}
 
             @include('forum.partials._edit-history-modal', [
@@ -31,27 +32,29 @@
             ])
         </div>
 
-        <div style="display: flex; gap: 8px;">
-            <button
+        <div class="d-flex gap-2">
+            <x-ui.button
                 type="button"
-                class="btn btn-ghost"
-                style="border-radius: 0px; padding: 4px 10px; font-size: 11px;"
+                variant="ghost"
+                size="sm"
                 data-forum-report-button
                 data-postable-type="forum_reply"
                 data-postable-id="{{ $reply->id }}"
-                data-modal-target="report-modal"
+                data-bs-toggle="modal"
+                data-bs-target="#report-modal"
                 dusk="report-reply-{{ $reply->id }}"
-            >Denunciar</button>
+            >Denunciar</x-ui.button>
 
             @if($isReplyAuthor || $canModerate)
                 <form method="POST" action="{{ route('forum-replies.destroy', [$course, $topic, $reply]) }}" dusk="delete-reply-form-{{ $reply->id }}">
                     @csrf
                     @method('DELETE')
-                    <button type="submit" class="btn btn-ghost" style="border-radius: 0px; padding: 4px 10px; font-size: 11px;" dusk="delete-reply-{{ $reply->id }}">Apagar</button>
+                    <x-ui.button type="submit" variant="ghost" size="sm" dusk="delete-reply-{{ $reply->id }}">Apagar</x-ui.button>
                 </form>
             @endif
         </div>
     </div>
 
-    <div style="font-size: 14px; white-space: pre-wrap;" dusk="reply-content-{{ $reply->id }}">{{ $reply->content }}</div>
+    <div class="text-prewrap" dusk="reply-content-{{ $reply->id }}">{{ $reply->content }}</div>
+    </div>
 </div>

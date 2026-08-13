@@ -12,12 +12,12 @@
 --}}
 
 @if($lesson->quiz)
-    <div style="padding: 24px; text-align: center; border: 1px dashed var(--color-divider);" dusk="quiz-placeholder">
-        <p style="margin: 0 0 16px;">Esta lição é um Quiz de avaliação.</p>
+    <div class="p-5 text-center border border-dashed" dusk="quiz-placeholder">
+        <p class="mb-4">Esta lição é um Quiz de avaliação.</p>
         <x-ui.button href="{{ route('student.quizzes.show', $lesson) }}" dusk="start-quiz">Iniciar Quiz</x-ui.button>
     </div>
 @else
-    <div style="padding: 24px; text-align: center; color: var(--color-neutral-600); border: 1px dashed var(--color-divider);" dusk="quiz-placeholder">
-        <p style="margin: 0;">Este conteúdo é um Quiz. A funcionalidade de Quiz estará disponível em breve.</p>
+    <div class="p-5 text-center text-body-secondary border border-dashed" dusk="quiz-placeholder">
+        <p class="mb-0">Este conteúdo é um Quiz. A funcionalidade de Quiz estará disponível em breve.</p>
     </div>
 @endif

@@ -133,7 +133,11 @@ class NotificationBellTest extends DuskTestCase
                 ->click('@notifications-toggle')
                 ->waitFor('@notifications-dropdown')
                 ->click('@notifications-mark-all-read')
-                ->waitUntil("document.querySelector('[data-notifications-badge]').style.display === 'none'")
+                // O badge é ocultado por `.d-none` via `classList` (NotificationBell.js),
+                // não por `style.display` inline — `element.style` só enxerga o atributo
+                // inline e o predicado antigo nunca ficaria verdadeiro. `waitUntilMissing`
+                // afere visibilidade real e independe do mecanismo de ocultação.
+                ->waitUntilMissing('@notifications-badge')
                 ->assertMissing('@notifications-badge');
         });
 

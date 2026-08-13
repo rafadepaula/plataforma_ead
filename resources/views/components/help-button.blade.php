@@ -19,11 +19,11 @@
 @if($article)
     <button
         type="button"
-        class="btn btn-ghost btn-icon"
+        class="btn btn-link text-body text-decoration-none d-inline-flex align-items-center gap-2"
         aria-label="Ajuda"
-        data-modal-target="{{ $modalId }}"
+        data-bs-toggle="modal"
+        data-bs-target="#{{ $modalId }}"
         dusk="help-button-{{ $key }}"
-        style="color: var(--color-text); border-radius: 0px;"
     >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="10"></circle>
@@ -32,23 +32,23 @@
         </svg>
     </button>
 
-    <x-ui.modal id="{{ $modalId }}" title="{{ $article->title }}" size="md">
-        <div dusk="help-article-content-{{ $key }}" style="white-space: pre-wrap; font-size: 14px; line-height: 1.6;">
+    <x-ui.modal id="{{ $modalId }}" title="{{ $article->title }}" size="md" dusk="help-modal-{{ $key }}">
+        <div dusk="help-article-content-{{ $key }}" class="fs-6 lh-lg text-prewrap">
             {{ $article->content }}
         </div>
 
         <x-slot:actions>
-            <button type="button" class="btn btn-ghost" data-modal-dismiss="true" style="border-radius: 0px;">Fechar</button>
+            <button type="button" class="btn btn-link text-body text-decoration-none" data-bs-dismiss="modal">Fechar</button>
         </x-slot:actions>
     </x-ui.modal>
 @else
     <button
         type="button"
-        class="btn btn-ghost btn-icon"
+        class="btn btn-link text-body text-decoration-none d-inline-flex align-items-center gap-2"
         aria-label="Ajuda"
-        data-modal-target="{{ $modalId }}"
+        data-bs-toggle="modal"
+        data-bs-target="#{{ $modalId }}"
         dusk="help-button-{{ $key }}"
-        style="color: var(--color-text); border-radius: 0px;"
     >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="10"></circle>
@@ -57,13 +57,13 @@
         </svg>
     </button>
 
-    <x-ui.modal id="{{ $modalId }}" title="Ajuda" size="md">
-        <div dusk="help-placeholder-content-{{ $key }}" style="white-space: pre-wrap; font-size: 14px; line-height: 1.6;">
+    <x-ui.modal id="{{ $modalId }}" title="Ajuda" size="md" dusk="help-modal-{{ $key }}">
+        <div dusk="help-placeholder-content-{{ $key }}" class="fs-6 lh-lg text-prewrap">
             Estamos preparando o conteúdo de ajuda desta tela.
         </div>
 
         <x-slot:actions>
-            <button type="button" class="btn btn-ghost" data-modal-dismiss="true" style="border-radius: 0px;">Fechar</button>
+            <button type="button" class="btn btn-link text-body text-decoration-none" data-bs-dismiss="modal">Fechar</button>
         </x-slot:actions>
     </x-ui.modal>
 @endif

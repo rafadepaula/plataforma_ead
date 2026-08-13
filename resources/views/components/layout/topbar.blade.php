@@ -10,14 +10,20 @@
     $logoutUrl = $logoutUrl ?? '#';
 @endphp
 
-<header class="nav" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 24px; background: var(--color-surface); border-bottom: 1px solid var(--color-divider); height: 60px; border-radius: 0px;">
-    <div style="display: flex; align-items: center; gap: 16px;">
+<header class="nav d-flex align-items-center justify-content-between py-3 px-5 bg-body-secondary border-bottom h-60">
+    <div class="d-flex align-items-center gap-4">
+        {{-- Gatilho do drawer mobile. 100% declarativo: o Bootstrap resolve
+             abertura, backdrop, foco e `aria-expanded` a partir dos
+             `data-bs-*`. O alvo `#mobile-sidebar` é o `.offcanvas` de
+             `components/layout/sidebar.blade.php`. --}}
         <button type="button"
-                @click="sidebarOpen = !sidebarOpen"
-                class="btn btn-ghost btn-icon d-lg-none"
+                data-bs-toggle="offcanvas"
+                data-bs-target="#mobile-sidebar"
+                aria-controls="mobile-sidebar"
+                aria-expanded="false"
+                class="btn btn-link text-body text-decoration-none d-inline-flex align-items-center justify-content-center d-lg-none p-2"
                 aria-label="Abrir menu"
-                dusk="mobile-menu-button"
-                style="color: var(--color-text); padding: 6px; border-radius: 0px;">
+                dusk="mobile-menu-button">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="3" y1="12" x2="21" y2="12"></line>
                 <line x1="3" y1="6" x2="21" y2="6"></line>
@@ -25,53 +31,53 @@
             </svg>
         </button>
 
-        <a href="{{ $homeUrl }}" style="font-family: var(--font-heading); font-weight: 800; font-size: 16px; color: var(--color-text); text-decoration: none;">
+        <a href="{{ $homeUrl }}" class="fw-bolder fs-5 text-body text-decoration-none lh-1">
             {{ session('tenant_name') ?? config('app.name', 'Conselho EAD') }}
         </a>
     </div>
 
-    <div class="d-none d-md-block" style="flex: 1; max-width: 400px; margin: 0 24px;">
-        <div style="position: relative;">
-            <svg style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); opacity: 0.5;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <div class="d-none d-md-block flex-grow-1 max-w-400 mx-5">
+        <div class="position-relative">
+            <svg class="position-absolute start-0 top-50 translate-middle-y opacity-50" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="11" cy="11" r="8"></circle>
                 <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
-            <input type="text" class="input" placeholder="Buscar cursos, aulas..." style="padding-left: 34px; width: 100%; height: 36px; border-radius: 0px; font-size: 13px;" />
+            <input type="text" class="form-control ps-5 w-100 h-36 fs-6" placeholder="Buscar cursos, aulas..." />
         </div>
     </div>
 
-    <div style="display: flex; align-items: center; gap: 12px;">
+    <div class="d-flex align-items-center gap-3">
         <x-help-button :key="Route::currentRouteName() ?? 'unknown'" />
 
         <x-notifications-bell />
 
         @auth
-            <div style="display: flex; align-items: center; gap: 10px; padding-left: 12px; border-left: 1px solid var(--color-divider);">
-                <div class="grayscale" style="width: 32px; height: 32px; background: var(--color-neutral-800); color: var(--color-neutral-100); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; border-radius: 0px;">
+            <div class="d-flex align-items-center gap-2 ps-3 border-start">
+                <div class="grayscale w-32 h-32 d-flex align-items-center justify-content-center fw-bolder small text-bg-dark text-light lh-1">
                     {{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 2)) }}
                 </div>
                 <div class="d-none d-sm-block text-start">
-                    <div style="font-size: 13px; font-weight: 600; color: var(--color-text); line-height: 1.2;">
+                    <div class="fs-6 fw-semibold text-body lh-1">
                         {{ auth()->user()->name }}
                     </div>
-                    <div style="font-size: 11px; color: var(--color-neutral-600);">
+                    <div class="small text-body-secondary">
                         {{ auth()->user()->getRoleNames()->first() ?? 'Usuário' }}
                     </div>
                 </div>
 
-                <a href="{{ route('profile.edit') }}" class="btn btn-ghost" dusk="topbar-profile-link" style="padding: 4px 8px; font-size: 12px; color: var(--color-neutral-600); border-radius: 0px;">
+                <a href="{{ route('profile.edit') }}" class="btn btn-link text-body text-decoration-none py-1 px-2 small text-body-secondary" dusk="topbar-profile-link">
                     Meu Perfil
                 </a>
 
-                <form method="POST" action="{{ $logoutUrl }}" style="margin-left: 4px;">
+                <form method="POST" action="{{ $logoutUrl }}" class="ms-1">
                     @csrf
-                    <button type="submit" class="btn btn-ghost" style="padding: 4px 8px; font-size: 12px; color: var(--color-neutral-600); border-radius: 0px;" title="Sair">
+                    <button type="submit" class="btn btn-link text-body text-decoration-none py-1 px-2 small text-body-secondary" title="Sair">
                         Sair
                     </button>
                 </form>
             </div>
         @else
-            <a href="{{ $loginUrl }}" class="btn btn-primary btn-sm" style="border-radius: 0px;">Entrar</a>
+            <a href="{{ $loginUrl }}" class="btn btn-primary btn-sm">Entrar</a>
         @endauth
     </div>
 </header>

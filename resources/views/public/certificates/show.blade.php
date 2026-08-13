@@ -6,8 +6,10 @@
     Deliberately NOT `@extends('layouts.app')` (requires an authenticated
     session/topbar/sidebar) nor `layouts.guest` (that layout's left panel
     is themed around "Acesse a plataforma" login copy, which doesn't fit
-    a public audit page) — this is a standalone document that still pulls
-    in the app's compiled CSS via `@vite` for the shared design tokens.
+    a public audit page) — o shell HTML standalone vive agora em
+    `<x-layout.public>`, com o `.container.py-5` padrão. A largura de
+    leitura (antes `max-width: 640px`) é dada pelo grid: `.row` centralizada
+    + `.col-lg-6`.
 
     Expected `$certificate` variable: the bound Certificate, with `user`,
     `course`, and `course.organization` eager-loaded. Renders for BOTH
@@ -15,70 +17,68 @@
     and `revoked_at !== null` ("Revogado", §2's mandatory banner + reason,
     without hiding the original certificate data).
 --}}
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Validação de Certificado — {{ $certificate->course->title }}</title>
+<x-layout.public :title="'Validação de Certificado — '.$certificate->course->title">
 
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-</head>
-<body class="antialiased" style="background: var(--color-bg); color: var(--color-text); font-family: var(--font-body); margin: 0; padding: 0; min-height: 100vh;">
-    <div style="max-width: 640px; margin: 0 auto; padding: 48px 24px;">
-        <div style="margin-bottom: 24px; text-align: center; position: relative;">
-            <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-accent); font-weight: 700;">Validação Pública de Certificado</span>
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
 
-            <div style="position: absolute; top: -8px; right: 0;">
-                <x-help-button key="certificates.verify" />
+            <div class="position-relative text-center mb-4">
+                <span class="kicker text-primary">Validação Pública de Certificado</span>
+
+                <div class="position-absolute top-0 end-0">
+                    <x-help-button key="certificates.verify" />
+                </div>
             </div>
+
+            @if($certificate->isRevoked())
+                <x-ui.alert variant="danger" class="mb-4" dusk="certificate-revoked-banner">
+                    <strong class="d-block mb-1">
+                        Certificado Revogado em {{ $certificate->revoked_at->format('d/m/Y H:i') }}
+                    </strong>
+                    <span class="small" dusk="certificate-revoke-reason">
+                        Motivo: {{ $certificate->revoke_reason }}
+                    </span>
+                </x-ui.alert>
+            @else
+                <x-ui.alert variant="success" class="mb-4" dusk="certificate-valid-banner">
+                    <strong>Certificado Válido</strong>
+                </x-ui.alert>
+            @endif
+
+            <x-ui.card>
+                <div class="table-responsive">
+                    <table class="table table-borderless align-middle mb-0">
+                        <tbody>
+                            <tr>
+                                <th scope="row" class="w-25 fw-normal text-body-secondary">Aluno</th>
+                                <td class="fw-bold" dusk="certificate-student-name">{{ $certificate->user->name }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row" class="fw-normal text-body-secondary">Curso</th>
+                                <td class="fw-bold" dusk="certificate-course-title">{{ $certificate->course->title }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row" class="fw-normal text-body-secondary">Organização Emissora</th>
+                                <td class="fw-bold" dusk="certificate-org-name">{{ $certificate->course->organization->name }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row" class="fw-normal text-body-secondary">Carga Horária</th>
+                                <td class="fw-bold" dusk="certificate-workload">{{ $certificate->course->workload_hours }}h</td>
+                            </tr>
+                            <tr>
+                                <th scope="row" class="fw-normal text-body-secondary">Data de Emissão</th>
+                                <td class="fw-bold" dusk="certificate-issued-at">{{ $certificate->issued_at->format('d/m/Y') }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </x-ui.card>
+
+            <p class="mt-4 mb-0 small text-body-secondary text-center text-break">
+                Hash de validação: {{ $certificate->validation_hash }}
+            </p>
+
         </div>
-
-        @if($certificate->isRevoked())
-            <div dusk="certificate-revoked-banner" style="background: var(--color-danger-100, #fdecea); border: 1px solid var(--color-danger-300, #f5b5ac); color: var(--color-danger-700, #b3261e); padding: 16px 20px; margin-bottom: 24px; border-radius: 0px;">
-                <strong style="display: block; font-size: 15px; margin-bottom: 4px;">
-                    Certificado Revogado em {{ $certificate->revoked_at->format('d/m/Y H:i') }}
-                </strong>
-                <span dusk="certificate-revoke-reason" style="font-size: 13px;">
-                    Motivo: {{ $certificate->revoke_reason }}
-                </span>
-            </div>
-        @else
-            <div dusk="certificate-valid-banner" style="background: var(--color-accent-100, #eafaf1); border: 1px solid var(--color-accent-300, #a6e9c4); color: var(--color-accent-700, #146c43); padding: 12px 20px; margin-bottom: 24px; text-align: center; border-radius: 0px;">
-                <strong>Certificado Válido</strong>
-            </div>
-        @endif
-
-        <x-ui.card>
-            <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-                <tr>
-                    <td style="padding: 8px 0; color: var(--color-neutral-600); width: 40%;">Aluno</td>
-                    <td style="padding: 8px 0; font-weight: 700;" dusk="certificate-student-name">{{ $certificate->user->name }}</td>
-                </tr>
-                <tr>
-                    <td style="padding: 8px 0; color: var(--color-neutral-600);">Curso</td>
-                    <td style="padding: 8px 0; font-weight: 700;" dusk="certificate-course-title">{{ $certificate->course->title }}</td>
-                </tr>
-                <tr>
-                    <td style="padding: 8px 0; color: var(--color-neutral-600);">Organização Emissora</td>
-                    <td style="padding: 8px 0; font-weight: 700;" dusk="certificate-org-name">{{ $certificate->course->organization->name }}</td>
-                </tr>
-                <tr>
-                    <td style="padding: 8px 0; color: var(--color-neutral-600);">Carga Horária</td>
-                    <td style="padding: 8px 0; font-weight: 700;" dusk="certificate-workload">{{ $certificate->course->workload_hours }}h</td>
-                </tr>
-                <tr>
-                    <td style="padding: 8px 0; color: var(--color-neutral-600);">Data de Emissão</td>
-                    <td style="padding: 8px 0; font-weight: 700;" dusk="certificate-issued-at">{{ $certificate->issued_at->format('d/m/Y') }}</td>
-                </tr>
-            </table>
-        </x-ui.card>
-
-        <p style="margin-top: 24px; font-size: 11px; color: var(--color-neutral-600); text-align: center; word-break: break-all;">
-            Hash de validação: {{ $certificate->validation_hash }}
-        </p>
     </div>
 
-
-</body>
-</html>
+</x-layout.public>

@@ -15,16 +15,12 @@
 --}}
 
 @section('content')
-    <div style="margin-bottom: 20px;">
-        <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-accent); font-weight: 700;">
-            {{ $lesson->module->course->title }} / {{ $lesson->module->title }}
-        </span>
-        <h1 style="font-family: var(--font-heading); font-weight: 800; font-size: 24px; margin: 4px 0 0;">{{ $lesson->title }}</h1>
-    </div>
-
-    <div style="margin-bottom: 16px;">
-        <x-ui.button variant="secondary" href="{{ route('classroom.show', $lesson->module->course) }}" dusk="back-to-classroom">Voltar à Sala de Aula</x-ui.button>
-    </div>
+    <x-layout.page-header :kicker="$lesson->module->course->title.' / '.$lesson->module->title"
+                          :title="$lesson->title">
+        <x-slot:actions>
+            <x-ui.button variant="secondary" href="{{ route('classroom.show', $lesson->module->course) }}" dusk="back-to-classroom">Voltar à Sala de Aula</x-ui.button>
+        </x-slot:actions>
+    </x-layout.page-header>
 
     <x-ui.card>
         @if($lesson->type === 'quiz')

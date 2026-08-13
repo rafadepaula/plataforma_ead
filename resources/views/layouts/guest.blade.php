@@ -7,40 +7,39 @@
 
     <title>{{ $title ?? config('app.name', 'Plataforma EAD') }}</title>
 
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @vite(['resources/scss/app.scss', 'resources/js/app.js'])
     @stack('styles')
 </head>
-<body class="antialiased" style="background: var(--color-bg); color: var(--color-text); font-family: var(--font-body); margin: 0; padding: 0; min-height: 100vh;">
-    <div style="display: flex; min-height: 100vh; width: 100%;">
+<body class="bg-body text-body m-0 p-0 min-vh-100 antialiased">
+    <div class="d-flex min-vh-100 w-100">
         {{-- Left Institutional Panel (Desktop) --}}
-        <div class="d-none d-lg-flex" 
-             style="width: 42%; flex: none; background: var(--color-neutral-900); color: var(--color-neutral-100); flex-direction: column; padding: 56px; border-radius: 0px;">
-            <span style="font-family: var(--font-heading); font-weight: 800; font-size: 20px;">
+        <div class="guest-panel d-none d-lg-flex flex-column flex-none bg-dark text-light">
+            <span class="guest-logo">
                 {{ session('tenant_name') ?? config('app.name', 'Conselho EAD') }}
             </span>
 
-            <div style="margin-top: auto; margin-bottom: auto;">
-                <div style="width: 56px; height: 2px; background: var(--color-accent); margin-bottom: 24px;"></div>
-                <h1 style="font-family: var(--font-heading); font-weight: 800; font-size: 36px; line-height: 1.1; max-width: 10ch; margin-bottom: 16px; color: var(--color-neutral-100);">
+            <div class="my-auto">
+                <div class="guest-accent-bar bg-primary mb-4"></div>
+                <h1 class="guest-title fw-bolder mb-4 text-light lh-base">
                     Acesse a plataforma
                 </h1>
-                <p style="font-size: 15px; color: var(--color-neutral-400); max-width: 32ch; line-height: 1.5;">
+                <p class="guest-text lh-base">
                     Capacitação técnica continuada, provas interativas e emissão de certificados oficiais.
                 </p>
             </div>
 
-            <div style="font-size: 12px; color: var(--color-neutral-600);">
+            <div class="guest-footer text-info">
                 © {{ date('Y') }} Plataforma EAD. Todos os direitos reservados.
             </div>
         </div>
 
         {{-- Right Form Area --}}
-        <div style="flex: 1; background: var(--color-bg); display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 32px 24px; border-radius: 0px; position: relative;">
-            <div style="position: absolute; top: 16px; right: 16px;">
+        <div class="flex-fill bg-body d-flex flex-column justify-content-center align-items-center position-relative guest-form-area">
+            <div class="position-absolute top-0 end-0 guest-help-pos">
                 <x-help-button :key="Route::currentRouteName() ?? 'unknown'" />
             </div>
 
-            <div style="width: 380px; max-width: 100%;">
+            <div class="w-100 guest-form-max-w">
                 <x-layout.alerts />
                 {{ $slot ?? '' }}
                 @yield('content')

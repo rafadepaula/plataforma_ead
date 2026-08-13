@@ -13,49 +13,50 @@
 @extends('layouts.app')
 
 @section('content')
-    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
-        <h1 style="font-family: var(--font-heading); font-weight: 800; font-size: 22px; color: var(--color-text); margin: 0;">
-            Meu Perfil
-        </h1>
-    </div>
+    <x-layout.page-header title="Meu Perfil" />
 
-    <div style="display: flex; flex-direction: column; gap: 24px; max-width: 560px;">
-        <x-ui.card title="Informações do Perfil" kicker="Dados Cadastrais">
-            <form method="POST" action="{{ route('profile.update') }}" dusk="profile-form">
-                @csrf
-                @method('PATCH')
+    {{-- `col-lg-6` substitui o antigo `max-width: 560px`: o Bootstrap não tem
+         utility de largura máxima em px, e a coluna do grid é o degrau
+         responsivo equivalente já adotado em `users/create`. --}}
+    <div class="row">
+        <div class="col-12 col-lg-6 d-flex flex-column gap-4">
+            <x-ui.card title="Informações do Perfil" kicker="Dados Cadastrais">
+                <form method="POST" action="{{ route('profile.update') }}" dusk="profile-form">
+                    @csrf
+                    @method('PATCH')
 
-                <div style="display: flex; flex-direction: column; gap: 20px;">
-                    <x-ui.input name="name" label="Nome" required value="{{ old('name', $user->name) }}" />
+                    <x-ui.field-stack>
+                        <x-ui.input name="name" label="Nome" required value="{{ old('name', $user->name) }}" />
 
-                    <x-ui.input name="email" type="email" label="E-mail" required value="{{ old('email', $user->email) }}" />
+                        <x-ui.input name="email" type="email" label="E-mail" required value="{{ old('email', $user->email) }}" />
 
-                    <x-ui.input name="cpf" label="CPF" value="{{ old('cpf', $user->cpf) }}" hint="Opcional." />
-                </div>
+                        <x-ui.input name="cpf" label="CPF" value="{{ old('cpf', $user->cpf) }}" hint="Opcional." />
+                    </x-ui.field-stack>
 
-                <div style="display: flex; gap: 12px; margin-top: 24px;">
-                    <x-ui.button type="submit" dusk="profile-submit">Salvar Alterações</x-ui.button>
-                </div>
-            </form>
-        </x-ui.card>
+                    <x-ui.form-actions>
+                        <x-ui.button type="submit" dusk="profile-submit">Salvar Alterações</x-ui.button>
+                    </x-ui.form-actions>
+                </form>
+            </x-ui.card>
 
-        <x-ui.card title="Atualizar Senha" kicker="Segurança">
-            <form method="POST" action="{{ route('password.update') }}" dusk="password-form">
-                @csrf
-                @method('PUT')
+            <x-ui.card title="Atualizar Senha" kicker="Segurança">
+                <form method="POST" action="{{ route('password.update') }}" dusk="password-form">
+                    @csrf
+                    @method('PUT')
 
-                <div style="display: flex; flex-direction: column; gap: 20px;">
-                    <x-ui.input name="current_password" type="password" label="Senha Atual" required />
+                    <x-ui.field-stack>
+                        <x-ui.input name="current_password" type="password" label="Senha Atual" required />
 
-                    <x-ui.input name="password" type="password" label="Nova Senha" required />
+                        <x-ui.input name="password" type="password" label="Nova Senha" required />
 
-                    <x-ui.input name="password_confirmation" type="password" label="Confirmar Nova Senha" required />
-                </div>
+                        <x-ui.input name="password_confirmation" type="password" label="Confirmar Nova Senha" required />
+                    </x-ui.field-stack>
 
-                <div style="display: flex; gap: 12px; margin-top: 24px;">
-                    <x-ui.button type="submit" dusk="password-submit">Atualizar Senha</x-ui.button>
-                </div>
-            </form>
-        </x-ui.card>
+                    <x-ui.form-actions>
+                        <x-ui.button type="submit" dusk="password-submit">Atualizar Senha</x-ui.button>
+                    </x-ui.form-actions>
+                </form>
+            </x-ui.card>
+        </div>
     </div>
 @endsection

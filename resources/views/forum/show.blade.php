@@ -31,76 +31,80 @@
 @extends('layouts.app')
 
 @section('content')
-    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
-        <div>
-            <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-accent); font-weight: 700;">Fórum</span>
-            <h1 style="font-family: var(--font-heading); font-weight: 800; font-size: 24px; margin: 4px 0 0;">{{ $topic->title }}</h1>
-        </div>
+    <x-layout.page-header kicker="Fórum" :title="$topic->title">
+        <x-slot:actions>
+            <x-ui.button variant="secondary" href="{{ route('forum.index', $course) }}" dusk="back-to-forum">Voltar ao Fórum</x-ui.button>
+        </x-slot:actions>
+    </x-layout.page-header>
 
-        <x-ui.button variant="secondary" href="{{ route('forum.index', $course) }}" dusk="back-to-forum">Voltar ao Fórum</x-ui.button>
-    </div>
+    {{-- Markup `.card` cru (e não `<x-ui.card>`) pelo mesmo motivo de
+         `forum/partials/_reply.blade.php`, já migrado: o post do tópico e a
+         resposta são o mesmo padrão visual, e `<x-ui.card>` embrulha o slot
+         num `.card-content.small` que rebaixaria o corpo do post. --}}
+    <div class="card bg-body-tertiary mb-4" dusk="topic-post" data-topic-id="{{ $topic->id }}">
+        <div class="card-body">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <div class="small text-body-secondary">
+                    @if($topic->is_pinned)
+                        <x-ui.badge variant="accent" dusk="pinned-badge-{{ $topic->id }}">Fixado</x-ui.badge>
+                    @endif
+                    <strong class="text-body">{{ $topic->user->name }}</strong>
+                    — {{ $topic->created_at->format('d/m/Y H:i') }}
 
-    <div style="padding: 16px; border: 1px solid var(--color-divider); background: var(--color-surface); margin-bottom: 20px;" dusk="topic-post" data-topic-id="{{ $topic->id }}">
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-            <div style="font-size: 12px; color: var(--color-neutral-600);">
-                @if($topic->is_pinned)
-                    <x-ui.badge variant="accent" dusk="pinned-badge-{{ $topic->id }}">Fixado</x-ui.badge>
-                @endif
-                <strong style="color: var(--color-text);">{{ $topic->user->name }}</strong>
-                — {{ $topic->created_at->format('d/m/Y H:i') }}
+                    @include('forum.partials._edit-history-modal', [
+                        'modalId' => 'edit-history-topic-'.$topic->id,
+                        'label' => 'Tópico',
+                        'editedAt' => $topic->edited_at,
+                        'history' => $topicEditHistory,
+                    ])
+                </div>
 
-                @include('forum.partials._edit-history-modal', [
-                    'modalId' => 'edit-history-topic-'.$topic->id,
-                    'label' => 'Tópico',
-                    'editedAt' => $topic->edited_at,
-                    'history' => $topicEditHistory,
-                ])
+                <div class="d-flex gap-2">
+                    <x-ui.button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        data-forum-report-button
+                        data-postable-type="forum_topic"
+                        data-postable-id="{{ $topic->id }}"
+                        data-bs-toggle="modal"
+                        data-bs-target="#report-modal"
+                        dusk="report-topic-{{ $topic->id }}"
+                    >Denunciar</x-ui.button>
+
+                    @if($canEditTopic)
+                        <x-ui.button
+                            variant="ghost"
+                            size="sm"
+                            :href="route('forum.edit', [$course, $topic])"
+                            dusk="edit-topic-{{ $topic->id }}"
+                        >Editar</x-ui.button>
+                    @endif
+
+                    @if($canPin)
+                        <form method="POST" action="{{ route('forum.pin', [$course, $topic]) }}" dusk="pin-form-{{ $topic->id }}">
+                            @csrf
+                            <x-ui.button type="submit" variant="ghost" size="sm" dusk="pin-topic-{{ $topic->id }}">
+                                {{ $topic->is_pinned ? 'Desafixar' : 'Fixar' }}
+                            </x-ui.button>
+                        </form>
+                    @endif
+
+                    @if($canDeleteTopic)
+                        <form method="POST" action="{{ route('forum.destroy', [$course, $topic]) }}" dusk="delete-topic-form">
+                            @csrf
+                            @method('DELETE')
+                            <x-ui.button type="submit" variant="ghost" size="sm" dusk="delete-topic">Apagar</x-ui.button>
+                        </form>
+                    @endif
+                </div>
             </div>
 
-            <div style="display: flex; gap: 8px;">
-                <button
-                    type="button"
-                    class="btn btn-ghost"
-                    style="border-radius: 0px; padding: 4px 10px; font-size: 11px;"
-                    data-forum-report-button
-                    data-postable-type="forum_topic"
-                    data-postable-id="{{ $topic->id }}"
-                    data-modal-target="report-modal"
-                    dusk="report-topic-{{ $topic->id }}"
-                >Denunciar</button>
-
-                @if($canEditTopic)
-                    <a
-                        href="{{ route('forum.edit', [$course, $topic]) }}"
-                        class="btn btn-ghost"
-                        style="border-radius: 0px; padding: 4px 10px; font-size: 11px;"
-                        dusk="edit-topic-{{ $topic->id }}"
-                    >Editar</a>
-                @endif
-
-                @if($canPin)
-                    <form method="POST" action="{{ route('forum.pin', [$course, $topic]) }}" dusk="pin-form-{{ $topic->id }}">
-                        @csrf
-                        <button type="submit" class="btn btn-ghost" style="border-radius: 0px; padding: 4px 10px; font-size: 11px;" dusk="pin-topic-{{ $topic->id }}">
-                            {{ $topic->is_pinned ? 'Desafixar' : 'Fixar' }}
-                        </button>
-                    </form>
-                @endif
-
-                @if($canDeleteTopic)
-                    <form method="POST" action="{{ route('forum.destroy', [$course, $topic]) }}" dusk="delete-topic-form">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" class="btn btn-ghost" style="border-radius: 0px; padding: 4px 10px; font-size: 11px;" dusk="delete-topic">Apagar</button>
-                    </form>
-                @endif
-            </div>
+            <div class="text-prewrap" dusk="topic-content">{{ $topic->content }}</div>
         </div>
-
-        <div style="font-size: 14px; white-space: pre-wrap;" dusk="topic-content">{{ $topic->content }}</div>
     </div>
 
-    <h2 style="font-family: var(--font-heading); font-weight: 700; font-size: 15px; margin: 0 0 12px;">Respostas</h2>
+    <h2 class="h6 mb-3x">Respostas</h2>
 
     <div
         id="replies-list"
@@ -120,25 +124,14 @@
         @endforeach
     </div>
 
-    <form method="POST" action="{{ route('forum-replies.store', [$course, $topic]) }}" style="margin-top: 16px;" dusk="new-reply-form">
+    <form method="POST" action="{{ route('forum-replies.store', [$course, $topic]) }}" class="mt-4x" dusk="new-reply-form">
         @csrf
 
-        <label for="reply_content" style="display: block; font-size: 12px; font-weight: 700; margin-bottom: 6px;">Responder</label>
-        <textarea
-            id="reply_content"
-            name="content"
-            rows="4"
-            required
-            dusk="new-reply-content"
-            style="width: 100%; box-sizing: border-box; border: 1px solid var(--color-divider); padding: 10px; font-family: inherit; font-size: 13px; border-radius: 0px;"
-        >{{ old('content') }}</textarea>
-        @error('content')
-            <p style="color: var(--color-danger-700, #b3261e); font-size: 12px; margin: 6px 0 0;">{{ $message }}</p>
-        @enderror
+        <x-ui.textarea name="content" label="Responder" :rows="4" required dusk="new-reply-content" />
 
-        <div style="margin-top: 12px; text-align: right;">
-            <button type="submit" class="btn btn-primary" style="border-radius: 0px; padding: 10px 18px;" dusk="new-reply-submit">Responder</button>
-        </div>
+        <x-ui.form-actions align="end">
+            <x-ui.button type="submit" dusk="new-reply-submit">Responder</x-ui.button>
+        </x-ui.form-actions>
     </form>
 
     {{-- "Denunciar" reason modal, shared by every "Denunciar" button on this
@@ -154,19 +147,11 @@
             <input type="hidden" name="postable_type" data-forum-report-postable-type>
             <input type="hidden" name="postable_id" data-forum-report-postable-id>
 
-            <label for="report_reason" style="display: block; font-size: 12px; font-weight: 700; margin-bottom: 6px;">Motivo</label>
-            <textarea
-                id="report_reason"
-                name="reason"
-                rows="4"
-                required
-                dusk="report-reason"
-                style="width: 100%; box-sizing: border-box; border: 1px solid var(--color-divider); padding: 10px; font-family: inherit; font-size: 13px; border-radius: 0px;"
-            ></textarea>
+            <x-ui.textarea name="reason" label="Motivo" :rows="4" required dusk="report-reason" />
 
             <x-slot:actions>
-                <button type="button" class="btn btn-ghost" data-modal-dismiss="true" style="border-radius: 0px;">Cancelar</button>
-                <button type="submit" form="report-form" class="btn btn-primary" style="border-radius: 0px;" dusk="report-submit">Enviar Denúncia</button>
+                <x-ui.button variant="ghost" data-bs-dismiss="modal">Cancelar</x-ui.button>
+                <x-ui.button type="submit" form="report-form" dusk="report-submit">Enviar Denúncia</x-ui.button>
             </x-slot:actions>
         </form>
     </x-ui.modal>

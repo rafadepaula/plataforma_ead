@@ -40,7 +40,7 @@
         @method('PUT')
     @endif
 
-    <div style="display: flex; flex-direction: column; gap: 16px;">
+    <div>
         <x-ui.input
             type="textarea"
             name="question_text"
@@ -65,47 +65,46 @@
             dusk="question-type-{{ $formSuffix }}"
         />
 
-        <p data-essay-hint="{{ $formSuffix }}" style="font-size: 12px; color: var(--color-neutral-600); margin: -8px 0 0; display: none;">
+        <p data-essay-hint="{{ $formSuffix }}" class="form-text mb-3 d-none">
             Questões dissertativas não têm opções — a resposta do aluno é um texto livre corrigido manualmente pelo Gestor.
         </p>
 
-        <div data-options-container="{{ $formSuffix }}" style="display: flex; flex-direction: column; gap: 10px;">
-            <span style="font-size: 13px; font-weight: 600; color: var(--color-text);">Opções</span>
+        <div data-options-container="{{ $formSuffix }}" class="mb-3">
+            <span class="form-label d-block">Opções</span>
 
-            <div data-options-list="{{ $formSuffix }}" style="display: flex; flex-direction: column; gap: 8px;">
+            <div data-options-list="{{ $formSuffix }}" class="d-flex flex-column gap-2">
                 @forelse($existingOptions as $i => $option)
-                    <div class="quiz-option-row" data-option-row data-option-id="{{ $option->id }}"
-                         style="display: flex; align-items: center; gap: 8px;">
+                    <div class="quiz-option-row d-flex align-items-center gap-2" data-option-row data-option-id="{{ $option->id }}">
                         <input type="hidden" name="options[{{ $i }}][id]" value="{{ $option->id }}" />
                         <input type="checkbox" name="options[{{ $i }}][is_correct]" value="1"
                                @checked($option->is_correct) data-correct-checkbox
-                               style="width: 16px; height: 16px; flex-shrink: 0;" dusk="option-correct-{{ $formSuffix }}-{{ $i }}" />
+                               class="form-check-input flex-shrink-0 m-0" dusk="option-correct-{{ $formSuffix }}-{{ $i }}" />
                         <input type="text" name="options[{{ $i }}][option_text]" value="{{ $option->option_text }}"
                                {{ $isTrueFalse ? 'readonly' : '' }}
                                placeholder="Texto da opção"
-                               style="flex: 1; border-radius: 0px; height: 36px; padding: 6px 10px; font-size: 13px; background: var(--color-surface); border: 1px solid var(--color-divider); color: var(--color-text);"
+                               class="form-control form-control-sm flex-fill"
                                dusk="option-text-{{ $formSuffix }}-{{ $i }}" />
-                        <button type="button" class="btn btn-ghost" data-remove-option-btn style="padding: 4px 8px;" dusk="remove-option-{{ $formSuffix }}-{{ $i }}">✕</button>
+                        <x-ui.button type="button" variant="ghost" size="sm" data-remove-option-btn dusk="remove-option-{{ $formSuffix }}-{{ $i }}">✕</x-ui.button>
                     </div>
                 @empty
                     {{-- Blank forms start with the minimum 2 rows every single_choice/true_false/multiple_choice question needs. --}}
                     @for($i = 0; $i < 2; $i++)
-                        <div class="quiz-option-row" data-option-row style="display: flex; align-items: center; gap: 8px;">
+                        <div class="quiz-option-row d-flex align-items-center gap-2" data-option-row>
                             <input type="checkbox" name="options[{{ $i }}][is_correct]" value="1" data-correct-checkbox
-                                   style="width: 16px; height: 16px; flex-shrink: 0;" dusk="option-correct-{{ $formSuffix }}-{{ $i }}" />
+                                   class="form-check-input flex-shrink-0 m-0" dusk="option-correct-{{ $formSuffix }}-{{ $i }}" />
                             <input type="text" name="options[{{ $i }}][option_text]"
                                    value="{{ $isTrueFalse ? ($i === 0 ? 'Verdadeiro' : 'Falso') : '' }}"
                                    {{ $isTrueFalse ? 'readonly' : '' }}
                                    placeholder="Texto da opção"
-                                   style="flex: 1; border-radius: 0px; height: 36px; padding: 6px 10px; font-size: 13px; background: var(--color-surface); border: 1px solid var(--color-divider); color: var(--color-text);"
+                                   class="form-control form-control-sm flex-fill"
                                    dusk="option-text-{{ $formSuffix }}-{{ $i }}" />
-                            <button type="button" class="btn btn-ghost" data-remove-option-btn style="padding: 4px 8px;" dusk="remove-option-{{ $formSuffix }}-{{ $i }}">✕</button>
+                            <x-ui.button type="button" variant="ghost" size="sm" data-remove-option-btn dusk="remove-option-{{ $formSuffix }}-{{ $i }}">✕</x-ui.button>
                         </div>
                     @endfor
                 @endforelse
             </div>
 
-            <div>
+            <div class="mt-2">
                 <x-ui.button type="button" variant="secondary" size="sm" data-add-option-btn="{{ $formSuffix }}" dusk="add-option-{{ $formSuffix }}">
                     + Adicionar Opção
                 </x-ui.button>
@@ -113,19 +112,19 @@
 
             {{-- Cloned by `QuizBuilder.addOption()` — kept as an inert `<template>` so it is never itself submitted. --}}
             <template data-option-template="{{ $formSuffix }}">
-                <div class="quiz-option-row" data-option-row style="display: flex; align-items: center; gap: 8px;">
+                <div class="quiz-option-row d-flex align-items-center gap-2" data-option-row>
                     <input type="checkbox" name="options[__INDEX__][is_correct]" value="1" data-correct-checkbox
-                           style="width: 16px; height: 16px; flex-shrink: 0;" />
+                           class="form-check-input flex-shrink-0 m-0" />
                     <input type="text" name="options[__INDEX__][option_text]" placeholder="Texto da opção"
-                           style="flex: 1; border-radius: 0px; height: 36px; padding: 6px 10px; font-size: 13px; background: var(--color-surface); border: 1px solid var(--color-divider); color: var(--color-text);" />
-                    <button type="button" class="btn btn-ghost" data-remove-option-btn style="padding: 4px 8px;">✕</button>
+                           class="form-control form-control-sm flex-fill" />
+                    <x-ui.button type="button" variant="ghost" size="sm" data-remove-option-btn>✕</x-ui.button>
                 </div>
             </template>
         </div>
 
-        <div style="display: flex; gap: 12px; margin-top: 8px;">
+        <div class="d-flex gap-3 mt-2">
             <x-ui.button type="submit" dusk="question-submit-{{ $formSuffix }}">Salvar Questão</x-ui.button>
-            <x-ui.button type="button" variant="secondary" data-modal-dismiss="true">Cancelar</x-ui.button>
+            <x-ui.button type="button" variant="secondary" data-bs-dismiss="modal">Cancelar</x-ui.button>
         </div>
     </div>
 </form>

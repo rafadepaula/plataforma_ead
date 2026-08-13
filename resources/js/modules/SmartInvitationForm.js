@@ -72,7 +72,7 @@ export class SmartInvitationForm {
         const newAccountFields = form.querySelectorAll('[data-invitation-field="new-account"]');
 
         newAccountFields.forEach((field) => {
-            field.style.display = exists ? 'none' : '';
+            field.classList.toggle('d-none', exists);
 
             const input = field.matches('input, select, textarea') ? field : field.querySelector('input, select, textarea');
             if (input && input.dataset.originallyRequired !== 'false') {
@@ -87,7 +87,7 @@ export class SmartInvitationForm {
 
         const existingAccountHint = form.querySelector('[data-invitation-field="existing-account-hint"]');
         if (existingAccountHint) {
-            existingAccountHint.style.display = exists ? '' : 'none';
+            existingAccountHint.classList.toggle('d-none', !exists);
         }
     }
 

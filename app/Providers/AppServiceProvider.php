@@ -6,6 +6,7 @@ use App\Http\View\Composers\NavigationComposer;
 use App\Services\Navigation\NavigationRegistry;
 use App\Services\Navigation\NavigationService;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
@@ -31,6 +32,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // `Paginator::useBootstrapFive()` was removed in Laravel 11+; the Bootstrap 5
+        // pagination views still ship with the framework, so point the paginator at them.
+        Paginator::defaultView('pagination::bootstrap-5');
+        Paginator::defaultSimpleView('pagination::simple-bootstrap-5');
+
         View::composer(['components.layout.sidebar', 'components.layout.topbar'], NavigationComposer::class);
     }
 }

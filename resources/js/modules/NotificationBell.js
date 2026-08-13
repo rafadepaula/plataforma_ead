@@ -1,12 +1,16 @@
 /**
  * NotificationBell - SOLID JavaScript module for SPEC-13 §4's (RF28)
  * topbar bell: polls `GET notifications.unread-count` every 30s to keep
- * the badge fresh, toggles the pre-rendered dropdown (server-rendered by
- * `<x-notifications-bell />` with the 10 most recent rows — no separate
- * "list" AJAX endpoint exists per Bucket 2's contract), wires "marcar
- * todas como lidas" to `PATCH notifications.read-all`, and marks a single
- * notification read (`PATCH notifications.read`) before redirecting the
- * click to its `data.action_url`.
+ * the badge fresh, wires "marcar todas como lidas" to
+ * `PATCH notifications.read-all`, and marks a single notification read
+ * (`PATCH notifications.read`) as the browser follows the item's own
+ * `href` (the notification's `data.action_url`).
+ *
+ * Abrir/fechar o dropdown NÃO é responsabilidade deste módulo: o
+ * `<x-notifications-bell />` declara `data-bs-toggle="dropdown"` +
+ * `.dropdown-menu`, e o `bootstrap.Dropdown` cuida de posicionamento
+ * (Popper), clique fora, Escape e ARIA. Aqui só reagimos ao evento
+ * `show.bs.dropdown` para refrescar o contador na abertura.
  *
  * Same rationale as `ForumPolling.js`: no jQuery, no WebSockets, the
  * shared `HttpClient` module instead of `$.ajax`.
@@ -37,56 +41,29 @@ export class NotificationBell {
         this.unreadCountUrl = container.getAttribute('data-unread-count-url');
         this.markAllReadUrl = container.getAttribute('data-mark-all-read-url');
 
-        const toggle = container.querySelector('[data-notifications-toggle]');
-        const dropdown = container.querySelector('[data-notifications-dropdown]');
+        // O evento borbulha a partir do toggle, então o container é o ponto
+        // de escuta seguro tanto para `show.bs.dropdown` quanto para cliques.
+        container.addEventListener('show.bs.dropdown', () => {
+            // Abrir o dropdown também busca um contador fresco, para que o
+            // badge nunca fique atrás do ciclo de 30s do polling.
+            this.refreshUnreadCount();
+        });
 
-        if (toggle && dropdown) {
-            toggle.addEventListener('click', (event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                this.toggleDropdown(dropdown);
-            });
-
-            document.addEventListener('click', (event) => {
-                if (!container.contains(event.target)) {
-                    this.closeDropdown(dropdown);
-                }
-            });
-
-            document.addEventListener('keydown', (event) => {
-                if (event.key === 'Escape') this.closeDropdown(dropdown);
-            });
-        }
-
-        const markAllLink = container.querySelector('[data-notifications-mark-all]');
-        if (markAllLink) {
-            markAllLink.addEventListener('click', (event) => {
+        container.addEventListener('click', (event) => {
+            const markAllLink = event.target.closest('[data-notifications-mark-all]');
+            if (markAllLink) {
                 event.preventDefault();
                 this.markAllRead();
-            });
-        }
+                return;
+            }
 
-        container.querySelectorAll('[data-notifications-item]').forEach((item) => {
-            item.addEventListener('click', (event) => this.handleItemClick(event, item));
+            const item = event.target.closest('[data-notifications-item]');
+            if (item) {
+                this.handleItemClick(event, item);
+            }
         });
 
         this.startPolling();
-    }
-
-    toggleDropdown(dropdown) {
-        const isOpen = dropdown.style.display === 'block';
-        if (isOpen) {
-            this.closeDropdown(dropdown);
-        } else {
-            dropdown.style.display = 'block';
-            // Opening the dropdown also fetches a fresh unread count, so
-            // the badge never lags the 30s polling tick.
-            this.refreshUnreadCount();
-        }
-    }
-
-    closeDropdown(dropdown) {
-        dropdown.style.display = 'none';
     }
 
     startPolling() {
@@ -107,6 +84,12 @@ export class NotificationBell {
         }
     }
 
+    /**
+     * Visibilidade do badge é classe, nunca `style.display`: as utilities
+     * `d-flex`/`d-none` do Bootstrap são `!important`, então um
+     * `style.display = 'none'` inline perde a especificidade e o badge
+     * continuaria visível.
+     */
     updateBadge(count) {
         if (!this.container) return;
 
@@ -115,10 +98,12 @@ export class NotificationBell {
 
         if (count > 0) {
             badge.textContent = count > 99 ? '99+' : String(count);
-            badge.style.display = 'flex';
+            badge.classList.remove('d-none');
+            badge.classList.add('d-flex');
         } else {
             badge.textContent = '0';
-            badge.style.display = 'none';
+            badge.classList.remove('d-flex');
+            badge.classList.add('d-none');
         }
     }
 
@@ -130,35 +115,28 @@ export class NotificationBell {
             this.updateBadge(0);
 
             this.container.querySelectorAll('[data-notifications-item]').forEach((item) => {
-                item.style.background = '';
-                item.style.fontWeight = '';
+                item.classList.remove('bg-primary', 'bg-opacity-10', 'fw-semibold');
             });
         } catch (error) {
             // Leave the badge/list as-is on failure; the user can retry.
         }
     }
 
+    /**
+     * O item é um `<a href="{action_url}">` de verdade: deixamos a navegação
+     * nativa acontecer (funciona sem JS) e apenas disparamos o
+     * `PATCH notifications.read` antes dela. `keepalive` é o que garante que
+     * a requisição sobreviva ao unload da página — sem ele o navegador
+     * cancelaria o fetch em voo e a notificação nunca seria marcada lida.
+     */
     handleItemClick(event, item) {
-        event.preventDefault();
-
         const markReadUrl = item.getAttribute('data-mark-read-url');
-        const actionUrl = item.getAttribute('href') || '#';
-        const redirect = () => {
-            window.location.href = actionUrl;
-        };
+        if (!markReadUrl) return;
 
-        if (!markReadUrl) {
-            redirect();
-            return;
-        }
-
-        this.httpClient
-            .patch(markReadUrl)
-            .catch(() => {
-                // Even if marking-as-read fails, the user still expects
-                // to be taken to the resource they clicked.
-            })
-            .finally(redirect);
+        this.httpClient.patch(markReadUrl, null, { keepalive: true }).catch(() => {
+            // Mesmo que marcar-como-lida falhe, o usuário ainda é levado ao
+            // recurso que clicou — a navegação nativa segue seu curso.
+        });
     }
 
     stop() {

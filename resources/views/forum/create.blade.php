@@ -12,20 +12,24 @@
 @extends('layouts.app')
 
 @section('content')
-    <x-ui.card title="Novo Tópico" kicker="{{ $course->title }} / Fórum">
-        <form method="POST" action="{{ route('forum.store', $course) }}" dusk="new-topic-form">
-            @csrf
+    <x-layout.page-header kicker="{{ $course->title }} / Fórum" title="Novo Tópico" />
 
-            <div style="display: flex; flex-direction: column; gap: 20px; max-width: 640px;">
-                <x-ui.input name="title" label="Título" required value="{{ old('title') }}" dusk="new-topic-title" />
+    <div class="row">
+        <div class="col-12 col-lg-8">
+            <x-ui.card>
+                <form method="POST" action="{{ route('forum.store', $course) }}" dusk="new-topic-form">
+                    @csrf
 
-                <x-ui.input type="textarea" name="content" label="Conteúdo" required value="{{ old('content') }}" dusk="new-topic-content" />
-            </div>
+                    <x-ui.input name="title" label="Título" required value="{{ old('title') }}" dusk="new-topic-title" />
 
-            <div style="display: flex; gap: 12px; margin-top: 24px;">
-                <x-ui.button type="submit" dusk="new-topic-submit">Publicar Tópico</x-ui.button>
-                <x-ui.button variant="secondary" href="{{ route('forum.index', $course) }}">Cancelar</x-ui.button>
-            </div>
-        </form>
-    </x-ui.card>
+                    <x-ui.input type="textarea" name="content" label="Conteúdo" required value="{{ old('content') }}" rows="8" dusk="new-topic-content" />
+
+                    <div class="d-flex flex-wrap gap-3 mt-4">
+                        <x-ui.button type="submit" dusk="new-topic-submit">Publicar Tópico</x-ui.button>
+                        <x-ui.button variant="secondary" href="{{ route('forum.index', $course) }}">Cancelar</x-ui.button>
+                    </div>
+                </form>
+            </x-ui.card>
+        </div>
+    </div>
 @endsection
