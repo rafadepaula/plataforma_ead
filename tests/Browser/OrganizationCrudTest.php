@@ -63,12 +63,48 @@ class OrganizationCrudTest extends DuskTestCase
             $browser->loginAs($admin)
                 ->visit(route('organizations.index'))
                 ->waitFor('@delete-organization-'.$organization->id)
+                // UX-003 — nenhum modal nasce aberto (ver BUG-003).
+                ->assertMissing('.modal.show')
+                ->assertMissing('.modal-backdrop')
                 ->click('@delete-organization-'.$organization->id)
+                // Espera a transição `.fade` terminar: clicar num diálogo ainda
+                // em movimento é a fonte nº 1 de flake aqui.
+                ->waitForModalShown('delete-organization-'.$organization->id)
+                // O modal identifica a Organização pelo nome.
+                ->assertSeeIn('#delete-organization-'.$organization->id, 'Organização Removível')
+                ->click('@confirm-modal-delete-organization-'.$organization->id.'-confirm')
                 ->waitForLocation('/organizations')
+                ->assertSee('Organização removida com sucesso.')
                 ->assertDontSee('Organização Removível');
         });
 
         $this->assertSoftDeleted($organization);
+    }
+
+    public function test_admin_can_cancel_the_organization_deletion(): void
+    {
+        $admin = User::factory()->create(['org_id' => null]);
+        $admin->assignRole(RolesEnum::ADMIN->value);
+        $organization = Organization::factory()->create(['name' => 'Organização Preservada']);
+
+        $this->browse(function (Browser $browser) use ($admin, $organization): void {
+            $browser->loginAs($admin)
+                ->visit(route('organizations.index'))
+                ->waitFor('@delete-organization-'.$organization->id)
+                ->assertMissing('.modal.show')
+                ->assertMissing('.modal-backdrop')
+                ->click('@delete-organization-'.$organization->id)
+                ->waitForModalShown('delete-organization-'.$organization->id)
+                ->click('@confirm-modal-delete-organization-'.$organization->id.'-cancel')
+                // O backdrop só some no fim da transição de fechamento.
+                ->waitForModalClosed('delete-organization-'.$organization->id)
+                ->assertMissing('.modal.show')
+                ->assertVisible('@organization-row-'.$organization->id)
+                ->assertSee('Organização Preservada')
+                ->assertDontSee('Organização removida com sucesso.');
+        });
+
+        $this->assertNotSoftDeleted($organization);
     }
 
     public function test_gestor_cannot_reach_the_organizations_index(): void

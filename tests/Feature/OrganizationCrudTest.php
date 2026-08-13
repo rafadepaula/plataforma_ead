@@ -22,6 +22,33 @@ class OrganizationCrudTest extends TestCase
             ->assertViewIs('organizations.index');
     }
 
+    public function test_organizations_index_renders_a_confirmation_modal_trigger_for_each_row(): void
+    {
+        $this->actingAsAdmin();
+        $organization = Organization::factory()->create();
+
+        $response = $this->get(route('organizations.index'))->assertOk();
+
+        $response->assertSee('data-bs-toggle="modal"', false);
+        $response->assertSee('data-bs-target="#delete-organization-'.$organization->id.'"', false);
+        $response->assertSee('id="delete-organization-'.$organization->id.'"', false);
+        $response->assertSee('dusk="delete-organization-'.$organization->id.'"', false);
+        $response->assertSee('dusk="delete-form-'.$organization->id.'"', false);
+        $response->assertSee(route('organizations.destroy', $organization), false);
+        $response->assertSee($organization->name);
+    }
+
+    public function test_organizations_index_never_renders_an_open_modal(): void
+    {
+        $this->actingAsAdmin();
+        Organization::factory()->create();
+
+        $response = $this->get(route('organizations.index'))->assertOk();
+
+        $response->assertDontSee('modal fade show', false);
+        $response->assertDontSee('modal-backdrop', false);
+    }
+
     public function test_gestor_is_forbidden_from_the_organizations_index(): void
     {
         $this->actingAsOrgUser(role: 'gestor');

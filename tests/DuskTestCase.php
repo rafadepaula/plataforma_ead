@@ -6,6 +6,7 @@ use Facebook\WebDriver\Chrome\ChromeOptions;
 use Facebook\WebDriver\Remote\DesiredCapabilities;
 use Facebook\WebDriver\Remote\RemoteWebDriver;
 use Illuminate\Support\Collection;
+use Laravel\Dusk\Browser;
 use Laravel\Dusk\TestCase as BaseTestCase;
 use PHPUnit\Framework\Attributes\BeforeClass;
 
@@ -38,6 +39,48 @@ abstract class DuskTestCase extends BaseTestCase
     {
         if (! static::runningInSail()) {
             static::startChromeDriver(['--port=9515']);
+        }
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        static::registerBootstrapModalMacros();
+    }
+
+    /**
+     * Espera pela ABERTURA/FECHAMENTO REAL de um `bootstrap.Modal`.
+     *
+     * `waitFor('#id.show')` não basta: o Bootstrap adiciona `.show` no INÍCIO
+     * da transição do `.fade` e só zera `_isTransitioning` no fim dela — e
+     * `Modal.hide()` chamado enquanto `_isTransitioning` é `true` retorna sem
+     * fazer nada (bootstrap/js/dist/modal.js). Um clique em "Cancelar" no meio
+     * da transição, portanto, é silenciosamente engolido.
+     *
+     * O sinal usado é o `transform` do `.modal-dialog` — exatamente a transição
+     * que o Bootstrap aguarda: `translate(0, -50px)` (matrix) durante a
+     * animação, `none` quando ela termina.
+     */
+    protected static function registerBootstrapModalMacros(): void
+    {
+        if (! Browser::hasMacro('waitForModalShown')) {
+            Browser::macro('waitForModalShown', function (string $modalId, ?int $seconds = null) {
+                /** @var Browser $this */
+                return $this->waitFor('#'.$modalId.'.show', $seconds)
+                    ->waitUntil(
+                        "getComputedStyle(document.querySelector('#".$modalId." .modal-dialog')).transform === 'none'",
+                        $seconds
+                    );
+            });
+        }
+
+        if (! Browser::hasMacro('waitForModalClosed')) {
+            Browser::macro('waitForModalClosed', function (string $modalId, ?int $seconds = null) {
+                /** @var Browser $this */
+                return $this->waitUntilMissing('#'.$modalId.'.show', $seconds)
+                    ->waitUntilMissing('.modal-backdrop', $seconds);
+            });
         }
     }
 

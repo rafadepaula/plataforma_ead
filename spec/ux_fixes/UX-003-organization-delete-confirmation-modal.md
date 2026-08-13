@@ -131,6 +131,6 @@ Direção da correção:
 - [ ] `vendor/bin/sail bin pint --dirty --format agent` limpo.
 
 ## Resolution Status
-- **Status:** OPEN
-- **Reproduction Tests:** —
-- **Fixed In Files:** —
+- **Status:** FIXED
+- **Reproduction Tests:** `tests/Browser/OrganizationCrudTest.php` (`test_admin_can_soft_delete_an_organization_via_the_ui`, `test_admin_can_cancel_the_organization_deletion`), `tests/Feature/OrganizationCrudTest.php` (`test_organizations_index_renders_a_confirmation_modal_trigger_for_each_row`, `test_organizations_index_never_renders_an_open_modal`)
+- **Fixed In Files:** `resources/views/organizations/index.blade.php`, `tests/Browser/OrganizationCrudTest.php`, `tests/Browser/Ui/AlertDismissTest.php`, `tests/DuskTestCase.php`, `tests/Feature/OrganizationCrudTest.php`

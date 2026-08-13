@@ -49,16 +49,28 @@
 
                         <x-ui.button href="{{ route('organizations.edit', $organization) }}" size="sm" dusk="edit-organization-{{ $organization->id }}">Editar</x-ui.button>
 
-                        {{-- Submit direto, sem `<x-ui.delete-button>`: `OrganizationCrudTest`
-                             clica `@delete-organization-{id}` e espera o redirect imediato.
-                             Adotar o modal de confirmação aqui é mudança de contrato de
-                             teste, agendada para a Fase 7 junto com as demais exclusões. --}}
-                        <form method="POST" action="{{ route('organizations.destroy', $organization) }}" dusk="delete-form-{{ $organization->id }}">
-                            @csrf
-                            @method('DELETE')
-                            <x-ui.button type="submit" variant="ghost" size="sm" class="text-danger link-danger" dusk="delete-organization-{{ $organization->id }}">Remover</x-ui.button>
-                        </form>
+                        {{-- UX-003 — o "Remover" agora só ABRE o modal de confirmação
+                             (gatilho declarativo `data-bs-toggle`/`data-bs-target`).
+                             O `DELETE` real vive no `<form>` embutido em
+                             `<x-ui.confirm-modal>`. Mesmo par gatilho + modal de
+                             `users/index.blade.php`: o `id` do modal é sufixado com
+                             `$organization->id`, então cada linha do loop tem o seu
+                             próprio modal, sem id duplicado no DOM. --}}
+                        <x-ui.button variant="ghost"
+                                     size="sm"
+                                     class="text-danger link-danger"
+                                     data-bs-toggle="modal"
+                                     data-bs-target="#delete-organization-{{ $organization->id }}"
+                                     dusk="delete-organization-{{ $organization->id }}">Remover</x-ui.button>
                     </div>
+
+                    <x-ui.confirm-modal id="delete-organization-{{ $organization->id }}"
+                                        title="Remover Organização"
+                                        :action="route('organizations.destroy', $organization)"
+                                        method="DELETE"
+                                        confirm-label="Remover"
+                                        :message="'Remover a Organização “'.$organization->name.'” também tira do ar seus usuários, cursos e certificados. Esta ação não poderá ser desfeita.'"
+                                        dusk="delete-form-{{ $organization->id }}" />
                 </td>
             </tr>
         @empty

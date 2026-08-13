@@ -36,7 +36,11 @@ class AlertDismissTest extends DuskTestCase
             $browser->loginAs($admin)
                 ->visit(route('organizations.index'))
                 ->waitFor('@delete-organization-'.$organization->id)
+                // UX-003 — "Remover" agora abre o modal de confirmação; o flash
+                // de sucesso só existe depois de confirmar.
                 ->click('@delete-organization-'.$organization->id)
+                ->waitForModalShown('delete-organization-'.$organization->id)
+                ->click('@confirm-modal-delete-organization-'.$organization->id.'-confirm')
                 ->waitForLocation('/organizations')
                 // Pré-condição: o alerta precisa estar de fato na tela antes do
                 // clique, senão o teste passaria vazio.
