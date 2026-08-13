@@ -44,6 +44,7 @@
         <button type="button"
                 data-bs-dismiss="alert"
                 class="btn-close flex-shrink-0"
+                dusk="alert-dismiss"
                 aria-label="Fechar alerta">
         </button>
     @endif

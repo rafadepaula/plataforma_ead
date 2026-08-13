@@ -118,7 +118,7 @@ A view do aluno continua confiando no formato stored (contrato já documentado).
 - [ ] Tornar o consumidor defensivo: normalizar em `_video.blade.php:20,34` (ou, preferencialmente, num accessor/mutator de `App\Models\Lesson` sobre `youtube_url`, o que fecha o buraco para todos os consumidores de uma vez) em vez de confiar no formato armazenado.
 
 ## Resolution Status
-- **Status:** PARTIALLY FIXED — produtor corrigido em `44c7e8a` (pré-migração); dados legados e consumidor defensivo em aberto.
+- **Status:** CLOSED — produtor corrigido em `44c7e8a`; dados legados normalizados por migration e consumidor endurecido em `274f700`.
 - **Reproduction Tests:** `tests/Feature/LessonYoutubeEmbedRenderingTest.php:25,59,95` (3 passed, 10 assertions em 2026-08-13).
 - **Fixed In Files:** `database/seeders/CourseSeeder.php:53,121`.
 - **Still Broken In Files:** `resources/views/classroom/partials/_video.blade.php:20,34`; ausência de migration em `database/migrations/`.

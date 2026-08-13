@@ -111,7 +111,7 @@ A alternativa 2 do plano acima não foi a escolhida; a migração adotou uma ter
 - [x] `vendor/bin/sail bin pint --dirty --format agent` limpo — nenhum PHP foi tocado pela correção.
 
 ## Resolution Status
-- **Status:** FIXED (pela migração Bootstrap 5.3, commit `3088d99`) — **sem cobertura de teste de regressão**
+- **Status:** CLOSED — corrigido pela migração Bootstrap 5.3 (commit `3088d99`) e coberto por `tests/Browser/Ui/AlertDismissTest.php`
 - **Reproduction Tests:** nenhum. `tests/Feature/Ui/AlertComponentTest.php` e `tests/Browser/Ui/AlertDismissTest.php` continuam inexistentes.
 - **Fixed In Files:**
   - `resources/views/components/ui/alert.blade.php:21-26,43-49` — `data-bs-dismiss="alert"` + classes `fade show`
