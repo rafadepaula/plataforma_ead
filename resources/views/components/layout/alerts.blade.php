@@ -1,4 +1,4 @@
-<div class="layout-alerts-container" style="margin-bottom: 20px;">
+<div class="layout-alerts-container mb-4">
     @if(session('success'))
         <x-ui.alert variant="accent" dismissable>
             {{ session('success') }}
@@ -25,7 +25,7 @@
 
     @if($errors->any())
         <x-ui.alert variant="accent-2" dismissable>
-            <ul style="margin: 0; padding-left: 18px;">
+            <ul class="m-0 ps-4">
                 @foreach($errors->all() as $error)
                     <li>{{ $error }}</li>
                 @endforeach
@@ -33,3 +33,10 @@
         </x-ui.alert>
     @endif
 </div>
+
+{{--
+    Container único de toasts do Bootstrap (bootstrap-conventions §9).
+    O id `notification-container` é contrato: `NotificationService` injeta os
+    `.toast` aqui e a suíte Dusk o asserta.
+--}}
+<div class="toast-container position-fixed bottom-0 end-0 p-3" id="notification-container"></div>

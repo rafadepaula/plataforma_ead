@@ -10,38 +10,36 @@
     available.
 --}}
 
-<div style="margin-bottom: 16px;">
+<div class="ratio ratio-16x9 mb-4">
     <iframe
         src="{{ Storage::url($lesson->pdf_path) }}"
-        style="width: 100%; height: 600px; border: 1px solid var(--color-divider);"
+        class="border"
         dusk="pdf-viewer-{{ $lesson->id }}"
     ></iframe>
 </div>
 
-<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
-    <a href="{{ Storage::url($lesson->pdf_path) }}" download style="font-size: 13px; color: var(--color-accent); font-weight: 700;" dusk="pdf-download-{{ $lesson->id }}">
+<div class="d-flex align-items-center justify-content-between gap-3">
+    <a href="{{ Storage::url($lesson->pdf_path) }}" download class="link-primary fw-bold small" dusk="pdf-download-{{ $lesson->id }}">
         Baixar PDF
     </a>
 
-    <div style="display: flex; align-items: center; gap: 12px;">
+    <div class="d-flex align-items-center gap-3">
         {{--
-            NOTE: `x-ui.badge` bakes `display: inline-flex` into its own
-            inline `style`; the native `hidden` attribute's UA-stylesheet
-            `display: none` cannot win against an inline style already
-            set on the same element, so the hidden state is expressed as
-            an explicit `style="display:none;"` override instead (Blade's
-            `ComponentAttributeBag::merge()` appends the caller's `style`
-            after the component's own, so the later declaration wins).
-            `LessonPlayer.js.reflectCompletion()` reveals it by setting
-            `style.display = 'inline-flex'` directly.
+            Badge and button both express their hidden state with the
+            `.d-none` utility, toggled by
+            `LessonPlayer.js.reflectCompletion()` via `classList`. Do NOT
+            use the native `hidden` attribute here: Bootstrap's Reboot
+            emits `[hidden] { display: none !important }`, an author rule
+            that beats any inline `style.display` the JS could write to
+            reveal the element.
         --}}
-        <x-ui.badge variant="accent" data-completion-badge dusk="lesson-completed-badge" style="{{ ($isCompleted ?? false) ? '' : 'display:none;' }}">
+        <x-ui.badge variant="accent" data-completion-badge dusk="lesson-completed-badge" @class(['d-none' => ! ($isCompleted ?? false)])>
             Concluída
         </x-ui.badge>
 
         <x-ui.button
             data-mark-complete-url="{{ route('lessons.complete', $lesson) }}"
-            :hidden="$isCompleted ?? false"
+            @class(['d-none' => $isCompleted ?? false])
             dusk="mark-complete-button"
         >
             Marcar como concluída

@@ -6,6 +6,11 @@
     `forum.show`/`forum.index` view only includes it when `$editedAt` is
     present.
 
+    Migrado para Bootstrap 5.3 (Fase 2, Wave B / P7): o gatilho é
+    declarativo (`data-bs-toggle="modal"` + `data-bs-target`), portanto o
+    módulo `ForumEditHistory.js` (que delegava ao removido ModalManager e
+    escondia `.dialog-backdrop` via `style.display`) deixou de existir.
+
     Expected variables (passed by the including view):
       - `$modalId`    unique DOM id for this post's history modal.
       - `$label`      "Tópico" or "Resposta" (used as the modal title).
@@ -17,35 +22,34 @@
                        ->orderByDesc('edited_at')->get()`).
 --}}
 @if($editedAt)
-    <span style="font-size: 11px; color: var(--color-neutral-600); margin-left: 8px;">
+    <span class="small text-body-secondary ms-2">
         Editado em {{ $editedAt->format('d/m/Y H:i') }}
         —
         <button
             type="button"
-            class="btn btn-ghost"
-            style="display: inline; padding: 0; border: 0; background: none; font-size: 11px; text-decoration: underline; color: var(--color-accent); cursor: pointer;"
-            data-modal-target="{{ $modalId }}"
-            data-edit-history-trigger
+            class="btn btn-link p-0 align-baseline small text-decoration-underline"
+            data-bs-toggle="modal"
+            data-bs-target="#{{ $modalId }}"
             dusk="edit-history-trigger-{{ $modalId }}"
         >ver histórico</button>
     </span>
 
     <x-ui.modal id="{{ $modalId }}" title="Histórico de Edição — {{ $label }}" size="md">
         @forelse($history as $edit)
-            <div style="padding: 10px 0; border-bottom: 1px solid var(--color-divider);" dusk="edit-history-entry-{{ $edit->id }}">
-                <div style="font-size: 11px; color: var(--color-neutral-600); margin-bottom: 4px;">
+            <div class="py-2 border-bottom" dusk="edit-history-entry-{{ $edit->id }}">
+                <div class="small text-body-secondary mb-1">
                     {{ optional($edit->editor)->name ?? 'Usuário removido' }} — {{ $edit->edited_at->format('d/m/Y H:i') }}
                 </div>
-                <div style="font-size: 13px; white-space: pre-wrap;">{{ $edit->previous_content }}</div>
+                <div class="text-prewrap">{{ $edit->previous_content }}</div>
             </div>
         @empty
-            <p style="color: var(--color-neutral-600); font-size: 13px;" dusk="edit-history-empty-{{ $modalId }}">
+            <p class="text-body-secondary mb-0" dusk="edit-history-empty-{{ $modalId }}">
                 Nenhuma versão anterior registrada.
             </p>
         @endforelse
 
         <x-slot:actions>
-            <button type="button" class="btn btn-ghost" data-modal-dismiss="true" style="border-radius: 0px;">Fechar</button>
+            <x-ui.button variant="ghost" data-bs-dismiss="modal">Fechar</x-ui.button>
         </x-slot:actions>
     </x-ui.modal>
 @endif

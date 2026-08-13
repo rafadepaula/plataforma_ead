@@ -11,8 +11,17 @@
  * calls `submit()` on the form itself when the countdown reaches zero, it
  * only flips to a "Tempo esgotado" visual state, so a slow network or a
  * background tab never silently discards the student's answers.
+ *
+ * The expired state is painted with the Bootstrap `text-bg-danger` utility
+ * (never an inline `style`). The timer element is a `<x-ui.badge
+ * variant="outline">` precisely so it carries no `text-bg-*` class of its
+ * own and this toggle cannot collide — see the contract comment at the top
+ * of `resources/views/student/quizzes/show.blade.php`.
  */
 export class QuizTimer {
+    /** Bootstrap utility class applied while the countdown is expired. */
+    static EXPIRED_CLASS = 'text-bg-danger';
+
     constructor() {
         this.intervalId = null;
     }
@@ -46,11 +55,12 @@ export class QuizTimer {
 
         if (remainingMs <= 0) {
             container.textContent = 'Tempo esgotado';
-            container.style.color = 'var(--color-accent-2, #e15b47)';
+            container.classList.add(QuizTimer.EXPIRED_CLASS);
             if (this.intervalId) clearInterval(this.intervalId);
             return;
         }
 
+        container.classList.remove(QuizTimer.EXPIRED_CLASS);
         container.textContent = this.formatRemaining(remainingMs);
     }
 

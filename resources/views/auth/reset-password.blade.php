@@ -1,12 +1,9 @@
 @extends('layouts.guest')
 
 @section('content')
-    <div style="margin-bottom: 24px;">
-        <span style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-accent); font-weight: 700;">Recuperação de senha</span>
-        <h1 style="font-family: var(--font-heading); font-weight: 800; font-size: 26px; margin: 8px 0 0;">Redefinir senha</h1>
-    </div>
+    <x-layout.page-header kicker="Recuperação de senha" title="Redefinir senha" />
 
-    <form method="POST" action="{{ route('password.store') }}" dusk="reset-password-form" style="display: flex; flex-direction: column; gap: 16px;">
+    <form method="POST" action="{{ route('password.store') }}" dusk="reset-password-form">
         @csrf
 
         <input type="hidden" name="token" value="{{ $request->route('token') }}">

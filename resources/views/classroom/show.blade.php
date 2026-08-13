@@ -17,50 +17,53 @@
 --}}
 
 @section('content')
-    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
-        <div>
-            <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-accent); font-weight: 700;">Sala de Aula</span>
-            <h1 style="font-family: var(--font-heading); font-weight: 800; font-size: 24px; margin: 4px 0 0;">{{ $course->title }}</h1>
-        </div>
+    <x-layout.page-header kicker="Sala de Aula" :title="$course->title">
+        <x-slot:actions>
+            <x-ui.button variant="secondary" href="{{ route('student.courses.index') }}">Meus Cursos</x-ui.button>
+        </x-slot:actions>
+    </x-layout.page-header>
 
-        <x-ui.button variant="secondary" href="{{ route('student.courses.index') }}">Meus Cursos</x-ui.button>
-    </div>
-
-    <div style="margin-bottom: 24px;">
-        <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--color-neutral-600); margin-bottom: 6px;">
+    <div class="mb-4">
+        <div class="d-flex justify-content-between small text-body-secondary mb-2">
             <span>Progresso do Curso</span>
             <span dusk="course-progress-label">{{ (int) $progressPercentage }}%</span>
         </div>
-        <div style="background: var(--color-neutral-200); height: 10px; border-radius: 0px; overflow: hidden;">
-            <div style="background: var(--color-accent); height: 100%; width: {{ (int) $progressPercentage }}%;" dusk="course-progress-bar"></div>
-        </div>
+
+        {{-- O seletor dusk course-progress-bar fica no wrapper `.progress` (o
+             elemento visível equivalente à barra artesanal anterior); a barra
+             de preenchimento interna recebe course-progress-bar-bar do
+             próprio componente. --}}
+        <x-ui.progress :value="(int) $progressPercentage"
+                       :height="8"
+                       label="Progresso do Curso"
+                       dusk="course-progress-bar" />
     </div>
 
-    <div style="margin-bottom: 24px;">
+    <div class="mb-4">
         @if($certificate)
             <x-ui.button href="{{ route('certificates.download', $certificate) }}" dusk="download-certificate">Baixar Certificado</x-ui.button>
         @else
-            <div dusk="certificate-unavailable" style="padding: 12px 16px; border: 1px solid var(--color-divider); background: var(--color-surface); font-size: 13px; color: var(--color-neutral-600);">
+            <div dusk="certificate-unavailable" class="border bg-body-tertiary py-3x px-4x small text-body-secondary">
                 Certificado indisponível. {{ (int) $progressPercentage }}%
             </div>
         @endif
     </div>
 
     @forelse($modules as $module)
-        <div style="margin-bottom: 20px;" dusk="module-{{ $module->id }}">
-            <h2 style="font-family: var(--font-heading); font-weight: 700; font-size: 15px; margin: 0 0 10px;">{{ $module->title }}</h2>
+        <div class="mb-4" dusk="module-{{ $module->id }}">
+            <h2 class="h6 mb-2x">{{ $module->title }}</h2>
 
-            <ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px;">
+            <ul class="list-unstyled d-flex flex-column gap-2x mb-0">
                 @forelse($module->lessons as $lesson)
                     @php
                         $isCompleted = in_array($lesson->id, $completedLessonIds ?? [], true);
                     @endphp
-                    <li dusk="lesson-{{ $lesson->id }}" style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; border: 1px solid var(--color-divider); background: var(--color-surface);">
-                        <a href="{{ route('classroom.lesson', $lesson) }}" style="color: var(--color-text); text-decoration: none; display: flex; align-items: center; gap: 10px;" dusk="open-lesson-{{ $lesson->id }}">
+                    <li dusk="lesson-{{ $lesson->id }}" class="d-flex align-items-center justify-content-between gap-3x border bg-body-tertiary py-3x px-4x">
+                        <a href="{{ route('classroom.lesson', $lesson) }}" class="d-flex align-items-center gap-2x text-body text-decoration-none" dusk="open-lesson-{{ $lesson->id }}">
                             @if($isCompleted)
-                                <x-ui.icon name="check" :size="16" style="color: var(--color-accent);" dusk="lesson-completed-{{ $lesson->id }}" />
+                                <x-ui.icon name="check" :size="16" class="text-primary" dusk="lesson-completed-{{ $lesson->id }}" />
                             @else
-                                <x-ui.icon name="play" :size="16" style="color: var(--color-neutral-600);" />
+                                <x-ui.icon name="play" :size="16" class="text-body-secondary" />
                             @endif
                             {{ $lesson->title }}
                         </a>
@@ -68,13 +71,13 @@
                         <x-ui.badge variant="outline">{{ $lesson->type === 'quiz' ? 'Quiz' : 'Conteúdo' }}</x-ui.badge>
                     </li>
                 @empty
-                    <li style="padding: 16px; text-align: center; color: var(--color-neutral-600); border: 1px dashed var(--color-divider);">
+                    <li class="border border-dashed text-center text-body-secondary p-4x">
                         Nenhuma lição publicada neste módulo.
                     </li>
                 @endforelse
             </ul>
         </div>
     @empty
-        <p style="color: var(--color-neutral-600);" dusk="no-modules">Este curso ainda não possui módulos publicados.</p>
+        <p class="text-body-secondary" dusk="no-modules">Este curso ainda não possui módulos publicados.</p>
     @endforelse
 @endsection

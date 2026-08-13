@@ -1,0 +1,47 @@
+// =============================================================================
+//  Modernist Design System — FONTE ÚNICA DE VERDADE
+//  Estes valores alimentam as variáveis SCSS do Bootstrap (ver app.scss).
+// =============================================================================
+// --- Paleta base -------------------------------------------------------------
+$modernist-bg:        #f3f2f2;
+$modernist-surface:   #eae9e9;
+$modernist-text:      #201e1d;
+$modernist-accent:    #ec3013;
+$modernist-accent-2:  #e15b47;
+
+// --- Rampa neutra (100–900) --------------------------------------------------
+$modernist-neutral-100: #f8f4f4;
+$modernist-neutral-200: #eae7e7;
+$modernist-neutral-300: #d7d3d3;
+$modernist-neutral-400: #bab6b6;
+$modernist-neutral-500: #9b9797;
+$modernist-neutral-600: #7d7979;
+$modernist-neutral-700: #605d5d;
+$modernist-neutral-800: #444141;
+$modernist-neutral-900: #2d2b2b;
+
+// --- Rampa accent (100–900) --------------------------------------------------
+$modernist-accent-100: #fff2ef;
+$modernist-accent-200: #ffe0d9;
+$modernist-accent-300: #ffc4b8;
+$modernist-accent-400: #ff9783;
+$modernist-accent-500: #ff563c;
+$modernist-accent-600: #dd2b0f;
+$modernist-accent-700: #ae1800;
+$modernist-accent-800: #7c1405;
+$modernist-accent-900: #4d170e;
+
+// --- Rampa accent-2 (100–900) ------------------------------------------------
+$modernist-accent-2-100: #fff2ef;
+$modernist-accent-2-200: #ffe0da;
+$modernist-accent-2-300: #ffc4b9;
+$modernist-accent-2-400: #ff9784;
+$modernist-accent-2-500: #ef6853;
+$modernist-accent-2-600: #c94b39;
+$modernist-accent-2-700: #9e3526;
+$modernist-accent-2-800: #71261b;
+$modernist-accent-2-900: #471d16;
+
+// --- Tipografia --------------------------------------------------------------
+$modernist-font-family:    "Archivo", system-ui, -apple-system, "Segoe UI", sans-serif;
+$modernist-heading-weight: 800;

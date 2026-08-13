@@ -1,54 +1,58 @@
 @extends('layouts.app')
 
 @section('content')
-    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
-        <div>
-            <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-accent); font-weight: 700;">Organização</span>
-            <h1 style="font-family: var(--font-heading); font-weight: 800; font-size: 24px; margin: 4px 0 0;">Alunos & Gestores</h1>
-        </div>
-
-        <div style="display: flex; gap: 8px;">
+    <x-layout.page-header kicker="Organização" title="Alunos & Gestores">
+        <x-slot:actions>
             <x-ui.button variant="secondary" href="{{ route('users.import.create') }}" dusk="import-users">Importar CSV</x-ui.button>
             <x-ui.button href="{{ route('users.create') }}" dusk="new-user">Novo Usuário</x-ui.button>
-        </div>
-    </div>
+        </x-slot:actions>
+    </x-layout.page-header>
 
-    <x-ui.table :headers="['Nome', 'E-mail', 'CPF', 'Papel', 'Status', 'Ações']">
+    <x-ui.data-table striped hover responsive
+                     :headers="['Nome', 'E-mail', 'CPF', 'Papel', 'Status', 'Ações']">
         @forelse($users as $user)
-            <tr style="border-bottom: 1px solid var(--color-divider);" dusk="user-row-{{ $user->id }}">
-                <td style="padding: 12px 16px;">{{ $user->name }}</td>
-                <td style="padding: 12px 16px;">{{ $user->email }}</td>
-                <td style="padding: 12px 16px;">{{ $user->cpf ?? '—' }}</td>
-                <td style="padding: 12px 16px;">
+            <tr dusk="user-row-{{ $user->id }}">
+                <td>{{ $user->name }}</td>
+                <td>{{ $user->email }}</td>
+                <td>{{ $user->cpf ?? '—' }}</td>
+                <td>
                     <x-ui.badge variant="accent">{{ \App\Enums\Permissions\RolesEnum::label($user->getRoleNames()->first() ?? '') }}</x-ui.badge>
                 </td>
-                <td style="padding: 12px 16px;">
+                <td>
                     @if($user->status === 'active')
                         <x-ui.badge variant="accent" dusk="user-status-{{ $user->id }}">Ativo</x-ui.badge>
                     @else
                         <x-ui.badge variant="neutral" dusk="user-status-{{ $user->id }}">Inativo</x-ui.badge>
                     @endif
                 </td>
-                <td style="padding: 12px 16px; display: flex; gap: 8px;">
-                    <x-ui.button variant="secondary" size="sm" href="{{ route('users.edit', $user) }}" dusk="edit-user-{{ $user->id }}">Editar</x-ui.button>
+                <td>
+                    <div class="btn-group btn-group-sm" role="group" aria-label="Ações do usuário {{ $user->name }}">
+                        <x-ui.button variant="secondary"
+                                     size="sm"
+                                     href="{{ route('users.edit', $user) }}"
+                                     dusk="edit-user-{{ $user->id }}">Editar</x-ui.button>
 
-                    <form method="POST" action="{{ route('users.destroy', $user) }}" dusk="delete-form-{{ $user->id }}">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" class="btn btn-ghost" dusk="delete-user-{{ $user->id }}">Remover</button>
-                    </form>
+                        <x-ui.button variant="ghost"
+                                     size="sm"
+                                     class="text-danger link-danger"
+                                     data-bs-toggle="modal"
+                                     data-bs-target="#delete-user-{{ $user->id }}"
+                                     dusk="delete-user-{{ $user->id }}">Remover</x-ui.button>
+                    </div>
+
+                    <x-ui.confirm-modal id="delete-user-{{ $user->id }}"
+                                        title="Confirmar remoção"
+                                        :action="route('users.destroy', $user)"
+                                        method="DELETE"
+                                        confirm-label="Remover"
+                                        message="Remover {{ $user->name }} da organização? Esta ação não poderá ser desfeita."
+                                        dusk="delete-form-{{ $user->id }}" />
                 </td>
             </tr>
         @empty
-            <tr>
-                <td colspan="6" style="padding: 24px 16px; text-align: center; color: var(--color-neutral-600);">
-                    Nenhum Aluno ou Gestor cadastrado.
-                </td>
-            </tr>
+            <x-ui.empty-state colspan="6" message="Nenhum Aluno ou Gestor cadastrado." />
         @endforelse
-    </x-ui.table>
+    </x-ui.data-table>
 
-    <div style="margin-top: 20px;">
-        {{ $users->links() }}
-    </div>
+    <x-ui.pagination :paginator="$users" />
 @endsection

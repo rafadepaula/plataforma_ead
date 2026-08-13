@@ -9,56 +9,49 @@
 
 @php
     $elevationClass = match($elevation) {
-        'sm' => 'elev-sm',
-        'md' => 'elev-md',
-        'lg' => 'elev-lg',
+        'sm' => 'shadow-sm',
+        'md' => 'shadow',
+        'lg' => 'shadow-lg',
         default => '',
     };
 
-    $cardStyle = 'border-radius: 0px; background: var(--color-surface); text-align: left; display: flex; flex-direction: column; overflow: hidden;';
-    if ($border) {
-        $cardStyle .= ' border: 1px solid var(--color-divider);';
-    } else {
-        $cardStyle .= ' border: none;';
-    }
-    if (!$shadow && $elevation === 'none') {
-        $cardStyle .= ' box-shadow: none;';
-    }
+    $borderClass = $border ? '' : 'border-0';
 @endphp
 
-<div {{ $attributes->merge(['class' => "card {$elevationClass}", 'style' => $cardStyle]) }}>
+<div {{ $attributes->merge(['class' => "card bg-body-secondary {$elevationClass} {$borderClass}"]) }}>
     @if(isset($image))
-        <div class="card-image-slot grayscale" style="width: 100%; overflow: hidden; border-radius: 0px;">
+        <div class="grayscale w-100 overflow-hidden">
             {{ $image }}
         </div>
     @endif
 
-    <div class="card-body" style="padding: 20px; flex: 1; display: flex; flex-direction: column; gap: 8px;">
+    <div class="card-body p-4 d-flex flex-column gap-2">
         @if($kicker || isset($kickerSlot))
-            <div class="card-kicker" style="font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-accent); font-weight: 700;">
+            {{-- Sem cor explícita: o kicker do card herda a cor do corpo, como antes. --}}
+            <div class="kicker">
                 {{ $kicker ?? $kickerSlot }}
             </div>
         @endif
 
         @if($title || isset($titleSlot))
-            <h3 class="card-title" style="font-family: var(--font-heading); font-weight: 800; font-size: 18px; color: var(--color-text); margin: 0; line-height: 1.2;">
+            <h3 class="card-title mb-0">
                 {{ $title ?? $titleSlot }}
             </h3>
         @endif
 
-        <div class="card-content" style="font-size: 14px; color: var(--color-text);">
+        <div class="card-content small text-body">
             {{ $slot }}
         </div>
 
         @if($meta || isset($metaSlot))
-            <div class="card-meta" style="margin-top: auto; padding-top: 12px; font-size: 12px; color: var(--color-neutral-600); border-top: 1px solid var(--color-divider);">
+            <div class="card-meta mt-auto pt-3 small text-body-secondary border-top border-secondary">
                 {{ $meta ?? $metaSlot }}
             </div>
         @endif
     </div>
 
     @if(isset($footer))
-        <div class="card-footer" style="padding: 12px 20px; background: color-mix(in srgb, var(--color-neutral-900) 4%, transparent); border-top: 1px solid var(--color-divider); border-radius: 0px;">
+        <div class="card-footer p-3 bg-body-tertiary border-top border-secondary">
             {{ $footer }}
         </div>
     @endif

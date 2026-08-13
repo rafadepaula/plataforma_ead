@@ -22,57 +22,58 @@
         <form method="POST" action="{{ route('quizzes.store', $lesson) }}" dusk="quiz-form">
             @csrf
 
-            <div style="display: flex; flex-direction: column; gap: 20px; max-width: 640px;">
-                <x-ui.input name="title" label="Título" required value="{{ $quiz->title }}" dusk="quiz-title-input" />
+            {{-- `col-lg-8` substitui o antigo `max-width: 640px`: o Bootstrap não
+                 emite utility de max-width, e a coluna do grid é a forma
+                 idiomática de limitar a largura de leitura de um formulário. --}}
+            <div class="row">
+                <x-ui.field-stack class="col-lg-8">
+                    <x-ui.input name="title" label="Título" required value="{{ $quiz->title }}" dusk="quiz-title-input" />
 
-                <x-ui.input type="textarea" name="instructions" label="Instruções" value="{{ $quiz->instructions }}" />
+                    <x-ui.textarea name="instructions" label="Instruções" value="{{ $quiz->instructions }}" />
 
-                <div class="field" style="display: flex; align-items: center; gap: 8px;">
-                    <input type="checkbox" id="allow_retries" name="allow_retries" value="1"
-                           @checked(old('allow_retries', $quiz->allow_retries ?? true))
-                           style="width: 16px; height: 16px;" dusk="quiz-allow-retries" />
-                    <label for="allow_retries" style="font-size: 13px; font-weight: 600; color: var(--color-text);">Permitir novas tentativas</label>
-                </div>
+                    <x-ui.checkbox name="allow_retries"
+                                   label="Permitir novas tentativas"
+                                   :checked="$quiz->allow_retries ?? true"
+                                   dusk="quiz-allow-retries" />
 
-                <x-ui.input
-                    type="number"
-                    name="max_attempts"
-                    label="Máximo de tentativas"
-                    hint="Deixe em branco para tentativas ilimitadas (conta apenas tentativas enviadas, não em andamento)."
-                    value="{{ $quiz->max_attempts }}"
-                    dusk="quiz-max-attempts"
-                />
+                    <x-ui.input
+                        type="number"
+                        name="max_attempts"
+                        label="Máximo de tentativas"
+                        hint="Deixe em branco para tentativas ilimitadas (conta apenas tentativas enviadas, não em andamento)."
+                        value="{{ $quiz->max_attempts }}"
+                        dusk="quiz-max-attempts"
+                    />
 
-                <x-ui.input
-                    type="number"
-                    name="time_limit_minutes"
-                    label="Limite de tempo (minutos)"
-                    hint="Deixe em branco para sem limite. Envios após o limite são aceitos, mas marcados como reprovados."
-                    value="{{ $quiz->time_limit_minutes }}"
-                    dusk="quiz-time-limit"
-                />
+                    <x-ui.input
+                        type="number"
+                        name="time_limit_minutes"
+                        label="Limite de tempo (minutos)"
+                        hint="Deixe em branco para sem limite. Envios após o limite são aceitos, mas marcados como reprovados."
+                        value="{{ $quiz->time_limit_minutes }}"
+                        dusk="quiz-time-limit"
+                    />
 
-                <div class="field" style="display: flex; align-items: center; gap: 8px;">
-                    <input type="checkbox" id="show_correct_answers" name="show_correct_answers" value="1"
-                           @checked(old('show_correct_answers', $quiz->show_correct_answers ?? false))
-                           style="width: 16px; height: 16px;" dusk="quiz-show-correct-answers" />
-                    <label for="show_correct_answers" style="font-size: 13px; font-weight: 600; color: var(--color-text);">Exibir gabarito ao aluno após envio</label>
-                </div>
+                    <x-ui.checkbox name="show_correct_answers"
+                                   label="Exibir gabarito ao aluno após envio"
+                                   :checked="$quiz->show_correct_answers ?? false"
+                                   dusk="quiz-show-correct-answers" />
 
-                <x-ui.input
-                    type="number"
-                    name="min_score_percentage"
-                    label="Nota mínima para aprovação (%)"
-                    required
-                    value="{{ $quiz->min_score_percentage ?? 70 }}"
-                    dusk="quiz-min-score"
-                />
+                    <x-ui.input
+                        type="number"
+                        name="min_score_percentage"
+                        label="Nota mínima para aprovação (%)"
+                        required
+                        value="{{ $quiz->min_score_percentage ?? 70 }}"
+                        dusk="quiz-min-score"
+                    />
+                </x-ui.field-stack>
             </div>
 
-            <div style="display: flex; gap: 12px; margin-top: 24px;">
+            <x-ui.form-actions>
                 <x-ui.button type="submit" dusk="quiz-submit">Criar Quiz</x-ui.button>
                 <x-ui.button variant="secondary" href="{{ route('modules.lessons.index', $lesson->module) }}">Cancelar</x-ui.button>
-            </div>
+            </x-ui.form-actions>
         </form>
     </x-ui.card>
 @endsection

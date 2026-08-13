@@ -6,20 +6,20 @@
 @extends('layouts.app')
 
 @section('content')
-    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
-        <div>
-            <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-accent); font-weight: 700;">{{ $course->title }}</span>
-            <h1 style="font-family: var(--font-heading); font-weight: 800; font-size: 24px; margin: 4px 0 0;">Matrículas</h1>
-        </div>
-
-        <x-ui.button variant="secondary" href="{{ route('courses.index') }}">Voltar aos Cursos</x-ui.button>
-    </div>
+    <x-layout.page-header :kicker="$course->title" title="Matrículas">
+        <x-slot:actions>
+            <x-ui.button variant="secondary" href="{{ route('courses.index') }}">Voltar aos Cursos</x-ui.button>
+        </x-slot:actions>
+    </x-layout.page-header>
 
     <x-ui.card title="Matricular manualmente" kicker="RF21">
-        <form method="POST" action="{{ route('courses.enrollments.store', $course) }}" dusk="manual-enroll-form" style="display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap;">
+        <form method="POST"
+              action="{{ route('courses.enrollments.store', $course) }}"
+              dusk="manual-enroll-form"
+              class="row g-3 align-items-end">
             @csrf
 
-            <div style="flex: 1; min-width: 220px;">
+            <div class="col-12 col-md-4">
                 <x-ui.input
                     type="number"
                     name="user_id"
@@ -31,43 +31,52 @@
                 />
             </div>
 
-            <x-ui.button type="submit" dusk="manual-enroll-submit">Matricular</x-ui.button>
+            <div class="col-auto mb-3">
+                <x-ui.button type="submit" dusk="manual-enroll-submit">Matricular</x-ui.button>
+            </div>
         </form>
     </x-ui.card>
 
-    <div style="margin-top: 20px;">
-        <x-ui.table :headers="['Aluno', 'E-mail', 'Status', 'Matriculado em', 'Ações']">
+    <div class="mt-4">
+        <x-ui.data-table striped hover responsive
+                         :headers="['Aluno', 'E-mail', 'Status', 'Matriculado em', 'Ações']">
             @forelse($enrollments as $student)
-                <tr style="border-bottom: 1px solid var(--color-divider);" dusk="enrollment-row-{{ $student->id }}">
-                    <td style="padding: 12px 16px;">{{ $student->name }}</td>
-                    <td style="padding: 12px 16px;">{{ $student->email }}</td>
-                    <td style="padding: 12px 16px;">
+                <tr dusk="enrollment-row-{{ $student->id }}">
+                    <td>{{ $student->name }}</td>
+                    <td>{{ $student->email }}</td>
+                    <td>
                         <x-ui.badge :variant="$student->pivot->status === 'active' ? 'accent' : 'neutral'">
                             {{ ucfirst($student->pivot->status) }}
                         </x-ui.badge>
                     </td>
-                    <td style="padding: 12px 16px;">{{ optional($student->pivot->enrolled_at)->format('d/m/Y') }}</td>
-                    <td style="padding: 12px 16px;">
+                    <td class="text-nowrap">{{ optional($student->pivot->enrolled_at)->format('d/m/Y') }}</td>
+                    <td>
                         @if($student->pivot->status === 'active')
-                            <form method="POST" action="{{ route('courses.enrollments.destroy', [$course, $student]) }}" dusk="revoke-enrollment-form-{{ $student->id }}">
+                            {{--
+                                Form preservado deliberadamente (sem <x-ui.delete-button>):
+                                UserManagementTest clica em @revoke-enrollment-{id} esperando
+                                submit imediato e afere assertMissing('@revoke-enrollment-form-{id}').
+                                Um modal de confirmação quebraria os dois lados do contrato.
+                            --}}
+                            <form method="POST"
+                                  action="{{ route('courses.enrollments.destroy', [$course, $student]) }}"
+                                  dusk="revoke-enrollment-form-{{ $student->id }}">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="btn btn-ghost" dusk="revoke-enrollment-{{ $student->id }}">Revogar</button>
+                                <x-ui.button variant="ghost"
+                                             size="sm"
+                                             type="submit"
+                                             class="text-danger link-danger"
+                                             dusk="revoke-enrollment-{{ $student->id }}">Revogar</x-ui.button>
                             </form>
                         @endif
                     </td>
                 </tr>
             @empty
-                <tr>
-                    <td colspan="5" style="padding: 24px 16px; text-align: center; color: var(--color-neutral-600);">
-                        Nenhum aluno matriculado neste Curso.
-                    </td>
-                </tr>
+                <x-ui.empty-state colspan="5" message="Nenhum aluno matriculado neste Curso." />
             @endforelse
-        </x-ui.table>
+        </x-ui.data-table>
 
-        <div style="margin-top: 20px;">
-            {{ $enrollments->links() }}
-        </div>
+        <x-ui.pagination :paginator="$enrollments" />
     </div>
 @endsection

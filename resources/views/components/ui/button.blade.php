@@ -2,43 +2,37 @@
     'variant' => 'primary',
     'size' => 'md',
     'block' => false,
-    'icon' => false,
+    'icon' => null,
     'type' => 'button',
     'href' => null,
     'disabled' => false,
 ])
 
 @php
-    $baseClass = 'btn';
-    $variantClass = match($variant) {
-        'secondary' => 'btn-secondary',
-        'ghost' => 'btn-ghost',
+    $variantClass = match ($variant) {
+        'secondary' => 'btn-outline-secondary',
+        'ghost' => 'btn-link text-body text-decoration-none',
+        'danger' => 'btn-danger',
         default => 'btn-primary',
     };
-    
-    $classes = collect([
-        $baseClass,
-        $variantClass,
-        $block ? 'btn-block' : null,
-        $icon ? 'btn-icon' : null,
-    ])->filter()->implode(' ');
 
-    $inlineStyle = 'border-radius: 0px; text-align: left; justify-content: flex-start;';
-    if ($size === 'sm') {
-        $inlineStyle .= ' padding: 6px 12px; font-size: 12px;';
-    } elseif ($size === 'lg') {
-        $inlineStyle .= ' padding: 14px 24px; font-size: 16px;';
-    } else {
-        $inlineStyle .= ' padding: 10px 18px; font-size: 14px;';
-    }
+    $classes = collect([
+        'btn',
+        $variantClass,
+        $size === 'sm' ? 'btn-sm' : ($size === 'lg' ? 'btn-lg' : null),
+        $block ? 'w-100' : null,
+        $icon ? 'd-inline-flex align-items-center justify-content-start gap-2 text-start' : null,
+    ])->filter()->implode(' ');
 @endphp
 
-@if($href)
-    <a href="{{ $href }}" {{ $attributes->merge(['class' => $classes, 'style' => $inlineStyle]) }}>
+@if ($href)
+    <a href="{{ $href }}" @if ($disabled) class="disabled" aria-disabled="true" tabindex="-1" @endif {{ $attributes->merge(['class' => $classes]) }}>
+        @if ($icon) <x-ui.icon :name="$icon" /> @endif
         {{ $slot }}
     </a>
 @else
-    <button type="{{ $type }}" {{ $disabled ? 'disabled' : '' }} {{ $attributes->merge(['class' => $classes, 'style' => $inlineStyle]) }}>
+    <button type="{{ $type }}" @disabled($disabled) {{ $attributes->merge(['class' => $classes]) }}>
+        @if ($icon) <x-ui.icon :name="$icon" /> @endif
         {{ $slot }}
     </button>
 @endif

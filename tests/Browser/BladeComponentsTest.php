@@ -26,33 +26,41 @@ class BladeComponentsTest extends DuskTestCase
             $browser->visit('/')
                 ->assertPathIs('/');
 
+            // `ModalManager` was retired by the Bootstrap 5.3 migration in
+            // favour of `bootstrap.Modal` + `data-bs-*`; `window.bootstrap` is
+            // now the published contract for driving modals (see
+            // bootstrap-conventions §9).
             $modulesLoaded = $browser->script("
                 return typeof window.HttpClient !== 'undefined'
-                    && typeof window.ModalManager !== 'undefined'
+                    && typeof window.bootstrap !== 'undefined'
+                    && typeof window.bootstrap.Modal !== 'undefined'
                     && typeof window.NotificationService !== 'undefined';
             ")[0];
 
             $this->assertTrue(
                 (bool) $modulesLoaded,
-                'Frontend JS modules (HttpClient, ModalManager, NotificationService) must be registered on window.'
+                'Frontend JS modules (HttpClient, bootstrap.Modal, NotificationService) must be registered on window.'
             );
         });
     }
 
     /**
-     * Test ModalManager API modal state open, close, and DOM attribute toggling.
+     * Test bootstrap.Modal API modal state open, close, and DOM attribute toggling.
      */
     public function test_modal_component_open_and_close_interactions(): void
     {
         $this->browse(function (Browser $browser): void {
             $browser->visit('/');
 
-            // Verify ModalManager module functions exist and can manage modal elements
-            $hasModalManager = $browser->script("
-                return typeof window.ModalManager.open === 'function' && typeof window.ModalManager.close === 'function';
+            // Verify the Bootstrap Modal API that replaced ModalManager is
+            // available and exposes the show/hide surface the app drives.
+            $hasModalApi = $browser->script("
+                return typeof window.bootstrap.Modal.getOrCreateInstance === 'function'
+                    && typeof window.bootstrap.Modal.prototype.show === 'function'
+                    && typeof window.bootstrap.Modal.prototype.hide === 'function';
             ")[0];
 
-            $this->assertTrue((bool) $hasModalManager, 'ModalManager must expose open and close API methods.');
+            $this->assertTrue((bool) $hasModalApi, 'bootstrap.Modal must expose getOrCreateInstance plus show and hide API methods.');
         });
     }
 

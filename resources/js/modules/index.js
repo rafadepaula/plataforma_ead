@@ -1,0 +1,38 @@
+// -----------------------------------------------------------------------------
+// Registry único de módulos. Cada chave vira `window.<chave>` e recebe
+// `.init()` após o DOMContentLoaded. Este é o ÚNICO arquivo que muda quando um
+// módulo entra ou sai — mantenha-o em ordem alfabética para minimizar conflito.
+// -----------------------------------------------------------------------------
+import AuditLogDiffModal   from './AuditLogDiffModal';
+import CsvImporter         from './CsvImporter';
+import ForumPolling        from './ForumPolling';
+import ForumReportModal    from './ForumReportModal';
+import HttpClient          from './HttpClient';
+import LessonPlayer        from './LessonPlayer';
+import ModuleReorder       from './ModuleReorder';
+import NotificationBell    from './NotificationBell';
+import NotificationService from './NotificationService';
+import QuizBuilder         from './QuizBuilder';
+import QuizTimer           from './QuizTimer';
+import SmartInvitationForm from './SmartInvitationForm';
+
+// ModalManager e ForumEditHistory foram REMOVIDOS: substituídos por
+// bootstrap.Modal + data-bs-toggle/data-bs-dismiss.
+
+const httpClient   = HttpClient;          // singleton
+const notifications = NotificationService; // singleton (agora sobre bootstrap.Toast)
+
+export default {
+    HttpClient:          httpClient,
+    NotificationService: notifications,
+    AuditLogDiffModal:   new AuditLogDiffModal(),
+    CsvImporter:         new CsvImporter(httpClient),
+    ForumPolling:        new ForumPolling(httpClient),
+    ForumReportModal:    new ForumReportModal(httpClient, notifications),
+    LessonPlayer:        new LessonPlayer(httpClient, notifications),
+    ModuleReorder:       new ModuleReorder(httpClient, notifications),
+    NotificationBell:    new NotificationBell(httpClient),
+    QuizBuilder:         new QuizBuilder(notifications),
+    QuizTimer:           new QuizTimer(),
+    SmartInvitationForm: new SmartInvitationForm(httpClient, notifications),
+};

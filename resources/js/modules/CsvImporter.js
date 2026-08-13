@@ -157,24 +157,47 @@ export class CsvImporter {
         return chunks;
     }
 
+    /**
+     * Reveals the progress block and updates the Bootstrap progress bar.
+     *
+     * Visibility is driven by the `.d-none` utility (never `style.display`:
+     * `.d-none` is `display: none !important` and would win over an inline
+     * declaration). The bar's `style.width` is the single authorized inline
+     * style in the project — Bootstrap has no utility for an arbitrary
+     * runtime percentage — and the `.progress` wrapper's `aria-valuenow` is
+     * kept in sync with it on every update.
+     */
     setProgress(form, done, total) {
         const wrapper = form.querySelector('[dusk="csv-import-progress-wrapper"]');
-        const bar = form.querySelector('[dusk="csv-import-progress-bar"]');
+        const track = form.querySelector('[dusk="csv-import-progress"]');
+        const bar = form.querySelector('[dusk="csv-import-progress-bar"]')
+            || form.querySelector('[data-progress-bar]');
         const text = form.querySelector('[dusk="csv-import-progress-text"]');
         const percentage = total > 0 ? Math.round((done / total) * 100) : 0;
 
-        if (wrapper) wrapper.style.display = 'flex';
+        if (wrapper) wrapper.classList.remove('d-none');
         if (bar) bar.style.width = `${percentage}%`;
+        if (track) track.setAttribute('aria-valuenow', String(percentage));
         if (text) text.textContent = `Lote ${done} de ${total} (${percentage}%)`;
     }
 
+    /**
+     * Reveals the results block with `.d-none` removal and signals the error
+     * state with the `.text-primary` utility (the theme's #ec3013 accent),
+     * removing it again on the success path.
+     */
     showResults(form, message, type) {
         const results = form.querySelector('[dusk="csv-import-results"]');
         if (!results) return;
 
-        results.style.display = 'block';
+        results.classList.remove('d-none');
         results.textContent = message;
-        results.style.color = type === 'error' ? 'var(--color-accent)' : 'var(--color-text)';
+
+        if (type === 'error') {
+            results.classList.add('text-primary');
+        } else {
+            results.classList.remove('text-primary');
+        }
     }
 }
 

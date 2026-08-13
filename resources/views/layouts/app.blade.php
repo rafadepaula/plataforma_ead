@@ -7,17 +7,17 @@
 
     <title>{{ $title ?? config('app.name', 'Plataforma EAD') }}</title>
 
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @vite(['resources/scss/app.scss', 'resources/js/app.js'])
     @stack('styles')
 </head>
-<body class="antialiased" style="background: var(--color-bg); color: var(--color-text); font-family: var(--font-body); margin: 0; padding: 0; min-height: 100vh;" x-data="{ sidebarOpen: false }">
-    <div class="app-wrapper" style="display: flex; flex-direction: column; min-height: 100vh;">
+<body class="antialiased bg-body text-body m-0 p-0 min-vh-100">
+    <div class="app-wrapper d-flex flex-column min-vh-100">
         <x-layout.topbar />
 
-        <div class="app-body" style="display: flex; flex: 1; position: relative;">
+        <div class="app-body d-flex flex-1 position-relative">
             <x-layout.sidebar />
 
-            <main class="app-main" style="flex: 1; padding: 24px; min-width: 0; background: var(--color-bg);">
+            <main class="app-main flex-1 p-4 min-w-0 bg-body">
                 <x-layout.alerts />
                 {{ $slot ?? '' }}
                 @yield('content')

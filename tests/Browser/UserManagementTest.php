@@ -217,6 +217,7 @@ class UserManagementTest extends DuskTestCase
                 ->type('password', 'password')
                 ->type('password_confirmation', 'password')
                 ->press('Criar Usuário')
+                ->waitForText('The email has already been taken.')
                 ->assertPathIs('/users/create')
                 ->assertSee('The email has already been taken.');
         });

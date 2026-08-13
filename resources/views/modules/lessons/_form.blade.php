@@ -3,7 +3,7 @@
     $type = old('type', $lesson->type ?? 'content');
 @endphp
 
-<div style="display: flex; flex-direction: column; gap: 20px; max-width: 640px;">
+<div class="max-w-640">
     <x-ui.input
         name="title"
         label="Título"
@@ -19,11 +19,11 @@
         :selected="$type"
         dusk="lesson-type-select"
     />
-    <p style="font-size: 12px; color: var(--color-neutral-600); margin-top: -12px;">
+    <p class="form-text mb-3">
         Quiz será habilitado em uma etapa futura (SPEC-08). Selecione "Conteúdo" para cadastrar Rich Text, Imagem, PDF ou vídeo do YouTube.
     </p>
 
-    <div id="lesson-content-fields" data-lesson-content-fields style="display: flex; flex-direction: column; gap: 20px;">
+    <div id="lesson-content-fields" data-lesson-content-fields>
         <x-ui.input
             type="textarea"
             name="content_text"
@@ -31,27 +31,27 @@
             value="{{ $lesson->content_text }}"
         />
 
-        <div class="field" style="display: flex; flex-direction: column; gap: 6px;">
-            <label for="image" style="font-size: 13px; font-weight: 600; color: var(--color-text);">Imagem</label>
+        <div class="mb-3">
+            <label for="image" class="form-label">Imagem</label>
             <input type="file" id="image" name="image" accept="image/*" dusk="lesson-image-input"
-                   style="border-radius: 0px; border: 1px solid var(--color-divider); padding: 8px 12px; background: var(--color-surface); color: var(--color-text);" />
+                   class="form-control @error('image') is-invalid @enderror" />
             @if($lesson->image_path)
-                <span style="font-size: 12px; color: var(--color-neutral-600);">Imagem atual: {{ $lesson->image_path }}</span>
+                <div class="form-text">Imagem atual: {{ $lesson->image_path }}</div>
             @endif
             @error('image')
-                <span style="font-size: 12px; color: var(--color-accent); font-weight: 600;">{{ $message }}</span>
+                <div class="invalid-feedback">{{ $message }}</div>
             @enderror
         </div>
 
-        <div class="field" style="display: flex; flex-direction: column; gap: 6px;">
-            <label for="pdf" style="font-size: 13px; font-weight: 600; color: var(--color-text);">PDF</label>
+        <div class="mb-3">
+            <label for="pdf" class="form-label">PDF</label>
             <input type="file" id="pdf" name="pdf" accept="application/pdf" dusk="lesson-pdf-input"
-                   style="border-radius: 0px; border: 1px solid var(--color-divider); padding: 8px 12px; background: var(--color-surface); color: var(--color-text);" />
+                   class="form-control @error('pdf') is-invalid @enderror" />
             @if($lesson->pdf_path)
-                <span style="font-size: 12px; color: var(--color-neutral-600);">PDF atual: {{ $lesson->pdf_path }}</span>
+                <div class="form-text">PDF atual: {{ $lesson->pdf_path }}</div>
             @endif
             @error('pdf')
-                <span style="font-size: 12px; color: var(--color-accent); font-weight: 600;">{{ $message }}</span>
+                <div class="invalid-feedback">{{ $message }}</div>
             @enderror
         </div>
 
@@ -63,21 +63,21 @@
             dusk="lesson-youtube-input"
         />
 
-        <div data-youtube-preview-wrapper style="display: none; flex-direction: column; gap: 6px;">
-            <span style="font-size: 12px; font-weight: 600; color: var(--color-text);">Pré-visualização</span>
-            <div style="aspect-ratio: 16 / 9; max-width: 480px; border: 1px solid var(--color-divider); background: var(--color-neutral-200);">
-                <iframe data-youtube-preview-frame dusk="youtube-preview" width="100%" height="100%" frameborder="0"
+        <div data-youtube-preview-wrapper class="mb-3 d-none">
+            <span class="form-label d-block">Pré-visualização</span>
+            <div class="ratio ratio-16x9 border bg-body-secondary max-w-480">
+                <iframe data-youtube-preview-frame dusk="youtube-preview" frameborder="0"
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                         referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
             </div>
         </div>
     </div>
 
-    <div class="field" style="display: flex; align-items: center; gap: 8px;">
+    <div class="form-check mb-3">
         <input type="checkbox" id="is_published" name="is_published" value="1"
                @checked(old('is_published', $lesson->is_published))
-               style="width: 16px; height: 16px;" />
-        <label for="is_published" style="font-size: 13px; font-weight: 600; color: var(--color-text);">Publicado</label>
+               class="form-check-input" />
+        <label for="is_published" class="form-check-label fw-semibold">Publicado</label>
     </div>
 </div>
 
@@ -100,7 +100,7 @@
 
             function toggleContentFields() {
                 if (!typeSelect || !contentFields) return;
-                contentFields.style.display = typeSelect.value === 'quiz' ? 'none' : 'flex';
+                contentFields.classList.toggle('d-none', typeSelect.value === 'quiz');
             }
 
             function updateYoutubePreview() {
@@ -109,10 +109,10 @@
 
                 if (match) {
                     previewFrame.src = `https://www.youtube.com/embed/${match[1]}`;
-                    previewWrapper.style.display = 'flex';
+                    previewWrapper.classList.remove('d-none');
                 } else {
                     previewFrame.src = '';
-                    previewWrapper.style.display = 'none';
+                    previewWrapper.classList.add('d-none');
                 }
             }
 

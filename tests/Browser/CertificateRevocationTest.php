@@ -55,8 +55,18 @@ class CertificateRevocationTest extends DuskTestCase
             $browser->loginAs($gestor)
                 ->visit(route('courses.certificates.index', $course))
                 ->waitFor('@revoke-certificate-'.$certificate->id)
-                ->waitUntil("document.getElementById('revoke-modal-{$certificate->id}').closest('.dialog-backdrop').style.display === 'none'")
+                // Bootstrap boot gate + modal-closed precondition: `window.bootstrap`
+                // is the contract `resources/js/app.js` publishes once the bundle
+                // (and therefore the `data-bs-toggle` data-api) is evaluated, and a
+                // `.modal` without `.show` is the Bootstrap way of saying "closed"
+                // (the legacy `.dialog-backdrop` ancestor no longer exists).
+                ->waitUntil("window.bootstrap !== undefined && !document.getElementById('revoke-modal-{$certificate->id}').classList.contains('show')")
                 ->click('@revoke-certificate-'.$certificate->id)
+                // `.fade` takes ~150ms: the dialog is already `display:block` (so
+                // Dusk's visibility wait passes) while still translating, which is
+                // exactly what makes clicks land on the wrong spot. Wait for the
+                // transition to actually finish before touching the form.
+                ->waitUntil("document.getElementById('revoke-modal-{$certificate->id}').classList.contains('show') && window.getComputedStyle(document.getElementById('revoke-modal-{$certificate->id}')).opacity === '1'")
                 ->waitFor('@revoke-reason-'.$certificate->id)
                 ->type('revoke_reason', 'Matrícula cancelada retroativamente por fraude.')
                 ->waitUntil('!document.querySelector(\'[dusk="confirm-revoke-'.$certificate->id.'"]\').disabled')
@@ -99,8 +109,11 @@ class CertificateRevocationTest extends DuskTestCase
             $browser->loginAs($gestor)
                 ->visit(route('courses.certificates.index', $course))
                 ->waitFor('@revoke-certificate-'.$certificate->id)
-                ->waitUntil("document.getElementById('revoke-modal-{$certificate->id}').closest('.dialog-backdrop').style.display === 'none'")
+                // Same Bootstrap boot gate + modal-closed precondition as above.
+                ->waitUntil("window.bootstrap !== undefined && !document.getElementById('revoke-modal-{$certificate->id}').classList.contains('show')")
                 ->click('@revoke-certificate-'.$certificate->id)
+                // Wait out the `.fade` transition before typing/asserting.
+                ->waitUntil("document.getElementById('revoke-modal-{$certificate->id}').classList.contains('show') && window.getComputedStyle(document.getElementById('revoke-modal-{$certificate->id}')).opacity === '1'")
                 ->waitFor('@revoke-reason-'.$certificate->id)
                 ->type('revoke_reason', 'curto')
                 ->assertAttribute('@confirm-revoke-'.$certificate->id, 'disabled', 'true');

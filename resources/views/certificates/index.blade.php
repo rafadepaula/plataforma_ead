@@ -2,67 +2,65 @@
     SPEC-09 §1.2 — Gestor/Admin per-course certificate list, reached via
     `GET courses/{course}/certificates` (`courses.certificates.index`,
     `App\Http\Controllers\CertificateController::index()`, Bucket B).
-    Mirrors `resources/views/courses/index.blade.php`'s table layout.
 
     Expected variables:
       - `$course`  the bound Course.
       - `$certificates`  `$course->certificates()->with('user')->latest('issued_at')->paginate(...)`.
 
-    Each active (non-revoked) row exposes a "Revogar" button that opens
-    this row's own `x-ui.modal` (one modal per certificate, same pattern
-    as `quizzes/edit.blade.php`'s per-question edit modals) with the
-    `revoke_reason` textarea. The modal's submit is wired inline below
-    (see the `@push('scripts')` block) rather than via a new
-    `resources/js/certificates.js` Vite entry, since `vite.config.js`
-    only declares `resources/js/app.js` as a build input.
+    Each active (non-revoked) row exposes a "Revogar" button that opens this
+    row's own `<x-ui.modal>` (one modal per certificate, same pattern as
+    `quizzes/edit.blade.php`'s per-question edit modals) with the
+    `revoke_reason` textarea. `<x-ui.confirm-modal>` is deliberately NOT used
+    here: it keeps its `<form>` in the footer, so a body-level textarea would
+    fall outside the submitted form, and its confirm button carries a fixed
+    `confirm-modal-{id}-confirm` dusk selector instead of the
+    `confirm-revoke-{id}` contract `CertificateRevocationTest` asserts on.
+
+    Opening/closing is fully declarative (`data-bs-toggle="modal"` /
+    `data-bs-dismiss="modal"`). The submit-enable toggle is wired inline below
+    (see the `@push('scripts')` block) rather than via a
+    `resources/js/modules/RevokeCertificateForm.js` entry — extracting it is a
+    JS-layer change outside this migration's file scope.
 --}}
 @extends('layouts.app')
 
 @section('content')
-    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
-        <div>
-            <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-accent); font-weight: 700;">Certificados</span>
-            <h1 style="font-family: var(--font-heading); font-weight: 800; font-size: 24px; margin: 4px 0 0;">{{ $course->title }}</h1>
-        </div>
-    </div>
+    <x-layout.page-header kicker="Certificados" :title="$course->title" />
 
-    <x-ui.table :headers="['Aluno', 'Emitido em', 'Status', 'Ações']">
+    <x-ui.data-table striped :headers="['Aluno', 'Emitido em', 'Status', 'Ações']">
         @forelse($certificates as $certificate)
-            <tr style="border-bottom: 1px solid var(--color-divider);" dusk="certificate-row-{{ $certificate->id }}">
-                <td style="padding: 12px 16px;">{{ $certificate->user->name }}</td>
-                <td style="padding: 12px 16px;">{{ $certificate->issued_at->format('d/m/Y') }}</td>
-                <td style="padding: 12px 16px;">
+            <tr dusk="certificate-row-{{ $certificate->id }}">
+                <td>{{ $certificate->user->name }}</td>
+                <td>{{ $certificate->issued_at->format('d/m/Y') }}</td>
+                <td>
                     @if($certificate->isRevoked())
                         <x-ui.badge variant="neutral" dusk="certificate-status-{{ $certificate->id }}">Revogado</x-ui.badge>
                     @else
                         <x-ui.badge variant="accent" dusk="certificate-status-{{ $certificate->id }}">Válido</x-ui.badge>
                     @endif
                 </td>
-                <td style="padding: 12px 16px; display: flex; gap: 8px;">
-                    <x-ui.button variant="secondary" size="sm" href="{{ route('certificates.download', $certificate) }}" dusk="download-certificate-{{ $certificate->id }}">Baixar PDF</x-ui.button>
+                <td>
+                    <div class="btn-group btn-group-sm" role="group" aria-label="Ações do certificado">
+                        <x-ui.button variant="secondary" size="sm" href="{{ route('certificates.download', $certificate) }}" dusk="download-certificate-{{ $certificate->id }}">Baixar PDF</x-ui.button>
 
-                    @unless($certificate->isRevoked())
-                        <x-ui.button
-                            variant="ghost"
-                            size="sm"
-                            data-modal-target="revoke-modal-{{ $certificate->id }}"
-                            dusk="revoke-certificate-{{ $certificate->id }}"
-                        >Revogar</x-ui.button>
-                    @endunless
+                        @unless($certificate->isRevoked())
+                            <x-ui.button
+                                variant="ghost"
+                                size="sm"
+                                data-bs-toggle="modal"
+                                data-bs-target="#revoke-modal-{{ $certificate->id }}"
+                                dusk="revoke-certificate-{{ $certificate->id }}"
+                            >Revogar</x-ui.button>
+                        @endunless
+                    </div>
                 </td>
             </tr>
         @empty
-            <tr>
-                <td colspan="4" style="padding: 24px 16px; text-align: center; color: var(--color-neutral-600);">
-                    Nenhum certificado emitido para este curso ainda.
-                </td>
-            </tr>
+            <x-ui.empty-state colspan="4" message="Nenhum certificado emitido para este curso ainda." />
         @endforelse
-    </x-ui.table>
+    </x-ui.data-table>
 
-    <div style="margin-top: 20px;">
-        {{ $certificates->links() }}
-    </div>
+    <x-ui.pagination :paginator="$certificates" />
 
     {{-- One "Revogar Certificado" modal per active certificate, mirroring
          quizzes/edit.blade.php's per-question modal pattern. --}}
@@ -78,11 +76,11 @@
                     @csrf
                     @method('PUT')
 
-                    <p style="font-size: 13px; color: var(--color-neutral-600); margin: 0 0 12px;">
+                    <p class="small text-body-secondary mb-3">
                         Certificado de <strong>{{ $certificate->user->name }}</strong>. Esta ação não pode ser desfeita.
                     </p>
 
-                    <label for="revoke_reason_{{ $certificate->id }}" style="display: block; font-size: 12px; font-weight: 700; margin-bottom: 6px;">Motivo da revogação</label>
+                    <label for="revoke_reason_{{ $certificate->id }}" class="form-label fw-bold">Motivo da revogação</label>
                     <textarea
                         id="revoke_reason_{{ $certificate->id }}"
                         name="revoke_reason"
@@ -92,20 +90,26 @@
                         required
                         data-revoke-reason
                         dusk="revoke-reason-{{ $certificate->id }}"
-                        style="width: 100%; box-sizing: border-box; border: 1px solid var(--color-divider); padding: 10px; font-family: inherit; font-size: 13px; border-radius: 0px;"
+                        class="form-control @error('revoke_reason') is-invalid @enderror"
                     >{{ old('revoke_reason') }}</textarea>
 
                     @error('revoke_reason')
-                        <p style="color: var(--color-danger-700, #b3261e); font-size: 12px; margin: 6px 0 0;">{{ $message }}</p>
+                        <div class="invalid-feedback d-block">{{ $message }}</div>
                     @enderror
 
-                    <p data-revoke-hint style="font-size: 11px; color: var(--color-neutral-600); margin: 6px 0 0;">
+                    <div class="form-text" data-revoke-hint>
                         Mínimo de 10 caracteres.
-                    </p>
+                    </div>
 
-                    <div style="margin-top: 20px; display: flex; justify-content: flex-end; gap: 12px;">
-                        <button type="button" class="btn btn-ghost" data-modal-dismiss="true" style="border-radius: 0px;">Cancelar</button>
-                        <button type="submit" class="btn btn-primary" data-revoke-submit disabled style="border-radius: 0px;" dusk="confirm-revoke-{{ $certificate->id }}">Revogar Certificado</button>
+                    <div class="d-flex justify-content-end gap-3 mt-4">
+                        <x-ui.button variant="ghost" data-bs-dismiss="modal">Cancelar</x-ui.button>
+                        <x-ui.button
+                            type="submit"
+                            variant="primary"
+                            disabled
+                            data-revoke-submit
+                            dusk="confirm-revoke-{{ $certificate->id }}"
+                        >Revogar Certificado</x-ui.button>
                     </div>
                 </form>
             </x-ui.modal>
@@ -118,10 +122,9 @@
             // its submit button — server-side `RevokeCertificateRequest`
             // (min:10) is still the authority, this is UX-only.
             //
-            // The initial hidden state for `.dialog-backdrop` elements is
-            // handled globally by `ModalManager` (see
-            // `resources/js/modules/ModalManager.js`), so this only wires
-            // up the revoke-reason textarea/submit toggle.
+            // Opening/closing is fully declarative via Bootstrap's
+            // `data-bs-toggle="modal"` / `data-bs-dismiss="modal"`, so this
+            // only wires up the revoke-reason textarea/submit toggle.
             document.addEventListener('DOMContentLoaded', function () {
                 document.querySelectorAll('[data-revoke-form]').forEach(function (form) {
                     var textarea = form.querySelector('[data-revoke-reason]');

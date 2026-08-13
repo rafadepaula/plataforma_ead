@@ -41,6 +41,19 @@
         single_choice/true_false, checkboxes for multiple_choice) or
         `answers[{question_id}][essay_answer]` (textarea, essay) for
         every question in one request — see `SubmitQuizAttemptRequest`.
+
+    CONTRATO COM `resources/js/modules/QuizTimer.js` — NÃO ALTERAR SEM LER O
+    MÓDULO. O cronômetro abaixo é UM ÚNICO elemento que carrega, ao mesmo
+    tempo, `[data-quiz-timer]` (seletor de bind), `data-started-at`,
+    `data-time-limit-minutes` e o seletor Dusk `@quiz-timer`. O módulo escreve em
+    `container.textContent`, portanto o elemento NÃO pode ter filhos
+    estruturais. Ele NÃO pode ser `<x-ui.badge>`: `.badge` carrega
+    `text-transform: uppercase` (ver `resources/scss/components/_index.scss`),
+    e o Selenium lê o texto RENDERIZADO — `StudentQuizAttemptTest` faz
+    `waitForText('Tempo esgotado')` e passaria a receber `TEMPO ESGOTADO`.
+    Por isso é um `<span>` com as mesmas utilities de borda do badge outline e
+    sem nenhuma classe `text-bg-*`, para que o estado "Tempo esgotado" possa
+    ser pintado por `classList.add('text-bg-danger')` sem colidir.
 --}}
 @extends('layouts.app')
 
@@ -58,26 +71,21 @@
 @endphp
 
 @section('content')
-    <div style="display: flex; justify-content: center; padding: 24px;">
-        <div style="width: 680px; max-width: 100%;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <div>
-                    <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-accent); font-weight: 700;">
-                        {{ $lesson->module->course->title }}
-                    </span>
-                    <h1 style="font-family: var(--font-heading); font-weight: 800; font-size: 22px; margin: 4px 0 0;">{{ $quiz->title }}</h1>
-                </div>
-
+    <div class="d-flex justify-content-center p-6x">
+        <div class="w-100 max-w-640">
+            <x-layout.page-header :kicker="$lesson->module->course->title" :title="$quiz->title">
                 @if($canAttempt && $quiz->time_limit_minutes)
-                    <div
-                        data-quiz-timer
-                        data-started-at="{{ now()->toIso8601String() }}"
-                        data-time-limit-minutes="{{ $quiz->time_limit_minutes }}"
-                        dusk="quiz-timer"
-                        style="font-family: var(--font-heading); font-weight: 800; font-size: 18px; color: var(--color-text);"
-                    >--:--</div>
+                    <x-slot:actions>
+                        <span
+                            class="border border-secondary text-body fs-5 fw-bold px-2 py-1"
+                            data-quiz-timer
+                            data-started-at="{{ now()->toIso8601String() }}"
+                            data-time-limit-minutes="{{ $quiz->time_limit_minutes }}"
+                            dusk="quiz-timer"
+                        >--:--</span>
+                    </x-slot:actions>
                 @endif
-            </div>
+            </x-layout.page-header>
 
             @if($bestScore !== null)
                 <x-ui.alert variant="accent" dusk="quiz-best-score">
@@ -99,17 +107,17 @@
                 <x-ui.card title="Gabarito" dusk="quiz-answer-key">
                     @foreach($quiz->questions as $index => $question)
                         @php $answer = $answersByQuestionId->get($question->id); @endphp
-                        <div style="margin-bottom: 16px;" dusk="answer-key-question-{{ $question->id }}">
-                            <p style="font-weight: 700; margin: 0 0 8px;">{{ $index + 1 }}. {{ $question->question_text }}</p>
+                        <div class="mb-4x" dusk="answer-key-question-{{ $question->id }}">
+                            <p class="fw-bold mb-2x">{{ $index + 1 }}. {{ $question->question_text }}</p>
 
                             @if($question->type === 'essay')
                                 <x-ui.badge :variant="$answer?->is_correct ? 'accent' : 'accent-2'">
                                     {{ $answer?->is_correct ? 'Correta' : 'Incorreta' }}
                                 </x-ui.badge>
                             @else
-                                <ul style="margin: 0; padding-left: 20px;">
+                                <ul class="mb-0 ps-6x">
                                     @foreach($question->options as $option)
-                                        <li style="{{ $option->is_correct ? 'font-weight: 700; color: var(--color-accent);' : '' }}" dusk="answer-key-option-{{ $option->id }}">
+                                        <li @class(['fw-bold text-primary' => $option->is_correct]) dusk="answer-key-option-{{ $option->id }}">
                                             {{ $option->option_text }}
                                             @if($option->is_correct)
                                                 (resposta correta)
@@ -157,15 +165,15 @@
                         ];
                     @endphp
 
-                    <div style="margin-bottom: 30px;" dusk="quiz-question-{{ $question->id }}">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                            <h6 style="color: var(--color-neutral-600); margin: 0; font-weight: 800;">
+                    <div class="mb-8x" dusk="quiz-question-{{ $question->id }}">
+                        <div class="d-flex justify-content-between align-items-center gap-3x mb-2x">
+                            <h6 class="text-body-secondary fw-bold mb-0">
                                 Questão {{ $questionNumber }} de {{ $quiz->questions->count() }}
                             </h6>
                             <x-ui.badge variant="outline">{{ $typeLabels[$question->type] ?? $question->type }}</x-ui.badge>
                         </div>
 
-                        <h3 style="font-family: var(--font-heading); font-weight: 800; font-size: 18px; margin-bottom: 16px; color: var(--color-text);">
+                        <h3 class="h5 mb-4x">
                             {{ $question->question_text }}
                         </h3>
 
@@ -178,18 +186,21 @@
                                 dusk="quiz-essay-{{ $question->id }}"
                             />
                         @else
-                            <div style="display: flex; flex-direction: column; gap: 10px;">
+                            <div class="list-group">
                                 @foreach($question->options as $option)
                                     @php $isSelected = in_array($option->id, $selected); @endphp
-                                    <label
-                                        style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; border: 1px solid {{ $isSelected ? 'var(--color-accent)' : 'var(--color-divider)' }}; background: {{ $isSelected ? 'var(--color-accent-100)' : 'var(--color-surface)' }}; font-size: 14px; cursor: pointer;"
-                                    >
+                                    <label @class([
+                                        'list-group-item',
+                                        'list-group-item-action',
+                                        'd-flex align-items-center gap-3x p-4x bg-body-tertiary cursor-pointer',
+                                        'border-primary border-2' => $isSelected,
+                                    ])>
                                         <input
                                             type="{{ $question->type === 'multiple_choice' ? 'checkbox' : 'radio' }}"
                                             name="answers[{{ $question->id }}][selected_option_ids][]"
                                             value="{{ $option->id }}"
                                             @checked($isSelected)
-                                            style="accent-color: var(--color-accent);"
+                                            class="form-check-input flex-shrink-0 mt-0"
                                             dusk="quiz-option-{{ $question->id }}-{{ $option->id }}"
                                         />
                                         <span>{{ $option->option_text }}</span>
@@ -200,7 +211,7 @@
                     </div>
                 @endforeach
 
-                <div style="display: flex; justify-content: flex-end; margin-top: 12px;">
+                <div class="d-flex justify-content-end mt-3x">
                     <x-ui.button type="submit" dusk="quiz-attempt-submit">Finalizar Quiz</x-ui.button>
                 </div>
             </form>

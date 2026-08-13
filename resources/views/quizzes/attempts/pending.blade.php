@@ -12,39 +12,30 @@
 @extends('layouts.app')
 
 @section('content')
-    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
-        <div>
-            <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-accent); font-weight: 700;">SPEC-08</span>
-            <h1 style="font-family: var(--font-heading); font-weight: 800; font-size: 24px; margin: 4px 0 0;">Correções Pendentes</h1>
-        </div>
-    </div>
+    <x-layout.page-header kicker="SPEC-08" title="Correções Pendentes" />
 
     <x-ui.table :headers="['Aluno', 'Curso / Quiz', 'Enviado em', 'Ações']">
         @forelse($attempts as $attempt)
-            <tr style="border-bottom: 1px solid var(--color-divider);" dusk="pending-attempt-row-{{ $attempt->id }}">
-                <td style="padding: 12px 16px;">{{ $attempt->user->name }}</td>
-                <td style="padding: 12px 16px;">
+            <tr dusk="pending-attempt-row-{{ $attempt->id }}">
+                <td>{{ $attempt->user->name }}</td>
+                <td>
                     {{ $attempt->quiz->lesson->module->course->title }}
                     <br>
-                    <span style="font-size: 12px; color: var(--color-neutral-600);">{{ $attempt->quiz->title }}</span>
+                    <span class="small text-body-secondary">{{ $attempt->quiz->title }}</span>
                 </td>
-                <td style="padding: 12px 16px;">{{ optional($attempt->completed_at)->format('d/m/Y H:i') }}</td>
-                <td style="padding: 12px 16px;">
+                <td>{{ optional($attempt->completed_at)->format('d/m/Y H:i') }}</td>
+                <td>
                     <x-ui.button variant="secondary" size="sm" href="{{ route('quiz-attempts.show', $attempt) }}" dusk="grade-attempt-{{ $attempt->id }}">
                         Corrigir
                     </x-ui.button>
                 </td>
             </tr>
         @empty
-            <tr>
-                <td colspan="4" style="padding: 24px 16px; text-align: center; color: var(--color-neutral-600);" dusk="pending-attempts-empty">
-                    Nenhuma correção pendente.
-                </td>
-            </tr>
+            <x-ui.empty-state :colspan="4" dusk="pending-attempts-empty">
+                Nenhuma correção pendente.
+            </x-ui.empty-state>
         @endforelse
     </x-ui.table>
 
-    <div style="margin-top: 20px;">
-        {{ $attempts->links() }}
-    </div>
+    <x-ui.pagination :paginator="$attempts" />
 @endsection

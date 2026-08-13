@@ -34,15 +34,12 @@ class HelpCenterDuskTest extends DuskTestCase
             $browser->loginAs($student)
                 ->visit(route('student.courses.index'))
                 ->waitFor('@help-button-student.courses.index')
-                // `x-ui.modal`'s backdrop ships with a static inline
-                // `display: flex` and is only hidden once ModalManager's
-                // `hideBackdropsOnLoad()` runs on `DOMContentLoaded` (this
-                // project has no Alpine.js — see ModalManager.js's
-                // docblock). Waits for that plain-JS hide before clicking
-                // the trigger button — otherwise, on a fast page load, the
-                // still-visible fixed-position backdrop can intercept the
-                // click meant for the button beneath it.
-                ->waitUntilMissing('.dialog-backdrop')
+                // `x-ui.modal` is now plain Bootstrap markup: the modal is
+                // `display: none` until `data-bs-toggle="modal"` shows it,
+                // and the backdrop is created by `bootstrap.Modal` only on
+                // open. There is therefore no pre-click backdrop to wait
+                // out anymore (the old `.dialog-backdrop`/ModalManager
+                // contract is gone from the project).
                 ->click('@help-button-student.courses.index')
                 ->waitFor('@help-article-content-student.courses.index')
                 ->assertSee('Como acessar meus cursos')
@@ -66,12 +63,9 @@ class HelpCenterDuskTest extends DuskTestCase
             $browser->loginAs($student)
                 ->visit(route('student.courses.index'))
                 ->waitFor('@help-button-student.courses.index')
-                // See the docblock above for why this wait is required
-                // before clicking the trigger button.
-                ->waitUntilMissing('.dialog-backdrop')
                 ->click('@help-button-student.courses.index')
                 ->waitFor('@help-article-content-student.courses.index')
-                ->assertSeeIn('.dialog-title', 'Artigo global de fallback')
+                ->assertSeeIn('@help-modal-student.courses.index .modal-title', 'Artigo global de fallback')
                 ->assertSeeIn('@help-article-content-student.courses.index', 'Conteúdo global exibido quando não há artigo específico da organização.');
         });
     }
@@ -89,12 +83,9 @@ class HelpCenterDuskTest extends DuskTestCase
             $browser->loginAs($student)
                 ->visit(route('student.courses.index'))
                 ->waitFor('@help-button-student.courses.index')
-                // See the docblock above for why this wait is required
-                // before clicking the trigger button.
-                ->waitUntilMissing('.dialog-backdrop')
                 ->click('@help-button-student.courses.index')
                 ->waitFor('@help-placeholder-content-student.courses.index')
-                ->assertSeeIn('.dialog-title', 'Ajuda')
+                ->assertSeeIn('@help-modal-student.courses.index .modal-title', 'Ajuda')
                 ->assertSeeIn('@help-placeholder-content-student.courses.index', 'Estamos preparando');
         });
     }

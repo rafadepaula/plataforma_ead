@@ -1,63 +1,64 @@
 @extends('layouts.app')
 
 @section('content')
-    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
-        <div>
-            <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-accent); font-weight: 700;">Administração</span>
-            <h1 style="font-family: var(--font-heading); font-weight: 800; font-size: 24px; margin: 4px 0 0;">Organizações</h1>
-        </div>
-
-        <x-ui.button href="{{ route('organizations.create') }}" dusk="new-organization">Nova Organização</x-ui.button>
-    </div>
+    <x-layout.page-header kicker="Administração" title="Organizações">
+        <x-slot:actions>
+            <x-ui.button href="{{ route('organizations.create') }}" dusk="new-organization">Nova Organização</x-ui.button>
+        </x-slot:actions>
+    </x-layout.page-header>
 
     @if(session('active_org_id'))
         <x-ui.alert variant="warning" dismissable>
             Você está no contexto da Organização
             <strong>{{ \App\Models\Organization::find(session('active_org_id'))?->name }}</strong>.
-            <form method="POST" action="{{ route('impersonate-org.destroy') }}" style="display: inline;" dusk="exit-impersonation-form">
+            <form method="POST" action="{{ route('impersonate-org.destroy') }}" class="d-inline" dusk="exit-impersonation-form">
                 @csrf
                 @method('DELETE')
-                <button type="submit" class="btn btn-ghost" style="padding: 0 0 0 8px; text-decoration: underline;" dusk="exit-impersonation">Sair do contexto</button>
+                <button type="submit" class="btn btn-link p-0 ps-2 text-decoration-underline" dusk="exit-impersonation">Sair do contexto</button>
             </form>
         </x-ui.alert>
     @endif
 
-    <x-ui.table :headers="['Nome', 'Slug', 'CNPJ', 'Status', 'Ações']">
+    <x-ui.data-table striped hover responsive :headers="['Nome', 'Slug', 'CNPJ', 'Status', 'Ações']">
         @forelse($organizations as $organization)
-            <tr style="border-bottom: 1px solid var(--color-divider);" dusk="organization-row-{{ $organization->id }}">
-                <td style="padding: 12px 16px;">{{ $organization->name }}</td>
-                <td style="padding: 12px 16px;">{{ $organization->slug }}</td>
-                <td style="padding: 12px 16px;">{{ $organization->cnpj ?? '—' }}</td>
-                <td style="padding: 12px 16px;">
+            <tr dusk="organization-row-{{ $organization->id }}">
+                <td>{{ $organization->name }}</td>
+                <td class="font-monospace small">{{ $organization->slug }}</td>
+                <td>{{ $organization->cnpj ?? '—' }}</td>
+                <td>
                     <x-ui.badge :variant="$organization->status === 'active' ? 'accent' : 'neutral'">
                         {{ $organization->status === 'active' ? 'Ativo' : 'Inativo' }}
                     </x-ui.badge>
                 </td>
-                <td style="padding: 12px 16px; display: flex; gap: 8px;">
-                    <form method="POST" action="{{ route('impersonate-org.store', $organization) }}" dusk="impersonate-form-{{ $organization->id }}">
-                        @csrf
-                        <button type="submit" class="btn btn-ghost" dusk="impersonate-{{ $organization->id }}">Entrar como</button>
-                    </form>
+                <td>
+                    {{-- `d-flex`, não `.btn-group`: os filhos diretos aqui são `<form>`,
+                         e o `.btn-group` só agrupa quando os filhos são os próprios
+                         `<button>`/`<a>` — com forms no meio os botões saem colados
+                         e sem os cantos/bordas corretos. --}}
+                    <div class="d-flex flex-wrap align-items-center gap-2">
+                        <form method="POST" action="{{ route('impersonate-org.store', $organization) }}" dusk="impersonate-form-{{ $organization->id }}">
+                            @csrf
+                            <button type="submit" class="btn btn-outline-secondary" dusk="impersonate-{{ $organization->id }}">Entrar como</button>
+                        </form>
 
-                    <x-ui.button variant="secondary" size="sm" href="{{ route('organizations.edit', $organization) }}" dusk="edit-organization-{{ $organization->id }}">Editar</x-ui.button>
+                        <x-ui.button href="{{ route('organizations.edit', $organization) }}" size="sm" dusk="edit-organization-{{ $organization->id }}">Editar</x-ui.button>
 
-                    <form method="POST" action="{{ route('organizations.destroy', $organization) }}" dusk="delete-form-{{ $organization->id }}">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" class="btn btn-ghost" dusk="delete-organization-{{ $organization->id }}">Remover</button>
-                    </form>
+                        {{-- Submit direto, sem `<x-ui.delete-button>`: `OrganizationCrudTest`
+                             clica `@delete-organization-{id}` e espera o redirect imediato.
+                             Adotar o modal de confirmação aqui é mudança de contrato de
+                             teste, agendada para a Fase 7 junto com as demais exclusões. --}}
+                        <form method="POST" action="{{ route('organizations.destroy', $organization) }}" dusk="delete-form-{{ $organization->id }}">
+                            @csrf
+                            @method('DELETE')
+                            <x-ui.button type="submit" variant="ghost" size="sm" class="text-danger link-danger" dusk="delete-organization-{{ $organization->id }}">Remover</x-ui.button>
+                        </form>
+                    </div>
                 </td>
             </tr>
         @empty
-            <tr>
-                <td colspan="5" style="padding: 24px 16px; text-align: center; color: var(--color-neutral-600);">
-                    Nenhuma Organização cadastrada.
-                </td>
-            </tr>
+            <x-ui.empty-state colspan="5" message="Nenhuma Organização cadastrada." />
         @endforelse
-    </x-ui.table>
+    </x-ui.data-table>
 
-    <div style="margin-top: 20px;">
-        {{ $organizations->links() }}
-    </div>
+    <x-ui.pagination :paginator="$organizations" />
 @endsection

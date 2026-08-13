@@ -26,22 +26,17 @@
 @extends('layouts.app')
 
 @section('content')
-    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
-        <div style="display: flex; align-items: center; gap: 10px;">
-            <div>
-                <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-accent); font-weight: 700;">{{ $course->title }}</span>
-                <h1 style="font-family: var(--font-heading); font-weight: 800; font-size: 24px; margin: 4px 0 0;">Regras de Conclusão</h1>
-            </div>
-        </div>
-
-        <x-ui.button variant="secondary" href="{{ route('courses.index') }}">Voltar aos Cursos</x-ui.button>
-    </div>
+    <x-layout.page-header :kicker="$course->title" title="Regras de Conclusão">
+        <x-slot:actions>
+            <x-ui.button variant="secondary" href="{{ route('courses.index') }}">Voltar aos Cursos</x-ui.button>
+        </x-slot:actions>
+    </x-layout.page-header>
 
     <x-ui.card title="Nova regra" kicker="UC13">
-        <form method="POST" action="{{ route('courses.completion-rules.store', $course) }}" dusk="completion-rule-form" style="display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap;">
+        <form method="POST" action="{{ route('courses.completion-rules.store', $course) }}" dusk="completion-rule-form" class="row g-3 align-items-end">
             @csrf
 
-            <div style="flex: 1; min-width: 220px;">
+            <div class="col-12 col-md-4">
                 <x-ui.select
                     name="rule_type"
                     label="Tipo de Regra"
@@ -52,7 +47,7 @@
                 />
             </div>
 
-            <div style="flex: 1; min-width: 220px;">
+            <div class="col-12 col-md-4">
                 <x-ui.select
                     name="target_id"
                     label="Alvo (quiz ou módulo)"
@@ -78,7 +73,7 @@
                 </x-ui.select>
             </div>
 
-            <div style="flex: 1; min-width: 160px;">
+            <div class="col-12 col-md-2">
                 <x-ui.input
                     type="number"
                     name="required_percentage"
@@ -89,34 +84,36 @@
                 />
             </div>
 
-            <x-ui.button type="submit" dusk="completion-rule-submit">Adicionar Regra</x-ui.button>
+            <div class="col-12 col-md-auto mb-3">
+                <x-ui.button type="submit" dusk="completion-rule-submit">Adicionar Regra</x-ui.button>
+            </div>
         </form>
     </x-ui.card>
 
-    <div style="margin-top: 20px;">
-        <x-ui.table :headers="['Tipo', 'Alvo', 'Percentual Exigido', 'Ações']">
+    <div class="mt-4">
+        <x-ui.data-table striped hover responsive :headers="['Tipo', 'Alvo', 'Percentual Exigido', 'Ações']">
             @forelse($rules as $rule)
-                <tr style="border-bottom: 1px solid var(--color-divider);" dusk="completion-rule-row-{{ $rule->id }}">
-                    <td style="padding: 12px 16px;">
+                <tr dusk="completion-rule-row-{{ $rule->id }}">
+                    <td>
                         <x-ui.badge variant="outline">{{ $ruleTypeLabels[$rule->rule_type] ?? $rule->rule_type }}</x-ui.badge>
                     </td>
-                    <td style="padding: 12px 16px;">{{ $targetLabelFor($rule) }}</td>
-                    <td style="padding: 12px 16px;">{{ $rule->required_percentage }}%</td>
-                    <td style="padding: 12px 16px;">
+                    <td>{{ $targetLabelFor($rule) }}</td>
+                    <td>{{ $rule->required_percentage }}%</td>
+                    <td>
                         <form method="POST" action="{{ route('courses.completion-rules.destroy', [$course, $rule]) }}" dusk="delete-completion-rule-form-{{ $rule->id }}">
                             @csrf
                             @method('DELETE')
-                            <button type="submit" class="btn btn-ghost" dusk="delete-completion-rule-{{ $rule->id }}">Remover</button>
+                            <x-ui.button type="submit"
+                                         variant="ghost"
+                                         size="sm"
+                                         class="text-danger link-danger"
+                                         dusk="delete-completion-rule-{{ $rule->id }}">Remover</x-ui.button>
                         </form>
                     </td>
                 </tr>
             @empty
-                <tr>
-                    <td colspan="4" style="padding: 24px 16px; text-align: center; color: var(--color-neutral-600);">
-                        Nenhuma regra de conclusão cadastrada para este Curso.
-                    </td>
-                </tr>
+                <x-ui.empty-state colspan="4" message="Nenhuma regra de conclusão cadastrada para este Curso." />
             @endforelse
-        </x-ui.table>
+        </x-ui.data-table>
     </div>
 @endsection

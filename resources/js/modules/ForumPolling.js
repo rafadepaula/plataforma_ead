@@ -70,22 +70,29 @@ export class ForumPolling {
     appendReply(container, reply) {
         if (container.querySelector(`[data-reply-id="${reply.id}"]`)) return;
 
+        // Mirrors `forum/partials/_reply.blade.php`'s Bootstrap card markup —
+        // keep the two in sync, a polled reply must be visually
+        // indistinguishable from a server-rendered one.
         const el = document.createElement('div');
         el.setAttribute('data-reply-id', String(reply.id));
         el.setAttribute('dusk', `reply-${reply.id}`);
-        el.style.cssText = 'padding: 14px 16px; border: 1px solid var(--color-divider); background: var(--color-surface); margin-bottom: 10px;';
+        el.className = 'forum-reply card mb-2';
+
+        const body = document.createElement('div');
+        body.className = 'card-body py-3';
 
         const author = document.createElement('div');
-        author.style.cssText = 'font-size: 12px; color: var(--color-neutral-600); margin-bottom: 6px;';
+        author.className = 'small text-body-secondary mb-1';
         author.textContent = `${(reply.user && reply.user.name) || 'Usuário'} — ${reply.created_at || ''}`;
 
         const content = document.createElement('div');
-        content.style.cssText = 'font-size: 14px; white-space: pre-wrap;';
+        content.className = 'text-prewrap';
         content.setAttribute('dusk', `reply-content-${reply.id}`);
         content.textContent = reply.content;
 
-        el.appendChild(author);
-        el.appendChild(content);
+        body.appendChild(author);
+        body.appendChild(content);
+        el.appendChild(body);
         container.appendChild(el);
     }
 

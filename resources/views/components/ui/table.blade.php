@@ -4,16 +4,25 @@
     'striped' => false,
 ])
 
-<div class="table-responsive" style="width: 100%; overflow-x: auto; border: 1px solid var(--color-divider); border-radius: 0px; background: var(--color-surface);">
-    <table {{ $attributes->merge(['class' => 'table', 'style' => 'width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; border-radius: 0px;']) }}>
+@php
+    $tableClasses = collect([
+        'table',
+        'table-sm',
+        $hoverable ? 'table-hover' : null,
+        $striped ? 'table-striped' : null,
+    ])->filter()->implode(' ');
+@endphp
+
+<div class="table-responsive border bg-body-tertiary">
+    <table {{ $attributes->merge(['class' => $tableClasses]) }}>
         @if(count($headers) > 0 || isset($header))
-            <thead style="background: color-mix(in srgb, var(--color-neutral-900) 6%, transparent); border-bottom: 1px solid var(--color-divider);">
+            <thead class="table-header">
                 @if(isset($header))
                     {{ $header }}
                 @else
                     <tr>
                         @foreach($headers as $h)
-                            <th style="padding: 12px 16px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-neutral-700);">
+                            <th scope="col" class="small text-body-secondary fw-bold text-uppercase">
                                 {{ $h }}
                             </th>
                         @endforeach
@@ -22,7 +31,7 @@
             </thead>
         @endif
 
-        <tbody style="divide-y divide-color-divider;">
+        <tbody>
             {{ $slot }}
         </tbody>
     </table>

@@ -1,5 +1,15 @@
 /**
- * NotificationService - SOLID JavaScript module for toast & alert notification management
+ * NotificationService — fachada pública de toasts, reimplementada sobre
+ * `bootstrap.Toast` (bootstrap-conventions §9).
+ *
+ * A ASSINATURA PÚBLICA É CONTRATO e não muda: `show(message, type, options)`,
+ * `success/error/warning/info(message, options)`, `dismiss(element)` e
+ * `getOrCreateContainer()`. Seis módulos recebem este singleton por injeção
+ * (`ForumReportModal`, `LessonPlayer`, `ModuleReorder`, `QuizBuilder`,
+ * `SmartInvitationForm`, e o registry em `modules/index.js`), e a suíte Dusk
+ * chama `window.NotificationService.success(...)`.
+ *
+ * Zero `style=` gerado por JS: todo o visual vem de classes do Bootstrap.
  */
 export class NotificationService {
     constructor(containerId = 'notification-container') {
@@ -7,63 +17,97 @@ export class NotificationService {
         this.container = null;
     }
 
+    /**
+     * Resolve o container único de toasts. Normalmente ele já vem renderizado
+     * por `<x-layout.alerts>`; telas standalone (landing, verificação pública)
+     * não têm o componente, então criamos o container sob demanda com as
+     * mesmas classes.
+     */
     getOrCreateContainer() {
         if (this.container && document.body.contains(this.container)) {
             return this.container;
         }
 
         let container = document.getElementById(this.containerId);
+
         if (!container) {
             container = document.createElement('div');
             container.id = this.containerId;
-            container.className = 'notification-container position-fixed top-0 end-0 p-3';
-            container.style.cssText = 'position: fixed; top: 1rem; right: 1rem; z-index: 9999; display: flex; flex-direction: column; gap: 0.5rem; max-width: 400px; width: 100%; pointer-events: none;';
+            container.className = 'toast-container position-fixed bottom-0 end-0 p-3';
             document.body.appendChild(container);
         }
+
         this.container = container;
+
         return container;
     }
 
+    /**
+     * Mapeia o tipo lógico para a classe de cor do Bootstrap 5.3.
+     */
+    resolveVariantClass(type) {
+        switch (type) {
+            case 'success':
+                return 'text-bg-success';
+            case 'error':
+            case 'danger':
+                return 'text-bg-danger';
+            case 'warning':
+                return 'text-bg-warning';
+            default:
+                return 'text-bg-secondary';
+        }
+    }
+
+    /**
+     * @param {string} message
+     * @param {string} type    info | success | error | danger | warning
+     * @param {{duration?: number}} options `duration` 0 desliga o auto-dismiss.
+     * @returns {HTMLElement} o elemento `.toast` criado.
+     */
     show(message, type = 'info', options = {}) {
         const container = this.getOrCreateContainer();
         const duration = options.duration ?? 5000;
 
         const toast = document.createElement('div');
-        toast.className = `toast-notification alert-item variant-${type}`;
-        toast.style.cssText = 'pointer-events: auto; padding: 12px 16px; background: var(--color-surface, #eae9e9); border: 1px solid var(--color-divider, #201e1d); border-left: 4px solid var(--color-accent, #ec3013); color: var(--color-text, #201e1d); font-family: var(--font-body, sans-serif); box-shadow: var(--shadow-md, 0 3px 10px rgba(0,0,0,0.16)); display: flex; align-items: center; justify-content: space-between; gap: 12px; transition: opacity 0.3s ease, transform 0.3s ease; opacity: 0; transform: translateY(-10px); border-radius: 0px;';
+        toast.className = `toast align-items-center border-0 ${this.resolveVariantClass(type)}`;
+        toast.setAttribute('role', 'alert');
+        toast.setAttribute('aria-live', type === 'error' || type === 'danger' ? 'assertive' : 'polite');
+        toast.setAttribute('aria-atomic', 'true');
 
-        if (type === 'success') {
-            toast.style.borderLeftColor = 'var(--color-accent, #ec3013)';
-        } else if (type === 'error' || type === 'danger' || type === 'warning') {
-            toast.style.borderLeftColor = 'var(--color-accent-2, #e15b47)';
-        }
+        const flex = document.createElement('div');
+        flex.className = 'd-flex';
 
-        const textSpan = document.createElement('span');
-        textSpan.className = 'notification-message';
-        textSpan.textContent = message;
-        toast.appendChild(textSpan);
+        const body = document.createElement('div');
+        body.className = 'toast-body';
+        body.textContent = message;
 
         const closeBtn = document.createElement('button');
         closeBtn.type = 'button';
-        closeBtn.className = 'btn-close';
-        closeBtn.style.cssText = 'background: none; border: none; cursor: pointer; font-size: 16px; font-weight: bold; color: inherit; padding: 0 4px; line-height: 1; border-radius: 0px;';
-        closeBtn.innerHTML = '&times;';
+        closeBtn.className = 'btn-close btn-close-white me-2 m-auto';
+        closeBtn.setAttribute('data-bs-dismiss', 'toast');
         closeBtn.setAttribute('aria-label', 'Fechar');
-        closeBtn.addEventListener('click', () => this.dismiss(toast));
-        toast.appendChild(closeBtn);
 
+        flex.appendChild(body);
+        flex.appendChild(closeBtn);
+        toast.appendChild(flex);
         container.appendChild(toast);
 
-        requestAnimationFrame(() => {
-            toast.style.opacity = '1';
-            toast.style.transform = 'translateY(0)';
+        // Remove o nó do DOM quando o Bootstrap terminar de escondê-lo, para o
+        // container não acumular toasts mortos.
+        toast.addEventListener('hidden.bs.toast', () => toast.remove());
+
+        // `animation: false` é deliberado: o fade do Bootstrap mantém
+        // `.toast.showing { opacity: 0 }` por 150ms, o que torna a asserção de
+        // texto no Dusk dependente de timing. Sem animação o toast é visível no
+        // mesmo tick em que `show()` retorna.
+        const instance = window.bootstrap.Toast.getOrCreateInstance(toast, {
+            animation: false,
+            autohide: duration > 0,
+            delay: duration > 0 ? duration : 5000,
         });
 
-        if (duration > 0) {
-            setTimeout(() => {
-                this.dismiss(toast);
-            }, duration);
-        }
+        instance.show();
 
         return toast;
     }
@@ -84,15 +128,15 @@ export class NotificationService {
         return this.show(message, 'info', options);
     }
 
+    /**
+     * @param {HTMLElement} toastElement elemento devolvido por `show()`.
+     */
     dismiss(toastElement) {
-        if (!toastElement || !toastElement.parentElement) return;
-        toastElement.style.opacity = '0';
-        toastElement.style.transform = 'translateY(-10px)';
-        setTimeout(() => {
-            if (toastElement.parentElement) {
-                toastElement.parentElement.removeChild(toastElement);
-            }
-        }, 300);
+        if (!toastElement || !toastElement.parentElement) {
+            return;
+        }
+
+        window.bootstrap.Toast.getOrCreateInstance(toastElement).hide();
     }
 }
 

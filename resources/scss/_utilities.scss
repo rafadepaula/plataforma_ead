@@ -1,0 +1,112 @@
+// Utilities extras derivadas dos nossos tokens (API de utilities do Bootstrap)
+// Este arquivo importa componentes customizados do projeto
+
+@import "components/index";
+
+// =============================================================================
+// Utilities adicionais para valores de pixel específicos (caso a decisão §5
+// da árvore do bootstrap-conventions chegue no step 6, adicione aqui).
+// =============================================================================
+$utilities: map.merge($utilities, (
+  "width-px": (
+    property: width,
+    class: w,
+    values: (
+      32: 32px,
+      36: 36px,
+      // Largura canônica do dropdown de notificações (topbar).
+      340: 340px,
+    )
+  ),
+  "height-px": (
+    property: height,
+    class: h,
+    values: (
+      // Alturas de barra de progresso (`<x-ui.progress height="...">`).
+      4: 4px,
+      6: 6px,
+      8: 8px,
+      24: 24px,
+      // Badge quadrado de contagem (sino de notificações).
+      16: 16px,
+      32: 32px,
+      36: 36px,
+      60: 60px,
+    )
+  ),
+  "max-width-px": (
+    property: max-width,
+    class: max-w,
+    values: (
+      400: 400px,
+      420: 420px,
+      480: 480px,
+      560: 560px,
+      640: 640px,
+      // Trava responsiva de painéis flutuantes em telas estreitas.
+      "90vw": 90vw,
+    )
+  ),
+  "max-height-px": (
+    property: max-height,
+    class: max-h,
+    values: (
+      360: 360px,
+      420: 420px,
+    )
+  ),
+  // `min-width: 0` é o destravador de truncamento dentro de flex containers;
+  // `min-width: 16px` é o piso do badge de contagem antes de crescer com o texto.
+  "min-width-px": (
+    property: min-width,
+    class: min-w,
+    values: (
+      0: 0,
+      16: 16px,
+    )
+  ),
+  // Escalão abaixo de `.fs-6`, para o badge de contagem do sino.
+  "font-size-px": (
+    property: font-size,
+    class: fs,
+    values: (10: 10px)
+  ),
+  // `flex: 1` (Bootstrap só entrega flex-grow-1, sem o basis 0%).
+  "flex-1": (
+    property: flex,
+    class: flex,
+    values: (1: 1 1 0%)
+  ),
+  // Conteúdo gerado pelo usuário preserva quebras de linha (fórum, help).
+  "white-space": (
+    property: white-space,
+    class: text,
+    values: (
+      prewrap: pre-wrap,
+      nowrap: nowrap,
+    )
+  ),
+  // O Bootstrap 5.3 não emite utility de cursor. Alvo: `<label>` clicável de
+  // alternativa de quiz, que perdeu o `cursor: pointer` do estilo inline antigo.
+  "cursor": (
+    property: cursor,
+    class: cursor,
+    values: (
+      pointer: pointer,
+      grab: grab,
+      "not-allowed": not-allowed,
+    )
+  ),
+  // O Bootstrap 5.3 não emite utility de border-style.
+  "border-style": (
+    property: border-style,
+    class: border,
+    values: (
+      dashed: dashed,
+      solid: solid,
+    )
+  ),
+));
+
+// Re-importar a API para gerar as utilities adicionais
+@import "bootstrap/scss/utilities/api";

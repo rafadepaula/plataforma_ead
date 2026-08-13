@@ -1,47 +1,40 @@
 @extends('layouts.app')
 
 @section('content')
-    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
-        <div>
-            <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-accent); font-weight: 700;">Gestão</span>
-            <h1 style="font-family: var(--font-heading); font-weight: 800; font-size: 24px; margin: 4px 0 0;">Cursos</h1>
-        </div>
+    <x-layout.page-header kicker="Gestão" title="Cursos">
+        <x-slot:actions>
+            <x-ui.button href="{{ route('courses.create') }}" dusk="new-course">Novo Curso</x-ui.button>
+        </x-slot:actions>
+    </x-layout.page-header>
 
-        <x-ui.button href="{{ route('courses.create') }}" dusk="new-course">Novo Curso</x-ui.button>
-    </div>
-
-    <x-ui.table :headers="['Título', 'Carga Horária', 'Status', 'Ações']">
+    <x-ui.data-table striped hover responsive :headers="['Título', 'Carga Horária', 'Status', 'Ações']">
         @forelse($courses as $course)
-            <tr style="border-bottom: 1px solid var(--color-divider);" dusk="course-row-{{ $course->id }}">
-                <td style="padding: 12px 16px;">{{ $course->title }}</td>
-                <td style="padding: 12px 16px;">{{ $course->workload_hours }}h</td>
-                <td style="padding: 12px 16px;">
+            <tr dusk="course-row-{{ $course->id }}">
+                <td>{{ $course->title }}</td>
+                <td>{{ $course->workload_hours }}h</td>
+                <td>
                     <x-ui.badge :variant="$course->is_published ? 'accent' : 'neutral'">
                         {{ $course->is_published ? 'Publicado' : 'Rascunho' }}
                     </x-ui.badge>
                 </td>
-                <td style="padding: 12px 16px; display: flex; gap: 8px;">
-                    <x-ui.button variant="secondary" size="sm" href="{{ route('courses.modules.index', $course) }}" dusk="manage-modules-{{ $course->id }}">Módulos</x-ui.button>
-                    <x-ui.button variant="secondary" size="sm" href="{{ route('courses.completion-rules.index', $course) }}" dusk="manage-completion-rules-{{ $course->id }}">Regras de Conclusão</x-ui.button>
-                    <x-ui.button variant="secondary" size="sm" href="{{ route('courses.edit', $course) }}" dusk="edit-course-{{ $course->id }}">Editar</x-ui.button>
+                <td>
+                    <div class="d-flex flex-wrap align-items-center gap-2">
+                        <x-ui.button variant="secondary" size="sm" href="{{ route('courses.modules.index', $course) }}" dusk="manage-modules-{{ $course->id }}">Módulos</x-ui.button>
+                        <x-ui.button variant="secondary" size="sm" href="{{ route('courses.completion-rules.index', $course) }}" dusk="manage-completion-rules-{{ $course->id }}">Regras de Conclusão</x-ui.button>
+                        <x-ui.button variant="secondary" size="sm" href="{{ route('courses.edit', $course) }}" dusk="edit-course-{{ $course->id }}">Editar</x-ui.button>
 
-                    <form method="POST" action="{{ route('courses.destroy', $course) }}" dusk="delete-form-{{ $course->id }}">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" class="btn btn-ghost" dusk="delete-course-{{ $course->id }}">Remover</button>
-                    </form>
+                        <form method="POST" action="{{ route('courses.destroy', $course) }}" class="d-inline" dusk="delete-form-{{ $course->id }}">
+                            @csrf
+                            @method('DELETE')
+                            <x-ui.button type="submit" variant="ghost" size="sm" class="text-danger link-danger" dusk="delete-course-{{ $course->id }}">Remover</x-ui.button>
+                        </form>
+                    </div>
                 </td>
             </tr>
         @empty
-            <tr>
-                <td colspan="4" style="padding: 24px 16px; text-align: center; color: var(--color-neutral-600);">
-                    Nenhum Curso cadastrado.
-                </td>
-            </tr>
+            <x-ui.empty-state colspan="4" message="Nenhum Curso cadastrado." />
         @endforelse
-    </x-ui.table>
+    </x-ui.data-table>
 
-    <div style="margin-top: 20px;">
-        {{ $courses->links() }}
-    </div>
+    <x-ui.pagination :paginator="$courses" />
 @endsection

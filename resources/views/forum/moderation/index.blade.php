@@ -37,47 +37,42 @@
 @extends('layouts.app')
 
 @section('content')
-    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
-        <div>
-            <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-accent); font-weight: 700;">Fórum</span>
-            <h1 style="font-family: var(--font-heading); font-weight: 800; font-size: 24px; margin: 4px 0 0;">Fila de Denúncias</h1>
-        </div>
-    </div>
+    <x-layout.page-header kicker="Fórum" title="Fila de Denúncias" />
 
-    <x-ui.table :headers="['Denunciado por', 'Motivo', 'Publicação', 'Ações']">
+    <x-ui.data-table striped hover responsive :headers="['Denunciado por', 'Motivo', 'Publicação', 'Ações']">
         @forelse($reports as $report)
             @php
                 $postable = $report->postable ?? null;
                 $postableLabel = $report->postable_type === \App\Models\ForumTopic::class ? 'Tópico' : 'Resposta';
                 $postableContent = $postable?->content;
             @endphp
-            <tr style="border-bottom: 1px solid var(--color-divider);" dusk="report-row-{{ $report->id }}">
-                <td style="padding: 12px 16px;">{{ optional($report->reporter)->name ?? 'Usuário removido' }}</td>
-                <td style="padding: 12px 16px;">{{ $report->reason }}</td>
-                <td style="padding: 12px 16px; max-width: 320px;">
+            <tr dusk="report-row-{{ $report->id }}">
+                <td>{{ optional($report->reporter)->name ?? 'Usuário removido' }}</td>
+                <td>{{ $report->reason }}</td>
+                <td>
                     <x-ui.badge variant="outline">{{ $postableLabel }}</x-ui.badge>
-                    <div style="font-size: 12px; color: var(--color-neutral-600); margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    <div class="small text-body-secondary text-truncate max-w-400 mt-1">
                         {{ $postableContent ?? 'Publicação já removida.' }}
                     </div>
                 </td>
-                <td style="padding: 12px 16px; display: flex; gap: 8px;">
-                    <form method="POST" action="{{ route('forum-moderation.dismiss', $report) }}" dusk="dismiss-form-{{ $report->id }}">
-                        @csrf
-                        <button type="submit" class="btn btn-ghost" style="border-radius: 0px;" dusk="dismiss-report-{{ $report->id }}">Descartar</button>
-                    </form>
+                <td>
+                    <div class="d-flex flex-wrap gap-2">
+                        <form method="POST" action="{{ route('forum-moderation.dismiss', $report) }}" dusk="dismiss-form-{{ $report->id }}">
+                            @csrf
+                            <x-ui.button type="submit" variant="secondary" size="sm" dusk="dismiss-report-{{ $report->id }}">Descartar</x-ui.button>
+                        </form>
 
-                    <form method="POST" action="{{ route('forum-moderation.remove', $report) }}" dusk="remove-form-{{ $report->id }}">
-                        @csrf
-                        <button type="submit" class="btn btn-ghost" style="border-radius: 0px;" dusk="remove-post-{{ $report->id }}">Remover Publicação</button>
-                    </form>
+                        <form method="POST" action="{{ route('forum-moderation.remove', $report) }}" dusk="remove-form-{{ $report->id }}">
+                            @csrf
+                            <x-ui.button type="submit" variant="danger" size="sm" dusk="remove-post-{{ $report->id }}">Remover Publicação</x-ui.button>
+                        </form>
+                    </div>
                 </td>
             </tr>
         @empty
-            <tr>
-                <td colspan="4" style="padding: 24px 16px; text-align: center; color: var(--color-neutral-600);" dusk="no-pending-reports">
-                    Nenhuma denúncia pendente.
-                </td>
-            </tr>
+            <x-ui.empty-state colspan="4"
+                              message="Nenhuma denúncia pendente."
+                              dusk="no-pending-reports" />
         @endforelse
-    </x-ui.table>
+    </x-ui.data-table>
 @endsection
