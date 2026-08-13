@@ -4,7 +4,11 @@ namespace Tests\Feature;
 
 use App\Models\Organization;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\View;
+use Illuminate\Support\MessageBag;
+use Illuminate\Support\ViewErrorBag;
 use Tests\TestCase;
 
 /**
@@ -212,6 +216,134 @@ class OrganizationCrudTest extends TestCase
             ->assertOk()
             ->assertViewIs('organizations.edit')
             ->assertSee($organization->name);
+    }
+
+    /**
+     * UX-004 — the edit screen renders the stored logo as an actual `<img>`
+     * resolved from the `public` disk, never the raw column value.
+     */
+    public function test_edit_form_renders_the_current_logo_as_an_image(): void
+    {
+        Storage::fake('public');
+        $this->actingAsAdmin();
+        $organization = Organization::factory()->create([
+            'name' => 'Instituto Preview',
+            'logo_path' => 'organizations/logos/current-logo.png',
+        ]);
+        Storage::disk('public')->put($organization->logo_path, 'fake-contents');
+
+        $response = $this->get(route('organizations.edit', $organization))->assertOk();
+
+        $response->assertSee('dusk="organization-logo-preview"', false);
+        $response->assertSee('src="'.Storage::disk('public')->url($organization->logo_path).'"', false);
+        $response->assertSee('alt="Logo da Organização Instituto Preview"', false);
+        $response->assertSee('org-logo', false);
+    }
+
+    /**
+     * UX-004 — the raw `logo_path` string must no longer leak into the UI.
+     */
+    public function test_edit_form_no_longer_prints_the_raw_logo_path(): void
+    {
+        Storage::fake('public');
+        $this->actingAsAdmin();
+        $organization = Organization::factory()->create([
+            'logo_path' => 'organizations/logos/current-logo.png',
+        ]);
+
+        $response = $this->get(route('organizations.edit', $organization))->assertOk();
+
+        $response->assertDontSee('Logo atual:');
+    }
+
+    /**
+     * UX-004 — no logo means no `<img>` at all, so there is never an empty
+     * `src` re-requesting the page's own HTML.
+     */
+    public function test_edit_form_renders_no_logo_preview_when_the_organization_has_none(): void
+    {
+        $this->actingAsAdmin();
+        $organization = Organization::factory()->create(['logo_path' => null]);
+
+        $response = $this->get(route('organizations.edit', $organization))->assertOk();
+
+        $response->assertDontSee('dusk="organization-logo-preview"', false);
+        $response->assertDontSee('src=""', false);
+    }
+
+    public function test_create_form_renders_no_logo_preview(): void
+    {
+        $this->actingAsAdmin();
+
+        $response = $this->get(route('organizations.create'))->assertOk();
+
+        $response->assertDontSee('dusk="organization-logo-preview"', false);
+        $response->assertDontSee('src=""', false);
+    }
+
+    /**
+     * UX-004 — the logo field moved to `<x-ui.input type="file">`; the
+     * `id`/`name` contract and the accepted MIME filter must survive.
+     */
+    public function test_logo_field_keeps_its_input_contract_after_migrating_to_the_ui_component(): void
+    {
+        $this->actingAsAdmin();
+        $organization = Organization::factory()->create();
+
+        $response = $this->get(route('organizations.edit', $organization))->assertOk();
+
+        $response->assertSee('type="file"', false);
+        $response->assertSee('id="logo"', false);
+        $response->assertSee('name="logo"', false);
+        $response->assertSee('accept="image/*"', false);
+    }
+
+    /**
+     * UX-004 failure path — a non-image upload is rejected and nothing is
+     * written to the `public` disk nor to `logo_path`.
+     */
+    public function test_a_non_image_logo_upload_is_rejected_and_never_persisted(): void
+    {
+        Storage::fake('public');
+        $this->actingAsAdmin();
+        $organization = Organization::factory()->create(['logo_path' => null]);
+
+        $this->from(route('organizations.edit', $organization))
+            ->put(route('organizations.update', $organization), [
+                'name' => $organization->name,
+                'slug' => $organization->slug,
+                'status' => 'active',
+                'logo' => UploadedFile::fake()->create('not-an-image.pdf', 10, 'application/pdf'),
+            ])
+            ->assertRedirect(route('organizations.edit', $organization))
+            ->assertSessionHasErrors('logo');
+
+        $this->assertNull($organization->refresh()->logo_path);
+        $this->assertEmpty(Storage::disk('public')->allFiles('organizations/logos'));
+    }
+
+    /**
+     * UX-004 failure path (rendering) — with a `logo` error in the bag, the
+     * field is now rendered by `<x-ui.input>`, so the message comes out in
+     * `.invalid-feedback` under `dusk="error-logo"` and the control itself
+     * gets `.is-invalid`.
+     *
+     * The bag is shared with the view directly because `SESSION_DRIVER=array`
+     * (phpunit.xml) discards session data seeded by the test before the
+     * request is handled, so a flashed error bag never reaches the view.
+     */
+    public function test_logo_validation_error_is_rendered_by_the_ui_input_component(): void
+    {
+        $bag = new ViewErrorBag;
+        $bag->put('default', new MessageBag(['logo' => ['O campo logo deve ser uma imagem.']]));
+        View::share('errors', $bag);
+
+        $html = Blade::render('<x-ui.input type="file" name="logo" label="Logo" accept="image/*" />');
+
+        $this->assertStringContainsString('dusk="error-logo"', $html);
+        $this->assertStringContainsString('invalid-feedback', $html);
+        $this->assertStringContainsString('is-invalid', $html);
+        $this->assertStringContainsString('O campo logo deve ser uma imagem.', $html);
     }
 
     public function test_admin_can_update_an_organization(): void

@@ -33,15 +33,25 @@
         :selected="$organization->status ?? 'active'"
     />
 
-    <div class="mb-3">
-        <label for="logo" class="form-label">Logo</label>
-        <input type="file" id="logo" name="logo" accept="image/*"
-               class="form-control @error('logo') is-invalid @enderror" />
-        @if($organization->logo_path)
-            <div class="form-text">Logo atual: {{ $organization->logo_path }}</div>
-        @endif
-        @error('logo')
-            <div class="invalid-feedback">{{ $message }}</div>
-        @enderror
-    </div>
+    <x-ui.input
+        type="file"
+        name="logo"
+        label="Logo"
+        accept="image/*"
+    />
+
+    {{-- UX-004 — o logo já persistido é renderizado como imagem resolvida pelo
+         disco `public`; nunca o valor cru da coluna. A visibilidade é decidida
+         aqui no servidor: sem logo, nenhum `<img>` (e nenhum `src` vazio).
+         `.org-logo` é a exceção histórica de escala de cinza do projeto
+         (`resources/scss/app.scss`), a mesma convenção já usada no PDF do
+         certificado. --}}
+    @if($organization->logo_path)
+        <div class="mb-3">
+            <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($organization->logo_path) }}"
+                 alt="Logo da Organização {{ $organization->name }}"
+                 class="org-logo d-block h-60 mw-100 object-fit-contain border p-2"
+                 dusk="organization-logo-preview">
+        </div>
+    @endif
 </div>
