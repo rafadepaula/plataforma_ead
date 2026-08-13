@@ -33,12 +33,47 @@ class NavigationMenuDuskTest extends DuskTestCase
                 ->waitFor('@admin-dashboard')
                 ->assertPresent('@sidebar-dashboard-link')
                 ->assertPresent('@sidebar-organizations-link')
-                ->assertPresent('@sidebar-users-link')
                 ->assertPresent('@sidebar-courses-link')
                 ->assertPresent('@sidebar-quiz-attempts-link')
                 ->assertPresent('@sidebar-forum-moderation-link')
                 ->assertPresent('@sidebar-audit-logs-link')
-                ->assertPresent('@sidebar-settings-link');
+                ->assertPresent('@sidebar-settings-link')
+                // BUG-005 — `Alunos & Usuários` is single-org and thus
+                // unreachable for an Admin in global context; it only
+                // appears while impersonating (test below).
+                ->assertMissing('@sidebar-users-link')
+                ->assertMissing('@sidebar-users-link-mobile');
+        });
+    }
+
+    /**
+     * BUG-005 — after "Entrar como", the operational users screen becomes
+     * reachable, so the menu offers it again (desktop + mobile Offcanvas)
+     * and the click actually lands on the rendered list instead of
+     * bouncing back with "Selecione uma Organização ativa antes de
+     * continuar.".
+     */
+    public function test_admin_impersonating_an_org_gets_a_working_users_link(): void
+    {
+        $org = Organization::factory()->create();
+        $admin = User::factory()->create(['org_id' => null]);
+        $admin->assignRole(RolesEnum::ADMIN->value);
+        $aluno = User::factory()->create(['org_id' => $org->id, 'name' => 'Aluno Da Org']);
+        $aluno->assignRole(RolesEnum::ALUNO->value);
+
+        $this->browse(function (Browser $browser) use ($admin, $org, $aluno): void {
+            $browser->loginAs($admin)
+                ->visit(route('organizations.index'))
+                ->waitFor('@impersonate-'.$org->id)
+                ->click('@impersonate-'.$org->id)
+                ->waitForLocation('/organizations')
+                ->waitFor('@sidebar-users-link')
+                ->assertPresent('@sidebar-users-link-mobile')
+                ->click('@sidebar-users-link')
+                ->waitForLocation('/users')
+                ->waitFor('@user-row-'.$aluno->id)
+                ->assertDontSee('Selecione uma Organização ativa antes de continuar.')
+                ->assertSee('Aluno Da Org');
         });
     }
 
@@ -99,11 +134,14 @@ class NavigationMenuDuskTest extends DuskTestCase
 
     public function test_active_item_highlight_is_applied_on_a_sub_route(): void
     {
-        $admin = User::factory()->create(['org_id' => null]);
-        $admin->assignRole(RolesEnum::ADMIN->value);
+        $org = Organization::factory()->create();
+        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor->assignRole(RolesEnum::GESTOR->value);
 
-        $this->browse(function (Browser $browser) use ($admin): void {
-            $browser->loginAs($admin)
+        // A Gestor always resolves a tenant context, so the users item is
+        // visible for them (BUG-005 only hides it for a context-less Admin).
+        $this->browse(function (Browser $browser) use ($gestor): void {
+            $browser->loginAs($gestor)
                 ->visit(route('users.create'))
                 ->waitFor('@user-form');
 

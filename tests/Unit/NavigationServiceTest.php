@@ -57,6 +57,10 @@ class NavigationServiceTest extends TestCase
     {
         $admin = User::factory()->create(['org_id' => null]);
         $admin->assignRole(RolesEnum::ADMIN->value);
+        // BUG-005 — `users` is the one item that additionally requires a
+        // resolvable tenant context, so impersonate an Organization here
+        // and cover the context-less Admin in the two tests below.
+        session(['active_org_id' => Organization::factory()->create()->id]);
 
         $keys = $this->keysFor($admin);
 
@@ -69,6 +73,37 @@ class NavigationServiceTest extends TestCase
         $this->assertContains('audit-logs', $keys);
         $this->assertContains('settings', $keys);
         $this->assertContains('student-courses', $keys);
+    }
+
+    /**
+     * BUG-005 / RN38 — `users.index` resolves its tenant strictly, so a
+     * system Admin in global context (no own `org_id`, no
+     * `active_org_id`) cannot reach it; the item must be filtered out
+     * instead of dead-ending in a `back()` + flash error. Every other
+     * Administração item stays put.
+     */
+    public function test_admin_without_an_active_org_context_does_not_see_the_users_item(): void
+    {
+        $admin = User::factory()->create(['org_id' => null]);
+        $admin->assignRole(RolesEnum::ADMIN->value);
+
+        $keys = $this->keysFor($admin);
+
+        $this->assertNotContains('users', $keys);
+        $this->assertContains('organizations', $keys);
+        $this->assertContains('courses', $keys);
+        $this->assertContains('settings', $keys);
+    }
+
+    public function test_admin_impersonating_an_org_sees_the_users_item_again(): void
+    {
+        $org = Organization::factory()->create();
+        $admin = User::factory()->create(['org_id' => null]);
+        $admin->assignRole(RolesEnum::ADMIN->value);
+
+        session(['active_org_id' => $org->id]);
+
+        $this->assertContains('users', $this->keysFor($admin));
     }
 
     public function test_gestor_never_sees_organizations_but_sees_everything_else_admin_sees(): void
@@ -261,8 +296,12 @@ class NavigationServiceTest extends TestCase
 
     public function test_active_flag_is_true_when_request_route_matches_an_active_pattern(): void
     {
-        $admin = User::factory()->create(['org_id' => null]);
-        $admin->assignRole(RolesEnum::ADMIN->value);
+        $org = Organization::factory()->create();
+        // A Gestor always resolves a tenant context, so the `users` item
+        // is present for them (BUG-005 hides it only for a context-less
+        // Admin).
+        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor->assignRole(RolesEnum::GESTOR->value);
 
         // `routeIs()` reads `request()->route()->named(...)`. In a unit
         // test no route is dispatched, so a real `Illuminate\Routing\Route`
@@ -278,7 +317,7 @@ class NavigationServiceTest extends TestCase
 
         $service = new NavigationService(new NavigationRegistry, $request);
 
-        $usersItem = collect($service->build($admin))
+        $usersItem = collect($service->build($gestor))
             ->flatMap(fn ($section) => $section->items)
             ->firstWhere('key', 'users');
 

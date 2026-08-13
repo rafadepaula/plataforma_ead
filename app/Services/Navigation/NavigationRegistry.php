@@ -59,11 +59,21 @@ final class NavigationRegistry
             new NavigationItem(
                 key: 'users',
                 label: 'Alunos & Usuários',
+                // BUG-005 — `users.index` is an *operational*, single-org
+                // screen: `UserController` resolves its tenant strictly
+                // via `ResolvesOrgContext`, so a system Admin with no
+                // `org_id` and no active "Impersonate Org" cannot reach
+                // it. The resolver below hides the item in that state
+                // rather than offering a link that dead-ends in a
+                // `back()` + "Selecione uma Organização ativa" flash
+                // (RN38/RN40). The cross-org administration screen is
+                // separate, future work (SPEC-002).
                 route: 'users.index',
                 activePatterns: ['users.*'],
                 icon: $this->usersIcon(),
                 roles: self::ADMIN_GESTOR,
                 section: 'Administração',
+                routeResolver: fn ($user) => $this->resolveUsersRoute($user),
             ),
             new NavigationItem(
                 key: 'courses',
@@ -178,6 +188,25 @@ final class NavigationRegistry
         }
 
         return null;
+    }
+
+    /**
+     * BUG-005 — mirrors `ResolvesOrgContext::resolveOrgId()`: the item is
+     * only reachable when a tenant context can be resolved server-side
+     * (the Gestor's own `org_id`, or the Admin's impersonated
+     * `session('active_org_id')`). Returns `null` — hiding the item in
+     * both the desktop `<aside>` and the mobile Offcanvas, which render
+     * the same resolved array — for a system Admin in global context.
+     */
+    private function resolveUsersRoute(User $user): ?string
+    {
+        $orgId = $user->org_id ?? session('active_org_id');
+
+        if (! $orgId) {
+            return null;
+        }
+
+        return route('users.index');
     }
 
     /**

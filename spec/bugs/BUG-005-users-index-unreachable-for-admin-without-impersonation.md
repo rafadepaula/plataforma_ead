@@ -107,7 +107,7 @@ Ponto de atenção correlato (mesmo bug, outra face): `NavigationRegistry` exibe
 - [ ] `vendor/bin/sail bin pint --dirty --format agent` limpo.
 
 ## Resolution Status
-- **Status:** OPEN (revalidado em 2026-08-13, pós-migração Bootstrap 5.3 / commit 3088d99 — defeito confirmado, inalterado)
+- **Status:** CLOSED — o item de menu passou a ser condicional ao contexto de Organização (`NavigationRegistry::resolveUsersRoute()`). A tela global de usuários para o Admin segue sendo trabalho da SPEC-002.
 - **Impacto da migração Bootstrap 5.3:** nenhum sobre a causa raiz (o commit não tocou controllers/rotas/middlewares/policies). Duas mudanças apenas na superfície do report: (1) o menu passou a ser alimentado por `NavigationComposer` (`app/Providers/AppServiceProvider.php:40`), que continua entregando o item `users` ao Admin sem contexto; (2) o menu mobile virou Bootstrap Offcanvas, adicionando o seletor `dusk="sidebar-users-link-mobile"` ao lado do `dusk="sidebar-users-link"` desktop.
 - **Reproduction Tests:** —
 - **Fixed In Files:** —

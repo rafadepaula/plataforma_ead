@@ -125,6 +125,25 @@ class UserCrudTest extends TestCase
         $this->assertSame($org->id, $user->org_id);
     }
 
+    /**
+     * BUG-005 — the menu no longer offers `users.index` to an Admin
+     * without an active Organization context (see
+     * `RoleMenuVisibilityTest`), but a hand-typed URL must still fail
+     * safely: the strict `ResolvesOrgContext` resolution stays in place
+     * and the global handler turns it into a `back()` + flash error,
+     * never a 500 and never a cross-org listing (that screen belongs to
+     * SPEC-002).
+     */
+    public function test_admin_without_active_org_context_is_redirected_back_from_the_users_index(): void
+    {
+        $this->actingAsAdmin();
+
+        $response = $this->from(route('admin.dashboard'))->get('/users');
+
+        $response->assertRedirect(route('admin.dashboard'));
+        $response->assertSessionHas('error');
+    }
+
     public function test_admin_without_active_org_context_gets_redirected_back_with_error_on_create(): void
     {
         $this->actingAsAdmin();

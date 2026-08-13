@@ -22,10 +22,16 @@ class RoleMenuVisibilityTest extends TestCase
 {
     public function test_admin_menu_renders_all_admin_links_and_no_dead_hash(): void
     {
+        // BUG-005 — `users.index` is an operational, single-org screen, so
+        // the Admin only gets that link while impersonating an
+        // Organization; see the dedicated cases below.
+        $org = Organization::factory()->create();
         $admin = User::factory()->create(['org_id' => null]);
         $admin->assignRole(RolesEnum::ADMIN->value);
 
-        $response = $this->actingAs($admin)->get(route('admin.dashboard'));
+        $response = $this->actingAs($admin)
+            ->withSession(['active_org_id' => $org->id])
+            ->get(route('admin.dashboard'));
 
         $response->assertOk();
         $response->assertSee(route('organizations.index'), false);
@@ -107,14 +113,78 @@ class RoleMenuVisibilityTest extends TestCase
 
     public function test_active_item_highlight_is_applied_on_a_sub_route(): void
     {
+        $org = Organization::factory()->create();
         $admin = User::factory()->create(['org_id' => null]);
         $admin->assignRole(RolesEnum::ADMIN->value);
 
         // `users.create` is a sub-route matched by the `users.*` active
         // pattern (RF37) — the parent item must carry the `active` class.
-        $response = $this->actingAs($admin)->get(route('users.create'));
+        // The Admin needs an impersonated Organization for the item to be
+        // visible at all (BUG-005).
+        $response = $this->actingAs($admin)
+            ->withSession(['active_org_id' => $org->id])
+            ->get(route('users.create'));
 
         $response->assertOk();
         $this->assertStringContainsString('sidebar-users-link', $response->getContent());
+    }
+
+    /**
+     * BUG-005 / RN38 — `users.index` resolves its tenant strictly
+     * (`ResolvesOrgContext`), so a system Admin with neither an own
+     * `org_id` nor an impersonated Organization cannot reach it. The menu
+     * must therefore not offer the item — in NEITHER render: the desktop
+     * `<aside>` (`dusk="sidebar-users-link"`) nor the mobile Offcanvas
+     * (`dusk="sidebar-users-link-mobile"`).
+     */
+    public function test_admin_without_an_active_org_context_never_sees_the_users_link(): void
+    {
+        $admin = User::factory()->create(['org_id' => null]);
+        $admin->assignRole(RolesEnum::ADMIN->value);
+
+        $response = $this->actingAs($admin)->get(route('admin.dashboard'));
+
+        $response->assertOk();
+        $this->assertStringNotContainsString('dusk="sidebar-users-link"', $response->getContent());
+        $this->assertStringNotContainsString('dusk="sidebar-users-link-mobile"', $response->getContent());
+        $response->assertDontSeeText('Alunos & Usuários');
+        // The rest of the Administração block is untouched.
+        $response->assertSee(route('organizations.index'), false);
+        $response->assertSee(route('courses.index'), false);
+    }
+
+    public function test_admin_impersonating_an_org_sees_the_users_link_in_both_renders(): void
+    {
+        $org = Organization::factory()->create();
+        $admin = User::factory()->create(['org_id' => null]);
+        $admin->assignRole(RolesEnum::ADMIN->value);
+
+        $response = $this->actingAs($admin)
+            ->withSession(['active_org_id' => $org->id])
+            ->get(route('admin.dashboard'));
+
+        $response->assertOk();
+        $this->assertStringContainsString('dusk="sidebar-users-link"', $response->getContent());
+        $this->assertStringContainsString('dusk="sidebar-users-link-mobile"', $response->getContent());
+        // And the link it offers actually works.
+        $this->actingAs($admin)
+            ->withSession(['active_org_id' => $org->id])
+            ->get(route('users.index'))
+            ->assertOk();
+    }
+
+    public function test_gestor_sees_the_users_link_in_both_renders(): void
+    {
+        $org = Organization::factory()->create();
+        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor->assignRole(RolesEnum::GESTOR->value);
+
+        $response = $this->actingAs($gestor)->get(route('admin.dashboard'));
+
+        $response->assertOk();
+        $this->assertStringContainsString('dusk="sidebar-users-link"', $response->getContent());
+        $this->assertStringContainsString('dusk="sidebar-users-link-mobile"', $response->getContent());
+
+        $this->actingAs($gestor)->get(route('users.index'))->assertOk();
     }
 }
