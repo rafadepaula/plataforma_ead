@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreOrganizationRequest;
 use App\Http\Requests\UpdateOrganizationRequest;
 use App\Models\Organization;
+use App\Services\Navigation\ImpersonationContext;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
@@ -17,7 +18,7 @@ use Illuminate\Support\Str;
  */
 class OrganizationController extends Controller
 {
-    public function index(): View
+    public function index(ImpersonationContext $impersonation): View
     {
         Gate::authorize('viewAny', Organization::class);
 
@@ -25,7 +26,13 @@ class OrganizationController extends Controller
             ->orderBy('name')
             ->paginate(15);
 
-        return view('organizations.index', ['organizations' => $organizations]);
+        return view('organizations.index', [
+            'organizations' => $organizations,
+            // UX-002 — the point-of-origin banner reads the same resolved
+            // Organization as the topbar badge instead of running its own
+            // `Organization::find()` inside the Blade.
+            'activeOrganization' => $impersonation->activeOrganization(auth()->user()),
+        ]);
     }
 
     public function create(): View

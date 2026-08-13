@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Http\View\Composers\NavigationComposer;
+use App\Services\Navigation\ImpersonationContext;
 use App\Services\Navigation\NavigationRegistry;
 use App\Services\Navigation\NavigationService;
 use Illuminate\Http\Request;
@@ -17,6 +18,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        // UX-002 — singleton so the impersonated Organization is resolved
+        // (and memoized) once per request, even though the sidebar and the
+        // topbar each trigger the `NavigationComposer`.
+        $this->app->singleton(ImpersonationContext::class);
+
         $this->app->singleton(NavigationRegistry::class);
 
         $this->app->singleton(NavigationService::class, function ($app): NavigationService {

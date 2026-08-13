@@ -2,6 +2,7 @@
 
 namespace App\Http\View\Composers;
 
+use App\Services\Navigation\ImpersonationContext;
 use App\Services\Navigation\NavigationService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -21,7 +22,10 @@ use Illuminate\View\View;
  */
 final class NavigationComposer
 {
-    public function __construct(private readonly NavigationService $navigation) {}
+    public function __construct(
+        private readonly NavigationService $navigation,
+        private readonly ImpersonationContext $impersonation,
+    ) {}
 
     /**
      * Bind navigation data to the view.
@@ -33,6 +37,11 @@ final class NavigationComposer
             'brandUrl' => $this->brandUrl(),
             'loginUrl' => Route::has('login') ? route('login') : '#',
             'logoutUrl' => Route::has('logout') ? route('logout') : '#',
+            // UX-002 — the topbar badge must never run its own query
+            // inside the Blade: it is rendered on every authenticated
+            // request, so the resolution lives here (memoized by
+            // `ImpersonationContext`) and the view only reads a model.
+            'activeOrganization' => $this->impersonation->activeOrganization(Auth::user()),
         ]);
     }
 

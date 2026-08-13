@@ -85,11 +85,12 @@ class AdminSidebarScopeTest extends DuskTestCase
                 ->waitForLocation('/courses')
                 ->assertDontSee('Selecione uma Organização ativa antes de continuar.');
 
-            // Ending the context drops the whole section again.
+            // Ending the context drops the whole section again. UX-002 §4.4
+            // made the destination deterministic (`admin.dashboard`).
             $browser->visit(route('organizations.index'))
                 ->waitFor('@exit-impersonation')
                 ->click('@exit-impersonation')
-                ->waitForLocation('/organizations')
+                ->waitForLocation('/admin/dashboard')
                 ->waitUntilMissing('@sidebar-courses-link')
                 ->assertDontSee(self::IMPERSONATE_HEADING);
 

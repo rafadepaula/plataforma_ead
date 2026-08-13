@@ -7,10 +7,16 @@
         </x-slot:actions>
     </x-layout.page-header>
 
-    @if(session('active_org_id'))
+    {{-- UX-002 — este banner permanece: é a confirmação imediata da ação
+         "Entrar como", no ponto de origem e com espaço para a frase inteira.
+         O badge da topbar cobre um problema diferente (a PERSISTÊNCIA do
+         sinal nas demais telas). Os dois não brigam: o alerta é
+         `dismissable` e o badge é imutável. `$activeOrganization` vem do
+         controller (mesma resolução da topbar), não de uma query aqui. --}}
+    @if($activeOrganization ?? null)
         <x-ui.alert variant="warning" dismissable>
             Você está no contexto da Organização
-            <strong>{{ \App\Models\Organization::find(session('active_org_id'))?->name }}</strong>.
+            <strong>{{ $activeOrganization->name }}</strong>.
             <form method="POST" action="{{ route('impersonate-org.destroy') }}" class="d-inline" dusk="exit-impersonation-form">
                 @csrf
                 @method('DELETE')

@@ -33,6 +33,16 @@ final class NavigationRegistry
     private const SECTION_ORDER = ['Administração', 'Impersonate', 'Aprendizado'];
 
     /**
+     * UX-002 — the "am I impersonating?" rule is shared with the topbar
+     * badge, so it is owned by {@see ImpersonationContext} rather than
+     * duplicated here. The default keeps the registry `new`-able from
+     * unit tests that don't go through the container.
+     */
+    public function __construct(
+        private readonly ImpersonationContext $impersonation = new ImpersonationContext,
+    ) {}
+
+    /**
      * @return list<NavigationItem>
      */
     public function items(): array
@@ -250,7 +260,8 @@ final class NavigationRegistry
             return 'Administração';
         }
 
-        return session('active_org_id') ? 'Impersonate' : null;
+        // UX-002 — same predicate that decides the topbar badge.
+        return $this->impersonation->isImpersonating($user) ? 'Impersonate' : null;
     }
 
     /**

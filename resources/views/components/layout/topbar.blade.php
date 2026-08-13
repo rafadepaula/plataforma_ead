@@ -36,20 +36,42 @@
         </a>
     </div>
 
-    <div class="d-none d-md-block flex-grow-1 max-w-400 mx-5">
-        <div class="position-relative">
-            <svg class="position-absolute start-0 top-50 translate-middle-y opacity-50" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="11" cy="11" r="8"></circle>
-                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-            </svg>
-            <input type="text" class="form-control ps-5 w-100 h-36 fs-6" placeholder="Buscar cursos, aulas..." />
-        </div>
-    </div>
+    {{-- UX-002 — o campo de busca que ocupava este espaço foi removido:
+         não pertencia a `<form>` algum, não tinha `name`/`action` e nenhum
+         módulo de `resources/js/modules/` o escutava. O
+         `justify-content-between` do `<header>` redistribui marca e cluster
+         direito sozinho. --}}
 
     <div class="d-flex align-items-center gap-3">
         <x-help-button :key="Route::currentRouteName() ?? 'unknown'" />
 
         <x-notifications-bell />
+
+        {{-- UX-002 — sinal persistente de "Impersonate Org". `$activeOrganization`
+             vem do `NavigationComposer` (via `ImpersonationContext`), a mesma
+             fonte de verdade que move os itens operacionais do menu para a
+             seção "Impersonate" (UX-001) — nada é resolvido aqui.
+             Atenção: `.badge` tem `text-transform: uppercase`
+             (`resources/scss/components/_index.scss:57`), então o nome da
+             Organização é RENDERIZADO em caixa alta. --}}
+        @if ($activeOrganization ?? null)
+            <div class="d-flex align-items-center gap-2 pe-3 border-end" dusk="topbar-impersonation">
+                <x-ui.badge variant="accent-2" dusk="topbar-active-org-badge">
+                    {{ $activeOrganization->name }}
+                </x-ui.badge>
+
+                <form method="POST" action="{{ route('impersonate-org.destroy') }}">
+                    @csrf
+                    @method('DELETE')
+                    <x-ui.button type="submit"
+                                 variant="ghost"
+                                 size="sm"
+                                 class="text-decoration-underline"
+                                 title="Sair do contexto"
+                                 dusk="topbar-exit-impersonation">Sair do contexto</x-ui.button>
+                </form>
+            </div>
+        @endif
 
         @auth
             <div class="d-flex align-items-center gap-2 ps-3 border-start">
