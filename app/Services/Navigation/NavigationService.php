@@ -22,6 +22,10 @@ use Illuminate\Support\Facades\Route;
  *      Items without a resolver fall back to `route($item->route)`, but
  *      only if that route name is actually registered (RF36 — never a
  *      dead `#` link).
+ *   4. `sectionResolver` (if set) must return a non-null section
+ *      heading — a `null` result means the item has no meaningful place
+ *      in this user's menu and is dropped (UX-001 — the Admin's
+ *      Organization-scoped items in global context).
  *
  * Empty sections (no visible items) are dropped so the sidebar never
  * renders an orphan heading.
@@ -52,7 +56,10 @@ final class NavigationService
                 continue;
             }
 
-            $sectionTitle = $item->section;
+            // UX-001 — the heading comes from the resolved item, not the
+            // registry's static `section`: it may have been rewritten
+            // per-user by a `sectionResolver`.
+            $sectionTitle = $resolved['section'];
 
             if (! isset($sections[$sectionTitle])) {
                 $sections[$sectionTitle] = new NavigationSection($sectionTitle);
@@ -90,6 +97,12 @@ final class NavigationService
             return null;
         }
 
+        $section = $this->resolveSection($item, $user);
+
+        if ($section === null) {
+            return null;
+        }
+
         $url = $this->resolveUrl($item, $user);
 
         if ($url === null) {
@@ -103,8 +116,23 @@ final class NavigationService
             'active' => $this->isActive($item),
             'badge' => $this->resolveBadge($item, $user),
             'icon' => $item->icon,
-            'section' => $item->section,
+            'section' => $section,
         ];
+    }
+
+    /**
+     * UX-001 — an item's heading may depend on the acting user's context
+     * (Admin in global scope vs. impersonating an Organization). Items
+     * without a `sectionResolver` keep their statically declared
+     * `section`; a resolver returning `null` hides the item entirely.
+     */
+    private function resolveSection(NavigationItem $item, User $user): ?string
+    {
+        if ($item->sectionResolver === null) {
+            return $item->section;
+        }
+
+        return ($item->sectionResolver)($user);
     }
 
     private function passesRoleGate(NavigationItem $item, User $user): bool

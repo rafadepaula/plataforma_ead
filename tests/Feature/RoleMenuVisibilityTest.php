@@ -148,9 +148,114 @@ class RoleMenuVisibilityTest extends TestCase
         $this->assertStringNotContainsString('dusk="sidebar-users-link"', $response->getContent());
         $this->assertStringNotContainsString('dusk="sidebar-users-link-mobile"', $response->getContent());
         $response->assertDontSeeText('Alunos & Usuários');
-        // The rest of the Administração block is untouched.
+        // The rest of the system-administration block is untouched.
+        // UX-001 — `courses.index` is NOT part of it anymore: it is an
+        // Organization-scoped item, covered by the cases below.
         $response->assertSee(route('organizations.index'), false);
+        $response->assertSee(route('admin.audit-logs.index'), false);
+        $response->assertSee(route('settings.edit'), false);
+    }
+
+    // ── UX-001 — Admin menu scope & the "Impersonate" section ────────
+
+    /**
+     * UX-001 — in global context the Admin's rendered menu must not offer
+     * any Organization-scoped item, in EITHER render (desktop `<aside>`
+     * and mobile Offcanvas), and must not emit an empty "Impersonate"
+     * heading.
+     */
+    public function test_admin_without_impersonation_sees_no_organization_scoped_items(): void
+    {
+        $admin = User::factory()->create(['org_id' => null]);
+        $admin->assignRole(RolesEnum::ADMIN->value);
+
+        $response = $this->actingAs($admin)->get(route('admin.dashboard'));
+        $html = $response->getContent();
+
+        $response->assertOk();
+        foreach (['courses', 'quiz-attempts', 'forum-moderation'] as $key) {
+            $this->assertStringNotContainsString('dusk="sidebar-'.$key.'-link"', $html);
+            $this->assertStringNotContainsString('dusk="sidebar-'.$key.'-link-mobile"', $html);
+        }
+        $response->assertDontSeeText('Impersonate');
+        $response->assertDontSeeText('Cursos e Módulos');
+        $response->assertDontSeeText('Redações Pendentes');
+        $response->assertDontSeeText('Moderação do Fórum');
+    }
+
+    /**
+     * UX-001 — with an active Impersonate Org the three operational items
+     * come back, under their own "Impersonate" heading, in both renders.
+     */
+    public function test_admin_impersonating_an_org_sees_the_impersonate_section_in_both_renders(): void
+    {
+        $org = Organization::factory()->create();
+        $admin = User::factory()->create(['org_id' => null]);
+        $admin->assignRole(RolesEnum::ADMIN->value);
+
+        $response = $this->actingAs($admin)
+            ->withSession(['active_org_id' => $org->id])
+            ->get(route('admin.dashboard'));
+        $html = $response->getContent();
+
+        $response->assertOk();
+        $response->assertSeeText('Impersonate');
+        foreach (['courses', 'quiz-attempts', 'forum-moderation'] as $key) {
+            $this->assertStringContainsString('dusk="sidebar-'.$key.'-link"', $html);
+            $this->assertStringContainsString('dusk="sidebar-'.$key.'-link-mobile"', $html);
+        }
+        // RF36 — the newly grouped links are real, reachable URLs.
         $response->assertSee(route('courses.index'), false);
+        $this->assertStringNotContainsString('sidebar-item" href="#"', $html);
+    }
+
+    /**
+     * UX-001 — "Meus Cursos" is gone from the Admin's menu, so the
+     * "Aprendizado" heading is never rendered for them either.
+     */
+    public function test_admin_never_sees_the_aprendizado_section(): void
+    {
+        $org = Organization::factory()->create();
+        $admin = User::factory()->create(['org_id' => null]);
+        $admin->assignRole(RolesEnum::ADMIN->value);
+
+        foreach ([[], ['active_org_id' => $org->id]] as $session) {
+            $response = $this->actingAs($admin)
+                ->withSession($session)
+                ->get(route('admin.dashboard'));
+
+            $response->assertOk();
+            $response->assertDontSeeText('Aprendizado');
+            $response->assertDontSeeText('Meus Cursos');
+            $this->assertStringNotContainsString('dusk="sidebar-student-courses-link"', $response->getContent());
+            $this->assertStringNotContainsString('dusk="sidebar-student-courses-link-mobile"', $response->getContent());
+        }
+    }
+
+    /**
+     * UX-001 non-regression — nothing moves for the Gestor: the
+     * operational items stay in "Administração" and no "Impersonate"
+     * heading appears, even with a stale `active_org_id` in session.
+     */
+    public function test_gestor_menu_is_untouched_and_never_shows_an_impersonate_section(): void
+    {
+        $org = Organization::factory()->create();
+        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor->assignRole(RolesEnum::GESTOR->value);
+
+        $response = $this->actingAs($gestor)
+            ->withSession(['active_org_id' => $org->id])
+            ->get(route('admin.dashboard'));
+
+        $response->assertOk();
+        $response->assertDontSeeText('Impersonate');
+        $response->assertSeeText('Administração');
+        $response->assertSee(route('courses.index'), false);
+        $response->assertSee(route('quiz-attempts.pending'), false);
+        $response->assertSee(route('forum-moderation.index'), false);
+        // The Gestor keeps "Meus Cursos".
+        $response->assertSee(route('student.courses.index'), false);
+        $response->assertSeeText('Aprendizado');
     }
 
     public function test_admin_impersonating_an_org_sees_the_users_link_in_both_renders(): void

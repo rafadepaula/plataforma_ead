@@ -116,6 +116,13 @@ Direção da correção (mantendo o service layer como fonte única, RN38/RN40):
 - [ ] `vendor/bin/sail bin pint --dirty --format agent` limpo.
 
 ## Resolution Status
-- **Status:** OPEN
-- **Reproduction Tests:** —
-- **Fixed In Files:** —
+- **Status:** FIXED
+- **Reproduction Tests:**
+  - `tests/Unit/NavigationServiceTest.php` (casos UX-001 acrescentados ao arquivo existente do SPEC-17 — a spec citava `tests/Feature/Navigation/NavigationServiceTest.php`, que não existe)
+  - `tests/Feature/RoleMenuVisibilityTest.php`
+  - `tests/Browser/Navigation/AdminSidebarScopeTest.php`
+- **Fixed In Files:**
+  - `app/Services/Navigation/NavigationRegistry.php`
+  - `app/Services/Navigation/NavigationService.php`
+  - `app/Services/Navigation/NavigationItem.php`
+- **Desvio consciente do §5:** o conjunto esperado para o Admin sem Impersonate é `dashboard, organizations, audit-logs, settings` — **sem** `users`, que o BUG-005 (commit `58dc8b7`, posterior à redação desta demanda) já esconde no contexto global pelo mesmo motivo de escopo. Nenhum markup foi alterado.

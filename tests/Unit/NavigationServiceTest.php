@@ -53,7 +53,33 @@ class NavigationServiceTest extends TestCase
             ->all();
     }
 
-    public function test_admin_sees_every_administration_item_including_organizations(): void
+    /**
+     * Collect the section titles emitted for a user, in display order.
+     *
+     * @return list<string>
+     */
+    private function sectionTitlesFor(User $user): array
+    {
+        return array_map(
+            fn ($section) => $section->title,
+            $this->service->build($user),
+        );
+    }
+
+    /**
+     * Collect the item keys of one named section (empty when the section
+     * is not emitted at all).
+     *
+     * @return list<string>
+     */
+    private function keysInSection(User $user, string $title): array
+    {
+        $section = collect($this->service->build($user))->firstWhere('title', $title);
+
+        return $section === null ? [] : array_column($section->items, 'key');
+    }
+
+    public function test_admin_impersonating_an_org_sees_every_administration_item_including_organizations(): void
     {
         $admin = User::factory()->create(['org_id' => null]);
         $admin->assignRole(RolesEnum::ADMIN->value);
@@ -72,15 +98,15 @@ class NavigationServiceTest extends TestCase
         $this->assertContains('forum-moderation', $keys);
         $this->assertContains('audit-logs', $keys);
         $this->assertContains('settings', $keys);
-        $this->assertContains('student-courses', $keys);
+        // UX-001 — "Meus Cursos" was removed from the Admin's menu.
+        $this->assertNotContains('student-courses', $keys);
     }
 
     /**
      * BUG-005 / RN38 — `users.index` resolves its tenant strictly, so a
      * system Admin in global context (no own `org_id`, no
      * `active_org_id`) cannot reach it; the item must be filtered out
-     * instead of dead-ending in a `back()` + flash error. Every other
-     * Administração item stays put.
+     * instead of dead-ending in a `back()` + flash error.
      */
     public function test_admin_without_an_active_org_context_does_not_see_the_users_item(): void
     {
@@ -91,8 +117,186 @@ class NavigationServiceTest extends TestCase
 
         $this->assertNotContains('users', $keys);
         $this->assertContains('organizations', $keys);
-        $this->assertContains('courses', $keys);
         $this->assertContains('settings', $keys);
+    }
+
+    // ── UX-001 — Admin menu scope & the "Impersonate" section ────────
+
+    /**
+     * UX-001 — in global context the Admin's menu is strictly the system
+     * administration surface: the operational, Organization-scoped items
+     * (`courses`, `quiz-attempts`, `forum-moderation`) have no tenant to
+     * act upon and must not be offered at all.
+     */
+    public function test_admin_without_impersonation_sees_only_the_system_administration_items(): void
+    {
+        $admin = User::factory()->create(['org_id' => null]);
+        $admin->assignRole(RolesEnum::ADMIN->value);
+
+        $this->assertSame(['Administração'], $this->sectionTitlesFor($admin));
+        // `users` is absent here by BUG-005 (no resolvable tenant).
+        $this->assertSame(
+            ['dashboard', 'organizations', 'audit-logs', 'settings'],
+            $this->keysInSection($admin, 'Administração'),
+        );
+    }
+
+    public function test_admin_without_impersonation_has_no_impersonate_section(): void
+    {
+        $admin = User::factory()->create(['org_id' => null]);
+        $admin->assignRole(RolesEnum::ADMIN->value);
+
+        $this->assertNotContains('Impersonate', $this->sectionTitlesFor($admin));
+
+        $keys = $this->keysFor($admin);
+        $this->assertNotContains('courses', $keys);
+        $this->assertNotContains('quiz-attempts', $keys);
+        $this->assertNotContains('forum-moderation', $keys);
+    }
+
+    /**
+     * UX-001 — once an Organization is impersonated, the operational
+     * items reappear, but grouped under their own "Impersonate" heading
+     * so the Admin can tell system scope from Organization scope.
+     */
+    public function test_admin_impersonating_an_org_gets_the_operational_items_in_an_impersonate_section(): void
+    {
+        $admin = User::factory()->create(['org_id' => null]);
+        $admin->assignRole(RolesEnum::ADMIN->value);
+        session(['active_org_id' => Organization::factory()->create()->id]);
+
+        $this->assertSame(
+            ['courses', 'quiz-attempts', 'forum-moderation'],
+            $this->keysInSection($admin, 'Impersonate'),
+        );
+        // The system block keeps its own 5 items (`users` is back because
+        // the impersonated Organization resolves a tenant — BUG-005).
+        $this->assertSame(
+            ['dashboard', 'organizations', 'users', 'audit-logs', 'settings'],
+            $this->keysInSection($admin, 'Administração'),
+        );
+    }
+
+    public function test_impersonate_section_is_ordered_right_after_administracao(): void
+    {
+        $admin = User::factory()->create(['org_id' => null]);
+        $admin->assignRole(RolesEnum::ADMIN->value);
+        session(['active_org_id' => Organization::factory()->create()->id]);
+
+        $this->assertSame(['Administração', 'Impersonate'], $this->sectionTitlesFor($admin));
+    }
+
+    /**
+     * UX-001 — RF38 badges must keep resolving after the items moved to
+     * the "Impersonate" section (the badge callbacks are unchanged, but
+     * the section move must not bypass `resolveBadge()`).
+     */
+    public function test_badges_are_still_resolved_inside_the_impersonate_section(): void
+    {
+        $org = Organization::factory()->create();
+        $course = Course::factory()->for($org)->create();
+        $admin = User::factory()->create(['org_id' => null]);
+        $admin->assignRole(RolesEnum::ADMIN->value);
+        $this->actingAs($admin);
+        session(['active_org_id' => $org->id]);
+
+        $quiz = $this->createQuizForCourse($course);
+        QuizAttempt::factory()->for($quiz)->create([
+            'user_id' => $admin->id,
+            'status' => 'awaiting_manual_grading',
+        ]);
+
+        $badgeItem = $this->findItem($admin, 'quiz-attempts');
+
+        $this->assertSame('Impersonate', $badgeItem['section']);
+        $this->assertSame(1, $badgeItem['badge']);
+    }
+
+    /**
+     * UX-001 non-regression — a Gestor always operates inside their own
+     * Organization, so nothing moves for them: the operational items stay
+     * in "Administração" and no "Impersonate" heading is ever emitted.
+     */
+    public function test_gestor_keeps_the_operational_items_in_administracao_and_never_sees_impersonate(): void
+    {
+        $org = Organization::factory()->create();
+        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor->assignRole(RolesEnum::GESTOR->value);
+
+        $this->assertNotContains('Impersonate', $this->sectionTitlesFor($gestor));
+        $this->assertSame(
+            ['dashboard', 'users', 'courses', 'quiz-attempts', 'forum-moderation', 'audit-logs', 'settings'],
+            $this->keysInSection($gestor, 'Administração'),
+        );
+    }
+
+    /**
+     * UX-001 — an impersonated Organization in the session must not leak
+     * an "Impersonate" heading into a Gestor's menu: only a system Admin
+     * (no own `org_id`) can be in an impersonated context.
+     */
+    public function test_a_stale_active_org_id_never_creates_an_impersonate_section_for_a_gestor(): void
+    {
+        $org = Organization::factory()->create();
+        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor->assignRole(RolesEnum::GESTOR->value);
+        session(['active_org_id' => $org->id]);
+
+        $this->assertNotContains('Impersonate', $this->sectionTitlesFor($gestor));
+        $this->assertContains('courses', $this->keysInSection($gestor, 'Administração'));
+    }
+
+    /**
+     * UX-001 — a dual Admin/Gestor account bound to its own Organization
+     * is not impersonating anything: it operates in its own tenant, so
+     * the operational items stay in "Administração".
+     */
+    public function test_admin_with_an_own_org_id_keeps_the_operational_items_in_administracao(): void
+    {
+        $org = Organization::factory()->create();
+        $admin = User::factory()->create(['org_id' => $org->id]);
+        $admin->assignRole(RolesEnum::ADMIN->value);
+
+        $this->assertNotContains('Impersonate', $this->sectionTitlesFor($admin));
+        $this->assertContains('courses', $this->keysInSection($admin, 'Administração'));
+    }
+
+    /**
+     * UX-001 — "Meus Cursos" is gone from the Admin's menu, which leaves
+     * the "Aprendizado" section empty and therefore dropped entirely by
+     * `build()`, in both contexts.
+     */
+    public function test_admin_never_sees_the_aprendizado_section(): void
+    {
+        $admin = User::factory()->create(['org_id' => null]);
+        $admin->assignRole(RolesEnum::ADMIN->value);
+
+        $this->assertNotContains('Aprendizado', $this->sectionTitlesFor($admin));
+        $this->assertNotContains('student-courses', $this->keysFor($admin));
+
+        session(['active_org_id' => Organization::factory()->create()->id]);
+
+        $this->assertNotContains('Aprendizado', $this->sectionTitlesFor($admin));
+        $this->assertNotContains('student-courses', $this->keysFor($admin));
+    }
+
+    /**
+     * UX-001 non-regression — only the Admin loses "Meus Cursos"; the
+     * Gestor and the Aluno keep their "Aprendizado" section.
+     */
+    public function test_gestor_and_aluno_still_see_meus_cursos(): void
+    {
+        $org = Organization::factory()->create();
+
+        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor->assignRole(RolesEnum::GESTOR->value);
+        $this->assertContains('Aprendizado', $this->sectionTitlesFor($gestor));
+        $this->assertContains('student-courses', $this->keysInSection($gestor, 'Aprendizado'));
+
+        $aluno = User::factory()->create(['org_id' => $org->id]);
+        $aluno->assignRole(RolesEnum::ALUNO->value);
+        $this->assertContains('Aprendizado', $this->sectionTitlesFor($aluno));
+        $this->assertContains('student-courses', $this->keysInSection($aluno, 'Aprendizado'));
     }
 
     public function test_admin_impersonating_an_org_sees_the_users_item_again(): void

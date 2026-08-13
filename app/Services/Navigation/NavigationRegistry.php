@@ -24,8 +24,13 @@ final class NavigationRegistry
 
     /**
      * @var list<string> Section labels, declared in display order.
+     *
+     * UX-001 — `Impersonate` sits between the two: it groups the
+     * Organization-scoped items a system Admin only reaches while
+     * impersonating, keeping them visibly separate from the global
+     * system-administration surface above it.
      */
-    private const SECTION_ORDER = ['Administração', 'Aprendizado'];
+    private const SECTION_ORDER = ['Administração', 'Impersonate', 'Aprendizado'];
 
     /**
      * @return list<NavigationItem>
@@ -75,6 +80,13 @@ final class NavigationRegistry
                 section: 'Administração',
                 routeResolver: fn ($user) => $this->resolveUsersRoute($user),
             ),
+            // ── Operação da Organização ──────────────────────────────
+            // UX-001 — the three items below act *inside* one
+            // Organization. For a Gestor that is always their own tenant,
+            // so they stay in "Administração"; for a system Admin they
+            // only mean something under an active "Impersonate Org",
+            // where they are grouped in their own section (and are hidden
+            // outright in global context). See `resolveOperationalSection()`.
             new NavigationItem(
                 key: 'courses',
                 label: 'Cursos e Módulos',
@@ -83,6 +95,7 @@ final class NavigationRegistry
                 icon: $this->bookIcon(),
                 roles: self::ADMIN_GESTOR,
                 section: 'Administração',
+                sectionResolver: fn ($user) => $this->resolveOperationalSection($user),
             ),
             new NavigationItem(
                 key: 'quiz-attempts',
@@ -94,6 +107,7 @@ final class NavigationRegistry
                 section: 'Administração',
                 // RF38 — badge counts attempts awaiting manual grading.
                 badgeCallback: $badges->pendingEssayCount(...),
+                sectionResolver: fn ($user) => $this->resolveOperationalSection($user),
             ),
             new NavigationItem(
                 key: 'forum-moderation',
@@ -105,6 +119,7 @@ final class NavigationRegistry
                 section: 'Administração',
                 // RF38 — badge counts pending forum reports.
                 badgeCallback: $badges->pendingForumReportCount(...),
+                sectionResolver: fn ($user) => $this->resolveOperationalSection($user),
             ),
             new NavigationItem(
                 key: 'audit-logs',
@@ -136,7 +151,11 @@ final class NavigationRegistry
                 route: 'student.courses.index',
                 activePatterns: ['student.courses.*', 'classroom.*'],
                 icon: $this->homeIcon(),
-                roles: ['aluno', 'gestor', 'admin'],
+                // UX-001 — the Admin is not a learner: "Meus Cursos" was
+                // dropped from their menu, which leaves "Aprendizado"
+                // empty and therefore discarded by
+                // `NavigationService::build()`.
+                roles: ['aluno', 'gestor'],
                 section: 'Aprendizado',
             ),
             new NavigationItem(
@@ -207,6 +226,31 @@ final class NavigationRegistry
         }
 
         return route('users.index');
+    }
+
+    /**
+     * UX-001 — decides where the Organization-scoped operational items
+     * ("Cursos e Módulos", "Redações Pendentes", "Moderação do Fórum")
+     * belong for the acting user:
+     *
+     *  - anyone bound to their own Organization (a Gestor, or a dual
+     *    Admin/Gestor account with an `org_id`) always operates in that
+     *    tenant → they stay in "Administração", unchanged;
+     *  - a system Admin (no own `org_id`) only reaches these screens
+     *    through an "Impersonate Org" → they move to the "Impersonate"
+     *    section, which disappears with the context;
+     *  - a system Admin in global context has no tenant to act upon →
+     *    `null` hides the items entirely, the same way
+     *    {@see self::resolveUsersRoute()} hides "Alunos & Usuários"
+     *    (BUG-005) rather than offering a dead-ending link.
+     */
+    private function resolveOperationalSection(User $user): ?string
+    {
+        if (! $user->hasRole('admin') || $user->org_id !== null) {
+            return 'Administração';
+        }
+
+        return session('active_org_id') ? 'Impersonate' : null;
     }
 
     /**

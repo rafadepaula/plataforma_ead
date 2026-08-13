@@ -22,6 +22,14 @@ use App\Models\User;
  *                        (used by RF39's contextual forum link, which
  *                        only renders when the Aluno has at least one
  *                        active enrollment).
+ *  4. `sectionResolver` — optional closure returning the section heading
+ *                        this item belongs to *for this user*, or `null`
+ *                        to hide the item entirely. `section` is the
+ *                        static fallback used when no resolver is set
+ *                        (UX-001 — the Admin's Organization-scoped items
+ *                        move to "Impersonate" and vanish in global
+ *                        context, while a Gestor keeps them in
+ *                        "Administração").
  *
  * `activePatterns` are `routeIs()` wildcards — e.g. `['users.*']` keeps
  * the "Alunos & Usuários" parent highlighted on `users.create` /
@@ -35,6 +43,7 @@ final class NavigationItem
      * @param  list<string>  $permissions  Optional explicit `can()` permission checks.
      * @param  callable(User): (string|null)|null  $routeResolver  Contextual URL resolver; `null` result hides the item.
      * @param  callable(User): (int|string|null)|null  $badgeCallback  Pending-count badge; `null`/0 renders no badge.
+     * @param  callable(User): (string|null)|null  $sectionResolver  Contextual section heading; `null` result hides the item.
      */
     public function __construct(
         public readonly string $key,
@@ -47,5 +56,6 @@ final class NavigationItem
         public array $permissions = [],
         public $routeResolver = null,
         public $badgeCallback = null,
+        public $sectionResolver = null,
     ) {}
 }

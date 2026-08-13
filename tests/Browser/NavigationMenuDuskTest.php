@@ -8,6 +8,7 @@ use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Laravel\Dusk\Browser;
+use Tests\Browser\Navigation\AdminSidebarScopeTest;
 use Tests\DuskTestCase;
 
 /**
@@ -22,7 +23,14 @@ class NavigationMenuDuskTest extends DuskTestCase
 {
     use DatabaseMigrations;
 
-    public function test_admin_sidebar_renders_every_administration_link(): void
+    /**
+     * UX-001 — in global context the Admin's sidebar is the *system*
+     * administration surface only. The Organization-scoped items
+     * (`courses`, `quiz-attempts`, `forum-moderation`) and the learner
+     * item (`student-courses`) are covered by
+     * {@see AdminSidebarScopeTest}.
+     */
+    public function test_admin_sidebar_renders_every_system_administration_link(): void
     {
         $admin = User::factory()->create(['org_id' => null]);
         $admin->assignRole(RolesEnum::ADMIN->value);
@@ -33,9 +41,6 @@ class NavigationMenuDuskTest extends DuskTestCase
                 ->waitFor('@admin-dashboard')
                 ->assertPresent('@sidebar-dashboard-link')
                 ->assertPresent('@sidebar-organizations-link')
-                ->assertPresent('@sidebar-courses-link')
-                ->assertPresent('@sidebar-quiz-attempts-link')
-                ->assertPresent('@sidebar-forum-moderation-link')
                 ->assertPresent('@sidebar-audit-logs-link')
                 ->assertPresent('@sidebar-settings-link')
                 // BUG-005 — `Alunos & Usuários` is single-org and thus
