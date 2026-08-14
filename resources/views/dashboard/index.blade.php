@@ -64,5 +64,29 @@
                 <x-ui.empty-state colspan="3" message="Nenhuma matrícula recente." />
             @endforelse
         </x-ui.data-table>
+
+        @isset($organizationsSummary)
+            {{-- Resumo das Organizações --}}
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3 mt-5">
+                <h2 class="h5 mb-0">Resumo das Organizações</h2>
+            </div>
+
+            <x-ui.data-table striped
+                             hover
+                             responsive
+                             :headers="['Organização', 'Alunos', 'Cursos', 'Certificados']"
+                             dusk="organizations-summary-table">
+                @forelse($organizationsSummary as $organization)
+                    <tr dusk="organization-summary-row-{{ data_get($organization, 'id') }}">
+                        <td class="fw-semibold">{{ data_get($organization, 'name') }}</td>
+                        <td dusk="org-summary-students-{{ data_get($organization, 'id') }}">{{ data_get($organization, 'students_count') }}</td>
+                        <td dusk="org-summary-courses-{{ data_get($organization, 'id') }}">{{ data_get($organization, 'courses_count') }}</td>
+                        <td dusk="org-summary-certificates-{{ data_get($organization, 'id') }}">{{ data_get($organization, 'certificates_count') }}</td>
+                    </tr>
+                @empty
+                    <x-ui.empty-state colspan="4" message="Nenhuma Organização cadastrada." />
+                @endforelse
+            </x-ui.data-table>
+        @endisset
     </div>
 @endsection

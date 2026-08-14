@@ -7,7 +7,9 @@ description: >
   admin-global-vs-gestor-own-org branching for models (`Certificate`,
   `course_user`, `User`) that cascade-inherited instead of directly org-scoped,
   streamed CSV export O(1)-RAM contract, `system_settings` org-then-global
-  override resolution reused from `SettingService`. Use when design or review
+  override resolution reused from `SettingService`. Also covers SPEC-001's
+  Admin-global-only "Resumo das Organizações" summary table
+  (`organizationsSummary`/`$isGlobalAdminView`). Use when design or review
   feature touching dashboard KPIs, CSV export pipeline, or org-level
   SMTP/logo/signature settings, or before add new stat/report type.
 license: MIT
@@ -18,6 +20,7 @@ metadata:
     - spec/specs/12-admin-dashboard-analytics-and-system-settings.md
     - spec/docs/mockups/07-dashboard-admin.md
     - spec/specs/00-architecture-database-and-guardrails.md
+    - spec/to_refine/specs/SPEC-001-admin-dashboard-organizations-summary-table.md
 ---
 
 # Dashboard Architecture
@@ -92,6 +95,53 @@ not second ad-hoc implementation) and by report `type` (`enrollments`,
 server-side, never trusted from request input. Gestor passing
 `?org_id=<anotherOrg>` must 403, not silently scope to own org (see
 `dashboard-conventions` for exact guard).
+
+## Organizations Summary Table (SPEC-001, Admin-Global-Only)
+
+`admin.dashboard` also renders a per-Organization "Resumo das Organizações"
+table, but **only** for an Admin viewing globally (no active Impersonate Org).
+`DashboardController@index` computes this gate once as `$isGlobalAdminView`
+(`$user->hasRole(RolesEnum::ADMIN->value) && $orgId === null`, where `$orgId`
+is the same `resolveViewingOrgId()` result used for the stat cards/recent
+enrollments) and passes `organizationsSummary` to the view as `null` whenever
+`$isGlobalAdminView` is `false` — Gestor and an Admin impersonating an Org never
+receive rows, not even an empty collection. Reuse this controller-resolved flag
+rather than re-deriving role/impersonation state elsewhere (e.g. in the view or
+a new consumer); it is the one place the gate is decided.
+
+`DashboardMetricsService::organizationsSummary()` itself takes no `$orgId` (it
+is unconditionally "all Organizations", called only when the controller has
+already gated it) and returns one row per `Organization` via 3 correlated
+subqueries (N+1-free):
+
+- `students_count` — distinct `users` with role `aluno`, `status = active`,
+  owned directly by the Organization (`users.org_id`), independent of
+  enrollment (different shape than `getStats()`'s `active_students`, which is
+  enrollment-derived).
+- `courses_count` — raw `DB::table('courses')` filtered by `courses.org_id`,
+  deliberately bypassing `Course`'s `OrgScope` so an Admin sees every
+  Organization's courses regardless of the acting user's own tenant context.
+- `certificates_count` — certificates joined through `courses.org_id`,
+  excluding revoked ones (mirrors `certificatesIssuedCount()`'s
+  `whereNull('certificates.revoked_at')`).
+
+Organizations with no related rows are zero-filled, not omitted.
+
+View contract (`resources/views/dashboard/index.blade.php`, only rendered
+inside `@isset($organizationsSummary)`): `<x-ui.data-table>` with headers
+`['Organização', 'Alunos', 'Cursos', 'Certificados']`, `dusk` selectors
+`organizations-summary-table` (table), `organization-summary-row-{id}` (row),
+and `org-summary-students-{id}` / `org-summary-courses-{id}` /
+`org-summary-certificates-{id}` (per-metric cells) — see `dashboard-conventions`
+for the full selector table.
+
+Mandatory test coverage added by SPEC-001 (see `dashboard-maintenance` for
+exact method names): 3 `OrgDashboardTest` cases (Admin-global sees it with
+correct counts, Gestor never receives it, Admin-impersonating never receives
+it), 4 `DashboardMetricsServiceTest` cases (counts, `OrgScope`-bypass, zero-fill,
+soft-deleted-Organization exclusion), and `DashboardDuskTest` assertions that
+the table is present for the Admin-global lifecycle and `assertMissing` for the
+Gestor lifecycle.
 
 ## Relationship to Other Modules
 

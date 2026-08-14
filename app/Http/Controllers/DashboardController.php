@@ -26,11 +26,17 @@ class DashboardController extends Controller
 
     public function index(Request $request): View
     {
+        $user = $request->user();
         $orgId = $this->resolveViewingOrgId($request);
+
+        $isGlobalAdminView = $user->hasRole(RolesEnum::ADMIN->value) && $orgId === null;
 
         return view('dashboard.index', [
             'stats' => $this->dashboardMetricsService->getStats($orgId),
             'recentEnrollments' => $this->dashboardMetricsService->recentEnrollments($orgId),
+            'organizationsSummary' => $isGlobalAdminView
+                ? $this->dashboardMetricsService->organizationsSummary()
+                : null,
         ]);
     }
 

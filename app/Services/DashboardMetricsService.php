@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\Permissions\RolesEnum;
 use App\Models\Certificate;
 use App\Models\Course;
+use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -96,6 +97,65 @@ class DashboardMetricsService
             ->avg('course_user.progress_percentage');
 
         return (int) round((float) ($average ?? 0));
+    }
+
+    /**
+     * SPEC-001 (admin-dashboard-organizations-summary-table) — per-Organization
+     * counts for ALL Organizations (Admin-only, non-impersonated view), in a
+     * single N+1-free query via correlated subqueries. Zero-filled when an
+     * Organization has no related data. Never reads `Auth::user()`/
+     * `session('active_org_id')` — that branching belongs to the controller.
+     *
+     * - `students_count`: distinct Users with role `aluno`, `status = active`,
+     *   directly owned by the Organization (`users.org_id`), not
+     *   enrollment-derived (different shape than `active_students` above).
+     * - `courses_count`: `courses.org_id = organizations.id`, bypassing
+     *   `Course`'s `OrgScope` (raw `DB::table` query, not `Course::query()`)
+     *   so an Admin sees every Organization's courses regardless of the
+     *   acting user's own tenant context.
+     * - `certificates_count`: certificates joined through `courses.org_id`,
+     *   excluding revoked ones (mirrors `certificatesIssuedCount()`).
+     *
+     * @return Collection<int, object{id: int, name: string, students_count: int, courses_count: int, certificates_count: int}>
+     */
+    public function organizationsSummary(): Collection
+    {
+        $studentsCount = DB::table('users')
+            ->join('model_has_roles', function ($join): void {
+                $join->on('model_has_roles.model_id', '=', 'users.id')
+                    ->where('model_has_roles.model_type', User::class);
+            })
+            ->join('roles', 'roles.id', '=', 'model_has_roles.role_id')
+            ->where('roles.name', RolesEnum::ALUNO->value)
+            ->where('users.status', 'active')
+            ->whereColumn('users.org_id', 'organizations.id')
+            ->selectRaw('count(distinct users.id)');
+
+        $coursesCount = DB::table('courses')
+            ->whereColumn('courses.org_id', 'organizations.id')
+            ->whereNull('courses.deleted_at')
+            ->selectRaw('count(*)');
+
+        $certificatesCount = DB::table('certificates')
+            ->join('courses', 'courses.id', '=', 'certificates.course_id')
+            ->whereColumn('courses.org_id', 'organizations.id')
+            ->whereNull('certificates.revoked_at')
+            ->selectRaw('count(*)');
+
+        return Organization::query()
+            ->select(['organizations.id', 'organizations.name'])
+            ->selectSub($studentsCount, 'students_count')
+            ->selectSub($coursesCount, 'courses_count')
+            ->selectSub($certificatesCount, 'certificates_count')
+            ->orderBy('organizations.name')
+            ->get()
+            ->map(fn ($row) => (object) [
+                'id' => (int) $row->id,
+                'name' => $row->name,
+                'students_count' => (int) $row->students_count,
+                'courses_count' => (int) $row->courses_count,
+                'certificates_count' => (int) $row->certificates_count,
+            ]);
     }
 
     private function statusLabel(string $status): string

@@ -37,7 +37,7 @@ class DashboardDuskTest extends DuskTestCase
             'progress_percentage' => 40,
         ]);
 
-        $this->browse(function (Browser $browser) use ($admin): void {
+        $this->browse(function (Browser $browser) use ($admin, $org): void {
             // 1. KPIs e matrículas recentes.
             //
             //    `<x-ui.stat-card>`'s kicker is `text-transform: uppercase`,
@@ -56,6 +56,21 @@ class DashboardDuskTest extends DuskTestCase
             // 2. Sem impersonation ativa, o Admin vê o resumo por Organização.
             $browser->waitFor('@organizations-summary-table')
                 ->assertSee('Instituto Alfa');
+
+            // 2.1. Com Impersonate Org ativa, a tabela deixa de aparecer —
+            //      esse é o mesmo gate (`$isGlobalAdminView`) que o
+            //      controller usa em produção, exercitado aqui via sessão
+            //      real de navegador (não a Kernel de teste do PHPUnit).
+            $browser->visit(route('organizations.index'))
+                ->waitFor('@impersonate-'.$org->id)
+                ->click('@impersonate-'.$org->id)
+                ->waitForLocation('/organizations')
+                ->visit(route('admin.dashboard'))
+                ->waitFor('@admin-dashboard')
+                ->assertMissing('@organizations-summary-table')
+                ->waitFor('@topbar-exit-impersonation')
+                ->click('@topbar-exit-impersonation')
+                ->waitForLocation('/admin/dashboard');
 
             // 3. Ponto de entrada do export aponta para a rota de streaming.
             $browser->waitFor('@export-enrollments-csv')

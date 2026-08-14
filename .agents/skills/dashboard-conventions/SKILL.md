@@ -6,9 +6,11 @@ description: >
   `settings.edit`/`settings.update` route-name contract,
   `<x-ui.stat-card>`/`<x-ui.table>`/`<x-ui.badge>`-only Blade composition (no new
   UI components), `dusk="stat-{metric}"`/`dusk="export-{type}-csv"`
-  test-selector contract, Gestor-cannot-pass-`org_id` export guard. Use when
-  write controller, service, Blade view, or test touching Dashboard, CSV export,
-  or `system_settings` org-override screen.
+  test-selector contract, Gestor-cannot-pass-`org_id` export guard, and
+  SPEC-001's `organizations-summary-table`/`organization-summary-row-{id}`/
+  `org-summary-{metric}-{id}` selector contract. Use when write controller,
+  service, Blade view, or test touching Dashboard, CSV export, or
+  `system_settings` org-override screen.
 license: MIT
 metadata:
   feature: dashboard
@@ -75,10 +77,30 @@ not know or care which `DashboardMetricsService` return.
 | Recent enrollments table | `dusk="recent-enrollments-table"` |
 | CSV export links | `dusk="export-{type}-csv"` (e.g. `export-enrollments-csv`, `export-certificates-csv`) |
 | Settings form | `dusk="settings-form"` / `dusk="settings-submit"` |
+| Organizations summary table (SPEC-001, Admin-global-only) | `dusk="organizations-summary-table"` |
+| Organizations summary row | `dusk="organization-summary-row-{id}"` |
+| Organizations summary per-metric cell | `dusk="org-summary-students-{id}"` / `dusk="org-summary-courses-{id}"` / `dusk="org-summary-certificates-{id}"` |
 
 Keep these stable. `DashboardDuskTest`/`OrgDashboardTest` assert against them
 directly, and rename without updating both tests look like silent regression
 rather than intentional rename.
+
+## Organizations Summary Table: Reuse `$isGlobalAdminView`, Literal Blade Strings
+
+`DashboardController@index` resolves `$isGlobalAdminView` once and passes
+`organizationsSummary` as `null` when it's `false` — the view gates the whole
+block with `@isset($organizationsSummary)`. Do not re-derive
+role/impersonation state in the view or a new consumer; reuse the controller's
+resolved value (see `dashboard-architecture`).
+
+`resources/views/dashboard/index.blade.php` reuses these exact literal
+strings — keep them if you touch this block:
+
+```blade
+<h2 class="h5 mb-0">Resumo das Organizações</h2>
+...
+:headers="['Organização', 'Alunos', 'Cursos', 'Certificados']"
+```
 
 ## CSV Export Entry Point: Plain `<a>`, No JS Module
 

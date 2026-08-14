@@ -56,6 +56,7 @@ Apresentar o painel de métricas pedagógicas e gerenciais para administradores 
    - **Stat Card 3 (Matrículas Ativas):** Total em `course_user` com status `active`.
    - **Stat Card 4 (Certificados Emitidos):** Total em `certificates`.
    - **Tabela de Matrículas Recentes:** Lista as últimas 10 matrículas realizadas com Aluno, Curso, Organização e Data.
+   - **Tabela "Resumo das Organizações" (RF18/SPEC-001):** Somente visível para Admin em visão global (`$isGlobalAdminView`, ou seja, Admin sem Impersonate Org ativo) — Gestor e Admin impersonando uma Organização nunca veem esta tabela. Lista, por Organização, o total de Alunos, Cursos e Certificados emitidos.
 
 ---
 
