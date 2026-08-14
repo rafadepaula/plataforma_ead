@@ -1,6 +1,6 @@
 ---
 name: laravel-best-practices
-description: "Apply this skill whenever writing, reviewing, or refactoring Laravel PHP code. This includes creating or modifying controllers, models, migrations, form requests, policies, jobs, scheduled commands, service classes, and Eloquent queries. Triggers for N+1 and query performance issues, caching strategies, authorization and security patterns, validation, error handling, queue and job configuration, route definitions, and architectural decisions. Also use for Laravel code reviews and refactoring existing Laravel code to follow best practices. Covers any task involving Laravel backend PHP code patterns."
+description: "Use when write, review, or refactor Laravel PHP code. Covers controllers, models, migrations, form requests, policies, jobs, scheduled commands, service classes, Eloquent queries. Triggers: N+1, query performance, caching, authorization, security, validation, error handling, queues, jobs, routes, architecture decisions. Also Laravel code review and refactor to best practices. Any Laravel backend PHP code pattern task."
 license: MIT
 metadata:
   author: laravel
@@ -8,26 +8,26 @@ metadata:
 
 # Laravel Best Practices
 
-Best practices for Laravel, organized as an index of rule files. Each rule file teaches what to do and why. For exact API syntax, verify with `search-docs`.
+Best practices for Laravel, index of rule files. Each rule file teaches what to do, why. For exact API syntax, verify with `search-docs`.
 
 ## Consistency First
 
-Before applying any rule, check what the application already does. Laravel offers multiple valid approaches, and the best choice is the one the codebase already uses, even if another pattern would be theoretically better. Inconsistency is worse than a suboptimal pattern.
+Before apply rule, check what app already does. Laravel offers many valid ways. Best choice is way codebase already uses, even if other pattern theoretically better. Inconsistency worse than suboptimal pattern.
 
-Check sibling files, related controllers, models, or tests for established patterns. If one exists, follow it. Don't introduce a second way. These rules are defaults for when no pattern exists yet, not overrides.
+Check sibling files, related controllers, models, tests for established pattern. Pattern exists, follow it. No second way. These rules are defaults for when no pattern exists yet, not overrides.
 
 ## How to Apply
 
-1. Check the changed files, nearby code, project configuration, and relevant tests for established patterns. Deviate only for a correctness or security defect, and call the deviation out.
-2. Map every affected concern to the rule index below. Read each mapped rule file before editing. Skip unrelated rule files.
-3. Make the smallest coherent change. Keep the application's architecture and naming instead of introducing a second pattern for the same job.
-4. Verify version-sensitive Laravel APIs for the installed version with `search-docs`, or inspect the installed framework when it is unavailable.
-5. Run the narrowest relevant tests first, then the project's formatting and static-analysis checks when the change warrants them.
-6. Re-read the diff against every mapped rule before finishing.
+1. Check changed files, nearby code, project config, relevant tests for established pattern. Deviate only for correctness or security defect, and call deviation out.
+2. Map every affected concern to rule index below. Read each mapped rule file before edit. Skip unrelated rule files.
+3. Make smallest coherent change. Keep app architecture and naming. No second pattern for same job.
+4. Verify version-sensitive Laravel APIs for installed version with `search-docs`, or inspect installed framework when unavailable.
+5. Run narrowest relevant tests first, then project formatting and static-analysis checks when change warrants.
+6. Re-read diff against every mapped rule before finish.
 
 ## Rule Index
 
-Cross-cutting changes often need more than one rule file.
+Cross-cutting change often needs more than one rule file.
 
 | Concern | Read |
 | --- | --- |
@@ -54,6 +54,6 @@ Cross-cutting changes often need more than one rule file.
 
 ## Decision Rules
 
-- Prefer framework features and existing application abstractions over new helpers or dependencies.
-- Avoid speculative abstractions. Extract code when it creates a clear domain boundary, removes meaningful duplication, or makes behavior independently testable.
-- Keep database access out of Blade views and prevent hidden N+1 queries across controllers, resources, jobs, and serialization.
+- Prefer framework features and existing app abstractions over new helpers or dependencies.
+- No speculative abstraction. Extract code when it creates clear domain boundary, removes real duplication, or makes behavior independently testable.
+- Keep DB access out of Blade views. Prevent hidden N+1 across controllers, resources, jobs, serialization.

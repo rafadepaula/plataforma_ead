@@ -1,47 +1,47 @@
 ---
 name: frontend-architecture
-description: Visão Geral, Schemas, Estrutura de Componentes Blade e Módulos JavaScript SOLID do Frontend da Plataforma EAD.
+description: Visão geral, schemas, componentes Blade e módulos JavaScript SOLID do frontend da Plataforma EAD.
 ---
 
 # Frontend Architecture (`frontend-architecture`)
 
-## Overview
+## Visão Geral
 
-O frontend da Plataforma EAD adota uma **Arquitetura em Camadas com Micro-Componentes Blade** combinada com **Bootstrap 5.3 (grid/utilities apenas)** e o **Modernist Design System** (Claude Design). O comportamento dinâmico e a comunicação remota são desacoplados através de **Módulos JavaScript SOLID** em `resources/js/modules/`.
+Frontend = camadas com micro-componentes Blade + **Bootstrap 5.3 (só grid/utilities)** + **Modernist Design System** (Claude Design). Comportamento dinâmico e chamada remota ficam desacoplados em **módulos JavaScript SOLID** em `resources/js/modules/`.
 
 ---
 
-## Componentes Arquiteturais
+## Componentes
 
-### 1. Camada de Master Layouts (`resources/views/layouts/`)
-- `app.blade.php`: Layout master para áreas autenticadas (Aluno, Admin, Gestor).
-- `guest.blade.php`: Layout mestre split-screen (42%/58%) para páginas públicas, autenticação e aceite de convites.
+### 1. Master layouts (`resources/views/layouts/`)
+- `app.blade.php`: área autenticada (Aluno, Admin, Gestor).
+- `guest.blade.php`: split-screen 42%/58% para páginas públicas, auth e aceite de convite.
 
-### 2. Submódulos Estruturais (`resources/views/components/layout/`)
-- `<x-layout.topbar>`: Barra superior com perfil do usuário, chaveamento de tenant/impersonate, busca e notificações.
-- `<x-layout.sidebar>`: Menu lateral dinâmico escuro (`--color-neutral-900`), configurado por permissões Spatie Roles (`role:admin`, `role:gestor`, `role:aluno`).
-- `<x-layout.footer>`: Rodapé institucional.
-- `<x-layout.alerts>`: Contêiner de mensagens flash do Laravel e toasts dinâmicos.
+### 2. Submódulos estruturais (`resources/views/components/layout/`)
+- `<x-layout.topbar>`: perfil, troca de tenant/impersonate, busca, notificações.
+- `<x-layout.sidebar>`: menu lateral escuro (`--color-neutral-900`), filtrado por Spatie Roles (`role:admin`, `role:gestor`, `role:aluno`).
+- `<x-layout.footer>`: rodapé institucional.
+- `<x-layout.alerts>`: flash messages do Laravel + toasts.
 
-### 3. Micro-Componentes Blade UI (`resources/views/components/ui/`)
-- `<x-ui.button>`: Botões com labels alinhados à esquerda e suporte a ícones inline SVG (`.btn-primary`, `.btn-secondary`, `.btn-ghost`).
-- `<x-ui.card>`: Container modular `.card` com slot de imagem grayscale, kicker, título, meta e elevações (`.elev-sm`, `.elev-md`, `.elev-lg`).
-- `<x-ui.modal>`: Diálogo acessível (`.dialog`) com backdrop (`.dialog-backdrop`), suporte `aria-modal="true"` e fechamento por backdrop/Esc.
-- `<x-ui.badge>`: Tags de status semânticas (`.tag-accent`, `.tag-outline`, `.tag-neutral`, `.tag-accent-2`) substitutas do badge Bootstrap.
-- `<x-ui.input>`: Campos de formulário estilizados (`.field > label + .input`).
-- `<x-ui.select>`: Select nativo customizado com seta chevron SVG posicionada absolutamente (`appearance: none`).
-- `<x-ui.table>`: Tabelas responsivas estilizadas (`.table`) com headers uppercase e hover tint.
-- `<x-ui.stat-card>`: Cards de métricas do dashboard admin com deltas percentuais.
-- `<x-ui.icon>`: Ícones Lucide SVG inline incorporados diretamente (`@include`).
+### 3. Micro-componentes UI (`resources/views/components/ui/`)
+- `<x-ui.button>`: label alinhado à esquerda, ícone SVG inline (`.btn-primary`, `.btn-secondary`, `.btn-ghost`).
+- `<x-ui.card>`: `.card` com slot de imagem grayscale, kicker, título, meta, elevação (`.elev-sm`, `.elev-md`, `.elev-lg`).
+- `<x-ui.modal>`: `.dialog` + `.dialog-backdrop`, `aria-modal="true"`, fecha por backdrop/Esc.
+- `<x-ui.badge>`: status semântico (`.tag-accent`, `.tag-outline`, `.tag-neutral`, `.tag-accent-2`). Substitui badge do Bootstrap.
+- `<x-ui.input>`: `.field > label + .input`.
+- `<x-ui.select>`: select nativo, chevron SVG absoluto, `appearance: none`.
+- `<x-ui.table>`: `.table` responsiva, header uppercase, hover tint.
+- `<x-ui.stat-card>`: métrica do dashboard admin com delta percentual.
+- `<x-ui.icon>`: ícone Lucide SVG inline via `@include`.
 
 ### 4. Módulos JavaScript SOLID (`resources/js/modules/`)
-- `HttpClient.js`: Singleton wrapper para `fetch` API com injeção automática do token CSRF (`X-CSRF-TOKEN`), tratamento de headers JSON (`Accept`/`Content-Type`) e parsing padronizado de erros HTTP.
-- `ModalManager.js`: Gerenciador de modais orientado a objetos com controle de backdrop, navegação por teclado (`Escape`), foco automático e binding por atributos `data-modal-target` / `data-modal-dismiss`.
-- `NotificationService.js`: Gerenciador de notificações toast com injeção dinâmica de contêiner `#notification-container`, temporizador de autodescarte e animações de transição.
+- `HttpClient.js`: singleton sobre `fetch`. Injeta `X-CSRF-TOKEN`, headers JSON (`Accept`/`Content-Type`), parsing padronizado de erro HTTP.
+- `ModalManager.js`: modais orientado a objeto. Backdrop, `Escape`, foco automático, binding por `data-modal-target` / `data-modal-dismiss`.
+- `NotificationService.js`: toasts. Injeta `#notification-container`, timer de autodescarte, animação.
 
 ---
 
-## Compilação e Build de Assets
+## Build de Assets
 
 ```
 resources/css/app.css  -\
@@ -49,5 +49,5 @@ resources/css/app.css  -\
 resources/js/app.js   -/
 ```
 
-- **Bootstrap 5.3**: Importado no topo do CSS incluindo **apenas** módulos `@import 'bootstrap/scss/grid'` e `@import 'bootstrap/scss/utilities'`.
-- **Modernist Tokens**: Declarados em CSS custom properties (`:root`), sobrescrevendo qualquer estilo base.
+- **Bootstrap 5.3**: importado no topo do CSS. **Só** `@import 'bootstrap/scss/grid'` e `@import 'bootstrap/scss/utilities'`.
+- **Tokens Modernist**: custom properties em `:root`. Sobrescrevem qualquer base.

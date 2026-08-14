@@ -1,12 +1,11 @@
 ---
 name: navigation-maintenance
 description: >
-  Maintenance guide for the Dynamic Navigation Menu domain (SPEC-17): how
-  to debug a missing/leaked link, a wrong active highlight, or a stale
-  badge count; the test files to extend when adding an item; how to keep
-  `NavigationRegistry` route names in sync after a route rename; and the
-  common regressions to watch for. Use when fixing a navigation bug or
-  after renaming/adding a route that the menu points at.
+  Maintenance for Dynamic Navigation Menu (SPEC-17): debug missing/leaked
+  link, wrong active highlight, stale badge count. Test files to extend
+  when adding item. Keep `NavigationRegistry` route names in sync after
+  rename. Common regressions. Use when fixing navigation bug or after
+  renaming/adding a route the menu points at.
 license: MIT
 metadata:
   feature: navigation
@@ -17,78 +16,60 @@ metadata:
 
 # Navigation Maintenance
 
-## Symptom → Cause → Fix
+## Symptom -> Cause -> Fix
 
-### A link the user should see is missing
-- **Cause:** one of the three gates (`roles`, `permissions`,
-  `routeResolver`/`Route::has()`) is hiding it.
-- **Diagnose:** in `tinker`, `app(NavigationService::class)->build($user)`
-  and check the returned sections/items — the item is absent if any gate
-  failed.
-- **Fix:** confirm the item's `roles` matches the route's `role:`
-  middleware (RN40), that `permissions` (if set) the user actually holds,
-  and that the `route` name is registered
-  (`vendor/bin/sail artisan route:list --name=<name>`).
+### Link missing for user who should see it
+- **Cause:** one of three gates (`roles`, `permissions`, `routeResolver`/`Route::has()`) hides it.
+- **Diagnose:** in `tinker`, `app(NavigationService::class)->build($user)`, inspect returned sections/items.
+- **Fix:** item `roles` must match route `role:` middleware (RN40); user must hold any `permissions` set; `route` name must be registered (`vendor/bin/sail artisan route:list --name=<name>`).
 
-### A restricted link leaks to the wrong role (RN38/RN40)
-- **Cause:** the item's `roles` array includes a role the route's
-  middleware does not grant, OR a resolver returned a URL for a user who
-  should not have it.
-- **Fix:** narrow `roles` in `NavigationRegistry`. Add/extend the
-  regression in `tests/Feature/RoleMenuVisibilityTest.php` asserting the
-  URL is absent from the rendered HTML for that role.
+### Restricted link leaks to wrong role (RN38/RN40)
+- **Cause:** `roles` includes role the route middleware denies, or resolver returned URL for user who should not get it.
+- **Fix:** narrow `roles` in `NavigationRegistry`. Extend `tests/Feature/RoleMenuVisibilityTest.php` asserting URL absent from rendered HTML for that role.
 
-### The wrong item is highlighted (RF37)
-- **Cause:** `activePatterns` too broad (matching sibling routes) or too
-  narrow (missing the current sub-route).
-- **Fix:** adjust the wildcards; verify with
-  `tests/Unit/NavigationServiceTest::test_active_flag_*` (real
-  `Illuminate\Routing\Route` bound to the request).
+### Wrong item highlighted (RF37)
+- **Cause:** `activePatterns` too broad (matches siblings) or too narrow (misses current sub-route).
+- **Fix:** adjust wildcards. Verify with `tests/Unit/NavigationServiceTest::test_active_flag_*` (real `Illuminate\Routing\Route` bound to request).
 
-### A badge count is wrong / leaks across orgs (RN41)
-- **Cause:** the badge resolver is not org-scoped. `QuizAttempt` is scoped
-  via the `whereHas('quiz.lesson.module.course')` subquery; `ForumReport`
-  has NO `OrgScope` and MUST be filtered through `postable()` + the
-  `ForumTopicPolicy`/`ForumReplyPolicy` `view` gate (see
-  `navigation-architecture`).
-- **Fix:** mirror the scoping of the page the badge links to
-  (`EssayGradingController::pending()` / `ForumModerationController::index()`).
-  Add a two-org regression test like
-  `test_pending_forum_report_badge_never_leaks_another_orgs_reports`.
+### Badge count wrong / leaks across orgs (RN41)
+- **Cause:** resolver not org-scoped. `QuizAttempt` scopes via `whereHas('quiz.lesson.module.course')`. `ForumReport` has NO `OrgScope` — MUST filter through `postable()` + `ForumTopicPolicy`/`ForumReplyPolicy` `view` gate (see `navigation-architecture`).
+- **Fix:** mirror scoping of linked page (`EssayGradingController::pending()` / `ForumModerationController::index()`). Add two-org regression like `test_pending_forum_report_badge_never_leaks_another_orgs_reports`.
 
-### Dead `#` link reappears (RF36)
-- **Cause:** a route was renamed but `NavigationRegistry` still references
-  the old name, OR someone added a `Route::has(...) ? route(...) : '#'`
-  fallback in Blade.
-- **Fix:** update the registry's `route` to the new name and re-run
-  `tests/Feature/RoleMenuVisibilityTest::test_admin_menu_renders_all_admin_links_and_no_dead_hash`,
-  which asserts no `sidebar-item" href="#"` exists in the served HTML.
+### Dead `#` link back (RF36)
+- **Cause:** route renamed, registry still points at old name. Or someone added `Route::has(...) ? route(...) : '#'` in Blade.
+- **Fix:** update registry `route`. Re-run `tests/Feature/RoleMenuVisibilityTest::test_admin_menu_renders_all_admin_links_and_no_dead_hash` — asserts no `sidebar-item" href="#"` in served HTML.
 
 ## After Renaming a Route
 
-1. `grep -rn "<old-name>" app/Services/Navigation/ routes/web.php` —
-   update `NavigationRegistry` entries and `activePatterns`.
-2. Run `tests/Unit/NavigationServiceTest` (service-level route resolution)
-   and `tests/Feature/RoleMenuVisibilityTest` (rendered HTML parity).
-3. Update the relevant `tests/Browser/NavigationMenuDuskTest` selector if
-   the item's `key` changed.
+1. `grep -rn "<old-name>" app/Services/Navigation/ routes/web.php` — update registry entries and `activePatterns`.
+2. Run `tests/Unit/NavigationServiceTest` (route resolution) and `tests/Feature/RoleMenuVisibilityTest` (HTML parity).
+3. Update `tests/Browser/NavigationMenuDuskTest` selector if item `key` changed.
 
-## Test Files (extend these when adding an item)
+## Test Files (extend when adding item)
 
-| File | Layer | What it asserts |
+| File | Layer | Asserts |
 | --- | --- | --- |
-| `tests/Unit/NavigationServiceTest.php` | Service | Per-role visibility matrix, route resolution, badge counts (incl. cross-tenant), active-flag matching. |
-| `tests/Feature/NavigationComposerTest.php` | Composer | `NavigationComposer` injects `$navigationSections` / `$brandUrl` / login-logout URLs into the layout views. |
-| `tests/Feature/RoleMenuVisibilityTest.php` | Rendered HTML | No restricted URL leaks into the HTML for each role; no dead `#` link. |
-| `tests/Browser/NavigationMenuDuskTest.php` | E2E (Dusk) | Live DOM presence/absence of `@sidebar-{key}-link` per role + active class on a sub-route. |
+| `tests/Unit/NavigationServiceTest.php` | Service | Per-role visibility matrix, route resolution, badge counts (incl. cross-tenant), active flag. |
+| `tests/Feature/NavigationComposerTest.php` | Composer | Injects `$navigationSections` / `$brandUrl` / login-logout URLs into layout views. |
+| `tests/Feature/RoleMenuVisibilityTest.php` | HTML | No restricted URL leaks per role; no dead `#`. |
+| `tests/Browser/NavigationMenuDuskTest.php` | E2E | DOM presence/absence of `@sidebar-{key}-link` per role + active class on sub-route. |
 
-## Common Regressions to Watch
+## Regressions to Watch
 
-- Reintroducing imperative `@hasanyrole`/`route()` calls in the Blade
-  components (bypasses the service's access control).
-- A new badge resolver using an unscoped `->count()` on a model without
-  `OrgScope` (cross-tenant leak).
-- Forgetting to register the composer for a new layout component in
-  `AppServiceProvider::boot()`.
-- Narrowing `activePatterns` so a parent item loses its highlight on a
-  sub-route.
+- Imperative `@hasanyrole`/`route()` back in Blade components — bypasses service access control.
+- New badge resolver with unscoped `->count()` on model lacking `OrgScope` — cross-tenant leak.
+- Composer not registered for a new layout component in `AppServiceProvider::boot()`.
+- Narrowed `activePatterns` — parent loses highlight on sub-route.
+
+---
+
+## E2E Coverage Lives in Lifecycle Chains
+
+`tests/Browser/` groups by **user journey (lifecycle chain)** — one method drives create, edit, state change, delete, consequence. Not by module, spec, or use case.
+
+- **Find coverage**: chain methods may sit in a file named after another module when the journey crosses boundaries. Search `grep -rn "<route name|dusk selector>" tests/Browser/`, not by file name. Missing per-module file is **not** a gap.
+- **Add coverage**: extend the journey's chain with a numbered step carrying UI **and** DB assertion. New method only for independent negatives (403, cross-tenant, other actor). New file only for genuinely new journey.
+- **Debug**: stack trace points at a step — match line to its `// N.` comment. Late failure usually means earlier step did not persist.
+- **Database**: no DB trait in `tests/Browser/*`; `DatabaseTruncation` inherited from `Tests\DuskTestCase`. Re-adding `DatabaseMigrations` = suite-wide slowdown. Files, cache, session not reset between methods.
+
+Full rule: `testing-conventions`. Chain debug: `testing-maintenance`.

@@ -1,28 +1,28 @@
 ---
 name: validate-test-quality
 description: >-
-  Use when reviewing unit or feature tests, auditing test suites for fake assertions,
-  checking whether code coverage is meaningful, or verifying that tests validate real logic.
+  Use when review unit or feature tests, audit test suites for fake assertions,
+  check whether code coverage meaningful, or verify tests validate real logic.
 ---
 
 # Validate Test Quality
 
 ## Overview
 
-High code coverage can hide useless, tautological, or fake tests that pass without verifying business logic. Real test validation checks whether assertions verify genuine domain invariants, state changes, and error conditions, or if the test merely executes code for coverage metrics.
+High code coverage hide useless, tautological, fake tests that pass without verifying business logic. Real test validation check whether assertions verify genuine domain invariants, state changes, error conditions — or test merely execute code for coverage metrics.
 
 ## When to Use
 
-- When reviewing new or existing unit/feature tests for quality and efficacy.
-- When auditing code coverage to detect "fake assertions" or "coverage padding".
-- When verifying if a test will catch regressions when production code breaks.
-- Before accepting PRs or merging code that adds new tests.
+- Review new or existing unit/feature tests for quality and efficacy.
+- Audit code coverage to detect "fake assertions" or "coverage padding".
+- Verify test catch regressions when production code breaks.
+- Before accept PRs or merge code adding new tests.
 
 ---
 
 ## The 6 Pillars of Real Test Validation
 
-When auditing any test, evaluate it against these 6 pillars:
+Audit any test against these 6 pillars:
 
 ```
 ┌──────────────────────────────────────────────────────────┐
@@ -45,40 +45,40 @@ When auditing any test, evaluate it against these 6 pillars:
 ## Key Test Smells & Fake Assertion Patterns
 
 ### 1. Mocking the System Under Test (Self-Mocking)
-- ❌ **Anti-Pattern**: Mocking the class/method being tested, setting return values on the mock, and calling the mock.
-- 🐛 **Why It Fails**: 0% of production code executes. The test validates PHPUnit/Mockery, not application logic.
-- ✅ **Fix**: Instantiate concrete class. Mock external dependencies (APIs, repositories), not the SUT.
+- **Anti-Pattern**: Mock class/method being tested, set return values on mock, call mock.
+- **Why It Fails**: 0% of production code executes. Test validates PHPUnit/Mockery, not application logic.
+- **Fix**: Instantiate concrete class. Mock external dependencies (APIs, repositories), not SUT.
 
 ### 2. Tautological / Self-Referential Assertions
-- ❌ **Anti-Pattern**: Assertions true by logical necessity or repeating exact SUT formulas (`$this->assertTrue(true)`, `$this->assertEquals($val, $val)`, `assert(add(2, 3) === 2 + 3)`).
-- 🐛 **Why It Fails**: Passes regardless of whether production code is correct or broken.
-- ✅ **Fix**: Assert against expected hardcoded domain outcomes or verified contract schema.
+- **Anti-Pattern**: Assertions true by logical necessity, or repeating exact SUT formulas (`$this->assertTrue(true)`, `$this->assertEquals($val, $val)`, `assert(add(2, 3) === 2 + 3)`).
+- **Why It Fails**: Passes regardless of production code correct or broken.
+- **Fix**: Assert against expected hardcoded domain outcomes or verified contract schema.
 
 ### 3. Weak / Redundant Factory Assertions
-- ❌ **Anti-Pattern**: Asserting `$this->assertNotNull($instance)` or `$this->assertInstanceOf(User::class, $user)` immediately after calling `User::factory()->create()`.
-- 🐛 **Why It Fails**: Factories always return model instances or throw exceptions. Does not verify database persistence or business attributes.
-- ✅ **Fix**: Replace with `$this->assertDatabaseHas('users', ['id' => $user->id, 'email' => $email])`.
+- **Anti-Pattern**: Assert `$this->assertNotNull($instance)` or `$this->assertInstanceOf(User::class, $user)` right after `User::factory()->create()`.
+- **Why It Fails**: Factories always return model instances or throw exceptions. No proof of DB persistence or business attributes.
+- **Fix**: Replace with `$this->assertDatabaseHas('users', ['id' => $user->id, 'email' => $email])`.
 
 ### 4. Coverage Padding (Assertion-Free Execution)
-- ❌ **Anti-Pattern**: Executing complex controller or service methods without assertions, or wrapping execution in `try { ... } catch (\Exception $e) {}` with no assertions.
-- 🐛 **Why It Fails**: Increases coverage line count while providing zero safety.
-- ✅ **Fix**: Assert HTTP response status (`$response->assertOk()`), JSON structure, and database side effects.
+- **Anti-Pattern**: Execute complex controller or service methods with no assertions, or wrap execution in `try { ... } catch (\Exception $e) {}` with no assertions.
+- **Why It Fails**: Grows coverage line count, gives zero safety.
+- **Fix**: Assert HTTP response status (`$response->assertOk()`), JSON structure, DB side effects.
 
 ### 5. Happy-Path-Only Illusion (Missing Failure Paths)
-- ❌ **Anti-Pattern**: Test suite has 10 tests for successful operations, but zero tests for invalid validation inputs (422), unauthorized roles (403), or cross-tenant data access.
-- 🐛 **Why It Fails**: Bugs occur in edge cases and failure paths, not in ideal happy paths.
-- ✅ **Fix**: Require test coverage for authorization policy rejection, validation failure responses, and missing tenant context (`UnresolvedOrgContextException`).
+- **Anti-Pattern**: Suite has 10 tests for successful operations, zero for invalid validation inputs (422), unauthorized roles (403), cross-tenant data access.
+- **Why It Fails**: Bugs live in edge cases and failure paths, not ideal happy paths.
+- **Fix**: Require coverage for authorization policy rejection, validation failure responses, missing tenant context (`UnresolvedOrgContextException`).
 
 ### 6. Fragile / Over-Specified Mocking
-- ❌ **Anti-Pattern**: Asserting private internal method execution order (`$mock->expects($this->once())->method('internalHelper')`).
-- 🐛 **Why It Fails**: Breaks during safe code refactoring even when external behavior is preserved.
-- ✅ **Fix**: Test public API behavior, state changes, and return values.
+- **Anti-Pattern**: Assert private internal method execution order (`$mock->expects($this->once())->method('internalHelper')`).
+- **Why It Fails**: Breaks on safe refactor even when external behavior preserved.
+- **Fix**: Test public API behavior, state changes, return values.
 
 ---
 
-## 🚫 Mandatory Fail-Path & Negative-Path Testing
+## Mandatory Fail-Path & Negative-Path Testing
 
-A test suite that only verifies happy-paths provides **false confidence**. Real code quality and resilience are defined by how gracefully system components handle invalid inputs, unauthorized access, boundary violations, and exception triggers.
+Suite testing only happy-paths gives **false confidence**. Real quality and resilience defined by how system handles invalid inputs, unauthorized access, boundary violations, exception triggers.
 
 **Rule: Every feature, API endpoint, and domain service MUST have explicit tests tracking its fail-paths.**
 
@@ -97,7 +97,7 @@ Every feature test audit must verify coverage across these 6 negative scenarios:
 
 ### Comparison: Happy-Path Only vs Full Fail-Path Coverage
 
-#### ❌ Incomplete: Testing Happy-Path Only
+#### Incomplete: Testing Happy-Path Only
 ```php
 // ❌ INCOMPLETE: Only tests successful creation.
 test('gestor can create course', function () {
@@ -113,7 +113,7 @@ test('gestor can create course', function () {
 });
 ```
 
-#### ✅ Complete: Testing Happy-Path AND Every Fail-Path
+#### Complete: Testing Happy-Path AND Every Fail-Path
 ```php
 // ✅ 1. Happy-Path
 test('gestor can create course in their organization', function () { ... });
@@ -165,15 +165,52 @@ test('gestor cannot force course creation into another organization', function (
 
 ---
 
+## Auditing Lifecycle-Chained E2E Tests (Dusk)
+
+Browser tests in `tests/Browser/` grouped by **lifecycle chain** (one method drives create → edit → state change → delete → consequence), not by atomic scenario. **Chained E2E test is valid and preferred — do NOT flag it as "test doing too much"** — provided it satisfies checkpoint rule below. Rationale is cost: each Dusk method pays DB reset, WebDriver boot, login, navigation, so fragmenting a lifecycle multiplies wall-clock without adding coverage.
+
+### Checkpoint Rule (what makes a chain genuine)
+
+| Requirement | Verdict if missing |
+| :--- | :--- |
+| UI assertion after **every** step (`assertSee`/`assertSeeIn`/`waitForText`) | 🔴 Blind chain — a broken middle step is invisible until a later step happens to fail |
+| DB assertion (`assertDatabaseHas`/`assertDatabaseMissing`) after every step that **writes** | 🔴 Coverage padding — the chain executes lines without proving persistence |
+| Numbered step comments mapping line → step | 🟡 Accepted but hard to diagnose; request them |
+| Final-state assertion after `browse()` closes | 🟡 Recommended for the terminal state of the entity |
+| Independent negatives (403, cross-tenant, other actor) kept in **separate** methods | 🔴 If chained: failure origin is masked and the negative may never run because an earlier step failed |
+
+### New E2E-Specific Smells
+
+#### 7. Blind Chain (chained steps with no intermediate assertions)
+- **Anti-Pattern**: long `$browser->visit()->type()->press()->visit()->type()->press()` ribbon asserting only at very end.
+- **Why It Fails**: step that silently no-ops caught only if it happens to break later step; failure line points at wrong step.
+- **Fix**: assert UI + DB after each step, with numbered comments.
+
+#### 8. Atomic E2E Fragmentation (the inverse smell)
+- **Anti-Pattern**: four browser methods, each re-seeds, re-logins, re-navigates to perform one action of *same* entity lifecycle.
+- **Why It Fails**: pays fixed browser cost N times, never exercises real state transitions between steps (e.g. "deactivated user can no longer log in").
+- **Fix**: merge into one lifecycle chain, keeping every assertion from original methods.
+
+#### 9. Lost Assertions During Consolidation
+- **Anti-Pattern**: merge 4 atomic tests into chain, drop `assertDatabaseMissing`, multitenant negative, or validation-rejection assertion "because flow already covers it".
+- **Why It Fails**: consolidation reducing assertion count is silent coverage regression, invisible in line-coverage metrics.
+- **Fix**: when auditing consolidation diff, count assertions **before vs after** — chained method must contain union of originals' assertions.
+
+### Coverage Mapping Rule
+
+Use Case / spec scenario counts as covered when its assertions exist **somewhere in a chain**, even if that chain lives in a file named after a different module. Never require one test method (or one file) per use case or per module — require one *assertion set* per scenario.
+
+---
+
 
 ## Validation Workflow
 
 ### Step 1: Read Test & Identify System Under Test (SUT)
-Locate the actual class or route being tested. Check if concrete SUT code is invoked or if it is mocked.
+Locate actual class or route being tested. Check whether concrete SUT code invoked or mocked.
 
 ### Step 2: Mental Mutation Analysis ("The Devil's Advocate")
 Ask: *"If I invert an `if` condition, comment out a scope filter, or change a return value in the production code, will this test fail?"*
-- If the test still passes after production code is mutated -> **Fake / Blind Test**.
+- If test still passes after production code mutated -> **Fake / Blind Test**.
 
 ### Step 3: Audit Assertions & State Checks
 Ensure assertions verify:
@@ -185,7 +222,7 @@ Ensure assertions verify:
 
 ## Test Audit Report Format
 
-When reviewing tests, produce a structured evaluation report using this format:
+When reviewing tests, produce structured evaluation report in this format:
 
 ```markdown
 ### 🧪 Test Quality Audit Report

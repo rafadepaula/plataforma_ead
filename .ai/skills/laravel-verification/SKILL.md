@@ -1,28 +1,28 @@
 ---
 name: laravel-verification
-description: "Verification loop for Laravel projects: env checks, linting, static analysis, tests with coverage, security scans, and deployment readiness."
+description: "Verification loop for Laravel projects: env checks, linting, static analysis, tests with coverage, security scans, deployment readiness."
 metadata:
   origin: ECC
 ---
 
 # Laravel Verification Loop
 
-Run before PRs, after major changes, and pre-deploy.
+Run before PRs, after big changes, pre-deploy.
 
 ## When to Use
 
-- Before opening a pull request for a Laravel project
-- After major refactors or dependency upgrades
-- Pre-deployment verification for staging or production
-- Running full lint -> test -> security -> deploy readiness pipeline
+- Before open pull request for Laravel project
+- After big refactor or dependency upgrade
+- Pre-deployment check for staging or production
+- Run full lint -> test -> security -> deploy readiness pipeline
 
 ## How It Works
 
-- Run phases sequentially from environment checks through deployment readiness so each layer builds on the last.
-- Environment and Composer checks gate everything else; stop immediately if they fail.
-- Linting/static analysis should be clean before running full tests and coverage.
-- Security and migration reviews happen after tests so you verify behavior before data or release steps.
-- Build/deploy readiness and queue/scheduler checks are final gates; any failure blocks release.
+- Run phases in order, environment checks through deployment readiness. Each layer builds on last.
+- Environment and Composer checks gate everything else. Stop immediately if they fail.
+- Linting/static analysis clean before full tests and coverage.
+- Security and migration review after tests, so behavior verified before data or release steps.
+- Build/deploy readiness and queue/scheduler checks are final gates. Any failure blocks release.
 
 ## Phase 1: Environment Checks
 
@@ -32,11 +32,11 @@ composer --version
 php artisan --version
 ```
 
-- Verify `.env` is present and required keys exist
-- Confirm `APP_DEBUG=false` for production environments
-- Confirm `APP_ENV` matches the target deployment (`production`, `staging`)
+- Verify `.env` present, required keys exist
+- Confirm `APP_DEBUG=false` for production
+- Confirm `APP_ENV` matches target deployment (`production`, `staging`)
 
-If using Laravel Sail locally:
+Laravel Sail locally:
 
 ```bash
 ./vendor/bin/sail php -v
@@ -57,7 +57,7 @@ vendor/bin/pint --test
 vendor/bin/phpstan analyse
 ```
 
-If your project uses Psalm instead of PHPStan:
+Project uses Psalm instead of PHPStan:
 
 ```bash
 vendor/bin/psalm
@@ -85,13 +85,13 @@ XDEBUG_MODE=coverage php artisan test --coverage
 
 ## Phase 3.5: Laravel Dusk Browser Testing (E2E)
 
-When UI, frontend components, or browser interactions are modified, run end-to-end browser tests:
+UI, frontend components, or browser interactions modified: run E2E browser tests.
 
 ```bash
 php artisan dusk
 ```
 
-If using Laravel Sail locally:
+Laravel Sail locally:
 
 ```bash
 ./vendor/bin/sail artisan dusk
@@ -104,8 +104,8 @@ Filter specific Dusk tests:
 ./vendor/bin/sail artisan dusk tests/Browser/LoginTest.php
 ```
 
-- If a Dusk test fails, check failure artifacts in `tests/Browser/screenshots/` and `tests/Browser/console/`.
-- Ensure Chrome/Chromium drivers are updated (`php artisan dusk:chrome-driver`).
+- Dusk test fails, check failure artifacts in `tests/Browser/screenshots/` and `tests/Browser/console/`.
+- Keep Chrome/Chromium drivers updated (`php artisan dusk:chrome-driver`).
 
 
 ## Phase 4: Security and Dependency Checks
@@ -122,9 +122,9 @@ php artisan migrate:status
 ```
 
 - Review destructive migrations carefully
-- Ensure migration filenames follow `Y_m_d_His_*` (e.g., `2025_03_14_154210_create_orders_table.php`) and describe the change clearly
-- Ensure rollbacks are possible
-- Verify `down()` methods and avoid irreversible data loss without explicit backups
+- Migration filenames follow `Y_m_d_His_*` (e.g., `2025_03_14_154210_create_orders_table.php`) and describe change clearly
+- Rollbacks possible
+- Verify `down()` methods, avoid irreversible data loss without explicit backups
 
 ## Phase 6: Build and Deployment Readiness
 
@@ -135,9 +135,9 @@ php artisan route:cache
 php artisan view:cache
 ```
 
-- Ensure cache warmups succeed in production configuration
-- Verify queue workers and scheduler are configured
-- Confirm `storage/` and `bootstrap/cache/` are writable in the target environment
+- Cache warmups succeed in production config
+- Verify queue workers and scheduler configured
+- Confirm `storage/` and `bootstrap/cache/` writable in target environment
 
 ## Phase 7: Queue and Scheduler Checks
 
@@ -146,28 +146,28 @@ php artisan schedule:list
 php artisan queue:failed
 ```
 
-If Horizon is used:
+Horizon used:
 
 ```bash
 php artisan horizon:status
 ```
 
-If `queue:monitor` is available, use it to check backlog without processing jobs:
+`queue:monitor` available: use it to check backlog without processing jobs.
 
 ```bash
 php artisan queue:monitor default --max=100
 ```
 
-Active verification (staging only): dispatch a no-op job to a dedicated queue and run a single worker to process it (ensure a non-`sync` queue connection is configured).
+Active verification (staging only): dispatch no-op job to dedicated queue, run single worker to process it (needs non-`sync` queue connection configured).
 
 ```bash
 php artisan tinker --execute="dispatch((new App\\Jobs\\QueueHealthcheck())->onQueue('healthcheck'))"
 php artisan queue:work --once --queue=healthcheck
 ```
 
-Verify the job produced the expected side effect (log entry, healthcheck table row, or metric).
+Verify job produced expected side effect (log entry, healthcheck table row, or metric).
 
-Only run this on non-production environments where processing a test job is safe.
+Run only on non-production environments where processing test job is safe.
 
 ## Examples
 

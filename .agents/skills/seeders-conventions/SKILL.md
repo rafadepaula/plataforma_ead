@@ -1,9 +1,9 @@
 ---
 name: seeders-conventions
 description: >
-  Concrete code patterns, idempotency guidelines, event suppression rules, and
-  environment isolation standards for database seeders in Plataforma EAD. Use whenever
-  writing or updating Laravel Seeder classes in database/seeders/.
+  Code patterns, idempotency rules, event suppression, environment isolation
+  for seeders in Plataforma EAD. Use when writing or editing Seeder classes
+  in database/seeders/.
 license: MIT
 metadata:
   feature: seeders
@@ -16,7 +16,7 @@ metadata:
 
 ## Environment Isolation in DatabaseSeeder
 
-`DatabaseSeeder` MUST check `app()->environment('production')`. In production, only production-safe seeders (`RolesAndPermissionsSeeder`, `SystemSettingSeeder`, `AdminSeeder`) run. In non-production environments (`local`, `staging`, `testing`), the full suite of domain seeders runs.
+`DatabaseSeeder` MUST check `app()->environment('production')`. Production runs only safe seeders (`RolesAndPermissionsSeeder`, `SystemSettingSeeder`, `AdminSeeder`). Non-production (`local`, `staging`, `testing`) runs full domain suite.
 
 ```php
 if (app()->environment('production')) {
@@ -24,9 +24,9 @@ if (app()->environment('production')) {
 }
 ```
 
-## Idempotency via `firstOrCreate` and `updateOrCreate`
+## Idempotency: `firstOrCreate` / `updateOrCreate`
 
-Seeders MUST NEVER use `Model::create()` or raw `DB::table()->insert()` without checking existence. Every seeder call MUST use `firstOrCreate` or `updateOrCreate` keyed on natural unique identifiers (such as `email`, `slug`, `title`, or foreign key relationships).
+NEVER bare `Model::create()` or raw `DB::table()->insert()`. Every seeder write uses `firstOrCreate` or `updateOrCreate` keyed on natural unique identifier (`email`, `slug`, `title`, FK pair).
 
 ```php
 $org = Organization::firstOrCreate(
@@ -41,7 +41,7 @@ $org = Organization::firstOrCreate(
 
 ## Event Suppression (`Model::withoutEvents`)
 
-To prevent unwanted side-effects during seeding—such as sending real notifications, triggering audit log listeners (`AuditableTrait`), or dispatching email alerts—wrap Eloquent creation in `withoutEvents`:
+Stop side effects while seeding — real notifications, `AuditableTrait` listeners, mail alerts. Wrap creation:
 
 ```php
 User::withoutEvents(function () use ($acme): void {
@@ -57,9 +57,9 @@ User::withoutEvents(function () use ($acme): void {
 });
 ```
 
-## Multitenant Context & Explicit `org_id`
+## Explicit `org_id`
 
-Models protected by `OrgScope` or direct tenant association MUST receive an explicit `org_id` during seeding. Cascade-inherited models (`Module`, `Lesson`, `Quiz`, `QuizQuestion`, `QuizOption`, `QuizAttempt`, `QuizAnswer`) inherit `org_id` from their parent records.
+Models under `OrgScope` or direct tenant link MUST get explicit `org_id` when seeded. Cascade-inherited models (`Module`, `Lesson`, `Quiz`, `QuizQuestion`, `QuizOption`, `QuizAttempt`, `QuizAnswer`) inherit `org_id` from parent.
 
 ```php
 $course = Course::withoutGlobalScopes()->firstOrCreate(
@@ -74,7 +74,7 @@ $course = Course::withoutGlobalScopes()->firstOrCreate(
 
 ## Spatie Role Assignment
 
-Assign Spatie roles to seeded users only after checking if the role is already assigned, maintaining idempotency across repeated seeder runs:
+Check before assign — keeps re-runs idempotent:
 
 ```php
 if (! $user->hasRole(RolesEnum::GESTOR->value)) {

@@ -1,24 +1,24 @@
 ---
 name: basic-spec-implementer
-description: Understand a spec task from spec/specs/, tech-refine it against the current codebase, implement it TDD-first via the laravel-tdd RED-GREEN-REFACTOR cycle and the laravel-dusk skill for browser flows, using PHPUnit classes per project convention, verify the full suite, loop code-reviewer until clean, then check the module skills for staleness.
+description: Take spec task from spec/specs/, tech-refine against codebase, implement TDD-first with laravel-tdd RED-GREEN-REFACTOR cycle plus laravel-dusk skill for browser flows, PHPUnit classes per project convention, verify full suite, loop code-reviewer until clean, then check module skills for staleness.
 ---
 
 # Basic Spec Implementer (`basic-spec-implementer`)
 
 ## Overview
 
-`basic-spec-implementer` is an end-to-end specification task implementation skill. It takes a requirement from `spec/specs/` (e.g. `spec/specs/01-quizzes.md` or a specific task reference like `RF01`), performs deep technical analysis against the codebase, decomposes implementation into 3 parallel TDD work buckets using PHPUnit and Laravel Dusk, runs full test suite verification, loops automated code review with `code-reviewer`, and finishes by updating the module's skill triad per SPEC-03.
+`basic-spec-implementer` = end-to-end spec task implementation skill. Take requirement from `spec/specs/` (e.g. `spec/specs/01-quizzes.md` or task ref like `RF01`). Do deep technical analysis against codebase. Split implementation into 3 parallel TDD work buckets using PHPUnit and Laravel Dusk. Run full test suite verification. Loop automated code review with `code-reviewer`. Finish by updating module skill triad per SPEC-03.
 
 ---
 
 ## When to Use
 
-Use `basic-spec-implementer` whenever you are tasked with implementing a specification requirement from `spec/specs/`.
+Use `basic-spec-implementer` when task = implement spec requirement from `spec/specs/`.
 
 **Invocation Arguments**:
 
-- `specFile`: Path or filename of the spec in `spec/specs/` (e.g., `01-quizzes.md` or `spec/specs/01-quizzes.md`).
-- `taskRef`: (Optional) Specific requirement or task reference (e.g., `RF01` or `RF02`). If omitted, defaults to the entire spec file.
+- `specFile`: Path or filename of spec in `spec/specs/` (e.g., `01-quizzes.md` or `spec/specs/01-quizzes.md`).
+- `taskRef`: (Optional) Requirement or task ref (e.g., `RF01` or `RF02`). If omitted, defaults to whole spec file.
 
 ---
 
@@ -34,8 +34,8 @@ Use `basic-spec-implementer` whenever you are tasked with implementing a specifi
 
 ### Phase 1: Understand (`spec-understand-agent`)
 
-- **Objective**: Analyze the specification file and extract business rules, database impacts, acceptance criteria, and cross-spec dependencies.
-- **Constraint**: **Research pass ONLY**. Do NOT write, edit, or delete any code or tests.
+- **Objective**: Analyze spec file. Extract business rules, DB impacts, acceptance criteria, cross-spec dependencies.
+- **Constraint**: **Research pass ONLY**. Do NOT write, edit, delete any code or tests.
 - **Subagent**: Invoke `spec-understand-agent`.
 - **Inputs**: `specFile`, `taskRef`.
 - **Reference Docs**: Read `spec/specs/${SPEC_FILE}` in full, plus `spec/specs/00-architecture-database-and-guardrails.md` and `spec/specs/README.md`.
@@ -61,7 +61,7 @@ Use `basic-spec-implementer` whenever you are tasked with implementing a specifi
 
 ### Phase 2: Tech-Refine (`spec-tech-refine-agent`)
 
-- **Objective**: Study the current codebase state (migrations in `database/migrations`, models in `app/Models`, controllers/actions, routes, and existing tests) and design a technical plan split into **EXACTLY 3 independent work buckets**.
+- **Objective**: Study current codebase state (migrations in `database/migrations`, models in `app/Models`, controllers/actions, routes, existing tests). Design technical plan split into **EXACTLY 3 independent work buckets**.
 - **Subagent**: Invoke `spec-tech-refine-agent`.
 - **Inputs**: Phase 1 understanding metadata, `specFile`, `taskRef`.
 - **Guidelines**: Apply `laravel-best-practices` conventions (idiomatic Eloquent, form requests, policies, single-responsibility actions).
@@ -96,20 +96,22 @@ Use `basic-spec-implementer` whenever you are tasked with implementing a specifi
 
 ### Phase 3: Code (`spec-coder-agent` - Up to 3 Parallel Instances)
 
-- **Objective**: Implement the 3 work buckets concurrently using TDD and Dusk.
+- **Objective**: Implement 3 work buckets concurrently with TDD and Dusk.
 - **Subagents**: Invoke up to 3 parallel instances of `spec-coder-agent`, each assigned one bucket from Phase 2.
 - **Directives & Guardrails**:
-    1. **Strict Bucket Scoping**: Each agent touches ONLY the files listed for its bucket.
+    1. **Strict Bucket Scoping**: Each agent touches ONLY files listed for its bucket.
     2. **PHPUnit TDD Mandate**:
         - Apply `laravel-tdd` RED-GREEN-REFACTOR cycle.
         - **MUST write tests as PHPUnit test classes** (extending `Tests\TestCase`), NOT Pest function syntax (project CLAUDE.md mandates PHPUnit classes).
         - Write failing test method first (RED) → verify failure with `vendor/bin/sail artisan test --filter=testMethodName` → write minimal implementation (GREEN) → verify pass → refactor keeping tests green.
-        - Exception: View-only markup or simple configuration changes do not require RED test first.
+        - Exception: view-only markup or simple config changes need no RED test first.
     3. **Laravel Dusk for UI/Browser Flows**:
-        - For Blade views, JS interactions, or browser workflows (per spec 00 §5 mandatory Dusk coverage), use `laravel-dusk`.
+        - For Blade views, JS interactions, browser workflows (per spec 00 §5 mandatory Dusk coverage), use `laravel-dusk`.
         - Write PHPUnit-style Browser tests in `tests/Browser` (extending `DuskTestCase`).
-        - Use `DatabaseMigrations` or `DatabaseTruncation` traits in Dusk tests (**NEVER** `RefreshDatabase`, as Dusk runs in a separate HTTP process).
+        - **Group by lifecycle chain, not by module/use case**: before creating new Browser file, search `tests/Browser/` for chain already covering this journey and **extend it**. One method drives create → edit → state change → delete → consequence, with UI assertion **and** DB assertion per step (numbered `// 1.` step comments). Independent negatives (403, cross-tenant, other actor) stay in own methods. Full rule in `testing-conventions`.
+        - **No DB trait in test class** — `DatabaseTruncation` inherited from `Tests\DuskTestCase`. Adding `DatabaseMigrations` back = performance regression; `RefreshDatabase` forbidden (Dusk runs in separate HTTP process).
         - Explicit `waitFor` over fixed sleep/pause.
+        - Budget: ≤ 1 `loginAs()` per method; file with > ~6 methods signals fragmentation.
     4. **Formatting**:
         - Run `vendor/bin/sail bin pint --dirty --format agent` on all modified PHP files.
 
@@ -117,11 +119,11 @@ Use `basic-spec-implementer` whenever you are tasked with implementing a specifi
 
 ### Phase 4: Test (`spec-tester-agent`)
 
-- **Objective**: Execute full test suite, verify coverage, audit edge cases, and ensure no regressions.
+- **Objective**: Execute full test suite, verify coverage, audit edge cases, ensure no regressions.
 - **Subagent**: Invoke `spec-tester-agent`.
 - **Verification Checklists**:
     - `laravel-tdd` checklist: migrations, model relationships, controllers/API integration, validation, authorization, `RefreshDatabase` for Unit/Feature, factories used.
-    - `laravel-dusk` checklist: `DatabaseMigrations`/`DatabaseTruncation` used in Dusk, ChromeDriver updated (`vendor/bin/sail artisan dusk:chrome-driver --detect`), screenshots checked in `tests/Browser/screenshots` on failure.
+    - `laravel-dusk` checklist: no DB trait redeclared in `tests/Browser/*` (`grep -rn "DatabaseMigrations\|RefreshDatabase" tests/Browser/` must be empty), new browser coverage added as lifecycle chain rather than new atomic methods, ChromeDriver updated (`vendor/bin/sail artisan dusk:chrome-driver --detect`), screenshots checked in `tests/Browser/screenshots` on failure.
     - Audit `edgeCases` from Phase 2 plan; write any missing test.
 - **Commands**:
     ```bash
@@ -130,14 +132,14 @@ Use `basic-spec-implementer` whenever you are tasked with implementing a specifi
     vendor/bin/sail artisan dusk
     php scripts/check-coverage.php
     ```
-- **Reporting**: Report exact pass/fail counts per suite and coverage percentage. If anything fails, fix and re-run.
+- **Reporting**: Report exact pass/fail counts per suite plus coverage percentage. If anything fails, fix and re-run.
 
 ---
 
 ### Phase 5: Review (`code-reviewer`, `validate-test-quality`, `spec-usecase-test-checker`, & `spec-fixer-agent` Loop)
 
-- **Objective**: Conduct automated code review using `code-reviewer`, validate the quality and efficacy of implemented tests using `validate-test-quality`, revalidate Use Case E2E Dusk test coverage using `spec-usecase-test-checker`, fix confirmed issues with `spec-fixer-agent`, and iterate (capped at 6 iterations).
-- **Subagents / Skills**: Invoke `code-reviewer` and `spec-usecase-test-checker` agents and apply `validate-test-quality` skill rules.
+- **Objective**: Run automated code review with `code-reviewer`, validate quality and efficacy of implemented tests with `validate-test-quality`, revalidate Use Case E2E Dusk test coverage with `spec-usecase-test-checker`, fix confirmed issues with `spec-fixer-agent`, iterate (capped at 6 iterations).
+- **Subagents / Skills**: Invoke `code-reviewer` and `spec-usecase-test-checker` agents. Apply `validate-test-quality` skill rules.
 - **Output Schema (`REVIEW_SCHEMA`)**:
     ```json
     {
@@ -165,16 +167,16 @@ Use `basic-spec-implementer` whenever you are tasked with implementing a specifi
     }
     ```
 - **Review Loop Protocol**:
-    1. `code-reviewer` audits code diff using `laravel-best-practices`, `laravel-specialist`, `laravel-verification` (and tenancy skills if org-scoped).
-    2. **Test Quality Audit (`validate-test-quality`)**: Audit all implemented PHPUnit and Dusk tests against the 6 Pillars of Real Test Validation:
+    1. `code-reviewer` audits code diff using `laravel-best-practices`, `laravel-specialist`, `laravel-verification` (plus tenancy skills if org-scoped).
+    2. **Test Quality Audit (`validate-test-quality`)**: Audit all implemented PHPUnit and Dusk tests against 6 Pillars of Real Test Validation:
         - **SUT Integrity**: Real execution of concrete SUT (0% SUT mocking).
         - **Assertion Meaningfulness**: No tautological checks (`assertTrue(true)`) or weak factory checks (`assertNotNull`).
-        - **Mutation Resiliency**: Tests fail if production logic is mutated/broken.
-        - **State Verification**: Database values (`assertDatabaseHas`), JSON responses, and side-effects.
-        - **Mandatory Failure Paths**: Must cover 403 Forbidden, 422 Validation, Exception guards (`UnresolvedOrgContextException`), and cross-tenant data leaks.
+        - **Mutation Resiliency**: Tests fail if production logic mutated/broken.
+        - **State Verification**: DB values (`assertDatabaseHas`), JSON responses, side-effects.
+        - **Mandatory Failure Paths**: Must cover 403 Forbidden, 422 Validation, Exception guards (`UnresolvedOrgContextException`), cross-tenant data leaks.
         - **Refactor Resilience**: Tests outcomes and contract behavior, not internal helper method execution order.
-          _Any test quality defect, fake assertion, coverage padding, or missing failure path is recorded as a `CONFIRMED` finding._
-    3. **UseCase E2E Test Audit (`spec-usecase-test-checker`)**: Invoke `spec-usecase-test-checker` to inspect all Use Cases (UCs) associated with `${SPEC_FILE}` (from `spec/docs/usecases/` and `spec/specs/`) and revalidate in the codebase (`tests/Browser/`) whether **EVERY** Use Case has **AT LEAST ONE** E2E Laravel Dusk test capturing both success and failure/exception scenarios. Any missing Use Case Dusk test or missing scenario path is recorded as a `CONFIRMED` finding.
+          _Any test quality defect, fake assertion, coverage padding, or missing failure path recorded as `CONFIRMED` finding._
+    3. **UseCase E2E Test Audit (`spec-usecase-test-checker`)**: Invoke `spec-usecase-test-checker` to inspect all Use Cases (UCs) tied to `${SPEC_FILE}` (from `spec/docs/usecases/` and `spec/specs/`) and revalidate in codebase (`tests/Browser/`) whether **EVERY** Use Case has success and failure/exception scenarios asserted in E2E Laravel Dusk. Coverage counted **per assertion set, not per method or file**: UC covered when its steps asserted somewhere inside lifecycle chain, even if that chain lives in file named after another module. **Never** record "UC has no dedicated test method/file" as finding — only genuinely missing scenario path (no UI/DB assertion for it anywhere) is `CONFIRMED` finding.
     4. Filter findings where `verdict === "CONFIRMED"`.
     5. If 0 confirmed findings, break loop (clean review).
     6. If confirmed findings exist and iteration < 6:
@@ -196,7 +198,7 @@ Use `basic-spec-implementer` whenever you are tasked with implementing a specifi
         - `{module}-maintenance`
         - Create triad if missing, seeded from what was built.
     3. Audit existing skills against merged code (models, migrations, actions, policies, routes, business rules). Update any stale documentation.
-    4. Check if project-level skills (`laravel-tdd`, `laravel-dusk`) need narrow project-specific notes added (ONLY if a real gap was encountered).
+    4. Check if project-level skills (`laravel-tdd`, `laravel-dusk`) need narrow project-specific notes added (ONLY if real gap was encountered).
 - **Output Schema (`SKILL_CHECK_SCHEMA`)**:
     ```json
     {
@@ -226,7 +228,7 @@ Use `basic-spec-implementer` whenever you are tasked with implementing a specifi
 
 ---
 
-## 🛠️ Summary of Associated Subagents
+## Summary of Associated Subagents
 
 | Subagent                        | Phase   | Role                                                  |
 | :------------------------------ | :------ | :---------------------------------------------------- |
@@ -241,9 +243,10 @@ Use `basic-spec-implementer` whenever you are tasked with implementing a specifi
 
 ---
 
-## ⚠️ Core Conventions & Guardrails
+## Core Conventions & Guardrails
 
-- **PHP 8.5 & Laravel Sail**: Prefix all PHP, Artisan, Composer, and Pint commands with `vendor/bin/sail`.
+- **PHP 8.5 & Laravel Sail**: Prefix all PHP, Artisan, Composer, Pint commands with `vendor/bin/sail`.
 - **PHPUnit Over Pest**: Project `CLAUDE.md` mandates PHPUnit test classes (`class FooTest extends TestCase`). Never use Pest function syntax (`test(...)`).
-- **Laravel Dusk Isolation**: Dusk tests run in a separate HTTP process. Use `DatabaseMigrations` or `DatabaseTruncation` in Dusk tests. Never use `RefreshDatabase` in Dusk.
+- **Laravel Dusk Isolation**: Dusk tests run in separate HTTP process. `DatabaseTruncation` inherited from `Tests\DuskTestCase` — declare no DB trait in `tests/Browser/*`. Never use `RefreshDatabase` in Dusk; `DatabaseMigrations` retired (per-method `migrate:fresh`).
+- **E2E Grouping**: browser coverage organized by lifecycle chain (user journey), never by module/spec/use case. Extend existing chain before creating new test file.
 - **Pint Formatting**: Always format modified PHP files with `vendor/bin/sail bin pint --dirty --format agent`.

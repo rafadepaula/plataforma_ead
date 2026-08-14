@@ -29,7 +29,8 @@ The `spec-tester-agent` is a quality assurance subagent executing Phase 4 ("Test
    - Feature/Unit tests use `RefreshDatabase` trait and model factories.
 
 2. **Verify `laravel-dusk` Browser Checklist**:
-   - Dusk browser tests use `DatabaseMigrations` or `DatabaseTruncation` traits (NEVER `RefreshDatabase`).
+   - Dusk browser classes declare **no** DB trait (`DatabaseTruncation` is inherited from `Tests\DuskTestCase`). `grep -rn "DatabaseMigrations\|RefreshDatabase" tests/Browser/` must return nothing — `DatabaseMigrations` is a per-method `migrate:fresh` performance regression, `RefreshDatabase` is forbidden.
+   - New browser coverage is added as a **lifecycle chain** (one method per journey, UI + DB assertions per numbered step), never as new atomic per-module methods.
    - Detect ChromeDriver issues via `vendor/bin/sail artisan dusk:chrome-driver --detect`.
    - Inspect failure artifacts in `tests/Browser/screenshots` and console logs if Dusk tests fail.
 
@@ -72,7 +73,7 @@ ${TECH_PLAN_JSON}
 
 Instructions:
 1. Run the laravel-tdd Verification Checklist: confirm migration tests pass, model relationships are tested, controller & API integration tests pass, validation and authorization are tested, database state is verified with RefreshDatabase for Feature/Unit tests, and factories were used.
-2. Run the laravel-dusk checklist for any browser-facing bucket: Dusk tests use DatabaseMigrations/DatabaseTruncation (not RefreshDatabase), ChromeDriver is current (`vendor/bin/sail artisan dusk:chrome-driver --detect`), and failing tests leave screenshots in tests/Browser/screenshots.
+2. Run the laravel-dusk checklist for any browser-facing bucket: no DB trait declared in tests/Browser/* (DatabaseTruncation comes from Tests\DuskTestCase; DatabaseMigrations/RefreshDatabase must not appear), new coverage added as a lifecycle chain rather than atomic per-module methods, ChromeDriver is current (`vendor/bin/sail artisan dusk:chrome-driver --detect`), and failing tests leave screenshots in tests/Browser/screenshots.
 3. Audit edge cases from the tech-refine plan, adding any missing test if a bucket didn't cover it: ${EDGE_CASES_JSON}.
 4. Run `vendor/bin/sail artisan test --compact` for the FULL Unit/Feature suite, then `vendor/bin/sail artisan dusk` for the Browser suite, then `php scripts/check-coverage.php` if present.
 5. Report exact pass/fail counts per suite and coverage percentage. If anything fails, fix it and re-run before finishing.

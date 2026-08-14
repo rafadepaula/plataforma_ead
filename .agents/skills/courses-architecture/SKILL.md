@@ -1,13 +1,11 @@
 ---
 name: courses-architecture
 description: >
-  Explains the Courses/Modules/Lessons domain (SPEC-05): the
-  courses/modules/lessons/course_user schema, OrgScope-on-Course vs.
-  cascade-inherited Module/Lesson tenancy, the Course delete guard, and
-  publication-state visibility rules. Use whenever designing or reviewing a
-  feature that touches Course/Module/Lesson data, before adding a new
-  column/relation to any of the three tables, or when deciding how a Gestor
-  -facing action should be tenant-scoped.
+  Courses/Modules/Lessons domain (SPEC-05): courses/modules/lessons/course_user
+  schema, OrgScope-on-Course vs cascade-inherited Module/Lesson tenancy, Course
+  delete guard, publication-state visibility rules. Use when design or review
+  feature touching Course/Module/Lesson data, before add new column/relation to
+  any of three tables, or when decide how Gestor-facing action get tenant-scoped.
 license: MIT
 metadata:
   feature: courses
@@ -21,109 +19,104 @@ metadata:
 
 ## Overview
 
-RF06/RF07 give a Gestor (`role:gestor`) CRUD over their own Organization's
-Courses, and each Course's Modules and Lessons. Admin (`role:admin`) has the
-same abilities, scoped to whichever Organization it is currently
-impersonating (see `tenancy-architecture`'s Impersonate Org section) — an
-Admin with no active impersonation manages nothing here, it does not fall
-back to a "manage everything globally" mode for this domain.
+RF06/RF07 give Gestor (`role:gestor`) CRUD over own Organization's Courses, and
+each Course's Modules and Lessons. Admin (`role:admin`) same abilities, scoped
+to Organization it impersonate now (see `tenancy-architecture` Impersonate Org
+section). Admin with no active impersonation manage nothing here. No fallback to
+"manage everything globally" mode for this domain.
 
 ## Schema (SPEC-00 §2.1.4–2.1.6)
 
 | Table | Key columns | Tenancy |
 | --- | --- | --- |
 | `courses` | `org_id`, `title`, `description`, `workload_hours`, `is_published` | **Directly org-scoped** — `OrgScope` trait |
-| `course_user` (pivot) | `user_id`, `course_id`, `status` (`active`\|`cancelled`\|`completed`), `progress_percentage`, `enrolled_at`, `completed_at` | Not org-scoped — enrollment crosses orgs (see `tenancy-architecture`) |
+| `course_user` (pivot) | `user_id`, `course_id`, `status` (`active`\|`cancelled`\|`completed`), `progress_percentage`, `enrolled_at`, `completed_at` | Not org-scoped — enrollment cross orgs (see `tenancy-architecture`) |
 | `modules` | `course_id`, `title`, `description`, `order_index` | **Cascade-inherited** via `courses.org_id` — no own `org_id`, no `OrgScope` |
-| `lessons` | `module_id`, `title`, `type` (`content`\|`quiz`), `content_text`, `youtube_url`, `pdf_path`, `image_path`, `order_index`, `is_published` | **Cascade-inherited** via `modules` → `courses.org_id` |
+| `lessons` | `module_id`, `title`, `type` (`content`\|`quiz`), `content_text`, `youtube_url`, `pdf_path`, `image_path`, `order_index`, `is_published` | **Cascade-inherited** via `modules`, `courses.org_id` |
 
-All three (`courses`, `modules`, `lessons`) use `SoftDeletes` — every delete
-action in this feature is a soft-delete (`deleted_at`), never a hard
-`DELETE`. This matters most for `lessons`: `lesson_progress` (SPEC-07) must
-survive a Lesson/Module/Course being archived, so no controller/service in
-this feature may `forceDelete()` or cascade-purge `lesson_progress` — see
-"Soft-Delete, Never Purge" below.
+All three (`courses`, `modules`, `lessons`) use `SoftDeletes`. Every delete
+action here soft-delete (`deleted_at`), never hard `DELETE`. Matter most for
+`lessons`: `lesson_progress` (SPEC-07) must survive Lesson/Module/Course
+archived, so no controller/service here may `forceDelete()` or cascade-purge
+`lesson_progress`. See "Soft-Delete, Never Purge" below.
 
-## OrgScope on Course vs. Cascade-Inherited Module/Lesson
+## OrgScope on Course vs Cascade-Inherited Module/Lesson
 
-`Course` uses the `OrgScope` trait directly (see `tenancy-architecture`):
-every query is transparently filtered to the acting Gestor's `org_id` (or the
-Admin's impersonated org), and `Course::create()` auto-assigns `org_id` from
-the resolved tenant context, throwing `UnresolvedOrgContextException` if none
-resolves (e.g. an Admin creating a Course with no active Impersonate Org).
+`Course` use `OrgScope` trait directly (see `tenancy-architecture`): every query
+filtered to acting Gestor's `org_id` (or Admin's impersonated org), and
+`Course::create()` auto-assign `org_id` from resolved tenant context, throw
+`UnresolvedOrgContextException` if none resolve (example: Admin creating Course
+with no active Impersonate Org).
 
-`Module` and `Lesson` are **cascade-inherited**: they have no `org_id` column
-and must NOT get the `OrgScope` trait (see each model's docblock). Their
-tenant boundary is implied by `modules.course_id` → `courses.org_id` (and one
-level deeper for `lessons.module_id` → `modules.course_id` →
-`courses.org_id`). This has one important consequence:
+`Module` and `Lesson` **cascade-inherited**: no `org_id` column, must NOT get
+`OrgScope` trait (see each model docblock). Tenant boundary implied by
+`modules.course_id`, `courses.org_id` (and one level deeper for
+`lessons.module_id`, `modules.course_id`, `courses.org_id`). One important
+consequence:
 
-**Route-model-bound `{course}` is OrgScope-protected for free** (a Gestor
-hitting `/courses/{id}` for another org's course gets a 404 automatically,
-since `Course::find()` never sees the row). **Route-model-bound `{module}`/
-`{lesson}` are NOT protected the same way** — a Gestor guessing another org's
-module/lesson ID by URL *will* find the row (no scope filters it out), so
-`ModulePolicy`/`LessonPolicy` are the only enforcement point for that case.
-See `courses-conventions` for the exact pattern (`withoutGlobalScopes()` when
-reading the parent Course from inside a Policy — reading it through the
-normal scoped relation while acting as a different-org Gestor returns `null`
-instead of the real cross-tenant row, turning an intended 403 into a type
-error).
+**Route-model-bound `{course}` OrgScope-protected for free** (Gestor hitting
+`/courses/{id}` for other org's course get 404 automatically, since
+`Course::find()` never see row). **Route-model-bound `{module}`/`{lesson}` NOT
+protected same way** — Gestor guessing other org's module/lesson ID by URL *will*
+find row (no scope filter it out), so `ModulePolicy`/`LessonPolicy` only
+enforcement point for that case. See `courses-conventions` for exact pattern
+(`withoutGlobalScopes()` when read parent Course inside Policy — read through
+normal scoped relation while acting as different-org Gestor return `null`
+instead of real cross-tenant row, turn intended 403 into type error).
 
-## The Course Delete Guard
+## Course Delete Guard
 
-A Course may not be soft-deleted while it has at least one `course_user` row
-with `status = 'active'` — `Course::hasActiveEnrollments()` / the inverse
-`Course::canBeDeleted()` check exactly that (`cancelled`/`completed`
-enrollments never block deletion). This is enforced in **two places
-deliberately**, not duplicated by accident:
+Course may not soft-delete while it have at least one `course_user` row with
+`status = 'active'`. `Course::hasActiveEnrollments()` / inverse
+`Course::canBeDeleted()` check exactly that (`cancelled`/`completed` enrollments
+never block deletion). Enforced in **two places deliberately**, not duplicated by
+accident:
 
-1. `CoursePolicy::delete()` returns `false` when `hasActiveEnrollments()` is
-   true — so `Gate::authorize('delete', $course)` / `@can('delete',
-   $course)` already short-circuit with a plain 403 in the common case.
-2. `CourseController::destroy()` independently checks
-   `$course->hasActiveEnrollments()` and throws
-   `CourseHasActiveEnrollmentsException` (mapped to HTTP 422 with a
-   Portuguese message in `bootstrap/app.php`) — this is the defense-in-depth
-   path and the one the acceptance criteria's "422" language refers to.
+1. `CoursePolicy::delete()` return `false` when `hasActiveEnrollments()` true, so
+   `Gate::authorize('delete', $course)` / `@can('delete', $course)` already
+   short-circuit with plain 403 in common case.
+2. `CourseController::destroy()` independently check
+   `$course->hasActiveEnrollments()` and throw
+   `CourseHasActiveEnrollmentsException` (mapped to HTTP 422 with Portuguese
+   message in `bootstrap/app.php`). This defense-in-depth path, and one that
+   acceptance criteria "422" language refer to.
 
-Both checks read the same `Course::hasActiveEnrollments()` method — never
-duplicate the `wherePivot('status', 'active')->exists()` query elsewhere.
+Both checks read same `Course::hasActiveEnrollments()` method. Never duplicate
+`wherePivot('status', 'active')->exists()` query elsewhere.
 
 ## Soft-Delete, Never Purge
 
-Deleting a Course, Module, or Lesson only ever sets `deleted_at`. Do not add
-a `forceDelete()`/cascade-purge path anywhere in this feature's
-controllers/services: `lesson_progress` (SPEC-07) references `lesson_id` and
-must remain queryable (e.g. for a student's historical completion record)
-even after the Lesson's parent chain is archived.
+Deleting Course, Module, or Lesson only set `deleted_at`. Do not add
+`forceDelete()`/cascade-purge path anywhere in this feature's
+controllers/services: `lesson_progress` (SPEC-07) reference `lesson_id` and must
+stay queryable (example: student historical completion record) even after
+Lesson's parent chain archived.
 
 ## Publication-State Visibility (cross-ref SPEC-07)
 
-`courses.is_published` / `lessons.is_published` gate what an enrolled
-**Aluno** sees on the student-facing side (SPEC-07 owns that read path
-entirely). This feature (SPEC-05) only exposes the toggle in the
-Gestor-facing CRUD form — it does not itself filter any query by
-`is_published`, since every read here is already an authenticated
-Gestor/Admin managing their own content, not a student consuming it.
+`courses.is_published` / `lessons.is_published` gate what enrolled **Aluno** see
+on student-facing side (SPEC-07 own that read path entirely). This feature
+(SPEC-05) only expose toggle in Gestor-facing CRUD form. It not filter any query
+by `is_published` itself, since every read here already authenticated
+Gestor/Admin managing own content, not student consuming it.
 
-## `lessons.type = 'quiz'` Is a Placeholder Here
+## `lessons.type = 'quiz'` Is Placeholder Here
 
-SPEC-08 owns quiz question authoring. This feature's Lesson form only
-populates `type = content` rows (Rich Text / Imagem / PDF / YouTube — RF07's
-four kinds) — `quiz` exists as a schema value and a disabled/placeholder
-option in the UI, never a fully wired content path in this spec's scope. Do
-not add `content_text`/`youtube_url`/`pdf_path`/`image_path` population logic
-for `type = quiz` rows.
+SPEC-08 own quiz question authoring. This feature's Lesson form only populate
+`type = content` rows (Rich Text / Imagem / PDF / YouTube — RF07's four kinds).
+`quiz` exist as schema value and disabled/placeholder option in UI, never fully
+wired content path in this spec scope. Do not add
+`content_text`/`youtube_url`/`pdf_path`/`image_path` population logic for
+`type = quiz` rows.
 
 ## Related Specs
 
-- `spec/specs/05-courses-modules-and-content-management.md` — this
-  feature's full RF06/RF07 requirements.
-- `spec/specs/00-architecture-database-and-guardrails.md` §2.1.4–2.1.6 —
-  full column/index/`onDelete` definitions.
+- `spec/specs/05-courses-modules-and-content-management.md` — this feature's
+  full RF06/RF07 requirements.
+- `spec/specs/00-architecture-database-and-guardrails.md` §2.1.4–2.1.6 — full
+  column/index/`onDelete` definitions.
 - `tenancy-architecture` — `OrgScope`, `RolesEnum`, Impersonate Org.
-- `spec/specs/07-student-learning-experience-and-progress.md` (student
-  -facing course consumption, `lesson_progress`, publication visibility) and
-  `spec/specs/08-quizzes-and-evaluations-engine.md` (quiz authoring) — both
-  build on top of this feature's schema without modifying it.
+- `spec/specs/07-student-learning-experience-and-progress.md` (student-facing
+  course consumption, `lesson_progress`, publication visibility) and
+  `spec/specs/08-quizzes-and-evaluations-engine.md` (quiz authoring) — both build
+  on top of this feature's schema without modifying it.

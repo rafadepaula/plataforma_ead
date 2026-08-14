@@ -1,15 +1,15 @@
 ---
 name: laravel-tdd
-description: Test-Driven Development specifically for Laravel applications using Pest PHP. Use when implementing any Laravel feature or bugfix - write the test first, watch it fail, write minimal code to pass.
+description: TDD for Laravel apps with Pest PHP. Use when implement any Laravel feature or bugfix - write test first, watch it fail, write minimal code to pass.
 ---
 
 # Test-Driven Development for Laravel
 
 ## Overview
 
-Write the test first. Watch it fail. Write minimal code to pass.
+Write test first. Watch it fail. Write minimal code to pass.
 
-This skill adapts TDD principles specifically for Laravel applications using Pest PHP, Laravel's testing features, and framework-specific patterns.
+Skill adapts TDD to Laravel apps: Pest PHP, Laravel testing features, framework patterns.
 
 ## When to Use
 
@@ -17,16 +17,16 @@ This skill adapts TDD principles specifically for Laravel applications using Pes
 - New features (controllers, models, services)
 - Bug fixes
 - API endpoints
-- Database migrations and models
+- DB migrations and models
 - Form validation
 - Authorization policies
 - Queue jobs
 - Artisan commands
 - Middleware
 
-**Exceptions (ask your human partner):**
+**Exceptions (ask human partner):**
 - Throwaway prototypes
-- Configuration files
+- Config files
 - View-only changes (no logic)
 
 ## The Laravel TDD Cycle
@@ -37,7 +37,7 @@ RED → Verify RED → GREEN → Verify GREEN → REFACTOR → Repeat
 
 ### RED - Write Failing Test
 
-Write one minimal test showing what the Laravel feature should do.
+Write one minimal test showing what Laravel feature should do.
 
 **Feature Test Example:**
 ```php
@@ -69,7 +69,7 @@ php artisan test --filter=authenticated_user_can_create_post
 
 ### GREEN - Minimal Laravel Code
 
-Write simplest Laravel code to pass the test.
+Write simplest Laravel code to pass test.
 
 ### Verify GREEN - Watch It Pass
 
@@ -82,7 +82,7 @@ php artisan test
 After green only:
 - Extract services for complex logic
 - Create policies for authorization
-- Add query scopes for reusability
+- Add query scopes for reuse
 - Use events for side effects
 
 ## Laravel-Specific Test Patterns
@@ -127,7 +127,13 @@ test('creates post via API', function () {
 ```
 
 ### End-to-End (E2E) Browser Testing with Laravel Dusk
-For UI interactions, JavaScript frontend components, and complete browser workflows:
+For UI interactions, JavaScript frontend components, full browser workflows.
+
+**Project rule — TDD granularity differs by suite:**
+
+- **Unit/Feature: atomic.** One behavior per test method, RED-GREEN per behavior.
+- **Dusk/E2E: lifecycle chain.** RED step is **new numbered step appended to chain** covering that journey (create → edit → state change → delete → consequence), with own UI + DB assertions — not new atomic method, not new file per module. Only independent negatives (403, cross-tenant, other actor) get own method. Why: each browser method pays DB reset + WebDriver boot + login + navigation. See `testing-conventions` / `laravel-dusk`.
+- Dusk classes declare **no** DB trait. `DatabaseTruncation` inherited from `Tests\DuskTestCase`. `RefreshDatabase` forbidden there.
 
 ```php
 use Laravel\Dusk\Browser;
@@ -165,9 +171,10 @@ php artisan dusk
 - [ ] E2E Dusk browser tests pass for UI changes (`php artisan dusk`)
 - [ ] Validation rules tested
 - [ ] Authorization tested
-- [ ] Database state verified
+- [ ] DB state verified
 - [ ] All tests passing
-- [ ] Used RefreshDatabase / DatabaseMigrations
+- [ ] Used `RefreshDatabase` in Unit/Feature; Dusk classes declare no DB trait (`DatabaseTruncation` inherited from `Tests\DuskTestCase`)
+- [ ] New browser coverage added as lifecycle-chain step, not new atomic method
 - [ ] Used factories
 
 ## Remember
@@ -179,9 +186,9 @@ Otherwise → Not TDD
 
 ## Project Note: Plataforma EAD Uses PHPUnit Classes, Not Pest
 
-This repo's `CLAUDE.md` mandates PHPUnit test classes ("If you see a test
-using Pest, convert it to PHPUnit") — every example above written as
-`test('...', function () { ... })` must be translated to a PHPUnit method
+Repo `CLAUDE.md` mandates PHPUnit test classes ("If you see a test using Pest,
+convert it to PHPUnit"). Every example above written as
+`test('...', function () { ... })` must be translated to PHPUnit method
 before use here, e.g.:
 
 ```php
@@ -203,41 +210,40 @@ class LoginTest extends TestCase
 ```
 
 Generate new tests with `vendor/bin/sail artisan make:test --phpunit {Name}`
-(see `laravel/core rules`), and run the narrowest test with
-`vendor/bin/sail artisan test --compact --filter=testName` — not the bare
-`php artisan test` commands shown elsewhere in this skill (this project runs
-everything through Sail). This note is intentionally narrow: the RED→GREEN→
-REFACTOR cycle and Laravel-specific patterns above still apply, only the
-test syntax and runner prefix differ for this codebase.
+(see `laravel/core rules`). Run narrowest test with
+`vendor/bin/sail artisan test --compact --filter=testName` — not bare
+`php artisan test` commands shown elsewhere in this skill. This project runs
+everything through Sail. Note is narrow on purpose: RED→GREEN→REFACTOR cycle
+and Laravel patterns above still apply. Only test syntax and runner prefix
+differ for this codebase.
 
 ## Project Note: Resolve Constructor-Injected Actions From the Container, Never `new X()`
 
-This codebase's single-purpose Action classes (e.g. `SubmitQuizAttemptAction`,
-`GradeEssayAnswerAction`) commonly take other Actions/services as
-constructor-promoted dependencies rather than being plain zero-arg classes.
-A test that instantiates one directly (`new SubmitQuizAttemptAction()`)
-will RED with "Too few arguments" the moment a dependency is added to the
-constructor — and silently keep working right up until that refactor, so
-it's an easy trap to fall into early and only discover much later. Always
-resolve Actions under test from the container instead:
+This codebase single-purpose Action classes (e.g. `SubmitQuizAttemptAction`,
+`GradeEssayAnswerAction`) often take other Actions/services as
+constructor-promoted dependencies, not plain zero-arg classes.
+Test that instantiates one directly (`new SubmitQuizAttemptAction()`)
+REDs with "Too few arguments" moment dependency added to constructor — and
+silently keeps working right up until that refactor. Easy trap to fall into
+early, discovered much later. Always resolve Actions under test from container:
 
 ```php
 $action = app(SubmitQuizAttemptAction::class);
 ```
 
-This also exercises the real Laravel binding/resolution path (catching a
-missing service-container binding as a test failure, not a production
-surprise), which a bare `new` never does.
+Also exercises real Laravel binding/resolution path, catching missing
+service-container binding as test failure, not production surprise. Bare `new`
+never does.
 
 ## Project Note: Testing a "Mail Failure Must Not Roll Back the Transaction" Boundary
 
-Several modules (e.g. SPEC-13 notifications) wrap a `->notify()`/
+Several modules (e.g. SPEC-13 notifications) wrap `->notify()`/
 `Notification::send()` call site in `try/catch (Throwable) { Log::error(...) }`
-specifically so a mail transport failure never rolls back the DB write that
-already committed, nor 500s the request. `Mail::fake()`/`Notification::fake()`
-can't exercise this branch — they swallow the call instead of throwing. Use
-the `Notification` facade's own mock expectations to force the failure, and
-assert `Log::error()` was reached instead of a bubbled exception:
+so mail transport failure never rolls back DB write already committed, never
+500s request. `Mail::fake()`/`Notification::fake()` cannot exercise this branch
+— they swallow call instead of throwing. Use `Notification` facade own mock
+expectations to force failure. Assert `Log::error()` reached, not bubbled
+exception:
 
 ```php
 Log::shouldReceive('error')->once();
@@ -249,23 +255,22 @@ Notification::shouldReceive('send')->once()->andThrow(new \RuntimeException('SMT
 $this->assertDatabaseHas('course_user', [...]);
 ```
 
-See `tests/Feature/NotificationTriggersTest.php` for the full pattern
-(including the per-recipient variant, where `Notification::shouldReceive('send')`
-is asserted without `->once()` since it's called once per recipient in a loop).
+See `tests/Feature/NotificationTriggersTest.php` for full pattern
+(includes per-recipient variant, where `Notification::shouldReceive('send')`
+asserted without `->once()` since called once per recipient in loop).
 
 ## Project Note: A Fully-Mocked `Log` Facade Breaks When New Code Adds a `Log::channel(...)` Call
 
 Some existing tests (e.g. two in `tests/Feature/NotificationTriggersTest.php`)
-fully mock the `Log` facade (`Log::shouldReceive(...)` with no fallback) to
-assert on a specific log call. `AuditService::log()` (SPEC-15) unconditionally
-calls `Log::channel('audit')->info(...)` on every `AuditLog`-observed model
-mutation and every explicit audit call site — so any pre-existing test that
-fully mocks `Log` and then exercises code path that now also triggers an
-audit write (e.g. `IssueCertificateAction` via `AuditableTrait` on
-`Certificate`) will fail with an unexpected-call error, not because the
-test's own assertion is wrong, but because a new module started using the
-same facade. When adding a new `Log::channel(...)` call site to
-already-audited code, grep existing tests for `Log::shouldReceive`/
-`Log::spy` and add a matching `Log::shouldReceive('channel')->with('audit')->andReturnSelf()`
-(or equivalent) expectation rather than assuming the new call is invisible
-to old mocks.
+fully mock `Log` facade (`Log::shouldReceive(...)`, no fallback) to assert on
+specific log call. `AuditService::log()` (SPEC-15) unconditionally calls
+`Log::channel('audit')->info(...)` on every `AuditLog`-observed model mutation
+and every explicit audit call site. So any pre-existing test that fully mocks
+`Log` then exercises code path now also triggering audit write (e.g.
+`IssueCertificateAction` via `AuditableTrait` on `Certificate`) fails with
+unexpected-call error — not because test assertion wrong, but because new
+module started using same facade. When adding new `Log::channel(...)` call site
+to already-audited code, grep existing tests for `Log::shouldReceive`/
+`Log::spy` and add matching
+`Log::shouldReceive('channel')->with('audit')->andReturnSelf()`
+(or equivalent) expectation. Do not assume new call invisible to old mocks.

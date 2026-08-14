@@ -36,8 +36,10 @@ The `spec-coder-agent` is an implementation subagent executing Phase 3 ("Code") 
 3. **Browser Testing via Laravel Dusk**:
    - For UI, Blade views, JavaScript, or browser-facing workflows (per spec 00 §5 mandatory Dusk coverage), use `laravel-dusk`.
    - Write PHPUnit-style Browser tests in `tests/Browser` (extending `DuskTestCase`).
-   - Use `DatabaseMigrations` or `DatabaseTruncation` traits in Dusk tests (NEVER `RefreshDatabase`, as Dusk runs in a separate HTTP process).
+   - **Group by lifecycle chain, not by module/spec/use case.** Search `tests/Browser/` for the chain that already covers this journey and extend it before creating a new file. One method = create → edit → state change → delete → consequence, with a UI assertion AND a DB assertion per step, numbered `// 1.` step comments. Independent negatives (403, cross-tenant, other actor) stay in their own methods. Unit/Feature tests remain atomic.
+   - **Declare no DB trait** in the test class: `DatabaseTruncation` is inherited from `Tests\DuskTestCase`. `RefreshDatabase` is forbidden (Dusk runs in a separate HTTP process); `DatabaseMigrations` is retired (per-method `migrate:fresh` = performance regression).
    - Use explicit `waitFor` over fixed sleep/pause. Use `dusk="..."` selectors.
+   - Budget: ≤ 1 `loginAs()` per test method; reuse the session with `visit()`.
    - Run Dusk tests using Sail: `vendor/bin/sail artisan dusk`.
 
 4. **Code Formatting**:
@@ -77,7 +79,8 @@ Instructions:
    - Refactor (services, policies, scopes, events) keeping tests green.
 3. If this bucket touches Blade views, JS interactions, or any browser-facing flow (per spec 00 §5's mandatory Dusk coverage), use the laravel-dusk skill:
    - Write PHPUnit-style Browser test in tests/Browser (dusk selectors, explicit waitFor over pause).
-   - Use DatabaseMigrations or DatabaseTruncation trait — NEVER RefreshDatabase in a Dusk test.
+   - Group by LIFECYCLE CHAIN, not by module: extend the existing chain covering that journey; one method drives the whole lifecycle with UI + DB assertions per numbered step. Keep 403/cross-tenant negatives in separate methods.
+   - Declare NO database trait in the class — DatabaseTruncation is inherited from Tests\DuskTestCase. NEVER RefreshDatabase; do not re-add DatabaseMigrations.
    - Always prefix Dusk/artisan commands with `vendor/bin/sail`.
 4. Run `vendor/bin/sail bin pint --dirty --format agent` on any PHP files you touch before finishing.
 ```

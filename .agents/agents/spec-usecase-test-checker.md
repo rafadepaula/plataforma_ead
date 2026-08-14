@@ -29,6 +29,8 @@ The `spec-usecase-test-checker` is a specialized test coverage and spec-conforma
 2. **Audit Laravel Dusk Test Suite (`tests/Browser/`)**:
    - Search `tests/Browser/` for Dusk test classes (extending `DuskTestCase`).
    - Map existing Dusk tests to their corresponding Use Case IDs (e.g. `UC01`, `UC02`).
+   - **Coverage is counted per assertion set, not per method or per file.** Browser tests here are grouped by **lifecycle chain** (one method drives a whole user journey: create → edit → state change → delete → consequence), so a single method routinely covers several UCs, and a UC's scenarios may be split across chains living in files named after other modules. Read the chain **step by step** (numbered `// 1.` comments) and attribute each step's assertions to the UC scenario it satisfies.
+   - **Never** report "UC has no dedicated test method/file", "UC scenarios are mixed into one method", or "test file is not named after this module" as a gap — those are the intended convention (see `testing-conventions`). Only a scenario with **no UI/DB assertion anywhere** is a real gap.
    - Inspect Dusk test methods and assertions (`browse()`, `$browser->visit()`, `$browser->type()`, `$browser->press()`, `$browser->assertSee()`, `$browser->assertPresent()`, etc.) to confirm real E2E browser execution.
 
 3. **Revalidate Scenario Coverage**:
@@ -102,9 +104,10 @@ The agent MUST return structured output conforming to `USECASE_TEST_CHECK_SCHEMA
   vendor/bin/sail artisan dusk tests/Browser/PathToTest.php
   ```
 - **Guardrails**:
-  - Dusk tests MUST use `DatabaseMigrations` or `DatabaseTruncation` traits (**NEVER** `RefreshDatabase`).
+  - Dusk classes MUST declare **no** database trait — `DatabaseTruncation` is inherited from `Tests\DuskTestCase`. Flag any `DatabaseMigrations` (retired: per-method `migrate:fresh`) or `RefreshDatabase` (forbidden) found in `tests/Browser/*`.
   - Tests MUST be written as PHPUnit classes extending `DuskTestCase`.
-  - Revalidation must confirm at least 1 Dusk test per Use Case covering both success and failure scenarios.
+  - Revalidation must confirm every Use Case scenario (success and failure) has assertions somewhere in the browser suite — inside a lifecycle chain is expected and valid. Do not demand one test per UC.
+  - Flag chains that execute a step with **no intermediate UI/DB assertion** (blind chain) as a real gap for that scenario.
 
 ---
 
@@ -122,11 +125,10 @@ Instructions:
    - Main Success Flow (Fluxo Principal)
    - Alternative & Exception Flows (Fluxos Alternativos e de Exceção)
 3. Audit all Dusk test files under tests/Browser/.
-4. Revalidate for EACH Use Case:
-   - Is there at least 1 Dusk test in tests/Browser/?
-   - Are SUCCESS scenarios covered in Dusk?
-   - Are FAILURE/EXCEPTION scenarios covered in Dusk?
-5. Identify any missing Dusk tests or missing scenario paths.
+4. Revalidate for EACH Use Case, counting coverage per ASSERTION SET (not per method/file — tests are grouped by lifecycle chain and one method may cover several UCs, possibly in a file named after another module):
+   - Are SUCCESS scenarios asserted somewhere in tests/Browser/?
+   - Are FAILURE/EXCEPTION scenarios asserted somewhere in tests/Browser/?
+5. Identify missing scenario paths only. Do NOT report "no dedicated method/file per UC" or "scenarios chained together" as gaps — that is the convention. Do report chain steps that run with no UI/DB assertion.
 6. Return a JSON object strictly matching USECASE_TEST_CHECK_SCHEMA.
 ```
 

@@ -1,17 +1,15 @@
 ---
 name: bootstrap-conventions
 description: >
-  Concrete code patterns, snippets, and guardrails for writing Bootstrap 5.3
-  UI in the Plataforma EAD: the `$attributes->merge()` anonymous-component
-  wrapper pattern, the `<x-ui.*>` vs `<x-layout.*>` naming rule, the
-  forbidden-patterns list (no inline `style=`, no hand-rolled
-  modal/toast/dropdown JS, no Tailwind classes, no invented CSS class when a
-  Bootstrap utility exists), the `.is-invalid`/`.invalid-feedback` Laravel
-  validation pattern, the `dusk=` preservation rule, the
-  utility-first-then-component-class decision tree, and the exact SCSS
-  override block. Use whenever writing or migrating a Blade view, a
-  `<x-ui.*>`/`<x-layout.*>` component, a SCSS partial, or a JS module that
-  drives a Bootstrap widget.
+  Padrões e guardrails para escrever UI Bootstrap 5.3 na Plataforma EAD:
+  wrapper de componente anônimo com `$attributes->merge()`, regra de nome
+  `<x-ui.*>` vs `<x-layout.*>`, lista fechada de padrões proibidos (sem
+  `style=` inline, sem JS artesanal de modal/toast/dropdown, sem classe
+  Tailwind, sem classe CSS inventada onde existe utility), validação com
+  `.is-invalid`/`.invalid-feedback`, preservação de `dusk=`, árvore de
+  decisão utility-primeiro, bloco de override SCSS. Use ao escrever ou
+  migrar view Blade, componente `<x-ui.*>`/`<x-layout.*>`, partial SCSS ou
+  módulo JS que dirige widget Bootstrap.
 license: MIT
 metadata:
   feature: bootstrap
@@ -25,9 +23,7 @@ metadata:
 
 ## 1. Componente Blade anônimo que embrulha markup Bootstrap
 
-Todo componente de UI é um **componente anônimo** (só o `.blade.php`, sem classe
-PHP) em `resources/views/components/`. O padrão canônico tem 4 partes: `@props`,
-bloco `@php` que resolve as classes, `$attributes->merge()`, e slots.
+Todo componente de UI é **componente anônimo** (só `.blade.php`, sem classe PHP) em `resources/views/components/`. Padrão canônico = 4 partes: `@props`, bloco `@php` que resolve classes, `$attributes->merge()`, slots.
 
 ```blade
 {{-- resources/views/components/ui/button.blade.php --}}
@@ -71,22 +67,14 @@ bloco `@php` que resolve as classes, `$attributes->merge()`, e slots.
 @endif
 ```
 
-Regras do padrão:
+Regras:
 
-1. **`$attributes->merge(['class' => ...])` sempre**, nunca `class="{{ $classes }}"`
-   solto. `merge()` é o que permite a tela acrescentar utilities
-   (`<x-ui.button class="mt-3 w-100">`) e — crucialmente — o que faz o
-   `dusk="..."` passado pela tela chegar ao elemento renderizado.
-2. **Nunca** `$attributes->merge(['style' => ...])`. `style` não entra em
-   componente nenhum (ver §3).
-3. `@props` documenta a API do componente. Prop com valor default = opcional;
-   prop sem default (`'title'`) = obrigatória e falha ruidosamente se faltar.
-4. Variantes mapeam para **classes reais do Bootstrap** via `match()`. Se a
-   variante pedida não tem equivalente Bootstrap, a resposta é uma classe da
-   camada 3 do projeto — nunca um `style=`.
-5. Ordem das classes no `implode`: base → variante → tamanho → layout/utilities.
-6. Componente que embrulha um widget JS do Bootstrap emite os `data-bs-*`
-   **ele mesmo**; a tela nunca escreve `data-bs-toggle` à mão.
+1. **`$attributes->merge(['class' => ...])` sempre**, nunca `class="{{ $classes }}"` solto. `merge()` deixa a tela somar utilities (`<x-ui.button class="mt-3 w-100">`) e faz o `dusk="..."` da tela chegar ao elemento renderizado.
+2. **Nunca** `$attributes->merge(['style' => ...])`. `style` não entra em componente nenhum (ver §3).
+3. `@props` documenta a API. Prop com default = opcional; prop sem default (`'title'`) = obrigatória, falha ruidosamente.
+4. Variante mapeia para **classe real do Bootstrap** via `match()`. Sem equivalente Bootstrap, use classe da camada 3 — nunca `style=`.
+5. Ordem das classes no `implode`: base, variante, tamanho, layout/utilities.
+6. Componente que embrulha widget JS do Bootstrap emite os `data-bs-*` **ele mesmo**. Tela nunca escreve `data-bs-toggle` à mão.
 
 ### Modal (wrapper de `bootstrap.Modal`)
 
@@ -143,7 +131,7 @@ Regras do padrão:
 </div>
 ```
 
-Uso na tela — o gatilho é declarativo, sem uma linha de JS:
+Uso na tela — gatilho declarativo, zero JS:
 
 ```blade
 <x-ui.button variant="danger" data-bs-toggle="modal" data-bs-target="#confirm-delete"
@@ -169,62 +157,36 @@ Uso na tela — o gatilho é declarativo, sem uma linha de JS:
 
 | Namespace | Diretório | O que é | Critério objetivo |
 | :--- | :--- | :--- | :--- |
-| `<x-ui.*>` | `resources/views/components/ui/` | Widget reutilizável, sem conhecimento de rota, de papel (role) ou de sessão. Recebe tudo por prop. | Se você consegue renderizá-lo num teste isolado só passando props, é `ui`. |
-| `<x-layout.*>` | `resources/views/components/layout/` | Peça estrutural do chrome da aplicação, singular por página, ciente de `auth()`, `route()`, roles Spatie e `session('active_org_id')`. | Se ele chama `auth()->user()`, `request()->routeIs()` ou `@role`, é `layout`. |
+| `<x-ui.*>` | `resources/views/components/ui/` | Widget reutilizável. Não conhece rota, role nem sessão. Recebe tudo por prop. | Renderiza em teste isolado só com props = `ui`. |
+| `<x-layout.*>` | `resources/views/components/layout/` | Peça do chrome da aplicação, singular por página, ciente de `auth()`, `route()`, roles Spatie, `session('active_org_id')`. | Chama `auth()->user()`, `request()->routeIs()` ou `@role` = `layout`. |
 
 - `ui`: `button`, `card`, `modal`, `badge`, `input`, `select`, `textarea`,
   `checkbox`, `table`, `stat-card`, `icon`, `alert`, `toast`, `pagination`,
   `empty-state`, `tabs`, `dropdown`, `progress`, `avatar`, `breadcrumb`.
 - `layout`: `topbar`, `sidebar`, `footer`, `alerts` (container de flash),
   `page-header`.
-- Componentes de domínio que não são nem chrome nem widget genérico
-  (`<x-help-button>`) ficam na **raiz** de `components/`, como já é hoje.
-- Nomes de arquivo em `kebab-case`; nada de subpastas dentro de `ui/`.
+- Componente de domínio que não é chrome nem widget genérico (`<x-help-button>`) fica na **raiz** de `components/`, como hoje.
+- Arquivo em `kebab-case`. Sem subpasta dentro de `ui/`.
 
 ---
 
 ## 3. Padrões proibidos (lista fechada)
 
-Cada item abaixo é motivo de **rejeição** em review — sem discussão sobre gosto.
+Cada item = motivo de **rejeição** em review. Não é questão de gosto.
 
-1. **`style="..."` em qualquer view, componente ou layout.** Zero exceções em
-   `resources/views/`, com uma única ressalva: `certificates/pdf.blade.php`
-   (dompdf, ver `bootstrap-maintenance`) e valores genuinamente dinâmicos
-   computados em runtime (barra de progresso: `style="width: {{ $pct }}%"`) —
-   e mesmo esses preferem `.progress-bar` + `aria-valuenow`.
-   Verificação: `grep -rn 'style="' resources/views --include='*.blade.php'`.
-2. **JS artesanal de modal, toast ou dropdown.** Nada de `ModalManager`,
-   `NotificationService` artesanal, `document.addEventListener('click', …)` para
-   abrir menu. Use `bootstrap.Modal`, `bootstrap.Toast`, `bootstrap.Dropdown`, ou
-   os atributos `data-bs-*`.
-3. **Classes Tailwind.** `flex`, `grid`, `gap-4`, `text-sm`, `bg-white`,
-   `rounded-lg`, `px-4`, `hidden`, `space-y-*`, `w-full`. O Tailwind está morto no
-   projeto e será removido. Atenção às colisões: `gap-4` e `border` existem nos
-   dois mundos com semântica diferente; `d-none` (Bootstrap) ≠ `hidden`;
-   `w-100` (Bootstrap) ≠ `w-full`.
-4. **Classe CSS inventada onde existe utility do Bootstrap.** Não crie
-   `.mt-large`, `.flex-center`, `.text-muted-custom`. Use `mt-4`,
-   `d-flex align-items-center justify-content-center`, `text-body-secondary`.
-5. **Classes fantasma do sistema antigo.** `.btn-ghost`, `.btn-block`,
-   `.btn-icon`, `.dialog`, `.dialog-backdrop`, `.dialog-title`, `.tag-accent`,
-   `.tag-outline`, `.tag-neutral`, `.tag-accent-2`, `.field`, `.input`,
-   `.elev-sm|md|lg`. Nenhuma existe em CSS algum — são resíduo. Mapeamento em §4.
-6. **`var(--color-*)` em novo código.** As custom properties passam a ser output
-   de `_variables.scss`. Novo CSS usa `$variáveis` SCSS ou as
-   `--bs-*` do Bootstrap.
-7. **Hex hardcoded** em view ou em SCSS de componente. Só `_variables.scss`
-   contém literais de cor.
-8. **`border-radius` diferente de zero**, `rounded`, `rounded-*`, `rounded-pill`,
-   `rounded-circle`. O mandato Modernist é canto reto sistêmico. Exceção
-   única: `.rounded-circle` em avatar, **se e somente se** aprovado
-   explicitamente — por padrão, avatar é quadrado.
-9. **Bootstrap Icons / CDNs externos.** Ícones continuam sendo Lucide inline via
-   `<x-ui.icon name="..."/>`.
+1. **`style="..."` em view, componente ou layout.** Zero exceção em `resources/views/`, salvo `certificates/pdf.blade.php` (dompdf, ver `bootstrap-maintenance`) e valor genuinamente dinâmico em runtime (`style="width: {{ $pct }}%"`) — e mesmo esse prefere `.progress-bar` + `aria-valuenow`.
+   Checagem: `grep -rn 'style="' resources/views --include='*.blade.php'`.
+2. **JS artesanal de modal, toast ou dropdown.** Nada de `ModalManager`, `NotificationService` artesanal, `document.addEventListener('click', …)` para abrir menu. Use `bootstrap.Modal`, `bootstrap.Toast`, `bootstrap.Dropdown` ou os `data-bs-*`.
+3. **Classe Tailwind.** `flex`, `grid`, `gap-4`, `text-sm`, `bg-white`, `rounded-lg`, `px-4`, `hidden`, `space-y-*`, `w-full`. Tailwind está morto no projeto e será removido. Cuidado com colisão: `gap-4` e `border` existem nos dois mundos com semântica diferente; `d-none` (Bootstrap) ≠ `hidden`; `w-100` ≠ `w-full`.
+4. **Classe CSS inventada onde existe utility.** Nada de `.mt-large`, `.flex-center`, `.text-muted-custom`. Use `mt-4`, `d-flex align-items-center justify-content-center`, `text-body-secondary`.
+5. **Classe fantasma do sistema antigo.** `.btn-ghost`, `.btn-block`, `.btn-icon`, `.dialog`, `.dialog-backdrop`, `.dialog-title`, `.tag-accent`, `.tag-outline`, `.tag-neutral`, `.tag-accent-2`, `.field`, `.input`, `.elev-sm|md|lg`. Nenhuma existe em CSS algum — resíduo. Mapeamento em §4.
+6. **`var(--color-*)` em código novo.** Custom properties viraram output de `_variables.scss`. CSS novo usa `$variáveis` SCSS ou `--bs-*`.
+7. **Hex hardcoded** em view ou SCSS de componente. Só `_variables.scss` tem literal de cor.
+8. **`border-radius` diferente de zero**, `rounded`, `rounded-*`, `rounded-pill`, `rounded-circle`. Mandato Modernist = canto reto sistêmico. Exceção única: `.rounded-circle` em avatar, **só** com aprovação explícita. Padrão: avatar quadrado.
+9. **Bootstrap Icons / CDN externo.** Ícone continua Lucide inline via `<x-ui.icon name="..."/>`.
 10. **`!important`** fora de `.org-logo` (exceção histórica documentada).
 11. **`<table>` sem `.table-responsive`** no wrapper.
-12. **Markup Bootstrap cru numa tela** quando existe (ou deveria existir) um
-    `<x-ui.*>` para ele — ver mandato de componentização em
-    `bootstrap-architecture`.
+12. **Markup Bootstrap cru em tela** quando existe (ou deveria existir) um `<x-ui.*>` — ver mandato de componentização em `bootstrap-architecture`.
 
 ---
 
@@ -255,15 +217,13 @@ Cada item abaixo é motivo de **rejeição** em review — sem discussão sobre 
 | `style="text-align:left"` | `text-start` |
 | `style="filter: grayscale(1)"` | `grayscale` (classe do projeto, camada 3) |
 
-Escala de espaçamento do Bootstrap (com `$spacer: 1rem`): `1`=4px, `2`=8px,
-`3`=12px, `4`=16px, `5`=24px — configurável em `_variables.scss` para casar com
-`--space-*` do Modernist (4/8/12/16/24/32). Ver §7.
+Escala de espaçamento (com `$spacer: 1rem`): `1`=4px, `2`=8px, `3`=12px, `4`=16px, `5`=24px. Configurável em `_variables.scss` para casar com `--space-*` do Modernist (4/8/12/16/24/32). Ver §7.
 
 ---
 
 ## 5. Árvore de decisão: utility primeiro, classe de componente depois
 
-Ao precisar de um estilo, percorra nesta ordem e **pare no primeiro que resolve**:
+Precisa de estilo? Percorra nesta ordem, **pare no primeiro que resolve**:
 
 ```
 1. Existe utility do Bootstrap?            → use (d-flex, mb-3, text-primary, gap-2)
@@ -279,16 +239,13 @@ Ao precisar de um estilo, percorra nesta ordem e **pare no primeiro que resolve*
                                               design faltando; escale, não improvise.
 ```
 
-Regra prática: **mais de 5 classes utilitárias no mesmo elemento repetidas em mais
-de uma tela** = componente faltando. **Menos de 3 utilities** = nunca vale uma
-classe nova.
+Regra prática: **mais de 5 utilities no mesmo elemento, repetidas em mais de uma tela** = componente faltando. **Menos de 3 utilities** = nunca vale classe nova.
 
 ---
 
 ## 6. Validação Laravel: `.is-invalid` + `.invalid-feedback`
 
-Padrão único para todo campo de formulário do sistema. O componente resolve o
-estado de erro sozinho a partir de `$errors`; a tela só passa `name`.
+Padrão único para todo campo do sistema. Componente resolve o erro sozinho a partir de `$errors`; tela só passa `name`.
 
 ```blade
 {{-- resources/views/components/ui/input.blade.php --}}
@@ -338,44 +295,25 @@ estado de erro sozinho a partir de `$errors`; a tela só passa `name`.
 
 Regras:
 
-- `.invalid-feedback` só aparece quando o input irmão imediatamente anterior tem
-  `.is-invalid` — é regra de CSS do Bootstrap (`.is-invalid ~ .invalid-feedback`).
-  Portanto **não** envolva o input num `<div>` extra entre ele e o feedback.
-- `dusk="error-{campo}"` é o contrato de teste para asserção de erro de validação.
-- Para `<select>`: mesma lógica com `.form-select is-invalid`.
-- Para checkbox/radio: `.form-check-input is-invalid` + `.invalid-feedback` dentro
-  do `.form-check`.
-- Erros vindos de resposta JSON (fluxos AJAX: `CsvImporter`, `SmartInvitationForm`)
-  aplicam `.is-invalid` via JS no campo e escrevem o texto no
-  `.invalid-feedback` correspondente — nunca criam markup de erro novo.
-- Nunca usar `<x-ui.alert>` para erro de campo; alert é para erro de formulário
-  inteiro / flash de sessão.
+- `.invalid-feedback` só aparece quando o input irmão imediatamente anterior tem `.is-invalid` — regra CSS do Bootstrap (`.is-invalid ~ .invalid-feedback`). **Não** ponha `<div>` extra entre input e feedback.
+- `dusk="error-{campo}"` = contrato de teste para asserção de erro.
+- `<select>`: mesma lógica com `.form-select is-invalid`.
+- checkbox/radio: `.form-check-input is-invalid` + `.invalid-feedback` dentro do `.form-check`.
+- Erro vindo de JSON (AJAX: `CsvImporter`, `SmartInvitationForm`) aplica `.is-invalid` via JS no campo e escreve o texto no `.invalid-feedback` existente. Nunca cria markup de erro novo.
+- Nunca `<x-ui.alert>` para erro de campo. Alert é para erro de formulário inteiro ou flash de sessão.
 
 ---
 
 ## 7. O bloco exato de override SCSS
 
-> **ATENÇÃO — o bloco abaixo é o ESBOÇO original, não o código em produção.**
-> A implementação real vive em **`resources/scss/app.scss`** (`_variables.scss`
-> nunca foi criado) e diverge em três pontos que mudam o que você escreve na
-> Blade:
+> **ATENÇÃO — bloco abaixo é o ESBOÇO original, não o código em produção.**
+> Implementação real vive em **`resources/scss/app.scss`** (`_variables.scss` nunca foi criado) e diverge em três pontos que mudam o que você escreve na Blade:
 >
-> 1. **`$spacers` é o mapa PADRÃO do Bootstrap** (`0..5`, `$spacer: 1rem`)
->    mesclado com as chaves `1x 2x 3x 4x 6x 8x` (4/8/12/16/24/32px).
->    Escala numérica: `1`=4px, `2`=8px, `3`=**16px**, `4`=**24px**, `5`=48px —
->    e **`p-6`/`g-6` não existem**. Para valores exatos do Modernist use as
->    chaves `x`: 12px = `gap-3x`, 16px = `mb-4x`, 24px = `mt-6x`, 32px = `p-8x`.
->    Nunca assuma que `mb-4` vale 16px; vale 24px.
-> 2. **Superfície é `--bs-tertiary-bg`**: o projeto define
->    `$body-tertiary-bg: $modernist-surface`. Para `--color-surface` use
->    **`bg-body-tertiary`**, não `bg-body-secondary`.
-> 3. **`$success: $modernist-accent`** (vermelho) por mandato Modernist, e
->    `$danger: $modernist-accent-2`. `alert-success` e `alert-danger` são dois
->    vermelhos próximos — não conte com verde/vermelho para diferenciar estado.
+> 1. **`$spacers` é o mapa PADRÃO do Bootstrap** (`0..5`, `$spacer: 1rem`) mesclado com as chaves `1x 2x 3x 4x 6x 8x` (4/8/12/16/24/32px). Escala numérica: `1`=4px, `2`=8px, `3`=**16px**, `4`=**24px**, `5`=48px. **`p-6`/`g-6` não existem.** Valor exato do Modernist usa chave `x`: 12px = `gap-3x`, 16px = `mb-4x`, 24px = `mt-6x`, 32px = `p-8x`. `mb-4` vale 24px, não 16px.
+> 2. **Superfície é `--bs-tertiary-bg`**: o projeto define `$body-tertiary-bg: $modernist-surface`. Para `--color-surface` use **`bg-body-tertiary`**, não `bg-body-secondary`.
+> 3. **`$success: $modernist-accent`** (vermelho) por mandato Modernist, e `$danger: $modernist-accent-2`. `alert-success` e `alert-danger` são dois vermelhos próximos — não use verde/vermelho para diferenciar estado.
 >
-> Antes de usar qualquer degrau de espaçamento ou token de cor, confira em
-> `resources/scss/app.scss`. O bloco a seguir fica como registro da intenção
-> de design:
+> Confira `resources/scss/app.scss` antes de usar degrau de espaçamento ou token de cor. Bloco abaixo fica como registro da intenção de design:
 
 ```scss
 // =====================================================================
@@ -511,26 +449,18 @@ $input-focus-border-color: $primary;
 }
 ```
 
-> **`$enable-rounded: false` é o guardrail mais importante do arquivo.** Ele
-> remove `border-radius` de *todo* componente do Bootstrap de uma vez, tornando
-> impossível um canto arredondado escapar por um componente que ninguém revisou.
+> **`$enable-rounded: false` é o guardrail mais importante do arquivo.** Remove `border-radius` de *todo* componente do Bootstrap de uma vez. Nenhum canto arredondado escapa por componente não revisado.
 
 ---
 
 ## 8. Preservação de `dusk=`
 
-Regra absoluta durante qualquer migração de markup:
+Regra absoluta em qualquer migração de markup:
 
 1. **Nunca** renomear, remover ou duplicar um `dusk="..."`.
-2. O atributo acompanha o **elemento semanticamente equivalente**: o `dusk` de um
-   `<button>` vai para o `<button>` novo; o de um container de lista vai para o
-   novo container de lista — não para o card interno.
-3. Quando o `dusk` estava num elemento que a estrutura Bootstrap elimina (ex.:
-   o `div.dialog-backdrop` do modal antigo), mova-o para o elemento Bootstrap de
-   papel equivalente (`div.modal`) e **registre isso no receipt** da migração.
-4. Componentes propagam `dusk` automaticamente porque usam
-   `$attributes->merge()`. Se um componente construir `class` sem `merge()`, o
-   `dusk` some silenciosamente — este é o modo de falha nº 1 da migração.
+2. Atributo acompanha o **elemento semanticamente equivalente**: `dusk` de `<button>` vai para o `<button>` novo; de container de lista vai para o novo container, não para o card interno.
+3. `dusk` em elemento que a estrutura Bootstrap elimina (ex.: `div.dialog-backdrop` do modal antigo) migra para o elemento de papel equivalente (`div.modal`) e **entra no receipt** da migração.
+4. Componente propaga `dusk` sozinho porque usa `$attributes->merge()`. Componente que monta `class` sem `merge()` perde o `dusk` em silêncio — modo de falha nº 1 da migração.
 5. Antes/depois obrigatório em cada arquivo migrado:
    ```bash
    git show HEAD:resources/views/x.blade.php | grep -o 'dusk="[^"]*"' | sort > /tmp/before.txt
@@ -547,24 +477,16 @@ Regra absoluta durante qualquer migração de markup:
   import * as bootstrap from 'bootstrap';
   window.bootstrap = bootstrap;
   ```
-- Para obter uma instância, **sempre** `getOrCreateInstance` (nunca `new` direto —
-  `new` num elemento já inicializado por `data-bs-toggle` cria duas instâncias e
-  duplica backdrops):
+- Instância: **sempre** `getOrCreateInstance`, nunca `new` direto. `new` em elemento já inicializado por `data-bs-toggle` cria duas instâncias e duplica backdrop:
   ```js
   const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('confirm-delete'));
   modal.show();
   ```
-- Prefira **markup declarativo** (`data-bs-toggle`/`data-bs-target`) e só recorra
-  à API imperativa quando o modal for aberto como resultado de uma resposta AJAX.
-- Eventos do ciclo de vida: `shown.bs.modal`, `hidden.bs.modal`,
-  `hidden.bs.toast`. Faça limpeza de estado em `hidden.bs.modal`, não em `click`.
-- `window.NotificationService` mantém a fachada existente
-  (`success(msg)`, `error(msg)`, `info(msg)`) reimplementada sobre
-  `bootstrap.Toast`, porque 6 módulos a recebem por injeção. **Não mude a
-  assinatura pública de nenhum módulo durante a migração.**
-- Toasts vivem num único container fixo renderizado por `<x-layout.alerts>`:
+- Prefira **markup declarativo** (`data-bs-toggle`/`data-bs-target`). API imperativa só quando o modal abre por resposta AJAX.
+- Eventos de ciclo de vida: `shown.bs.modal`, `hidden.bs.modal`, `hidden.bs.toast`. Limpeza de estado em `hidden.bs.modal`, não em `click`.
+- `window.NotificationService` mantém a fachada (`success(msg)`, `error(msg)`, `info(msg)`) reimplementada sobre `bootstrap.Toast` — 6 módulos a recebem por injeção. **Não mude assinatura pública de módulo durante a migração.**
+- Toast vive em um único container fixo renderizado por `<x-layout.alerts>`:
   ```html
   <div class="toast-container position-fixed bottom-0 end-0 p-3" id="notification-container"></div>
   ```
-  O id `#notification-container` é preservado porque `NotificationService` e
-  testes Dusk dependem dele.
+  Id `#notification-container` preservado — `NotificationService` e testes Dusk dependem dele.

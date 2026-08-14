@@ -1,21 +1,21 @@
 ---
 name: create-pull-request
 description: >-
-  Use when asked to create a GitHub Pull Request (PR), generate a PR description
-  from code changes, or open a PR for specified files and feature intent.
+  Use when asked to create GitHub Pull Request (PR), generate PR description
+  from code changes, or open PR for specified files and feature intent.
 ---
 
 # Create Pull Request
 
 ## Overview
 
-Creating a high-quality Pull Request requires combining the **task intent** with an **exact inspection of code changes (diff)**. This skill guides the step-by-step process of studying changes, analyzing technical and architectural impact, writing a comprehensive reviewer-focused PR description, and executing `gh pr create` safely.
+Good Pull Request combine **task intent** with **exact inspection of code changes (diff)**. This skill guide step-by-step: study changes, analyze technical and architectural impact, write reviewer-focused PR description, run `gh pr create` safely.
 
 ## When to Use
 
-- When the user asks to open/create a GitHub Pull Request for changed files.
-- When given specific files and a task intent to submit for code review.
-- When preparing a PR description that requires structured technical breakdown and reviewer guidance.
+- User asks to open/create GitHub Pull Request for changed files.
+- Given specific files plus task intent to submit for code review.
+- Preparing PR description needing structured technical breakdown and reviewer guidance.
 
 ---
 
@@ -56,11 +56,11 @@ Creating a high-quality Pull Request requires combining the **task intent** with
 
 ### Step 1: Parse Inputs & Inspect Code Changes
 
-1. **Identify Task Intent**: Review the provided task objective (e.g., issue description, feature requirement, or bug fix goal).
+1. **Identify Task Intent**: Review provided task objective (issue description, feature requirement, or bug fix goal).
 2. **Inspect Changed Files**:
-   - Run `git status` or inspect the provided file list.
-   - **MANDATORY**: Run `git diff HEAD -- <files>` or read the files directly to inspect exact changes line-by-line.
-   - Do NOT summarize from assumptions or high-level descriptions alone; verify the actual code edits.
+   - Run `git status` or inspect provided file list.
+   - **MANDATORY**: Run `git diff HEAD -- <files>`, or read files directly, to inspect exact changes line-by-line.
+   - Do NOT summarize from assumptions or high-level descriptions alone; verify actual code edits.
 
 ```bash
 # Example diff command for specified files
@@ -71,11 +71,11 @@ git diff HEAD -- app/Models/User.php tests/Feature/TenantUserTest.php
 
 ### Step 2: Verify Git & Remote Branch State
 
-Before invoking `gh pr create`, ensure the repository and branch states are ready:
+Before running `gh pr create`, make repository and branch states ready:
 
-1. **Branch Check**: Verify current branch is not `main`/`master` (`git branch --show-current`).
-2. **Uncommitted Changes**: Ensure all target changes are committed.
-3. **Push to Remote**: Ensure the local branch is pushed to remote origin.
+1. **Branch Check**: Verify current branch not `main`/`master` (`git branch --show-current`).
+2. **Uncommitted Changes**: All target changes committed.
+3. **Push to Remote**: Local branch pushed to remote origin.
 
 ```bash
 # Push branch to remote if not already pushed
@@ -86,7 +86,7 @@ git push -u origin $(git branch --show-current)
 
 ### Step 3: Build the PR Description
 
-Write the PR description to a temporary file (`/tmp/pr_description.md`) to avoid bash escaping corruption.
+Write PR description to temp file (`/tmp/pr_description.md`) to avoid bash escaping corruption.
 
 #### PR Description Template
 
@@ -96,7 +96,7 @@ Write the PR description to a temporary file (`/tmp/pr_description.md`) to avoid
 - **Task / Issue Reference**: <Reference issue/task ID if provided, e.g., #123>
 - **Motivation**: <Why this change is needed and what problem it solves>
 
-## 🔍 Technical Summary & Key Changes
+## Technical Summary & Key Changes
 - **`<file_1_path>`**: <Technical description of changes in this file>
 - **`<file_2_path>`**: <Technical description of changes in this file>
 
@@ -125,7 +125,7 @@ Write the PR description to a temporary file (`/tmp/pr_description.md`) to avoid
 
 ### Step 4: Execute `gh pr create`
 
-Execute `gh pr create` using `--body-file` pointing to the temporary markdown file:
+Run `gh pr create` with `--body-file` pointing at temp markdown file:
 
 ```bash
 # Write body to temp file
@@ -153,8 +153,8 @@ Use Conventional Commits format:
 ### Step 5: Post-Creation Verification
 
 1. Verify `gh pr create` exited with code `0`.
-2. Extract and report the generated Pull Request URL (e.g., `https://github.com/org/repo/pull/42`).
-3. Provide a short confirmation summary to the user.
+2. Extract and report generated Pull Request URL (e.g., `https://github.com/org/repo/pull/42`).
+3. Give short confirmation summary to user.
 
 ---
 

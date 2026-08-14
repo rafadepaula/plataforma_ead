@@ -1,60 +1,73 @@
 ---
 name: frontend-maintenance
-description: Guia de Manutenção, Compilação de Assets, Execução de Testes Dusk E2E e Resolução de Problemas.
+description: Manutenção do frontend: build de assets, testes Dusk E2E, troubleshooting.
 ---
 
 # Frontend Maintenance (`frontend-maintenance`)
 
-## Overview
-
-Este guia estabelece os procedimentos para manutenção, solução de problemas e verificação automatizada da camada de frontend da Plataforma EAD.
+Procedimento de manutenção, debug e verificação automatizada da camada de frontend.
 
 ---
 
-## Procedimentos de Compilação e Build
+## Build
 
-### 1. Compilação via Vite em Ambiente Sail
 ```bash
 # Build de produção de CSS e JS
 vendor/bin/sail npm run build
 
-# Execução em ambiente de desenvolvimento (Hot Module Replacement)
+# Desenvolvimento (Hot Module Replacement)
 vendor/bin/sail npm run dev
 ```
 
 ---
 
-## Suíte de Testes Automatizados E2E Laravel Dusk
+## Testes Dusk E2E
 
-A suíte de testes de interface garante a integridade de layouts e componentes Blade.
+Suíte de interface garante layout e componentes Blade.
 
-### Execução dos Testes Dusk via Sail
 ```bash
-# Executar todos os testes de navegador Dusk
+# Todos os testes de navegador
 vendor/bin/sail artisan dusk
 
-# Executar especificamente o teste de renderização de layout
+# Renderização de layout
 vendor/bin/sail artisan dusk --filter=LayoutRenderingTest
 
-# Executar especificamente o teste de componentes Blade UI
+# Componentes Blade UI
 vendor/bin/sail artisan dusk --filter=BladeComponentsTest
 ```
 
 ---
 
-## Resolução de Problemas Frequentes (Troubleshooting)
+## Troubleshooting
 
-### 1. Teste Dusk Falhando por `border-radius` Divergente
-- **Sintoma**: `LayoutRenderingTest` falha indicando `Expected border-radius to enforce 0px`.
-- **Causa**: Inclusão indevida de regras CSS com `border-radius` maior que zero ou inclusão do CSS Reboot do Bootstrap.
-- **Solução**: Garantir que `app.css` mantenha `--radius-sm: 0px`, `--radius-md: 0px`, `--radius-lg: 0px` e que o import do Bootstrap seja restrito a `grid` e `utilities`.
+### 1. Dusk falha por `border-radius`
+- **Sintoma**: `LayoutRenderingTest` acusa `Expected border-radius to enforce 0px`.
+- **Causa**: regra CSS com radius > 0, ou Reboot do Bootstrap importado.
+- **Solução**: `app.css` com `--radius-sm: 0px`, `--radius-md: 0px`, `--radius-lg: 0px`. Import do Bootstrap restrito a `grid` e `utilities`.
 
-### 2. Requisições AJAX com Erro 419 (CSRF Token Mismatch)
-- **Sintoma**: Chamadas efetuadas via `HttpClient` retornam erro HTTP 419.
-- **Causa**: Meta tag `<meta name="csrf-token" content="{{ csrf_token() }}">` ausente do `<head>` da view layout master (`app.blade.php`).
-- **Solução**: Verificar presença da meta tag no layout principal.
+### 2. AJAX retorna 419 (CSRF token mismatch)
+- **Sintoma**: chamada via `HttpClient` dá HTTP 419.
+- **Causa**: falta `<meta name="csrf-token" content="{{ csrf_token() }}">` no `<head>` de `app.blade.php`.
+- **Solução**: adicionar a meta tag no layout master.
 
-### 3. Modais Não Fecham ao Pressionar `Escape` ou Clicar no Backdrop
-- **Sintoma**: Clique fora da caixa de diálogo não oculta o modal.
-- **Causa**: Faltando estrutura `.dialog-backdrop` contendo o modal `.dialog` ou evento listeners desvinculados no `ModalManager`.
-- **Solução**: Confirmar inicialização de `ModalManager` em `app.js` e estrutura HTML de backdrop.
+### 3. Modal não fecha com `Escape` nem clique no backdrop
+- **Sintoma**: clique fora não esconde modal.
+- **Causa**: falta `.dialog-backdrop` envolvendo `.dialog`, ou listener não vinculado no `ModalManager`.
+- **Solução**: conferir init de `ModalManager` em `app.js` e estrutura HTML do backdrop.
+
+---
+
+## Cobertura E2E por Cadeia de Ciclo de Vida
+
+Testes em `tests/Browser/` agrupam por **jornada do usuário** — um método cobre criar, editar, transicionar, excluir, consequência. Não agrupa por módulo, tela ou spec.
+
+- **Achar cobertura**: buscar pelo seletor, não pelo nome do arquivo:
+  ```bash
+  grep -rn 'dusk="meu-seletor"' tests/Browser/
+  ```
+  Não existir arquivo por tela/módulo não é lacuna.
+- **Adicionar cobertura**: estender a cadeia existente com etapa numerada (`// N.`) que asserta UI **e** banco. Método novo só para negativa independente (403, cross-tenant, outro ator). Arquivo novo só para jornada nova.
+- **Custo**: cada método paga truncate + boot do WebDriver + login + navegação. Nunca quebrar cadeia em métodos atômicos por ação. Nunca usar `pause()`/`sleep()` como espera.
+- **Banco**: nenhuma trait de banco em `tests/Browser/*` — `DatabaseTruncation` vem de `Tests\DuskTestCase`. Arquivo em `storage/app/public`, cache e sessão **não** são limpos entre métodos: cadeia com upload usa nome único.
+
+Regra completa: `testing-conventions`. Debug de cadeia: `testing-maintenance`.

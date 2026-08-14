@@ -1,11 +1,10 @@
 ---
 name: auth-orgs-conventions
 description: >
-  Concrete code patterns, snippets, and guardrails shared by the Organization
-  CRUD, User (Aluno/Gestor) CRUD, and CSV Import features in the Plataforma
-  EAD auth/orgs module. Use whenever writing a controller, Policy, or Form
-  Request that manages `Organization` or `User` records, whenever handling a
-  file upload to the `public` disk, or whenever wiring an admin-only /
+  Code patterns and guardrails shared by Organization CRUD, User
+  (Aluno/Gestor) CRUD, and CSV Import in the auth/orgs module. Use when
+  writing a controller, Policy, or Form Request managing `Organization` or
+  `User`, handling upload to the `public` disk, or wiring an admin-only /
   gestor-only route.
 license: MIT
 metadata:
@@ -17,11 +16,9 @@ metadata:
 
 # Auth/Orgs Conventions
 
-## Controller Authorization: `Gate::authorize()` vs Form Request `authorize()`
+## Authorization: `Gate::authorize()` vs Form Request `authorize()`
 
-The base `App\Http\Controllers\Controller` does **not** include Laravel's
-`AuthorizesRequests` trait, so controller methods without a Form Request use
-the `Gate` facade directly instead of `$this->authorize()`:
+Base `App\Http\Controllers\Controller` has no `AuthorizesRequests` trait. Controller methods without a Form Request use the `Gate` facade, not `$this->authorize()`:
 
 ```php
 use Illuminate\Support\Facades\Gate;
@@ -40,10 +37,7 @@ public function destroy(Organization $organization): RedirectResponse
 }
 ```
 
-For `store`/`update` actions backed by a Form Request, push the same check
-into the request's `authorize()` method instead of duplicating it in the
-controller — the request already runs before the controller method body, so
-a second `Gate::authorize()` call there would be dead code:
+`store`/`update` backed by Form Request: put the check in the request's `authorize()`. Request runs before controller body, so a second `Gate::authorize()` there is dead code:
 
 ```php
 class StoreOrganizationRequest extends FormRequest
@@ -63,19 +57,11 @@ class UpdateUserRequest extends FormRequest
 }
 ```
 
-An unauthorized request from either path renders Laravel's default 403
-response — `assertForbidden()` in feature tests, never a redirect. Route
-`role:` middleware (see `tenancy-conventions`) is a first line of defense;
-the Policy is the second, enforced independent of which route/middleware
-group happens to reach the controller.
+Unauthorized from either path = Laravel default 403. Feature tests assert `assertForbidden()`, never a redirect. Route `role:` middleware (`tenancy-conventions`) is first defense; Policy is second, enforced whatever route reaches the controller.
 
 ## Policies: One Role Check Per Ability, No Team Scoping
 
-Policies in this module (`OrganizationPolicy`, and later `UserPolicy`) are
-plain role checks against `RolesEnum`, resolved automatically by Laravel's
-policy auto-discovery convention (`App\Models\{Model}` →
-`App\Policies\{Model}Policy` — no manual registration needed in a service
-provider):
+Policies here (`OrganizationPolicy`, later `UserPolicy`) = plain role checks against `RolesEnum`, auto-discovered (`App\Models\{Model}` to `App\Policies\{Model}Policy`, no provider registration):
 
 ```php
 class OrganizationPolicy
@@ -92,18 +78,11 @@ class OrganizationPolicy
 }
 ```
 
-`UserPolicy` (Bucket C) additionally has to compare `org_id`, not just role —
-a Gestor may only manage Users within their own `org_id`, resolved the same
-way `OrgScope::booted()` resolves it (`$user->org_id ?? session('active_org_id')`),
-never trusting a route/request-supplied org id.
+`UserPolicy` (Bucket C) also compares `org_id`: Gestor manages only Users in own `org_id`, resolved like `OrgScope::booted()` does (`$user->org_id ?? session('active_org_id')`). Never trust a route/request-supplied org id.
 
-## Slug Auto-Generation with Collision Suffixing
+## Slug Auto-Generation with Collision Suffix
 
-`organizations.slug` is independently editable but auto-derived from `name`
-when the caller submits a blank slug. Resolve it in the controller (not the
-Form Request — the Request only validates shape/uniqueness of *whatever*
-slug ends up submitted), appending a numeric suffix on collision rather than
-failing validation:
+`organizations.slug` editable, auto-derived from `name` when submitted blank. Resolve in controller, not Form Request (Request only validates shape/uniqueness of whatever slug arrives). Append numeric suffix on collision instead of failing:
 
 ```php
 private function resolveSlug(string $name, ?string $slug): string
@@ -125,16 +104,11 @@ private function resolveSlug(string $name, ?string $slug): string
 }
 ```
 
-An explicitly-submitted slug still goes through the normal
-`unique:organizations,slug` (or `Rule::unique(...)->ignore($id)` on update)
-rule and fails validation on collision — auto-suffixing is only a
-convenience for the "let the system pick one" path.
+Explicit slug still goes through `unique:organizations,slug` (or `Rule::unique(...)->ignore($id)` on update) and fails on collision. Auto-suffix serves only the "system picks" path.
 
 ## CNPJ Validation
 
-`cnpj` is nullable + unique, validated against the two conventional Brazilian
-formats (formatted or raw digits), and used only for certificate branding —
-never for billing logic:
+`cnpj` nullable + unique, two Brazilian formats (formatted or 14 raw digits), used only for certificate branding — never billing:
 
 ```php
 'cnpj' => [
@@ -145,11 +119,9 @@ never for billing logic:
 ],
 ```
 
-## File Uploads to the `public` Disk
+## Uploads to `public` Disk
 
-Logos (and any other admin-uploaded media in this module) go to the `public`
-disk, under a feature-specific subdirectory, and the old file is deleted on
-replacement:
+Logos and other admin media go to `public` disk under a feature subdirectory. Old file deleted on replace:
 
 ```php
 if ($request->hasFile('logo')) {
@@ -161,7 +133,7 @@ if ($request->hasFile('logo')) {
 unset($data['logo']); // never mass-assign the UploadedFile itself
 ```
 
-Tests fake the disk rather than touching real storage:
+Tests fake the disk:
 
 ```php
 Storage::fake('public');
@@ -169,12 +141,9 @@ Storage::fake('public');
 Storage::disk('public')->assertExists($organization->logo_path);
 ```
 
-## Impersonate Org: Validate Before Writing to Session
+## Impersonate Org: Validate Before Session Write
 
-`ImpersonateOrgController::store()` must reject an inactive or nonexistent
-Organization *before* writing to `session('active_org_id')` — never let a
-stale/invalid id sit in the session for `OrgScope` to silently filter
-everything down to zero rows:
+`ImpersonateOrgController::store()` rejects inactive/nonexistent Organization *before* writing `session('active_org_id')`. Stale id in session makes `OrgScope` filter everything to zero rows silently:
 
 ```php
 public function store(Organization $organization): RedirectResponse
@@ -191,32 +160,26 @@ public function store(Organization $organization): RedirectResponse
 }
 ```
 
-Route-model-binding the `Organization` (rather than accepting a raw
-`org_id` integer + manual lookup) gives a `404` for free on a nonexistent id,
-before the controller body even runs. `destroy()` only ever calls
-`session()->forget('active_org_id')` — it does not need to validate
-anything.
+Route-model-binding `Organization` (not raw `org_id` + manual lookup) gives 404 free on nonexistent id before the body runs. `destroy()` only calls `session()->forget('active_org_id')`, validates nothing.
 
 ## Factories: `inactive()` / `withCnpj()` States
 
-Both `OrganizationFactory` and `UserFactory` follow the same state-method
-convention already established for `status`/`cpf` — add a new named state
-rather than passing raw overrides at every call site:
+`OrganizationFactory` and `UserFactory` follow the state-method convention already used for `status`/`cpf`. Add a named state, do not pass raw overrides at every call site:
 
 ```php
 Organization::factory()->inactive()->create();
 Organization::factory()->withCnpj()->create();
 ```
 
-## Guest Middleware Override and Role-Aware Redirect
+## Guest Middleware Override
 
-The framework's default `guest` middleware alias (`Illuminate\Auth\Middleware\RedirectIfAuthenticated`) is overridden in `bootstrap/app.php` to point to `App\Http\Middleware\RedirectIfAuthenticated`, which uses `App\Services\UserHomeResolver` to provide role-aware redirect targets.
+Framework `guest` alias (`Illuminate\Auth\Middleware\RedirectIfAuthenticated`) overridden in `bootstrap/app.php` to `App\Http\Middleware\RedirectIfAuthenticated`, which uses `App\Services\UserHomeResolver` for role-aware targets.
 
-When an authenticated user visits `/login`, `/forgot-password`, or `/reset-password/{token}` (routes gated by the `guest` middleware), the custom middleware resolves the user's role home via `UserHomeResolver::resolve()` and redirects there, honoring any `url.intended` in the session.
+Authenticated user hitting `/login`, `/forgot-password`, `/reset-password/{token}` gets resolved to their role home via `UserHomeResolver::resolve()`, honoring `url.intended` in session.
 
-**Key convention:** All role-based redirect logic lives in `UserHomeResolver::resolve()` -- never duplicate it in controllers or middleware. Both `AuthenticatedSessionController::store()` and the `RedirectIfAuthenticated` middleware delegate to this single service via `app(UserHomeResolver::class)->resolve($user)`. If a new role needs a different destination, update only `UserHomeResolver::resolve()`.
+**Convention:** all role-based redirect logic lives in `UserHomeResolver::resolve()`. Never duplicate it in controller or middleware. Both `AuthenticatedSessionController::store()` and `RedirectIfAuthenticated` call `app(UserHomeResolver::class)->resolve($user)`. New role destination = edit only `UserHomeResolver::resolve()`.
 
-## `UserHomeResolver` -- Single Source of Truth for Role Home
+## `UserHomeResolver`
 
 ```php
 // app/Services/UserHomeResolver.php
@@ -233,4 +196,4 @@ class UserHomeResolver
 }
 ```
 
-Callers always use `app(UserHomeResolver::class)->resolve($user)` (container resolution, not manual instantiation).
+Callers always resolve from container: `app(UserHomeResolver::class)->resolve($user)`. No manual instantiation.

@@ -1,24 +1,24 @@
 ---
 name: spec-review
-description: Use when verifying codebase changes in a feature branch or PR against a target specification file in spec/specs/ to audit functional, non-functional, business rules, and test compliance and generate a report in spec/reviews/.
+description: Use when verifying codebase changes in feature branch or PR against target spec file in spec/specs/, to audit functional, non-functional, business rule, and test compliance, then generate report in spec/reviews/.
 ---
 
 # Spec Review (`spec-review`)
 
 ## Overview
 
-`spec-review` is a comprehensive specification audit skill for features developed in the codebase. It parses a target specification document (`.md`) from `spec/specs/`, analyzes the code changes in the active feature branch/PR, verifies 100% adherence to Functional Requirements (RF), Business Rules (RN), Non-Functional Requirements (RNF), Tenant Isolation, Security Protocols, and Test Coverage, and generates an actionable report file formatted as `spec_xx_review_report.md` inside `spec/reviews/`.
+`spec-review` = full spec audit skill for features built in codebase. Parses target spec doc (`.md`) from `spec/specs/`, analyzes code changes in active feature branch/PR, verifies 100% adherence to Functional Requirements (RF), Business Rules (RN), Non-Functional Requirements (RNF), Tenant Isolation, Security Protocols, Test Coverage. Generates actionable report file named `spec_xx_review_report.md` inside `spec/reviews/`.
 
-**Isolated Multi-Subagent Pipeline**: To prevent context bloat and ensure maximum precision, `spec-review` dispatches specialized subagents via `invoke_subagent` at each step. Each subagent operates within its own context window, performing deep code/spec analysis and reporting back structured results to the orchestrator.
+**Isolated Multi-Subagent Pipeline**: To stop context bloat and keep max precision, `spec-review` dispatches specialized subagents via `invoke_subagent` at each step. Each subagent works in own context window, does deep code/spec analysis, reports structured results back to orchestrator.
 
 ---
 
 ## When to Use
 
-Use `spec-review` whenever you need to audit a completed or in-progress feature branch against its specification before merging or finalizing code.
+Use `spec-review` when you must audit completed or in-progress feature branch against its spec, before merge or before finalizing code.
 
 **Invocation Arguments**:
-- `specFile`: (Required) Path or filename of the target specification file in `spec/specs/` (e.g., `spec/specs/05-courses-modules-and-content-management.md` or `05`).
+- `specFile`: (Required) Path or filename of target spec file in `spec/specs/` (e.g., `spec/specs/05-courses-modules-and-content-management.md` or `05`).
 - `baseBranch`: (Optional) Base branch for git diff comparison (default: `main` or `origin/main`).
 
 ---
@@ -55,7 +55,7 @@ Use `spec-review` whenever you need to audit a completed or in-progress feature 
 
 ### Step 1: Spec Deconstruction (`Subagent: Spec Deconstructor`)
 
-Dispatch a subagent via `invoke_subagent` to parse the target specification file and extract all verifiable requirements without polluting the main thread.
+Dispatch subagent via `invoke_subagent` to parse target spec file and extract all verifiable requirements, without polluting main thread.
 
 - **Role**: `Spec Deconstructor`
 - **Subagent Type**: `research` or `self`
@@ -63,7 +63,7 @@ Dispatch a subagent via `invoke_subagent` to parse the target specification file
   > Parse `spec/specs/[SPEC_FILE]`. Extract all Functional Requirements (RFxx), Business Rules (RNxx), Non-Functional Requirements (RNFxx / Tenant isolation, Security OWASP [REDACTED], XSS sanitization, upload paths), Database Schemas, UI/Blade components, and Acceptance Criteria. Return a clean, structured JSON requirement matrix.
 
 - **Requirements Extracted**:
-  1. **Requisitos Funcionais (`RFxx`)**: All endpoints, actions, and features.
+  1. **Requisitos Funcionais (`RFxx`)**: All endpoints, actions, features.
   2. **Regras de Negócio (`RNxx`)**: State transitions, validation constraints, calculation logic, role gates.
   3. **Requisitos Não-Funcionais & Guardrails (`RNFxx`)**:
      - **Tenant Isolation**: `OrgScope` trait, `org_id` foreign keys, isolated storage paths (`storage/app/public/orgs/{org_id}/...`).
@@ -72,13 +72,13 @@ Dispatch a subagent via `invoke_subagent` to parse the target specification file
      - **Auditoria**: `AuditLog`, `AuditableTrait`, `AuditObserver`, `AuditService::log()`.
   4. **Database Schemas & Models**: Tables, columns, foreign keys, indexes.
   5. **UI & Frontend Components**: Blade components `<x-ui...>`, JS modules, dynamic AJAX endpoints, `dusk="..."` test selectors.
-  6. **Acceptance Criteria & Test Checklist**: Required feature, unit, and Dusk E2E tests.
+  6. **Acceptance Criteria & Test Checklist**: Required feature, unit, Dusk E2E tests.
 
 ---
 
 ### Step 2: Codebase & Git Diff Inspection (`Subagent: Code Diff Scanner`)
 
-Dispatch a subagent to analyze all code changes made in the feature branch.
+Dispatch subagent to analyze all code changes made in feature branch.
 
 - **Role**: `Code Diff Scanner`
 - **Subagent Type**: `research` or `self`
@@ -95,7 +95,7 @@ Dispatch a subagent to analyze all code changes made in the feature branch.
 
 ### Step 3: Parallel Matrix Audit (`Subagents: Requirement Auditors`)
 
-Dispatch **two subagents in parallel** using `invoke_subagent` to audit functional and non-functional requirements concurrently without shared state.
+Dispatch **two subagents in parallel** via `invoke_subagent` to audit functional and non-functional requirements concurrently, no shared state.
 
 #### Subagent A: Functional & Business Rules Auditor
 - **Role**: `Functional & Business Rules Auditor`
@@ -118,7 +118,7 @@ Dispatch **two subagents in parallel** using `invoke_subagent` to audit function
 
 ### Step 4: Test Suite & Quality Gate (`Subagent: Test Suite Verifier`)
 
-Dispatch a subagent to verify test suite execution and test quality.
+Dispatch subagent to verify test suite execution and test quality.
 
 - **Role**: `Test Suite Verifier`
 - **Subagent Type**: `research` or `self`
@@ -134,7 +134,7 @@ Dispatch a subagent to verify test suite execution and test quality.
 
 ### Step 5: Report Synthesis & File Generation (`Subagent: Report Synthesizer`)
 
-Dispatch a subagent to compile findings from all previous steps and generate the final report file at `spec/reviews/spec_xx_review_report.md`.
+Dispatch subagent to compile findings from all previous steps and generate final report file at `spec/reviews/spec_xx_review_report.md`.
 
 - **Role**: `Review Report Synthesizer`
 - **Subagent Type**: `self` or write directly in orchestrator
@@ -191,7 +191,9 @@ Dispatch a subagent to compile findings from all previous steps and generate the
 - **Testes Browser (Dusk E2E):** `[PASS | FAIL]` - [Detalhamento de testes Dusk existentes vs. faltantes]
 - **Lacunas de Cobertura de Testes:**
   - [ ] `tests/Feature/ExampleTest.php`: Adicionar teste para o cenário de falha X.
-  - [ ] `tests/Browser/ExampleDuskTest.php`: Criar teste Dusk para fluxo Y.
+  - [ ] `tests/Browser/ExampleDuskTest.php`: Estender a cadeia de ciclo de vida `test_..._lifecycle` com a etapa do fluxo Y (asserção de UI + banco). Criar método/arquivo novo só se for negativa independente (403/cross-tenant) ou exigir outro ator.
+
+> Cobertura E2E é contada por **conjunto de asserções**, não por método/arquivo: testes de navegador são agrupados por cadeia de ciclo de vida (jornada), podendo cruzar módulos. Não registre "não há teste dedicado para o UC/módulo" como lacuna — ver `testing-conventions`.
 
 ---
 
@@ -206,10 +208,11 @@ Dispatch a subagent to compile findings from all previous steps and generate the
 
 ## Red Flags & Common Mistakes During Review
 
-- 🚩 **Not Dispatching Subagents**: Executing all steps in the main conversation thread, causing context truncation and incomplete analysis.
-- 🚩 **Superficial Verification**: Marking a requirement as `PASS` just because a controller method or view file exists, without checking if validation, policies, tenant isolation, and tests are implemented.
-- 🚩 **Ignoring Non-Functional Rules**: Focusing only on happy-path UI while ignoring tenant isolation (`OrgScope`), password masking (`[REDACTED]`), XSS sanitization, or file upload storage paths (`storage/app/public/orgs/{org_id}/...`).
-- 🚩 **Missing Dusk Test Verification**: Marking UI-heavy specs (e.g. AJAX reordering, dynamic modals, rich text editors) as compliant when Dusk E2E browser tests are missing.
-- 🚩 **Unlinked Code References**: Referencing code files without using proper `file:///` markdown links.
-- 🚩 **Forgetting the Output File**: Conducting the review in text form without saving the report file to `spec/reviews/spec_xx_review_report.md`.
-
+- **Not Dispatching Subagents**: Running all steps in main conversation thread. Causes context truncation and incomplete analysis.
+- **Superficial Verification**: Marking requirement `PASS` only because controller method or view file exists, without checking validation, policies, tenant isolation, tests.
+- **Ignoring Non-Functional Rules**: Focusing only on happy-path UI while ignoring tenant isolation (`OrgScope`), password masking (`[REDACTED]`), XSS sanitization, or file upload storage paths (`storage/app/public/orgs/{org_id}/...`).
+- **Missing Dusk Test Verification**: Marking UI-heavy specs (e.g. AJAX reordering, dynamic modals, rich text editors) compliant when Dusk E2E browser tests missing.
+- **Counting E2E Coverage per Method/File**: Reporting gap because UC or module has no dedicated Dusk method/file. Browser tests grouped by lifecycle chain and may cross modules — audit chain step by step, count assertions, not methods.
+- **Recommending Test Fragmentation**: Suggesting lifecycle chain be split into atomic per-action methods, or that `DatabaseMigrations` be (re)added to `tests/Browser/*`. Both are performance regressions; `DatabaseTruncation` lives in `Tests\DuskTestCase`.
+- **Unlinked Code References**: Referencing code files without proper `file:///` markdown links.
+- **Forgetting the Output File**: Doing review in text form without saving report file to `spec/reviews/spec_xx_review_report.md`.

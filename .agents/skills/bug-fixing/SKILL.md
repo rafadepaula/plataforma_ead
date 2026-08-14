@@ -1,22 +1,26 @@
 ---
 name: bug-fixing
-description: Use when resolving a bug specified in spec/bugs/BUG-{id}-{slug}.md, requiring understanding the bug then fixing it TDD-first with a PHPUnit unit/integration test, or a Dusk test if it is a UI bug.
+description: Use when resolving bug specified in spec/bugs/BUG-{id}-{slug}.md. Understand bug, then fix TDD-first with PHPUnit unit/integration test, or Dusk test if UI bug.
 ---
 
 # Bug Fixing Skill (`bug-fixing`)
 
 ## Overview
 
-`bug-fixing` is a lean, two-phase bug resolution skill. It reads a bug specification file from `spec/bugs/BUG-{id}-{slug}.md`, then fixes it with a strict TDD RED-GREEN-REFACTOR cycle: a failing PHPUnit unit/integration test (or a Dusk browser test if it's a UI bug), then the minimal fix to make it pass.
+`bug-fixing` is lean two-phase bug resolution skill. Reads bug spec file
+from `spec/bugs/BUG-{id}-{slug}.md`, then fixes with strict TDD
+RED-GREEN-REFACTOR cycle: failing PHPUnit unit/integration test (or Dusk
+browser test if UI bug), then minimal fix to make it pass.
 
 ---
 
 ## When to Use
 
-Use `bug-fixing` whenever you are assigned to fix a bug that has a specification file in `spec/bugs/`.
+Use `bug-fixing` whenever assigned to fix bug that has spec file in
+`spec/bugs/`.
 
 **Invocation Arguments**:
-- `bugReportFile`: Path to the bug specification file (e.g. `spec/bugs/BUG-001-quiz-score-calculation.md`).
+- `bugReportFile`: Path to bug spec file (e.g. `spec/bugs/BUG-001-quiz-score-calculation.md`).
 
 ---
 
@@ -30,8 +34,8 @@ Use `bug-fixing` whenever you are assigned to fix a bug that has a specification
 
 ### Phase 1: Understand (`spec-understand-agent`)
 
-- **Objective**: Read `spec/bugs/BUG-{id}-{slug}.md` in full to understand the bug: reproduction steps, expected vs actual behavior, root cause hypothesis, and whether it is a UI bug.
-- **Constraint**: **Research pass ONLY**. Do NOT write, edit, or delete any code or tests.
+- **Objective**: Read `spec/bugs/BUG-{id}-{slug}.md` in full. Get repro steps, expected vs actual behavior, root cause hypothesis, whether UI bug.
+- **Constraint**: **Research pass ONLY**. Do NOT write, edit, delete any code or test.
 - **Subagent**: Invoke `spec-understand-agent`.
 - **Inputs**: `bugReportFile`.
 - **Output Schema (`BUG_UNDERSTANDING_SCHEMA`)**:
@@ -56,20 +60,20 @@ Use `bug-fixing` whenever you are assigned to fix a bug that has a specification
 
 ### Phase 2: TDD Fix (`spec-coder-agent`)
 
-- **Objective**: Execute the TDD RED-GREEN-REFACTOR cycle to reproduce and fix the bug.
+- **Objective**: Run TDD RED-GREEN-REFACTOR cycle to reproduce and fix bug.
 - **Subagent**: Invoke `spec-coder-agent`.
-- **Test type choice**: Dusk ONLY if `isUiBug` is true and the bug cannot be reproduced without a real browser. Otherwise a PHPUnit Unit test (isolated logic) or Feature/integration test (HTTP, database, multiple collaborators).
+- **Test type choice**: Dusk ONLY if `isUiBug` true and bug cannot repro without real browser. Else PHPUnit Unit test (isolated logic) or Feature/integration test (HTTP, database, multiple collaborators).
 - **Mandatory TDD Cycle Steps**:
     1. **RED Phase (Write Failing Test)**:
-       - Write a PHPUnit test class (extending `Tests\TestCase`) or Dusk Browser test class (extending `DuskTestCase`) reproducing the exact steps from `BUG-{id}-{slug}.md`.
+       - Write PHPUnit test class (extends `Tests\TestCase`) or Dusk Browser test class (extends `DuskTestCase`) reproducing exact steps from `BUG-{id}-{slug}.md`.
        - Run: `vendor/bin/sail artisan test --filter={testMethod}` (or `vendor/bin/sail artisan dusk --filter={testMethod}` for Dusk).
-       - **VERIFY FAILURE**: Confirm the test fails with the expected error/exception (not a syntax/setup error).
+       - **VERIFY FAILURE**: Confirm test fails with expected error/exception, not syntax/setup error.
     2. **GREEN Phase (Minimal Code Fix)**:
-       - Write the minimal code to resolve the root cause. No scope creep.
-       - Re-run the same filtered command.
-       - **VERIFY PASS**: Confirm the test now passes completely.
+       - Write minimal code to fix root cause. No scope creep.
+       - Re-run same filtered command.
+       - **VERIFY PASS**: Confirm test now passes completely.
     3. **REFACTOR Phase**:
-       - Clean up any temporary debug lines while keeping the test green.
+       - Clean temporary debug lines, keep test green.
        - Run `vendor/bin/sail bin pint --dirty --format agent` to format modified PHP files.
 - **Output Schema (`TDD_FIX_SCHEMA`)**:
     ```json
@@ -90,7 +94,7 @@ Use `bug-fixing` whenever you are assigned to fix a bug that has a specification
 
 ---
 
-## 🛠️ Summary of Associated Subagents
+## Summary of Associated Subagents
 
 | Subagent                 | Phase   | Role                                              |
 | :------------------------ | :------ | :------------------------------------------------- |
@@ -99,10 +103,11 @@ Use `bug-fixing` whenever you are assigned to fix a bug that has a specification
 
 ---
 
-## ⚠️ Core Guardrails & Conventions
+## Core Guardrails & Conventions
 
-- **TDD Mandatory**: Never write fix code before watching the reproduction test fail (RED phase).
-- **PHPUnit Over Pest**: All PHPUnit tests must use PHPUnit test classes (`class BugFixTest extends TestCase`), per project convention in CLAUDE.md.
-- **Dusk Isolation**: Never use `RefreshDatabase` in Dusk tests; use `DatabaseMigrations` or `DatabaseTruncation`.
-- **Sail Execution**: All execution commands must be prefixed with `vendor/bin/sail`.
+- **TDD Mandatory**: Never write fix code before watching repro test fail (RED phase).
+- **PHPUnit Over Pest**: All PHPUnit tests use PHPUnit test classes (`class BugFixTest extends TestCase`), per project convention in CLAUDE.md.
+- **Dusk Isolation**: Never declare DB trait in `tests/Browser/*` — `DatabaseTruncation` inherited from `Tests\DuskTestCase`. `RefreshDatabase` forbidden; `DatabaseMigrations` retired.
+- **Dusk Grouping**: UI bug repro goes **into existing lifecycle chain** covering that journey (extra numbered step with own UI + DB assertions) whenever bug lies on that journey. Create new browser method only when repro needs different actor/tenant or is independent negative.
+- **Sail Execution**: All execution commands prefixed with `vendor/bin/sail`.
 - **Pint Formatting**: Format touched PHP files with `vendor/bin/sail bin pint --dirty --format agent`.

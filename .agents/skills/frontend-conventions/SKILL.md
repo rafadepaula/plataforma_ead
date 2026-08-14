@@ -1,59 +1,57 @@
 ---
 name: frontend-conventions
-description: Padrões de Código, Diretrizes do Modernist Design System, Convenções Blade e JavaScript SOLID.
+description: Padrões de código, regras do Modernist Design System, convenções Blade e JavaScript SOLID.
 ---
 
 # Frontend Conventions (`frontend-conventions`)
 
-## Visão Geral e Guardrails Visuais
-
-Todo o desenvolvimento frontend da Plataforma EAD deve seguir rigorosamente as convenções do **Modernist Design System** (Claude Design) e a arquitetura de micro-componentes Blade.
+Todo frontend segue **Modernist Design System** (Claude Design) + arquitetura de micro-componentes Blade.
 
 ---
 
-## Diretrizes do Modernist Design System
+## Regras do Modernist Design System
 
-1. **Regra Zero-Radius (`--radius-sm: 0px`)**:
-   - **MANDATÓRIO**: Todos os cantos de botões, cards, modais, inputs, badges e containers devem possuir `border-radius: 0px`.
-   - NUNCA adicionar `rounded`, `rounded-md` ou qualquer arredondamento de canto.
+1. **Zero-radius (`--radius-sm: 0px`)**
+   - MANDATÓRIO: botão, card, modal, input, badge, container = `border-radius: 0px`.
+   - NUNCA `rounded`, `rounded-md`, nem qualquer arredondamento.
 
-2. **Proibição de Hex Hardcoded nas Views**:
-   - Nenhuma view Blade ou arquivo CSS deve conter cores hexadecimais brutas.
-   - Sempre utilizar tokens globais CSS: `var(--color-bg)`, `var(--color-surface)`, `var(--color-text)`, `var(--color-accent)`, `var(--color-accent-2)`, `var(--color-neutral-100...900)`.
+2. **Proibido hex hardcoded na view**
+   - Nenhuma Blade ou CSS com cor hexadecimal crua.
+   - Usar token: `var(--color-bg)`, `var(--color-surface)`, `var(--color-text)`, `var(--color-accent)`, `var(--color-accent-2)`, `var(--color-neutral-100...900)`.
 
-3. **Alinhamento Flush-Left**:
-   - Rótulos de botões largos (`.btn-block`), títulos de hero e textos de cabeçalho devem ser sempre alinhados à esquerda (`text-align: left`).
+3. **Flush-left**
+   - Label de botão largo (`.btn-block`), título de hero e cabeçalho sempre `text-align: left`.
 
-4. **Fotografia Conteudista em Preto-e-Branco (`.grayscale`)**:
-   - Avatares de alunos, thumbnails de cursos e fotos de instrutores devem obrigatoriamente estar envolvidos em wrapper `.grayscale` (`filter: grayscale(1) contrast(1.08)`).
-   - *Exceção*: Logos de Organização (`organizations.logo_path`) mantêm suas cores originais da marca.
+4. **Foto preto-e-branco (`.grayscale`)**
+   - Avatar de aluno, thumbnail de curso, foto de instrutor sempre dentro de wrapper `.grayscale` (`filter: grayscale(1) contrast(1.08)`).
+   - Exceção: logo de Organização (`organizations.logo_path`) mantém cor da marca.
 
-5. **Ícones Lucide Inline**:
-   - Não utilizar Bootstrap Icons (`bi-*`) nem carregar CDNs externos. Usar `<x-ui.icon name="search|bell|user|check..." />`.
+5. **Ícone Lucide inline**
+   - Sem Bootstrap Icons (`bi-*`), sem CDN externo. Usar `<x-ui.icon name="search|bell|user|check..." />`.
 
 ---
 
-## Convenções de Componentes Blade `<x-ui.*>`
+## Componentes `<x-ui.*>`
 
-### Botão (`<x-ui.button>`)
+### Botão
 ```blade
 <x-ui.button variant="primary" block icon="plus">
     Salvar Aluno
 </x-ui.button>
 ```
 
-### Tag/Badge (`<x-ui.badge>`)
-- Mapeamento semântico de status sem introdução de cores extras:
-  - `variant="accent"`: Ativo / Concluído / Publicado (positivo)
-  - `variant="outline"`: Em andamento / Obrigatório / Em revisão
-  - `variant="neutral"`: Pendente / Rascunho / Aluno
-  - `variant="accent-2"`: Em risco / Vencido / Inativo (negativo)
+### Badge
+Status semântico, sem cor nova:
+- `variant="accent"`: Ativo / Concluído / Publicado (positivo)
+- `variant="outline"`: Em andamento / Obrigatório / Em revisão
+- `variant="neutral"`: Pendente / Rascunho / Aluno
+- `variant="accent-2"`: Em risco / Vencido / Inativo (negativo)
 
 ```blade
 <x-ui.badge variant="accent">Concluído</x-ui.badge>
 ```
 
-### Modal / Diálogo (`<x-ui.modal>`)
+### Modal
 ```blade
 <x-ui.modal id="confirm-delete-modal" title="Confirmar Exclusão">
     <p>Tem certeza de que deseja remover este aluno?</p>
@@ -66,8 +64,8 @@ Todo o desenvolvimento frontend da Plataforma EAD deve seguir rigorosamente as c
 
 ---
 
-## Convenções Módulos JavaScript
+## Módulos JavaScript
 
-- **Importação e Registro Global**: Importar módulos em `resources/js/app.js` e expô-los em `window` (`window.HttpClient`, `window.ModalManager`, `window.NotificationService`).
-- **CSRF Token**: `HttpClient` extrai automaticamente a meta tag `csrf-token`. Toda requisição AJAX mutativa deve incluir `X-CSRF-TOKEN`.
-- **Acessibilidade de Modais**: Todo modal aberto via `ModalManager.open()` deve receber `aria-modal="true"` e foco no primeiro elemento interativo.
+- **Registro global**: importar em `resources/js/app.js` e expor em `window` (`window.HttpClient`, `window.ModalManager`, `window.NotificationService`).
+- **CSRF**: `HttpClient` lê meta tag `csrf-token`. Toda requisição AJAX mutativa manda `X-CSRF-TOKEN`.
+- **Acessibilidade de modal**: modal aberto por `ModalManager.open()` recebe `aria-modal="true"` e foco no primeiro elemento interativo.

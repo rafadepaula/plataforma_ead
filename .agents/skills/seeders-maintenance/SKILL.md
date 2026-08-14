@@ -1,10 +1,10 @@
 ---
 name: seeders-maintenance
 description: >
-  Debugging, testing, and idempotency guide for Database Seeders (SPEC-16):
-  the mandatory PHPUnit tests (`DatabaseSeederProductionTest`, `DatabaseSeederDevelopmentTest`, `SeederIdempotencyTest`),
-  preventing duplicate key errors via firstOrCreate/updateOrCreate,
-  event and notification suppression during seeding, and multitenant org_id context preservation.
+  Debug, test, idempotency guide for Database Seeders (SPEC-16): mandatory
+  PHPUnit tests (`DatabaseSeederProductionTest`, `DatabaseSeederDevelopmentTest`,
+  `SeederIdempotencyTest`), duplicate key fixes via firstOrCreate/updateOrCreate,
+  event/notification suppression, org_id context preservation.
 license: MIT
 metadata:
   feature: seeders
@@ -16,29 +16,29 @@ metadata:
 
 # Seeders Maintenance
 
-## Mandatory Test Coverage for Database Seeders
+## Mandatory Test Coverage
 
-These PHPUnit tests guard the SPEC-16 database seeding contract and must remain green:
+These PHPUnit tests guard SPEC-16 contract. Keep green:
 
-- `tests/Feature/Seeders/DatabaseSeederDevelopmentTest.php` — verifies that running database seeders in local/development/testing environment creates all expected records across entities (Organisations, Users, Courses, Quizzes, Invitations, Certificates, Forum, Notifications) with explicit `org_id` binding and suppresses unwanted mail/events.
-- `tests/Feature/Seeders/SeederIdempotencyTest.php` — verifies that executing `php artisan db:seed` multiple consecutive times runs cleanly without throwing duplicate key exceptions and leaves table counts identical.
+- `tests/Feature/Seeders/DatabaseSeederDevelopmentTest.php` — seeding in local/development/testing creates all expected records (Organizations, Users, Courses, Quizzes, Invitations, Certificates, Forum, Notifications) with explicit `org_id`, no mail/events leak.
+- `tests/Feature/Seeders/SeederIdempotencyTest.php` — `php artisan db:seed` run many times: no duplicate key exception, table counts identical.
 
-Run the seeder test suite using Sail:
+Run:
 
 ```bash
 vendor/bin/sail artisan test --filter=DatabaseSeederDevelopmentTest
 ```
 
-## Common Failure Modes & Troubleshooting
+## Failure Modes
 
-- **Duplicate Key / Unique Constraint `QueryException` on re-run:**
-  Every seeder must use `firstOrCreate` or `updateOrCreate` with unique natural keys (e.g. `token`, `validation_hash`, `email`, `slug`, `id`). Avoid bare `Model::create()` or raw `DB::table()->insert()` calls without uniqueness checks.
+- **Duplicate key / unique constraint `QueryException` on re-run:**
+  Seeder used bare `Model::create()` or raw insert. Switch to `firstOrCreate`/`updateOrCreate` keyed on unique natural key (`token`, `validation_hash`, `email`, `slug`, `id`).
 
-- **`UnresolvedOrgContextException` during Seeding:**
-  Models using `OrgScope` (`InvitationLink`, `ForumTopic`, `Course`, `HelpArticle`, `SystemSetting`) require an explicit `org_id` parameter during model instantiation or `withoutEvents()` wrappers when running outside an HTTP session. Always explicitly supply `org_id` when seeding tenant-scoped records.
+- **`UnresolvedOrgContextException` while seeding:**
+  `OrgScope` models (`InvitationLink`, `ForumTopic`, `Course`, `HelpArticle`, `SystemSetting`) have no HTTP session. Pass `org_id` explicitly, or wrap in `withoutEvents()`.
 
-- **Unwanted Mail / Event Side Effects during Seeding:**
-  Use `Model::withoutEvents(...)`, `Mail::fake()`, or `Notification::fake()` within seeders or test setups to prevent actual emails, Webhooks, or heavy audit log creation during seeding.
+- **Unwanted mail / event side effects:**
+  Use `Model::withoutEvents(...)`, `Mail::fake()`, `Notification::fake()` inside seeder or test setup.
 
-- **DatabaseNotification Missing/Duplicated:**
-  Use deterministic UUIDs (e.g., formatted based on user ID) when seeding `DatabaseNotification` rows via `firstOrCreate(['id' => $uuid], [...])`.
+- **DatabaseNotification missing or duplicated:**
+  Seed with deterministic UUID (derived from user id): `firstOrCreate(['id' => $uuid], [...])`.

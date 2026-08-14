@@ -1,12 +1,12 @@
 ---
 name: learning-conventions
 description: >
-  Concrete code patterns for the Student Learning & Progress feature
-  (SPEC-07): `MarkLessonCompleteAction` usage, the `LessonProgressController`
-  422-shape-guard pattern, `withoutGlobalScopes()` Course resolution, and
-  the `LessonPlayer.js` video-polling/manual-completion conventions. Use
-  whenever writing a controller, action, or JS module that touches
-  `lesson_progress`, gates a student-facing route, or renders/updates
+  Concrete code patterns for Student Learning & Progress feature
+  (SPEC-07): `MarkLessonCompleteAction` usage, `LessonProgressController`
+  422-shape-guard pattern, `withoutGlobalScopes()` Course resolution,
+  `LessonPlayer.js` video-polling/manual-completion conventions. Use
+  whenever write controller, action, or JS module touching
+  `lesson_progress`, gate student-facing route, or render/update
   lesson-completion UI.
 license: MIT
 metadata:
@@ -20,9 +20,9 @@ metadata:
 
 ## Always Write `lesson_progress` Through `MarkLessonCompleteAction`
 
-Never `LessonProgress::updateOrCreate()`/manual save from a controller —
-route every completion through `app/Actions/MarkLessonCompleteAction.php`
-so the idempotency, `GREATEST(watched_seconds)`, and transition-gated
+Never `LessonProgress::updateOrCreate()`/manual save from controller.
+Route every completion through `app/Actions/MarkLessonCompleteAction.php`
+so idempotency, `GREATEST(watched_seconds)`, transition-gated
 `LessonMarkedAsCompleted` dispatch stay in one place:
 
 ```php
@@ -34,21 +34,20 @@ $progress = $this->markLessonCompleteAction->execute(
 );
 ```
 
-The one exception is the video endpoint's **below-threshold** path
-(`LessonProgressController::updateProgress()`): persisting an
-in-progress `watched_seconds` value that has not yet crossed 90% is not a
-completion, so it writes `LessonProgress` directly (`firstOrNew` +
-`GREATEST` + `save()`) rather than calling the Action — do not route that
-branch through `MarkLessonCompleteAction`, it would incorrectly dispatch
-`LessonMarkedAsCompleted` for an unfinished view.
+One exception: video endpoint's **below-threshold** path
+(`LessonProgressController::updateProgress()`). Persisting in-progress
+`watched_seconds` not yet past 90% is not completion, so it writes
+`LessonProgress` directly (`firstOrNew` + `GREATEST` + `save()`) instead of
+calling Action. Do not route that branch through
+`MarkLessonCompleteAction` — it would wrongly dispatch
+`LessonMarkedAsCompleted` for unfinished view.
 
 ## The 422 Shape-Guard Pattern on Both Progress Endpoints
 
-Both `LessonProgressController` actions validate the lesson **shape**
-before touching `lesson_progress`, checking `type === 'quiz'` first
-(quiz completion is reserved for SPEC-08's `SubmitQuizAttemptAction`) so
-malformed data carrying both `type=quiz` and a `youtube_url` still 422s
-as a quiz:
+Both `LessonProgressController` actions validate lesson **shape** before
+touching `lesson_progress`, checking `type === 'quiz'` first (quiz
+completion reserved for SPEC-08's `SubmitQuizAttemptAction`), so malformed
+data carrying both `type=quiz` and `youtube_url` still 422s as quiz:
 
 ```php
 // complete(): rejects quiz lessons and video lessons
@@ -62,19 +61,18 @@ if ($lesson->type === 'quiz' || empty($lesson->youtube_url)) {
 }
 ```
 
-Both actions also 404 an unpublished lesson for an Aluno specifically
+Both actions also 404 unpublished lesson for Aluno specifically
 (`! $lesson->is_published && $user->hasRole(RolesEnum::ALUNO->value)`),
-mirroring `ClassroomController`'s same check — Admin/Gestor retain
-preview access to draft lessons, so the role check is not optional.
+mirroring `ClassroomController`'s same check. Admin/Gestor keep preview
+access to draft lessons, so role check not optional.
 
 ## Resolving `Course` Inside This Module: Always `withoutGlobalScopes()`
 
 Every Course lookup in this module — `ClassroomController::show()`,
 `EnsureStudentIsEnrolled::resolveCourse()`,
 `RecalculateCourseProgress::handle()`, `StudentCourseController::index()` —
-bypasses `OrgScope` explicitly, because an Aluno carries no `org_id` of
-their own and the scope would otherwise filter every result out from
-under them:
+bypasses `OrgScope` explicitly, because Aluno carries no own `org_id` and
+scope would filter every result out from under them:
 
 ```php
 // Route param already a Course instance? Use it. Otherwise resolve raw:
@@ -84,15 +82,15 @@ $course = Course::query()->withoutGlobalScopes()->findOrFail($courseId);
 $course = $lesson->module->course()->withoutGlobalScopes()->firstOrFail();
 ```
 
-Never accept a typed `Course $course` implicit route-model binding on a
-student-facing route in this module — implicit binding uses the model's
-default (scoped) query and will silently 404 an Aluno viewing a course
-outside their own (nonexistent) `org_id`. `ClassroomController::show()`
-takes `int $course` for exactly this reason.
+Never accept typed `Course $course` implicit route-model binding on
+student-facing route in this module. Implicit binding uses model's default
+(scoped) query and will silently 404 Aluno viewing course outside their own
+(nonexistent) `org_id`. `ClassroomController::show()` takes `int $course`
+for exactly this reason.
 
-When a controller needs the Course cached onto a relation the view reads
-directly (e.g. `$lesson->module->course`), set it explicitly so a later
-access doesn't re-trigger the scoped, empty-for-an-Aluno query:
+When controller needs Course cached onto relation the view reads directly
+(e.g. `$lesson->module->course`), set it explicitly so later access does
+not re-trigger scoped, empty-for-Aluno query:
 
 ```php
 $course = $lesson->module->course()->withoutGlobalScopes()->firstOrFail();
@@ -102,26 +100,25 @@ $lesson->module->setRelation('course', $course);
 ## `LessonPlayer.js`: Two Independent Bindings, One Public Test Seam
 
 `resources/js/modules/LessonPlayer.js` binds two unrelated things on
-`init()` — `bindManualCompletion()` for `[data-mark-complete-url]`
-buttons, `bindVideoPlayers()` for `[data-youtube-player]` containers —
-and both funnel UI feedback through the same `reflectCompletion()`/
-`notify()` helpers so a manual click and a video auto-completion look
-identical to the student.
+`init()` — `bindManualCompletion()` for `[data-mark-complete-url]` buttons,
+`bindVideoPlayers()` for `[data-youtube-player]` containers. Both funnel UI
+feedback through same `reflectCompletion()`/`notify()` helpers, so manual
+click and video auto-completion look identical to student.
 
 `reportProgress(lessonId, watchedSeconds, durationSeconds)` is
-**intentionally public**: it is the real 5s-poll callback, but it is also
-the exact seam `tests/Browser/VideoThresholdCompletionTest.php` calls
-directly (`window.LessonPlayer.reportProgress(...)`) to simulate crossing
-the 90% threshold without depending on YouTube's real IFrame API inside
-headless Dusk. Do not rename or make this private — a Dusk regression
-here means the test file, not the JS, needs updating in lockstep.
+**intentionally public**: it is real 5s-poll callback, and also exact seam
+`tests/Browser/VideoThresholdCompletionTest.php` calls directly
+(`window.LessonPlayer.reportProgress(...)`) to simulate crossing 90%
+threshold without depending on YouTube's real IFrame API inside headless
+Dusk. Do not rename it, do not make it private. Dusk regression here means
+test file needs updating in lockstep, not JS.
 
 ## Badge/Button Visibility: Don't Rely on Bare `hidden` Toggling Against `<x-ui.badge>`
 
-`<x-ui.badge>` bakes `display: inline-flex` into its own inline `style`,
-so toggling the native `hidden` attribute cannot win against it. Reveal a
-completion badge with an explicit inline-style override instead, appended
-after the component's own `style` via `ComponentAttributeBag::merge()`:
+`<x-ui.badge>` bakes `display: inline-flex` into own inline `style`, so
+toggling native `hidden` attribute cannot win against it. Reveal completion
+badge with explicit inline-style override instead, appended after
+component's own `style` via `ComponentAttributeBag::merge()`:
 
 ```blade
 <x-ui.badge data-completion-badge style="display:none;">Concluída</x-ui.badge>
@@ -131,9 +128,9 @@ after the component's own `style` via `ComponentAttributeBag::merge()`:
 badge.style.display = 'inline-flex'; // not badge.classList.remove('hidden')
 ```
 
-Also, a bare `@if(...) hidden @endif` (or a bare `{{ $expr }}`) inside an
+Also: bare `@if(...) hidden @endif` (or bare `{{ $expr }}`) inside
 `<x-component ...>` tag's own attribute list breaks Blade's component-tag
-attribute compiler — use the dynamic-attribute binding form instead:
+attribute compiler. Use dynamic-attribute binding form instead:
 
 ```blade
 {{-- wrong: desyncs component-tag compilation --}}

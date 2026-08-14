@@ -1,13 +1,13 @@
 ---
 name: invitations-conventions
 description: >
-  Concrete code patterns, snippets, and guardrails for the Smart Invitation
-  & Enrollment feature (SPEC-06): ProcessSmartInvitationAction's
-  lockForUpdate transaction, the check-email/adaptive-form contract,
-  EnrollmentController's course_user upsert pattern, and the
-  InvitationLinkPolicy/route conventions. Use whenever writing a
-  controller, Form Request, Policy, or Action that manages InvitationLink
-  or course_user records, or wires the /convite/{token} endpoints.
+  Code patterns, snippets, guardrails for Smart Invitation & Enrollment
+  feature (SPEC-06): ProcessSmartInvitationAction lockForUpdate
+  transaction, check-email/adaptive-form contract, EnrollmentController
+  course_user upsert pattern, InvitationLinkPolicy/route conventions. Use
+  when writing controller, Form Request, Policy, or Action managing
+  InvitationLink or course_user records, or wiring /convite/{token}
+  endpoints.
 license: MIT
 metadata:
   feature: invitations
@@ -20,10 +20,10 @@ metadata:
 
 ## `ProcessSmartInvitationAction`: Lock First, Re-Check Usability, Then Branch
 
-The whole Action runs inside one `DB::transaction()`, and the very first
-thing it does inside that transaction is re-fetch the `InvitationLink`
-**with `lockForUpdate()`**, bypassing `OrgScope` (`withoutGlobalScopes()`)
-since this runs with no authenticated tenant context:
+Whole Action runs inside one `DB::transaction()`. First thing inside that
+transaction: re-fetch `InvitationLink` **with `lockForUpdate()`**,
+bypassing `OrgScope` (`withoutGlobalScopes()`) since this runs with no
+authenticated tenant context:
 
 ```php
 return DB::transaction(function () use ($token, $data) {
@@ -40,11 +40,10 @@ return DB::transaction(function () use ($token, $data) {
 });
 ```
 
-Never move the `isUsable()` check to before the `lockForUpdate()` call, and
-never reuse an `InvitationLink` instance the caller already loaded before
-entering the transaction — either mistake reopens the exact race the lock
-exists to close (see `invitations-architecture`'s two-concurrent-requests
-example).
+Never move `isUsable()` check before `lockForUpdate()` call. Never reuse
+`InvitationLink` instance caller loaded before entering transaction. Either
+mistake reopens exact race lock exists to close (see
+`invitations-architecture` two-concurrent-requests example).
 
 ## New Account vs. Existing Account: Password Check, Never a Silent Account Switch
 
@@ -63,14 +62,13 @@ if ($user) {
 }
 ```
 
-A wrong password on an existing e-mail is a `ValidationException` (surfaced
-back to the `password` field, HTTP 422 via the normal FormRequest/Exception
-pipeline), **not** an `InvitationLinkInvalidException` — the link itself is
-perfectly usable, it's the submitted credential that's wrong. This also
-deliberately does not re-check "does this e-mail exist" here: that was
-already revealed, by design, by `/convite/check-email` one step earlier in
-the flow (see the next section) — this branch's only job is authenticating
-against the *submitted* password.
+Wrong password on existing e-mail is `ValidationException` (surfaced back
+to `password` field, HTTP 422 via normal FormRequest/Exception pipeline),
+**not** `InvitationLinkInvalidException` — link itself is fine, submitted
+credential is wrong. Also deliberately does not re-check "does this e-mail
+exist" here: already revealed, by design, by `/convite/check-email` one
+step earlier in flow (see next section). This branch job is only
+authenticating against *submitted* password.
 
 ## `course_user` Upsert: Read-Then-Branch, Never a Blind `attach()`
 
@@ -85,10 +83,10 @@ if (! $enrollment) {
 }
 ```
 
-`course_user` has a real `UNIQUE(user_id, course_id)` constraint — a second
-`attach()` for a pair that already has a row (active, cancelled, or
-completed) would throw a DB integrity exception. `EnrollmentController::
-store()` (RF21's manual-enroll form) follows the identical shape:
+`course_user` has real `UNIQUE(user_id, course_id)` constraint. Second
+`attach()` for pair that already has row (active, cancelled, or completed)
+throws DB integrity exception. `EnrollmentController::store()` (RF21
+manual-enroll form) follows identical shape:
 
 ```php
 if ($course->students()->where('users.id', $userId)->exists()) {
@@ -98,32 +96,32 @@ if ($course->students()->where('users.id', $userId)->exists()) {
 }
 ```
 
-Both call sites reactivate a `cancelled` row to `active` rather than ever
-attempting a second insert — see `invitations-architecture` for why this
-must never touch a `completed` row the same way (out of this feature's
-scope to un-complete a finished course; if that's ever requested, it needs
-its own explicit design, not a tweak to this upsert).
+Both call sites reactivate `cancelled` row to `active`, never attempt
+second insert. See `invitations-architecture` for why this must never touch
+`completed` row same way — un-completing finished course is out of this
+feature scope; if ever requested, needs own explicit design, not tweak to
+this upsert.
 
 ## `check-email`: Reveal Existence By Design, Then Never Re-Reveal It
 
-`InvitationController::checkEmail()` is the one endpoint in this feature
-that intentionally answers "does an account with this e-mail exist?" to an
-unauthenticated caller — that's the whole point of the adaptive form (RF03
-§3). Every other endpoint in this feature must **not** leak that same fact
-through a different channel (timing, distinct error codes, etc.) — in
-particular, `ProcessSmartInvitationAction`'s wrong-password branch above
-returns the same generic validation shape whether or not the account
-exists elsewhere in the request lifecycle, since by the time `store()` is
-called the client has already been told the answer via `check-email`.
+`InvitationController::checkEmail()` is one endpoint in this feature that
+intentionally answers "does account with this e-mail exist?" to
+unauthenticated caller — whole point of adaptive form (RF03 §3). Every
+other endpoint in this feature must **not** leak same fact through
+different channel (timing, distinct error codes, etc.). In particular
+`ProcessSmartInvitationAction` wrong-password branch above returns same
+generic validation shape whether or not account exists elsewhere in request
+lifecycle, since by time `store()` runs client already got answer via
+`check-email`.
 
 ## `InvitationLinkPolicy`: Mirrors `CoursePolicy`, Not `ModulePolicy`
 
-`InvitationLink` carries its own `OrgScope` (like `Course`), so — same
-reasoning as `courses-conventions`' Course vs. Module/Lesson split — this
-Policy needs only the role check for `viewAny`/`create`, and one explicit
-`org_id` comparison for `delete` (since a route-model-bound
-`{invitation_link}` for `destroy` is not itself confined by any parent
-route segment the way `index`/`create`/`store` are via `{course}`):
+`InvitationLink` carries own `OrgScope` (like `Course`), so — same
+reasoning as `courses-conventions` Course vs. Module/Lesson split — this
+Policy needs only role check for `viewAny`/`create`, plus one explicit
+`org_id` comparison for `delete` (route-model-bound `{invitation_link}` for
+`destroy` is not confined by any parent route segment the way
+`index`/`create`/`store` are via `{course}`):
 
 ```php
 public function delete(User $user, InvitationLink $invitationLink): bool
@@ -132,17 +130,17 @@ public function delete(User $user, InvitationLink $invitationLink): bool
 }
 ```
 
-The `withoutGlobalScopes()` here is load-bearing for the exact same reason
-`ModulePolicy`/`LessonPolicy` need it in `courses-conventions`: reading the
-parent `Course` through the normal scoped relation while the acting user is
-a *different*-org Gestor returns `null` (the scope filters the row out),
-turning an intended 403 into a null-argument crash.
+`withoutGlobalScopes()` here is load-bearing for exact same reason
+`ModulePolicy`/`LessonPolicy` need it in `courses-conventions`: reading
+parent `Course` through normal scoped relation while acting user is
+*different*-org Gestor returns `null` (scope filters row out), turning
+intended 403 into null-argument crash.
 
 ## Route Shape: `courses.enrollments` Is Three Explicit Routes, Not A Resource
 
-`routes/web.php` registers all three `courses.enrollments.*` routes
-by hand — there is no `Route::resource('courses.enrollments', ...)` at
-all, not even a partial one:
+`routes/web.php` registers all three `courses.enrollments.*` routes by
+hand. No `Route::resource('courses.enrollments', ...)` at all, not even
+partial:
 
 ```php
 Route::get('courses/{course}/enrollments', [EnrollmentController::class, 'index'])
@@ -153,23 +151,22 @@ Route::delete('courses/{course}/enrollments/{user}', [EnrollmentController::clas
     ->name('courses.enrollments.destroy');
 ```
 
-This is deliberate: there is no `Enrollment` Eloquent model to route-bind
-(`course_user` is a pivot only — see `invitations-architecture`), so
-`index`/`store` bind only `{course}`, and `EnrollmentController::destroy(
-Course $course, User $user)` needs **both** the parent Course and the
-target User bound from the URI — a single trailing `{enrollment}` segment
-(what any `shallow()` resource's `destroy` would produce) cannot supply
-two named route parameters. If you ever need to add `edit`/`update` to
-this group, add another explicit `Route::` line the same way rather than
-introducing `Route::resource()`/`shallow()` for this feature.
-`InvitationLinkController`'s routes have no such problem (`InvitationLink`
-is a real model, `{invitation_link}` alone is enough), so those *do* use
-the plain `shallow()` resource shape (`only(['index', 'create', 'store',
+Deliberate: no `Enrollment` Eloquent model to route-bind (`course_user` is
+pivot only — see `invitations-architecture`), so `index`/`store` bind only
+`{course}`, and `EnrollmentController::destroy(Course $course, User $user)`
+needs **both** parent Course and target User bound from URI. Single
+trailing `{enrollment}` segment (what any `shallow()` resource `destroy`
+produces) cannot supply two named route parameters. Need `edit`/`update` in
+this group later? Add another explicit `Route::` line same way, do not
+introduce `Route::resource()`/`shallow()` for this feature.
+`InvitationLinkController` routes have no such problem (`InvitationLink` is
+real model, `{invitation_link}` alone is enough), so those *do* use plain
+`shallow()` resource shape (`only(['index', 'create', 'store',
 'destroy'])`).
 
 ## Related Specs
 
 - `spec/specs/06-smart-invitation-and-enrollment-system.md` — RF03, RF21,
   RN09.
-- `courses-conventions` — the `withoutGlobalScopes()`-for-Policy-parent
-  pattern this feature's `InvitationLinkPolicy` reuses verbatim.
+- `courses-conventions` — `withoutGlobalScopes()`-for-Policy-parent pattern
+  this feature `InvitationLinkPolicy` reuses verbatim.

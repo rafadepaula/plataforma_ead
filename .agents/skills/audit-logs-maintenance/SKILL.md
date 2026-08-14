@@ -1,14 +1,13 @@
 ---
 name: audit-logs-maintenance
 description: >
-  Debugging, testing, and edge-case guide for the System Audit Logging &
-  Monitoring feature (SPEC-15): the mandatory PHPUnit/Dusk test files,
-  common `org_id`-null/`UnresolvedOrgContextException`/prune-scope
-  failure modes, the retention config, and Dusk gotchas for the diff
-  modal. Use when `AuditLogTest` or `AuditLogUiTest` is failing, a guest
-  login-failure 500s instead of logging, `audit-logs:prune` deletes the
-  wrong (or no) rows, or the "Ver diff" modal doesn't show the expected
-  JSON in the browser.
+  Debug, test, edge-case guide for System Audit Logging & Monitoring
+  (SPEC-15): mandatory PHPUnit/Dusk files, `org_id`-null /
+  `UnresolvedOrgContextException` / prune-scope failure modes, retention
+  config, Dusk gotchas for diff modal. Use when `AuditLogTest` or
+  `AuditLogUiTest` fails, guest login-failure 500s instead of logging,
+  `audit-logs:prune` deletes wrong or no rows, or "Ver diff" modal shows
+  no JSON.
 license: MIT
 metadata:
   feature: audit-logs
@@ -19,136 +18,58 @@ metadata:
 
 # Audit Logs Maintenance
 
-## Mandatory Test Coverage for This Module
+## Mandatory Test Coverage
 
-- `tests/Feature/AuditLogTest.php` — covers: `AuditableTrait` firing on
-  `created`/`updated`/`deleted` with redaction applied; `AuditService`
-  dual-writing DB + the `audit` Monolog channel; the 4 auth listeners
-  firing with `password: '[REDACTED]'`; `OrgScope` isolation on
-  `index()` (Gestor sees only their own Org, Admin sees/filters all);
-  **no** `UnresolvedOrgContextException` for null-org writes (guest
-  `login.failed`); every spec §3 critical-action event
-  (`csv.import`/`essay.graded`/`certificate.issued`/`.revoked`/
-  `impersonate.start`/`.stop`/`content.deleted`/`user.status_changed`)
-  recorded with the documented payload shape; `audit-logs:prune`
-  deleting only rows older than `retention_days` and bypassing
-  `OrgScope`; `index()` filters (date range, event category, user
-  search, org) returning correctly scoped results; CSV export streaming
-  the full filtered set.
-- `tests/Browser/AuditLogUiTest.php` (Dusk) — Admin and Gestor loading
-  their respective screens, applying filters, opening the diff modal
-  and seeing old/new JSON, paginating, triggering CSV export, and a
-  Gestor never seeing another Org's rows or the Org filter dropdown.
+- `tests/Feature/AuditLogTest.php` — `AuditableTrait` firing on `created`/`updated`/`deleted` with redaction; `AuditService` dual-writing DB + `audit` Monolog channel; 4 auth listeners firing with `password: '[REDACTED]'`; `OrgScope` isolation on `index()` (Gestor own Org only, Admin all); **no** `UnresolvedOrgContextException` on null-org write (guest `login.failed`); every spec §3 critical-action event (`csv.import`, `essay.graded`, `certificate.issued`/`.revoked`, `impersonate.start`/`.stop`, `content.deleted`, `user.status_changed`) with documented payload; `audit-logs:prune` deleting only rows older than `retention_days` and bypassing `OrgScope`; `index()` filters (date range, event category, user search, org) scoped right; CSV export streaming full filtered set.
+- `tests/Browser/AuditLogUiTest.php` (Dusk) — Admin and Gestor loading their screens, filtering, opening diff modal and seeing old/new JSON, paginating, CSV export, Gestor never seeing another Org's rows or the Org dropdown.
 
-Run the narrowest of these first after touching this module:
+Run narrowest first:
 
 ```bash
 vendor/bin/sail artisan test --filter=AuditLogTest
 vendor/bin/sail dusk --filter=AuditLogUiTest
 ```
 
-Dusk tests use `DatabaseMigrations`, never `RefreshDatabase` (separate
-HTTP process, see `laravel-dusk`/`testing-architecture`).
+Dusk classes declare no DB trait — `DatabaseTruncation` inherited from `Tests\DuskTestCase`. `RefreshDatabase` forbidden (Dusk runs separate HTTP process). `DatabaseMigrations` retired (per-method `migrate:fresh`). See `laravel-dusk`/`testing-conventions`.
 
-## Common Failure Modes
+## Failure Modes
 
-- **A guest `login.failed` (or any Admin-global write with no active
-  Impersonate Org session) throws `UnresolvedOrgContextException`
-  instead of writing `org_id = null`.** This means `AuditLog`'s write
-  path is going through `OrgScope`'s default `creating` hook instead of
-  bypassing it — see `audit-logs-architecture`'s "Creating-Hook Bypass"
-  section. Fix: route every write through
-  `AuditLog::withoutEvents(...)` (or an equivalent bypass), never a
-  plain `AuditLog::create([...])` call outside that wrapper.
-- **`audit-logs:prune` deletes nothing (or deletes only one Org's rows)
-  when run from `artisan`/the scheduler.** Confirm the command builds
-  its query with `AuditLog::withoutGlobalScopes()` — a bare
-  `AuditLog::where('created_at', '<', ...)` still carries `OrgScope`'s
-  scope closure, which may add a narrowing (or, in a no-`Auth::user()`
-  console context, a no-op) `WHERE` depending on how that closure reads
-  `Auth::user()`; either way, un-scoped is the only correct query here
-  because pruning is a global retention policy, not a per-tenant one.
-- **`old_values`/`new_values` still contain a plaintext password after
-  a `User` update.** `AuditObserver` must `unset()` `password`/
-  `remember_token` from the arrays built off `getChanges()`/
-  `getOriginal()` — a model's `$hidden`/casts do **not** filter what
-  those two methods return, so relying on them silently leaks the
-  hashed (or, worse, pre-hash-mutator) value into `audit_logs`.
-- **A DB failure (or a full disk) on the `audit_logs` INSERT breaks the
-  primary request** (e.g. a certificate issuance 500s because the audit
-  write threw). `AuditService::log()`'s DB write must be wrapped in its
-  own `try`/`catch`; if this guard is missing, an audit-logging bug can
-  take down an unrelated feature.
-- **A Course/Module/Lesson delete produces two audit rows for the same
-  deletion** (one generic `deleted` from `AuditableTrait`, one manual
-  `content.deleted` from the controller's `destroy()`). Confirm which
-  path is authoritative per model before wiring both — see
-  `audit-logs-architecture`'s double-logging note.
-- **CSV export only contains the current page's 25 rows.** The export
-  action must apply the same filters as `index()` but query/stream
-  without `->paginate()` — grep for a stray `->paginate(25)` inside
-  `export()`.
-- **A Gestor's request can see the Admin-only Org filter dropdown, or a
-  spoofed `?org_id=` query string leaks another Org's rows.** The
-  `org_id` filter must be server-side ignored for any non-Admin
-  request regardless of what the query string contains — see
-  `dashboard-conventions`'s equivalent guard on `ReportExportController`.
+- **Guest `login.failed` (or Admin-global write with no Impersonate Org) throws `UnresolvedOrgContextException` instead of writing `org_id = null`.** Write path went through `OrgScope`'s `creating` hook — see "Creating-Hook Bypass" in `audit-logs-architecture`. Fix: route every write through `AuditLog::withoutEvents(...)` or equivalent bypass. Never plain `AuditLog::create([...])` outside that wrapper.
+- **`audit-logs:prune` deletes nothing, or only one Org's rows, from artisan/scheduler.** Query must use `AuditLog::withoutGlobalScopes()`. Bare `AuditLog::where('created_at', '<', ...)` still carries `OrgScope`'s closure, which may add a narrowing (or, without `Auth::user()`, a no-op) `WHERE`. Pruning = global retention policy, so unscoped is the only correct query.
+- **`old_values`/`new_values` still hold plaintext password after `User` update.** `AuditObserver` must `unset()` `password`/`remember_token` from arrays built off `getChanges()`/`getOriginal()`. `$hidden`/casts do **not** filter those two methods — relying on them leaks the hashed (or pre-hash-mutator) value into `audit_logs`.
+- **DB failure or full disk on `audit_logs` INSERT breaks the primary request** (certificate issuance 500s because audit write threw). `AuditService::log()`'s DB write needs its own `try`/`catch`. Missing guard = audit bug takes down unrelated feature.
+- **Course/Module/Lesson delete makes two audit rows** (generic `deleted` from `AuditableTrait` + manual `content.deleted` from `destroy()`). Pick authoritative path per model — see double-logging note in `audit-logs-architecture`.
+- **CSV export only has current page's 25 rows.** Export must apply same filters as `index()` but stream without `->paginate()`. Grep for stray `->paginate(25)` inside `export()`.
+- **Gestor sees Admin-only Org dropdown, or spoofed `?org_id=` leaks another Org.** `org_id` filter must be ignored server-side for any non-Admin request, whatever the query string says. Same guard as `ReportExportController` in `dashboard-conventions`.
 
 ## Retention Config
 
-`AUDIT_LOG_RETENTION_DAYS` (default `365`, read via
-`config('audit.retention_days')`) governs only the `audit_logs` MySQL
-table's pruning window — changing it does not affect the separate
-`audit` Monolog channel's own log-rotation settings in
-`config/logging.php`. When writing a prune test, seed rows straddling
-the boundary explicitly (`created_at` at `retention_days - 1`,
-`retention_days`, `retention_days + 1` days ago) rather than asserting
-on a total count, so an off-by-one in the `<` vs `<=` comparison is
-actually caught.
+`AUDIT_LOG_RETENTION_DAYS` (default `365`, via `config('audit.retention_days')`) governs only `audit_logs` MySQL pruning window. No effect on `audit` Monolog channel rotation in `config/logging.php`. In a prune test, seed rows straddling the boundary (`created_at` at `retention_days - 1`, `retention_days`, `retention_days + 1` days ago) instead of asserting a total count — catches off-by-one between `<` and `<=`.
 
-## Dusk Gotchas for the Diff Modal
+## Dusk Gotchas: Diff Modal
 
-- The diff modal is a **single shared** `#audit-diff-modal`, not one
-  per row (see `audit-logs-conventions`) — a Dusk test must click a
-  specific row's `[dusk="view-diff-{id}"]` button and then assert
-  against the shared `[dusk="audit-diff-old"]`/`[dusk="audit-diff-new"]`
-  content, not look for a per-row modal id.
-- `ModalManager`'s backdrop-hide-on-load fix (Alpine.js is not an
-  installed dependency, see `ForumEditHistory.js`'s comment) means the
-  modal is `display: none` until `AuditLogDiffModal.js` explicitly opens
-  it — `waitFor('@audit-diff-old')` alone is not sufficient before the
-  click, only after it; assert visibility only after the trigger click,
-  and use `waitFor` (never `pause()`) for the post-click content to
-  settle, per `laravel-dusk`.
-- Because the JSON is written via `.textContent` (not innerHTML), Dusk's
-  `assertSee()` against `[dusk="audit-diff-old"]` will match the
-  pretty-printed JSON string verbatim (including key names) — assert on
-  a distinguishing field value from the seeded `old_values`/`new_values`
-  fixture, not the whole blob, to keep the assertion resilient to
-  formatting/whitespace differences.
+- Modal is **single shared** `#audit-diff-modal`, not one per row (`audit-logs-conventions`). Test clicks a row's `[dusk="view-diff-{id}"]`, then asserts against shared `[dusk="audit-diff-old"]`/`[dusk="audit-diff-new"]`. No per-row modal id exists.
+- `ModalManager`'s backdrop-hide-on-load fix (no Alpine.js installed, see `ForumEditHistory.js` comment) keeps modal at `display: none` until `AuditLogDiffModal.js` opens it. `waitFor('@audit-diff-old')` before the click is not enough — assert visibility only after the trigger click, and use `waitFor` (never `pause()`) for content, per `laravel-dusk`.
+- JSON written via `.textContent`, so `assertSee()` on `[dusk="audit-diff-old"]` matches pretty-printed JSON verbatim including key names. Assert one distinguishing field value from the fixture, not the whole blob — resilient to whitespace/format changes.
 
-## Open Questions Still Needing a Decision
+## Open Questions
 
-Logged from the SPEC-15 tech-refine pass — not resolved by this
-bucket's implementation:
+From SPEC-15 tech-refine. Not resolved by this bucket:
 
-1. **`csv.import` granularity.** `UserImportService::importChunk()` is
-   called once per 50-row browser-side chunk; spec's payload
-   (`total_processed`, `file_name`) implies one event per logical
-   import, which may require an import-session/finalization step not
-   yet designed.
-2. **`password.reset` scope.** Whether the event should cover only the
-   completed reset (`NewPasswordController`'s existing `PasswordReset`
-   event) or also the request stage
-   (`PasswordResetLinkController::store()`, which fires no stock
-   Illuminate event today).
-3. **Exact "Mutação Geral" auditable model list.** Spec §4.1 names 7
-   models plus "etc." — confirm whether `InvitationLink`, `ForumTopic`,
-   `SystemSetting`, `HelpArticle` are in scope before assuming the list
-   is closed.
-4. **Event-category → event-name mapping for the RF33 UI dropdown.**
-   The 3 category labels (Autenticação / Mutações de Banco / Ações
-   Críticas) are named in spec §5 but no exact event-list-per-category
-   enum is given — `audit-logs-conventions`'s example 3-key array is a
-   working assumption, not a settled contract; confirm before treating
-   it as final.
+1. **`csv.import` granularity.** `UserImportService::importChunk()` runs once per 50-row browser chunk. Spec payload (`total_processed`, `file_name`) implies one event per logical import — needs an import-session/finalization step not yet designed.
+2. **`password.reset` scope.** Only completed reset (`NewPasswordController`'s `PasswordReset` event), or also request stage (`PasswordResetLinkController::store()`, which fires no stock Illuminate event today)?
+3. **Exact "Mutação Geral" model list.** Spec §4.1 names 7 models plus "etc.". Confirm whether `InvitationLink`, `ForumTopic`, `SystemSetting`, `HelpArticle` are in scope before treating list as closed.
+4. **Event-category to event-name mapping for RF33 dropdown.** 3 labels named in spec §5, no per-category enum given. The 3-key array in `audit-logs-conventions` is a working assumption, not settled.
+
+---
+
+## E2E Coverage Lives in Lifecycle Chains
+
+`tests/Browser/` groups by **user journey (lifecycle chain)** — one method drives create, edit, state change, delete, consequence. Not by module, spec, or use case.
+
+- **Find coverage**: chain methods may sit in a file named after another module when the journey crosses boundaries. Search `grep -rn "<route name|dusk selector>" tests/Browser/`, not by file name. Missing per-module file is **not** a gap.
+- **Add coverage**: extend the journey's chain with a numbered step carrying UI **and** DB assertion. New method only for independent negatives (403, cross-tenant, other actor). New file only for genuinely new journey.
+- **Debug**: stack trace points at a step — match line to its `// N.` comment. Late failure usually means earlier step did not persist.
+- **Database**: no DB trait in `tests/Browser/*`; `DatabaseTruncation` inherited from `Tests\DuskTestCase`. Re-adding `DatabaseMigrations` = suite-wide slowdown. Files, cache, session not reset between methods.
+
+Full rule: `testing-conventions`. Chain debug: `testing-maintenance`.

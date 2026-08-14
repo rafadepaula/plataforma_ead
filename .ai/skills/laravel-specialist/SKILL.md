@@ -1,6 +1,6 @@
 ---
 name: laravel-specialist
-description: Build and configure Laravel 10+ applications, including creating Eloquent models and relationships, implementing Sanctum authentication, configuring Horizon queues, designing RESTful APIs with API resources, and building reactive interfaces with Livewire. Use when creating Laravel models, setting up queue workers, implementing Sanctum auth flows, building Livewire components, optimising Eloquent queries, or writing Pest/PHPUnit tests for Laravel features.
+description: Build and configure Laravel 10+ apps. Eloquent models and relationships, Sanctum authentication, Horizon queues, RESTful APIs with API resources, reactive Livewire interfaces. Use when create Laravel models, set up queue workers, implement Sanctum auth flows, build Livewire components, optimise Eloquent queries, or write Pest/PHPUnit tests for Laravel features.
 license: MIT
 metadata:
   author: https://github.com/Jeffallan
@@ -15,19 +15,19 @@ metadata:
 
 # Laravel Specialist
 
-Senior Laravel specialist with deep expertise in Laravel 10+, Eloquent ORM, and modern PHP 8.2+ development.
+Senior Laravel specialist. Deep expertise: Laravel 10+, Eloquent ORM, modern PHP 8.2+.
 
 ## Core Workflow
 
-1. **Analyse requirements** — Identify models, relationships, APIs, and queue needs
-2. **Design architecture** — Plan database schema, service layers, and job queues
-3. **Implement models** — Create Eloquent models with relationships, scopes, and casts; run `php artisan make:model` and verify with `php artisan migrate:status`
-4. **Build features** — Develop controllers, services, API resources, and jobs; run `php artisan route:list` to verify routing
-5. **Test thoroughly** — Write feature and unit tests; run `php artisan test` before considering any step complete (target >85% coverage)
+1. **Analyse requirements** — Find models, relationships, APIs, queue needs
+2. **Design architecture** — Plan DB schema, service layers, job queues
+3. **Implement models** — Eloquent models with relationships, scopes, casts. Run `php artisan make:model`, verify with `php artisan migrate:status`
+4. **Build features** — Controllers, services, API resources, jobs. Run `php artisan route:list` to verify routing
+5. **Test thoroughly** — Write feature and unit tests. Run `php artisan test` before call any step done (target >85% coverage)
 
 ## Reference Guide
 
-Load detailed guidance based on context:
+Load detailed guidance by context:
 
 | Topic | Reference | Load When |
 |-------|-----------|-----------|
@@ -41,27 +41,27 @@ Load detailed guidance based on context:
 
 ### MUST DO
 - Use PHP 8.2+ features (readonly, enums, typed properties)
-- Type hint all method parameters and return types
-- Use Eloquent relationships properly (avoid N+1 with eager loading)
-- Implement API resources for transforming data
+- Type hint all method params and return types
+- Use Eloquent relationships right (avoid N+1, eager load)
+- API resources for transform data
 - Queue long-running tasks
-- Write comprehensive tests (>85% coverage)
-- Use service containers and dependency injection
-- Follow PSR-12 coding standards
+- Write full tests (>85% coverage)
+- Use service container and dependency injection
+- Follow PSR-12
 
 ### MUST NOT DO
-- Use raw queries without protection (SQL injection)
-- Skip eager loading (causes N+1 problems)
+- Raw queries without protection (SQL injection)
+- Skip eager loading (causes N+1)
 - Store sensitive data unencrypted
 - Mix business logic in controllers
-- Hardcode configuration values
+- Hardcode config values
 - Skip validation on user input
 - Use deprecated Laravel features
 - Ignore queue failures
 
 ## Code Templates
 
-Use these as starting points for every implementation.
+Start points for every implementation.
 
 ### Eloquent Model
 
@@ -247,7 +247,7 @@ it('queues a publish job when a draft is submitted', function (): void {
 
 ## Validation Checkpoints
 
-Run these at each workflow stage to confirm correctness before proceeding:
+Run at each workflow stage. Confirm correct before proceed.
 
 | Stage | Command | Expected Result |
 |-------|---------|-----------------|

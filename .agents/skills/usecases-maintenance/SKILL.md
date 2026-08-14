@@ -1,6 +1,6 @@
 ---
 name: usecases-maintenance
-description: Use when creating a new use case, updating existing use cases in spec/docs/usecases/, or maintaining traceability matrices in spec/docs/usecases/index.md and spec/docs/full_spec.md.
+description: Use when create new use case, update existing use cases in spec/docs/usecases/, or maintain traceability matrices in spec/docs/usecases/index.md and spec/docs/full_spec.md.
 ---
 
 # **Guia de Manutenção e Criação de Casos de Uso (Use Cases)**
@@ -9,7 +9,7 @@ description: Use when creating a new use case, updating existing use cases in sp
 
 ## **1. Visão Geral e Arquitetura de Documentação**
 
-A documentação de requisitos e especificação funcional da plataforma é mantida sob a pasta `spec/docs/` e organizada em três pilares fundamentais:
+Documentação de requisitos e especificação funcional da plataforma mora sob `spec/docs/`, organizada em três pilares:
 
 ```
 spec/docs/
@@ -25,14 +25,14 @@ spec/docs/
 
 1. **`spec/docs/full_spec.md` (Documento Mestre):**
    - Especificação técnica consolidada do sistema EAD Multitenant.
-   - Contém a visão de escopo, arquitetura técnica (PHP 8.5 / Laravel 13, MariaDB/MySQL), esquema de banco de dados (23 tabelas), Matriz de Requisitos Funcionais (**RF01 a RF33+**), Matriz de Requisitos Não-Funcionais (**RNF01 a RNF07**), Regras de Negócio (**RN01 a RN16+**), resumo dos Casos de Uso, Matriz de Rastreabilidade e Tokens do Design System.
+   - Contém visão de escopo, arquitetura técnica (PHP 8.5 / Laravel 13, MariaDB/MySQL), esquema de banco (23 tabelas), Matriz de Requisitos Funcionais (**RF01 a RF33+**), Matriz de Requisitos Não-Funcionais (**RNF01 a RNF07**), Regras de Negócio (**RN01 a RN16+**), resumo dos Casos de Uso, Matriz de Rastreabilidade e Tokens do Design System.
 
 2. **`spec/docs/usecases/` (Diretório de Casos de Uso Individuais):**
-   - Contém arquivos Markdown individuais para cada Caso de Uso (padrão `UCxx-slug-do-nome.md`).
-   - Cada arquivo descreve detalhadamente o fluxo verdadeiro da aplicação através de engenharia reversa do código-fonte (rotas, controllers, actions, middleware, form requests, blade views e componentes JS/AJAX).
+   - Contém arquivo Markdown individual por Caso de Uso (padrão `UCxx-slug-do-nome.md`).
+   - Cada arquivo descreve em detalhe o fluxo verdadeiro da aplicação, obtido por engenharia reversa do código-fonte (rotas, controllers, actions, middleware, form requests, blade views, componentes JS/AJAX).
 
 3. **`spec/docs/usecases/index.md` (Índice e Rastreabilidade Mestre):**
-   - Catálogo estruturado de todos os Casos de Uso categorizados por módulo.
+   - Catálogo estruturado de todos os Casos de Uso, categorizados por módulo.
    - Contém a **Matriz Completa de Rastreabilidade Cruzada** (RF vs RN vs UC) e a **Matriz de Cobertura de Regras de Negócio** (RN vs RF vs UC).
 
 ---
@@ -48,7 +48,7 @@ spec/docs/
 
 ## **3. Estrutura Padrão Esperada para um Caso de Uso (`UCxx-*.md`)**
 
-Todo novo arquivo em `spec/docs/usecases/` DEVE seguir rigorosamente a estrutura de 7 seções abaixo:
+Todo arquivo novo em `spec/docs/usecases/` DEVE seguir com rigor a estrutura de 7 seções abaixo:
 
 ```markdown
 # **Especificação de Caso de Uso: UCxx — [Nome do Caso de Uso]**
@@ -136,14 +136,14 @@ Todo novo arquivo em `spec/docs/usecases/` DEVE seguir rigorosamente a estrutura
 
 ## **4. Passo a Passo para Criar ou Atualizar um Caso de Uso**
 
-Quando um novo requisito/funcionalidade for adicionado ou alterado no sistema, siga a sequência obrigatória de 4 passos:
+Requisito/funcionalidade novo ou alterado no sistema: siga a sequência obrigatória de 4 passos.
 
 ### **Passo 1: Fazer a Engenharia Reversa do Código-Fonte**
-Inspecione as rotas (`routes/web.php`), Controllers (`app/Http/Controllers/`), Actions (`app/Actions/`), Services (`app/Services/`), Form Requests (`app/Http/Requests/`), Middlewares (`app/Http/Middleware/`), Views Blade (`resources/views/`) e scripts JS (`public/js/modules/`) para mapear o caminho real do usuário.
+Inspecione rotas (`routes/web.php`), Controllers (`app/Http/Controllers/`), Actions (`app/Actions/`), Services (`app/Services/`), Form Requests (`app/Http/Requests/`), Middlewares (`app/Http/Middleware/`), Views Blade (`resources/views/`) e scripts JS (`public/js/modules/`) para mapear o caminho real do usuário.
 
 ### **Passo 2: Criar o Arquivo Individual do Caso de Uso**
-Crie o arquivo `spec/docs/usecases/UCxx-nome-do-uc.md` utilizando o template da Seção 3 acima.
-- Preencha todos os passos do usuário (cliques, rotas, botões, campos e payloads).
+Crie `spec/docs/usecases/UCxx-nome-do-uc.md` usando o template da Seção 3 acima.
+- Preencha todos os passos do usuário (cliques, rotas, botões, campos, payloads).
 - Garanta que todos os RFs e RNs envolvidos estejam declarados na tabela da Seção 2.
 
 ### **Passo 3: Atualizar o Índice Mestre (`spec/docs/usecases/index.md`)**
@@ -153,7 +153,7 @@ Edite `spec/docs/usecases/index.md` adicionando:
 3. A atualização da **Matriz de Cobertura por Regra de Negócio (RN)**.
 
 ### **Passo 4: Atualizar o Documento Mestre (`spec/docs/full_spec.md`)**
-Edite `spec/docs/full_spec.md` refletindo as alterações nas seguintes seções:
+Edite `spec/docs/full_spec.md` refletindo as alterações nestas seções:
 1. **Seção 3 (Matriz de Requisitos Funcionais - RF):** Incluir novos RFs com suas RNs e UCs vinculadas.
 2. **Seção 5 (Regras de Negócio - RN):** Incluir novas RNs com seus RFs e UCs vinculados.
 3. **Seção 6 (Mapeamento de Casos de Uso):** Adicionar o novo UC e o link Markdown correspondente.

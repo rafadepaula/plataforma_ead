@@ -1,15 +1,17 @@
 ---
 name: bug-reporting
-description: Use when a user reports a bug, unexpected behavior, system error, broken feature, or failing test, and an exhaustive reproduction and fix specification must be documented.
+description: Use when user reports bug, unexpected behavior, system error, broken feature, or failing test, and exhaustive reproduction and fix specification must be documented.
 ---
 
 # Bug Reporting Skill (`bug-reporting`)
 
 ## Overview
 
-**A bug report is failed work if another agent cannot open `spec/bugs/BUG-*.md` and immediately write a failing PHPUnit/Dusk test and code the exact fix without asking a single follow-up question.**
+**Bug report is failed work if another agent cannot open `spec/bugs/BUG-*.md` and immediately write failing PHPUnit/Dusk test and code exact fix without asking single follow-up question.**
 
-This skill governs how to interview users, investigate the codebase, and author ultra-detailed, 100% reproducible bug specifications saved to `spec/bugs/BUG-{id}-{slug}.md`.
+This skill governs how to interview users, investigate codebase, author
+ultra-detailed, 100% reproducible bug specs saved to
+`spec/bugs/BUG-{id}-{slug}.md`.
 
 ---
 
@@ -38,55 +40,67 @@ digraph bug_reporting_flow {
 ## Core Protocol & Rules
 
 ### Rule 1: Mandatory Non-Technical `/grill-me` Interview
-When a user reports a bug, **NEVER** assume details or write a bug report based on a 1-sentence prompt.
-You MUST launch an exhaustive `/grill-me` interview using `ask_question` (one question at a time).
+User reports bug, **NEVER** assume details or write bug report from
+1-sentence prompt. MUST launch exhaustive `/grill-me` interview using
+`ask_question`, one question at a time.
 
 **Guiding Principles for Questions:**
-- **Keep it non-technical for the user:** Ask about user roles, UI actions, buttons clicked, form inputs, expected happy-path outcome vs actual error.
-- **Do NOT ask the user for PHP stack traces, SQL lines, or controller names:** You (the agent) will trace the code automatically based on the user's scenario.
-- **Provide clear, intuitive options** with a recommended default in `ask_question`.
+- **Keep non-technical for user:** Ask about user roles, UI actions, buttons clicked, form inputs, expected happy-path outcome vs actual error.
+- **Do NOT ask user for PHP stack traces, SQL lines, controller names:** You (agent) trace code automatically from user's scenario.
+- **Provide clear, intuitive options** with recommended default in `ask_question`.
 
 ### Rule 2: Concurrent Codebase & Log Mapping
-For every response the user provides, you MUST immediately use your code search and log tools (`grep_search`, `view_file`, `laravel-boost:read-log-entries`, `laravel-boost:browser-logs`) to:
-1. Locate the exact Blade views, routes, controllers, form requests, policies, and Eloquent models involved.
-2. Find existing failure/success logs or Dusk/PHPUnit tests for the affected feature.
-3. Identify exact line numbers, DB queries, and failure branches.
+For every user response, MUST immediately use code search and log tools
+(`grep_search`, `view_file`, `laravel-boost:read-log-entries`,
+`laravel-boost:browser-logs`) to:
+1. Locate exact Blade views, routes, controllers, form requests, policies, Eloquent models involved.
+2. Find existing failure/success logs or Dusk/PHPUnit tests for affected feature.
+3. Identify exact line numbers, DB queries, failure branches.
 
 ### Rule 4: Dusk Test Is Conditional, Never Automatic
-A Dusk E2E test is part of the plan ONLY when both are true:
-1. The bug is a UI/browser bug (visual rendering, JS interaction, drag-and-drop, modal, AJAX polling — something a PHPUnit request test cannot exercise).
-2. No existing test already covers this scenario. Search `tests/Browser/` and `tests/Feature/` for the affected feature before proposing a new Dusk test; if a test already reproduces (or would catch) this bug, reference that existing test instead of asking for a new one.
+Dusk E2E test is part of plan ONLY when both true:
+1. Bug is UI/browser bug (visual rendering, JS interaction, drag-and-drop, modal, AJAX polling — something PHPUnit request test cannot exercise).
+2. No existing test covers this scenario. Search `tests/Browser/` and `tests/Feature/` for affected feature before proposing new Dusk test; if test already reproduces (or would catch) this bug, reference that existing test instead of asking for new one.
 
-If the bug is a backend/logic bug, or an existing test already covers it, the Test Specification Plan MUST NOT include a Dusk test.
+Backend/logic bug, or existing test covers it: Test Specification Plan
+MUST NOT include Dusk test.
+
+Dusk test **is** warranted: plan must specify **which existing lifecycle
+chain it extends** (browser tests grouped by user journey, not by module,
+see `testing-conventions`) and which numbered step the repro becomes.
+Prescribe brand-new browser method only when repro needs different
+actor/tenant or is independent negative (403, cross-tenant). Never
+prescribe new file per module.
 
 ### Rule 3: Output File Contract
-Every bug report MUST be written to `spec/bugs/BUG-{id}-{slug}.md` using `write_to_file`.
+Every bug report MUST be written to `spec/bugs/BUG-{id}-{slug}.md` using
+`write_to_file`.
 
 ---
 
 ## `/grill-me` Question Playbook
 
-Ask questions sequentially until every item in this checklist is 100% clear:
+Ask questions sequentially until every checklist item 100% clear:
 
 1. **User Role & Multitenant Context:**
-   - Which user role is performing the action? (Admin, Gestor, Aluno, Guest/Unauthenticated)
-   - Which organization/tenant context is active? (Single tenant, specific `org_id`, multi-org switching)
+   - Which user role performs action? (Admin, Gestor, Aluno, Guest/Unauthenticated)
+   - Which organization/tenant context active? (Single tenant, specific `org_id`, multi-org switching)
 2. **Pre-conditions & Environment:**
-   - What state must the system/database be in before starting? (e.g., student enrolled in Course X, quiz submitted, certificate issued)
+   - What state must system/database be in before start? (e.g., student enrolled in Course X, quiz submitted, certificate issued)
 3. **Exact Step-by-Step Actions (The Trigger):**
-   - What page/URL did the user navigate to?
-   - What specific buttons were clicked, forms filled, or payloads sent?
+   - What page/URL did user navigate to?
+   - Which buttons clicked, forms filled, payloads sent?
 4. **Expected vs Actual Behavior:**
-   - What should have happened in a successful scenario (Happy Path)?
+   - What should happen in successful scenario (Happy Path)?
    - What actually happened? (500 Error page, validation message, silent failure, wrong redirect, missing database record)
 5. **Reproducibility & Scope:**
-   - Does this happen every time (100%), or only under specific conditions (edge cases, specific browser, specific user)?
+   - Happens every time (100%), or only under specific conditions (edge cases, specific browser, specific user)?
 
 ---
 
 ## Bug Report Specification Template (`spec/bugs/BUG-{id}-{slug}.md`)
 
-The generated file MUST adhere strictly to the following structure:
+Generated file MUST follow this structure strictly:
 
 ```markdown
 # BUG-{id}: {Short Descriptive Title}
@@ -155,12 +169,13 @@ Include this subsection ONLY if the bug is a UI/browser bug AND no existing test
 
 ## Red Flags - STOP and Grill Further
 
-If your draft bug report contains any of the following, **DO NOT SAVE IT YET**. Ask more questions via `ask_question` and inspect the code further:
+Draft bug report contains any of these, **DO NOT SAVE IT YET**. Ask more
+questions via `ask_question` and inspect code further:
 
-- 🚩 "The user gets an error on the page" (Which error? What status code? What did the UI show?)
-- 🚩 "Fill in the form" (Which specific fields and values cause the bug?)
-- 🚩 "Somewhere in the controller" (Which controller? Which line number? Which file?)
-- 🚩 "It fails sometimes" (What specific state/condition triggers the failure?)
+- "The user gets an error on the page" (Which error? What status code? What did the UI show?)
+- "Fill in the form" (Which specific fields and values cause the bug?)
+- "Somewhere in the controller" (Which controller? Which line number? Which file?)
+- "It fails sometimes" (What specific state/condition triggers the failure?)
 
 ---
 

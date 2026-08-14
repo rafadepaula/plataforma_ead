@@ -1,15 +1,13 @@
 ---
 name: notifications-conventions
 description: >
-  Concrete code patterns, snippets, and guardrails for the Notifications &
-  Alerts feature (SPEC-13): the try/catch-around-the-notify()-call-site
-  mail-isolation pattern, the database-before-mail via() ordering
-  convention, NotificationController's manual $request->user()->notifications()
-  scoping (no Policy/OrgScope exists for DatabaseNotification), the
-  role:gestor/role:aluno bell visibility gate, and the
-  NotificationBell.js/HttpClient JS module contract. Use whenever writing
-  a Notification class, Event/Listener pair, controller, or JS module
-  that touches `notifications` rows or the topbar bell.
+  Code patterns, snippets, guardrails for Notifications & Alerts (SPEC-13):
+  try/catch around notify() call site for mail isolation, database-before-mail
+  via() ordering, NotificationController manual $request->user()->notifications()
+  scoping (no Policy/OrgScope for DatabaseNotification), role:gestor/role:aluno
+  bell visibility gate, NotificationBell.js/HttpClient JS module contract. Use
+  when writing Notification class, Event/Listener pair, controller, or JS
+  module touching `notifications` rows or topbar bell.
 license: MIT
 metadata:
   feature: notifications
@@ -20,13 +18,13 @@ metadata:
 
 # Notifications Conventions
 
-## The try/catch Boundary Goes Around the `->notify()` Call Site, Not the DB Write
+## try/catch Boundary Wraps `->notify()` Call Site, Not DB Write
 
-Every Listener in this module wraps only the notification dispatch in
-`try/catch (Throwable)`, logging to `storage/logs/laravel.log` via
-`Log::error()` and swallowing the exception — the triggering row (the
-invitation/reply/enrollment/certificate) was already committed before the
-Listener ever ran, so there is nothing left to roll back:
+Every Listener in module wraps only notification dispatch in
+`try/catch (Throwable)`, logs to `storage/logs/laravel.log` via
+`Log::error()`, swallows exception. Triggering row (invitation/reply/
+enrollment/certificate) already committed before Listener ran, so nothing
+left to roll back:
 
 ```php
 public function handle(EnrollmentConfirmed $event): void
@@ -43,16 +41,15 @@ public function handle(EnrollmentConfirmed $event): void
 }
 ```
 
-`SendNewForumReplyNotifications` wraps this **per recipient**, inside the
-`foreach` loop — one recipient's mail failure must never prevent the
-other recipients (or their own `database` row) from being notified. Copy
-this per-recipient placement whenever a Listener fans out to more than
-one notifiable.
+`SendNewForumReplyNotifications` wraps this **per recipient**, inside
+`foreach` loop. One recipient mail failure must never block other recipients
+(or their own `database` row). Copy this per-recipient placement whenever
+Listener fans out to more than one notifiable.
 
-`InvitationSentNotification`'s Listener uses the same pattern, just
-targeting `Notification::route('mail', $email)` instead of a `User`
-instance — see `notifications-architecture` for why there's no `User`
-recipient for that trigger.
+`InvitationSentNotification` Listener uses same pattern, just targets
+`Notification::route('mail', $email)` instead of `User` instance. See
+`notifications-architecture` for why no `User` recipient exists for that
+trigger.
 
 ## `via()` Always Lists `'database'` Before `'mail'`
 
@@ -66,14 +63,13 @@ public function via(object $notifiable): array
 }
 ```
 
-This ordering is load-bearing, not stylistic — Laravel sends channels in
-declaration order, so the `database` row is guaranteed to have persisted
-by the time the `mail` channel's job runs and potentially throws. Never
-reorder this to `['mail', 'database']`.
+Ordering is load-bearing, not stylistic. Laravel sends channels in
+declaration order, so `database` row guaranteed persisted by time `mail`
+channel job runs and maybe throws. Never reorder to `['mail', 'database']`.
 
-## `toDatabase()`'s `data` Shape Is the Bell's Entire Contract
+## `toDatabase()` `data` Shape Is Bell's Entire Contract
 
-Every `toDatabase()` in this module returns at minimum:
+Every `toDatabase()` in module returns at minimum:
 
 ```php
 /**
@@ -91,17 +87,16 @@ public function toDatabase(object $notifiable): array
 
 `<x-notifications-bell>` and `NotificationController::read()` both read
 `$notification->data['message']`/`$notification->data['action_url']`
-directly — any new Notification class added to this module **must**
-include both keys, or the dropdown falls back to `'Nova notificação'`/
-`'#'` and the bell effectively breaks for that trigger.
+directly. Any new Notification class in module **must** include both keys,
+else dropdown falls back to `'Nova notificação'`/`'#'` and bell breaks for
+that trigger.
 
-## `NotificationController` Manually Scopes Every Query — No Policy Exists
+## `NotificationController` Manually Scopes Every Query. No Policy Exists
 
-`DatabaseNotification` carries no `OrgScope` and no Policy of its own (it
-isn't even in this application's model tree — it's a framework model).
-RN12 (no cross-user leak) is guaranteed entirely by resolving every
-notification through the authenticated user's own relation, never a bare
-`DatabaseNotification::find($id)`:
+`DatabaseNotification` carries no `OrgScope`, no Policy. Not even in this
+application model tree; framework model. RN12 (no cross-user leak)
+guaranteed entirely by resolving every notification through authenticated
+user own relation, never bare `DatabaseNotification::find($id)`:
 
 ```php
 public function read(Request $request, string $notification): JsonResponse
@@ -113,52 +108,49 @@ public function read(Request $request, string $notification): JsonResponse
 }
 ```
 
-`{notification}` is a plain `string` route parameter, never a typed
-`DatabaseNotification $notification` implicit binding — a route-model
-binding would resolve the row regardless of ownership, silently
-reintroducing the cross-user leak RN12 forbids. `findOrFail()` on the
-scoped relation 404s identically whether the UUID belongs to another
-user or doesn't exist at all — this is intentional, not an oversight
-(indistinguishable on purpose, don't "fix" it into a 403).
+`{notification}` is plain `string` route parameter, never typed
+`DatabaseNotification $notification` implicit binding. Route-model binding
+resolves row regardless of ownership, silently reintroduces cross-user leak
+RN12 forbids. `findOrFail()` on scoped relation 404s identically whether
+UUID belongs to another user or does not exist at all. Intentional, not
+oversight. Indistinguishable on purpose, don't "fix" it into 403.
 
 ## Bell Visibility: `role:gestor`/`role:aluno`, Not Just `@auth`
 
-`<x-notifications-bell>` gates its entire render on:
+`<x-notifications-bell>` gates entire render on:
 
 ```php
 $canSeeNotifications = $notifUser
     && ($notifUser->hasRole(RolesEnum::GESTOR->value) || $notifUser->hasRole(RolesEnum::ALUNO->value));
 ```
 
-An authenticated Admin (`@auth` alone would pass) must render **no**
-bell — Admin is technically a `User` (sometimes `org_id === null`) but
-never a recipient of any of the 4 SPEC-13 notification types. Never
-relax this to a bare `@auth` check.
+Authenticated Admin (`@auth` alone would pass) must render **no** bell.
+Admin is technically a `User` (sometimes `org_id === null`) but never
+recipient of any of 4 SPEC-13 notification types. Never relax to bare
+`@auth` check.
 
-## Bell Dropdown Is Server-Rendered, No Separate "List" AJAX Endpoint
+## Bell Dropdown Server-Rendered, No Separate "List" AJAX Endpoint
 
-`<x-notifications-bell>` queries the 10 most recent rows and the unread
-count **at render time** (`$user->notifications()->latest('created_at')->limit(10)->get()`,
-`$user->unreadNotifications()->count()`) and embeds them directly in the
-Blade markup. `NotificationBell.js` only polls `GET
-notifications.unread-count` (30s) to keep the **badge** fresh — there is
-no `GET notifications.list`/AJAX-refetch-the-dropdown endpoint in this
-module's contract. Opening the dropdown (`toggleDropdown()`) also
-triggers an immediate `refreshUnreadCount()` so the badge never visibly
-lags the 30s tick, but the dropdown's item list itself only ever reflects
-what was rendered server-side on the last full page load. Do not add a
-dropdown-refetch endpoint without a deliberate spec change — it isn't
-part of Bucket 2's contract.
+`<x-notifications-bell>` queries 10 most recent rows and unread count **at
+render time** (`$user->notifications()->latest('created_at')->limit(10)->get()`,
+`$user->unreadNotifications()->count()`), embeds them directly in Blade
+markup. `NotificationBell.js` only polls `GET notifications.unread-count`
+(30s) to keep **badge** fresh. No `GET notifications.list`/AJAX-refetch-the-dropdown
+endpoint in module contract. Opening dropdown (`toggleDropdown()`) also
+triggers immediate `refreshUnreadCount()` so badge never visibly lags 30s
+tick, but dropdown item list only ever reflects what was rendered
+server-side on last full page load. Do not add dropdown-refetch endpoint
+without deliberate spec change. Not part of Bucket 2 contract.
 
-## `NotificationBell.js` Follows `ForumPolling.js`'s Module Shape Exactly
+## `NotificationBell.js` Follows `ForumPolling.js` Module Shape Exactly
 
 Same constructor injection (`httpClient`, optional `intervalMs`), same
 `init()` guard (`DOMContentLoaded` if `document.readyState === 'loading'`,
-immediate `bind()` otherwise), same silent-catch-and-retry-next-tick on a
-failed poll — no jQuery, no WebSockets (jQuery is not an installed
-dependency; see CLAUDE.md's "don't add dependencies without approval"
-and `ForumPolling.js`'s own docblock for the precedent). Registered once
-in `resources/js/app.js`:
+immediate `bind()` otherwise), same silent-catch-and-retry-next-tick on
+failed poll. No jQuery, no WebSockets. jQuery is not installed dependency;
+see CLAUDE.md "don't add dependencies without approval" and
+`ForumPolling.js` own docblock for precedent. Registered once in
+`resources/js/app.js`:
 
 ```js
 window.NotificationBell = new NotificationBell(HttpClient);
@@ -166,18 +158,17 @@ window.NotificationBell = new NotificationBell(HttpClient);
 window.NotificationBell.init();
 ```
 
-Mark-single-read (`handleItemClick`) always fires the `PATCH
-notifications.read` call **before** redirecting, but redirects via
-`.finally(redirect)` regardless of whether that call succeeds — a
-transient failure marking the row read must never trap the user on the
-bell dropdown instead of taking them to `action_url`.
+Mark-single-read (`handleItemClick`) always fires `PATCH notifications.read`
+call **before** redirecting, but redirects via `.finally(redirect)`
+regardless of whether call succeeds. Transient failure marking row read must
+never trap user on bell dropdown instead of taking them to `action_url`.
 
 ## Related Specs
 
-- `spec/specs/13-notifications-and-alerts.md` — RF28, §2's 4-trigger
-  table, §3's mail-isolation RN.
-- `forum-conventions` — the `ForumPolling.js`/`HttpClient` JS module
-  contract `NotificationBell.js` mirrors.
-- `tenancy-security` — the general "never trust a route-bound id without
-  manual ownership scoping" guardrail `NotificationController` follows
-  for a model with no Policy of its own.
+- `spec/specs/13-notifications-and-alerts.md` — RF28, §2 4-trigger table, §3
+  mail-isolation RN.
+- `forum-conventions` — `ForumPolling.js`/`HttpClient` JS module contract
+  `NotificationBell.js` mirrors.
+- `tenancy-security` — general "never trust route-bound id without manual
+  ownership scoping" guardrail `NotificationController` follows for model
+  with no Policy of its own.

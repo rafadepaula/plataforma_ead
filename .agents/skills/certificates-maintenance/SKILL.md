@@ -1,15 +1,15 @@
 ---
 name: certificates-maintenance
 description: >
-  Debugging, testing, and edge-case guide for the Certificates & Public
-  Verification feature (SPEC-09): the mandatory PHPUnit/Dusk test files,
-  common eligibility/idempotency/revocation failure modes, the
-  never-404-a-revoked-hash contract, cross-org PDF/organization resolution
-  gotchas, and the open QR-code dependency question. Use when
+  Debug, test, edge-case guide for Certificates & Public Verification
+  (SPEC-09): mandatory PHPUnit/Dusk test files, common
+  eligibility/idempotency/revocation failure modes,
+  never-404-a-revoked-hash contract, cross-org PDF/organization
+  resolution gotchas, open QR-code dependency question. Use when
   `CertificateEligibilityTest`, `CertificateRevocationTest`, or
-  `PublicVerificationTest` is failing; a certificate isn't issued after a
-  course completes; the public page 404s when it shouldn't (or vice
-  versa); or the PDF/QR pipeline needs finishing.
+  `PublicVerificationTest` fail; certificate not issued after course
+  complete; public page 404 when it should not (or reverse); or PDF/QR
+  pipeline need finishing.
 license: MIT
 metadata:
   feature: certificates
@@ -23,33 +23,31 @@ metadata:
 
 ## Mandatory Test Coverage for This Module
 
-These tests guard the SPEC-09 contract and must stay green (PHPUnit, no
-Pest):
+Tests guard SPEC-09 contract. Must stay green (PHPUnit, no Pest):
 
-- `tests/Feature/CertificateEligibilityTest.php` (Bucket A) — the 3
-  `rule_type`s individually, the multi-rule AND case, idempotency
-  (no re-issue on a re-fired `CourseCompletedByStudent`), no-reissue-after
-  -revoke, and the no-rules-defined edge case (no-op, no certificate).
+- `tests/Feature/CertificateEligibilityTest.php` (Bucket A) — 3
+  `rule_type`s individually, multi-rule AND case, idempotency (no
+  re-issue on re-fired `CourseCompletedByStudent`), no-reissue-after
+  -revoke, no-rules-defined edge case (no-op, no certificate).
 - `tests/Feature/CertificateRevocationTest.php` (Bucket A) — Gestor
   own-org success, Gestor other-org 403, Admin any-org success,
-  `revoke_reason` `min:10` validation, the revoked row is never hard/soft
+  `revoke_reason` `min:10` validation, revoked row never hard/soft
   deleted.
 - `tests/Feature/PublicVerificationTest.php` (Bucket B) — valid
-  certificate shows student/course/org/workload/issued_at + "Válido",
-  revoked certificate returns `200` with the revoked banner + reason
-  (never 404), unknown hash 404s, cross-org access works with zero
-  auth/tenant scoping required.
+  certificate show student/course/org/workload/issued_at + "Válido",
+  revoked certificate return `200` with revoked banner + reason (never
+  404), unknown hash 404, cross-org access work with zero auth/tenant
+  scoping required.
 - `tests/Browser/CertificateVerificationTest.php` (this bucket, Dusk E2E)
-  — visits `/validar-certificado/{hash}` for both a valid and a revoked
-  certificate and asserts the visible banner/data; a genuinely-unknown
-  hash renders a 404 page.
+  — visit `/validar-certificado/{hash}` for both valid and revoked
+  certificate, assert visible banner/data; genuinely-unknown hash render
+  404 page.
 - `tests/Browser/CertificateRevocationTest.php` (this bucket, Dusk E2E) —
-  a Gestor revokes a certificate via `courses/{course}/certificates`'s UI,
-  the reason textarea's client-side `min:10` gate, and the resulting
-  public page reflecting the revoked state; a Gestor from another Org
-  gets a 403 on the list itself.
+  Gestor revoke certificate via `courses/{course}/certificates` UI,
+  reason textarea client-side `min:10` gate, resulting public page
+  reflect revoked state; Gestor from another Org get 403 on list itself.
 
-Run the narrowest of these first after touching this module:
+Run narrowest first after touch module:
 
 ```bash
 vendor/bin/sail artisan test --filter=CertificateEligibilityTest
@@ -59,65 +57,91 @@ vendor/bin/sail dusk --filter=CertificateVerificationTest
 vendor/bin/sail dusk --filter=CertificateRevocationTest
 ```
 
-Dusk tests use `DatabaseMigrations`, never `RefreshDatabase` (Dusk runs in
-a separate HTTP process against the same DB connection) — see
-`laravel-dusk`. They also seed `Certificate` rows directly with
-`Certificate::create([...])` rather than a `CertificateFactory` state
-helper where the exact `validation_hash` needs to match the formula in
-`certificates-conventions` byte-for-byte (a factory's `afterMaking` hook
-computing the hash from a *different* field-write order would silently
-desync from production code — recompute inline in the test instead).
+Dusk classes declare no DB trait — `DatabaseTruncation` inherited from
+`Tests\DuskTestCase`; `RefreshDatabase` forbidden (Dusk run in separate
+HTTP process); `DatabaseMigrations` retired (per-method `migrate:fresh`)
+— see `laravel-dusk`/`testing-conventions`. They also seed `Certificate`
+rows directly with `Certificate::create([...])` rather than
+`CertificateFactory` state helper where exact `validation_hash` must
+match formula in `certificates-conventions` byte-for-byte (factory
+`afterMaking` hook computing hash from *different* field-write order
+would silently desync from production code — recompute inline in test
+instead).
 
 ## Common Failure Modes
 
-- **Certificate never issued after a course completes.** Check (in
-  order): does the course have *any* `course_completion_rules` rows at
-  all (zero rows = intentional no-op, not a bug)? Is `min_quiz_score`'s
-  `target_id` actually pointing at the Quiz the student attempted (a
-  copy-paste'd wrong `target_id` fails silently, treated as "not
-  satisfied", not an error)? Is `QUEUE_CONNECTION=sync` in this
-  environment (an async queue would defer the Listener past the test's
-  assertion point)?
-- **Duplicate-key `QueryException` on re-completion.** `IssueCertificateAction`
-  must guard with `firstOrCreate`/an existence check, not a bare
-  `Certificate::create()` — see `certificates-architecture`'s idempotency
-  section. If this ever surfaces as an uncaught exception in production
-  logs, the guard regressed.
-- **Public page 404s for a revoked certificate (or vice versa: a
-  never-existed hash renders the certificate view).** These are two
-  distinct branches in `PublicCertificateController::show()` — a bad merge
-  can accidentally collapse "row not found" and "row found but revoked"
-  into the same 404, or route-model-bind `{hash}` onto `Certificate`
-  directly (which 404s on revoked rows too, since implicit binding has no
-  concept of a soft "still show it" state). Always look up
-  `validation_hash` explicitly and branch on `is null` vs.
-  `->isRevoked()`.
-- **PDF/public page shows the wrong Organization (or throws) for a
-  Gestor viewing from a different `active_org_id` session, or a fully
-  anonymous visitor.** `Course` has `OrgScope`; both
-  `CertificatePdfService` and `PublicCertificateController` must resolve
-  `$certificate->course` (and its `organization`) with
-  `Course::withoutGlobalScopes()`/an equivalent unscoped query — a bare
-  `$certificate->course` access through Eloquent's normal query builder
-  will silently apply the *viewer's* org scope and can return `null`/wrong
-  Course. See `tenancy-architecture` for the general pattern.
-- **Revoke button still shows (or 500s) on an already-revoked
-  certificate.** `certificates/index.blade.php` wraps the revoke trigger
-  and its per-row modal in `@unless($certificate->isRevoked())` — if a
-  new state gets added to the row later, keep that same guard rather than
-  relying on the controller to reject a second revoke (it should still
-  reject it too, defense in depth, but the UI shouldn't offer the action
-  at all).
+- **Certificate never issued after course complete.** Check, in order:
+  does course have *any* `course_completion_rules` rows at all (zero rows
+  = intentional no-op, not bug)? Is `min_quiz_score` `target_id` actually
+  pointing at Quiz student attempted (copy-paste'd wrong `target_id` fail
+  silently, treated as "not satisfied", not error)? Is
+  `QUEUE_CONNECTION=sync` in this environment (async queue would defer
+  Listener past test assertion point)?
+- **Duplicate-key `QueryException` on re-completion.**
+  `IssueCertificateAction` must guard with `firstOrCreate`/existence
+  check, not bare `Certificate::create()` — see
+  `certificates-architecture` idempotency section. If this surface as
+  uncaught exception in production logs, guard regressed.
+- **Public page 404 for revoked certificate (or reverse: never-existed
+  hash render certificate view).** Two distinct branches in
+  `PublicCertificateController::show()` — bad merge can accidentally
+  collapse "row not found" and "row found but revoked" into same 404, or
+  route-model-bind `{hash}` onto `Certificate` directly (which 404 on
+  revoked rows too, since implicit binding have no concept of soft "still
+  show it" state). Always look up `validation_hash` explicitly and branch
+  on `is null` vs `->isRevoked()`.
+- **PDF/public page show wrong Organization (or throw) for Gestor viewing
+  from different `active_org_id` session, or fully anonymous visitor.**
+  `Course` have `OrgScope`; both `CertificatePdfService` and
+  `PublicCertificateController` must resolve `$certificate->course` (and
+  its `organization`) with `Course::withoutGlobalScopes()`/equivalent
+  unscoped query — bare `$certificate->course` access through Eloquent
+  normal query builder silently apply *viewer* org scope, can return
+  `null`/wrong Course. See `tenancy-architecture` for general pattern.
+- **Revoke button still show (or 500) on already-revoked certificate.**
+  `certificates/index.blade.php` wrap revoke trigger and its per-row
+  modal in `@unless($certificate->isRevoked())` — if new state added to
+  row later, keep same guard rather than rely on controller to reject
+  second revoke (it should still reject too, defense in depth, but UI
+  must not offer action at all).
 
 ## Open Question: QR-Code Composer Package
 
-No QR-code generation package is installed — only
-`barryvdh/laravel-dompdf`. `certificates/pdf.blade.php` currently degrades
-to a text-only verification URL + hash when `$qrCodeDataUri` is `null`
-(see `certificates-conventions`). This is **not** spec-compliant on its
-own — SPEC-09 §2 requires an actual scannable QR image. Adding a package
-(`endroid/qr-code`, `simple-qrcode`, or `bacon/bacon-qr-code` are the
-usual Laravel-ecosystem choices) requires explicit user approval per this
-project's "no dependency changes without approval" rule (project
+No QR-code generation package installed — only
+`barryvdh/laravel-dompdf`. `certificates/pdf.blade.php` currently degrade
+to text-only verification URL + hash when `$qrCodeDataUri` is `null` (see
+`certificates-conventions`). This is **not** spec-compliant on its own —
+SPEC-09 §2 require actual scannable QR image. Adding package
+(`endroid/qr-code`, `simple-qrcode`, or `bacon/bacon-qr-code` are usual
+Laravel-ecosystem choices) require explicit user approval per this
+project "no dependency changes without approval" rule (project
 `CLAUDE.md`) — confirm which package before wiring
 `CertificatePdfService` to actually populate `$qrCodeDataUri`.
+
+---
+
+## E2E Coverage Lives in Lifecycle Chains, Not in a Per-Module File
+
+Browser tests in `tests/Browser/` grouped by **user journey (lifecycle
+chain)** — one method drive create → edit → state change → delete →
+consequence — **not** by module, spec, or use case. Consequences when
+maintain this module:
+
+- **Finding coverage**: Dusk scenarios listed above may be asserted as
+  numbered steps inside chain method, possibly in file named after
+  another module when journey cross module boundaries. Locate with
+  `grep -rn "<route name|dusk selector>" tests/Browser/`, not by file
+  name. Missing per-module file is **not** coverage gap.
+- **Adding coverage**: extend existing chain for that journey with new
+  numbered step carrying own UI **and** DB assertion. New method only for
+  independent negatives (403, cross-tenant, other actor); new file only
+  for genuinely new journey.
+- **Debugging failure**: stack trace point at step, not whole scenario —
+  match line to its `// N.` comment. Late failure usually mean earlier
+  step not persist what it should.
+- **Database**: no DB trait declared in `tests/Browser/*`;
+  `DatabaseTruncation` inherited from `Tests\DuskTestCase`. Re-adding
+  `DatabaseMigrations` is suite-wide performance regression. Files, cache
+  and session **not** reset between methods.
+
+Full rule: `testing-conventions`. Chain debugging: `testing-maintenance`.

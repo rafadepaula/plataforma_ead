@@ -1,11 +1,11 @@
 ---
 name: usecases-conventions
 description: >
-  Concrete patterns, snippets, and guardrails for creating or updating use-case
-  documents in spec/docs/usecases/ and maintaining the traceability matrices in
-  spec/docs/usecases/index.md and spec/docs/full_spec.md. Use whenever writing
-  a new UCxx file, linking a new RF or RN to an existing UC, or updating the
-  master traceability matrix after a feature change.
+  Patterns, snippets, guardrails for creating or updating use-case documents in
+  spec/docs/usecases/ and maintaining traceability matrices in
+  spec/docs/usecases/index.md and spec/docs/full_spec.md. Use when write new
+  UCxx file, link new RF or RN to existing UC, or update master traceability
+  matrix after feature change.
 license: MIT
 metadata:
   feature: usecases
@@ -19,11 +19,11 @@ metadata:
 
 ## 1. File Naming & Location
 
-- Files live exclusively in `spec/docs/usecases/`.
+- Files live only in `spec/docs/usecases/`.
 - Naming pattern: `UCxx-kebab-case-name.md` (lowercase, Portuguese slugs, no
-  accents in the filename itself).
-- The `xx` index is **always** zero-padded to two digits; next available index
-  is determined by `ls spec/docs/usecases/ | grep -E '^UC[0-9]+' | sort | tail -1`.
+  accents in filename itself).
+- `xx` index **always** zero-padded to two digits. Next available index from
+  `ls spec/docs/usecases/ | grep -E '^UC[0-9]+' | sort | tail -1`.
 
 ```bash
 # Find the next UC number
@@ -33,7 +33,7 @@ ls spec/docs/usecases/ | grep -E '^UC[0-9]+' | sort | tail -1
 
 ## 2. Mandatory 7-Section Template
 
-Paste this skeleton and fill every section — no section may be omitted:
+Paste skeleton, fill every section. No section may be omitted:
 
 ```markdown
 # **Especificação de Caso de Uso: UCxx — [Nome do Caso de Uso]**
@@ -110,7 +110,7 @@ Paste this skeleton and fill every section — no section may be omitted:
 
 ## 3. Codebase Reverse-Engineering Checklist
 
-Before writing section 5 (flows), inspect all of the following:
+Before writing section 5 (flows), inspect all of these:
 
 | Source | Location |
 | :--- | :--- |
@@ -124,11 +124,11 @@ Before writing section 5 (flows), inspect all of the following:
 | JS Modules | `public/js/modules/` |
 
 Reference **exact** route URIs, controller method names, service class names,
-Blade view paths, and JS module filenames in sections 5 and 7.
+Blade view paths, JS module filenames in sections 5 and 7.
 
 ## 4. Updating `spec/docs/usecases/index.md`
 
-After creating a UC file, update `index.md` in three places:
+After creating UC file, update `index.md` in three places:
 
 ### 4.1 — Catalog entry (by module)
 
@@ -138,8 +138,7 @@ After creating a UC file, update `index.md` in three places:
 
 ### 4.2 — Cross-Traceability Matrix (RF vs RN vs UC)
 
-Add or update the row for each RF that the new UC satisfies, appending `UCxx`
-to the UC column:
+Add or update row for each RF new UC satisfies, appending `UCxx` to UC column:
 
 ```markdown
 | RF37 | RN40 | UC23 |
@@ -147,7 +146,7 @@ to the UC column:
 
 ### 4.3 — Business Rule Coverage Matrix (RN vs RF vs UC)
 
-Add or update the row for each RN the UC enforces:
+Add or update row for each RN the UC enforces:
 
 ```markdown
 | RN40 | RF37 | UC23 |
@@ -166,16 +165,15 @@ After updating `index.md`, sync `full_spec.md` in four sections:
 
 ## 6. Guardrails
 
-- **Never skip sections** in the UC template — even if a section has no
-  alternative flow, write "N/A" with a brief explanation.
-- **Never invent route URIs or class names** — always verify against the actual
+- **Never skip sections** in UC template. Section with no alternative flow: write
+  "N/A" plus brief explanation.
+- **Never invent route URIs or class names**. Always verify against actual
   codebase before writing section 5 or 7.
-- **Never create a UC** without declaring at least one RF and one RN in section 2.
-- **Always update `index.md` and `full_spec.md`** in the same commit as the
-  new/updated UC file — partial traceability is worse than none.
-- **UC IDs are permanent** — once assigned, a UC ID must never be reused, even
-  if the UC is deprecated. Mark deprecated UCs with a `[DEPRECATED]` note at
-  the top of the file instead.
+- **Never create UC** without at least one RF and one RN declared in section 2.
+- **Always update `index.md` and `full_spec.md`** in same commit as new/updated
+  UC file. Partial traceability worse than none.
+- **UC IDs permanent**. Once assigned, UC ID never reused, even if UC
+  deprecated. Mark deprecated UC with `[DEPRECATED]` note at top of file instead.
 
 ## 7. Validation Checklist
 

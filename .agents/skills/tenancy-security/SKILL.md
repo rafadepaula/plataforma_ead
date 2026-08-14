@@ -1,10 +1,10 @@
 ---
 name: tenancy-security
 description: >
-    Use when reviewing or writing Laravel code, Eloquent queries, controllers,
-    policies, Form Requests, or database operations to audit single-database multitenant
-    isolation, prevent cross-tenant data leaks, and enforce role-based access control
-    between Admin, Gestor, and Aluno roles.
+    Use when review or write Laravel code, Eloquent queries, controllers,
+    policies, Form Requests, or database operations to audit single-database
+    multitenant isolation, prevent cross-tenant data leaks, and enforce
+    role-based access control between Admin, Gestor, and Aluno roles.
 license: MIT
 metadata:
     feature: tenancy
@@ -18,9 +18,13 @@ metadata:
 
 ## Overview
 
-The platform uses a **single MySQL database multitenancy architecture**. Tenant isolation is enforced at the **application layer** via `org_id` foreign keys, the `OrgScope` Eloquent global scope trait, and `RolesEnum` authorization.
+Platform use **single MySQL database multitenancy architecture**. Tenant
+isolation enforced at **application layer** via `org_id` foreign keys, `OrgScope`
+Eloquent global scope trait, and `RolesEnum` authorization.
 
-Because isolation is not enforced by database row-level security (RLS) or separate databases, **a single missing tenant check or un-scoped query will leak data across organizations.**
+Isolation is not enforced by database row-level security (RLS) or separate
+databases. **A single missing tenant check or un-scoped query will leak data
+across organizations.**
 
 ---
 
@@ -30,17 +34,17 @@ Because isolation is not enforced by database row-level security (RLS) or separa
 
 | Role (`RolesEnum`) | User `org_id`  | Scope of Access & Security Boundary                                                                                                                                                      |
 | ------------------ | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `admin`            | `null`         | Global access by default. Can switch context to a single organization via Impersonate Org (`session('active_org_id')`).                                                                  |
+| `admin`            | `null`         | Global access by default. Can switch context to single organization via Impersonate Org (`session('active_org_id')`).                                                                    |
 | `gestor`           | Fixed `org_id` | Restricted **strictly** to data matching their `user->org_id`. Cannot read or write data from any other `org_id`.                                                                        |
 | `aluno`            | Usually `null` | Enrolled across courses in multiple orgs via `course_user` pivot. Must **never** access org-scoped data directly; access is granted **only** through active course enrollment relations. |
 
 ### Model Classifications & Scoping Guardrails
 
-1. **Directly Org-Scoped Models** (Has `org_id` column + `OrgScope` trait):
+1. **Directly Org-Scoped Models** (has `org_id` column + `OrgScope` trait):
     - Examples: `Course`, `InvitationLink`, `ForumTopic`, `HelpArticle` (nullable), `SystemSetting` (nullable).
-    - _Security Guardrail_: Queries automatically append `where org_id = ?`. Bypassing `OrgScope` is a critical security vulnerability.
+    - _Security Guardrail_: Queries auto-append `where org_id = ?`. Bypassing `OrgScope` is a critical security vulnerability.
 
-2. **Cascade-Inherited Models** (No `org_id` column; inherited through parent):
+2. **Cascade-Inherited Models** (no `org_id` column; inherited through parent):
     - Examples: `Module`, `Lesson`, `Quiz`, `QuizQuestion`, `QuizOption`, `Certificate`.
     - _Security Guardrail_: Do NOT have `OrgScope` applied. **Finding by primary key directly (`Lesson::find($id)`) allows cross-tenant ID guessing unless explicitly scoped through parent relation!**
 
@@ -50,11 +54,12 @@ Because isolation is not enforced by database row-level security (RLS) or separa
 
 ---
 
-## 🚨 Critical Security Vulnerabilities & Prevention Rules
+## Critical Security Vulnerabilities & Prevention Rules
 
 ### 1. Raw SQL & DB Query Builder Bypasses (`DB::table(...)`)
 
-**Vulnerability**: Using `DB::table('courses')` bypasses Eloquent's `OrgScope` global scope completely.
+**Vulnerability**: `DB::table('courses')` bypasses Eloquent's `OrgScope` global
+scope completely.
 
 ```php
 // ❌ DANGEROUS: Bypasses OrgScope completely! Returns courses from ALL tenants.
@@ -77,7 +82,9 @@ $courses = DB::table('courses')
 
 ### 2. Unscoped `User` Model Queries (Cross-Tenant User Leak)
 
-**Vulnerability**: `User` model does **NOT** have `OrgScope` applied (because Admins and Alunos have `org_id = null`). Querying `User` directly in a Gestor controller leaks users from other organizations.
+**Vulnerability**: `User` model does **NOT** have `OrgScope` applied (Admins and
+Alunos have `org_id = null`). Querying `User` directly in a Gestor controller
+leaks users from other organizations.
 
 ```php
 // ❌ DANGEROUS: A Gestor calling this sees users from all organizations!
@@ -97,7 +104,9 @@ $users = User::where('org_id', $gestorOrgId)
 
 ### 3. Cascade-Inherited Model Access (ID Guessing Attack)
 
-**Vulnerability**: Models like `Lesson` or `Quiz` have no `OrgScope`. Calling `Lesson::findOrFail($id)` lets a Gestor from Tenant A view/edit a Lesson ID belonging to Tenant B.
+**Vulnerability**: Models like `Lesson` or `Quiz` have no `OrgScope`. Calling
+`Lesson::findOrFail($id)` lets a Gestor from Tenant A view or edit a Lesson ID
+belonging to Tenant B.
 
 ```php
 // ❌ DANGEROUS: No tenant check on cascade-inherited model!
@@ -140,7 +149,9 @@ public function show(Lesson $lesson)
 $course = Course::withoutGlobalScope(OrgScope::class)->find($id);
 ```
 
-**Rule**: `withoutGlobalScope(OrgScope::class)` is **strictly prohibited** in standard application flows. It is permitted **only** in system-wide Admin reporting utilities, and must be guarded with explicit Admin authorization:
+**Rule**: `withoutGlobalScope(OrgScope::class)` is **strictly prohibited** in
+standard application flows. It is permitted **only** in system-wide Admin
+reporting utilities, and it must be guarded with explicit Admin authorization:
 
 ```php
 // ✅ SAFE: Only permitted in system Admin context after explicit role verification
@@ -153,7 +164,9 @@ if (! auth()->user()?->hasRole(RolesEnum::ADMIN)) {
 
 ### 5. Request Parameter Spoofing (`org_id` Manipulation)
 
-**Vulnerability**: Accepting `org_id` in Form Requests or `request()->all()` allows an attacker to inject an `org_id` payload and assign records to another organization.
+**Vulnerability**: Accepting `org_id` in Form Requests or `request()->all()`
+allows an attacker to inject an `org_id` payload and assign records to another
+organization.
 
 ```php
 // ❌ DANGEROUS: Mass assignment allows attacker to override org_id in payload!
@@ -173,7 +186,8 @@ $course = Course::create($validated);
 
 ### 6. Authorization Policy Checks (Role vs Tenant Dual-Verification)
 
-**Vulnerability**: A policy checking role permissions without checking tenant ownership allows a Gestor from Tenant A to modify Tenant B's data.
+**Vulnerability**: A policy checking role permissions without checking tenant
+ownership allows a Gestor from Tenant A to modify Tenant B's data.
 
 ```php
 // ❌ INSECURE POLICY: Checks role, but ignores tenant boundary!
@@ -199,7 +213,10 @@ public function update(User $user, Course $course): bool
 
 ### 7. Aluno Direct Scoped Model Access Vulnerability
 
-**Vulnerability**: Alunos have `user->org_id = null`. If an Aluno executes `Course::all()`, `OrgScope` applies `whereRaw('1 = 0')` as a safety fallback. If a developer attempts to bypass this by removing `OrgScope`, the Aluno sees all courses from all tenants!
+**Vulnerability**: Alunos have `user->org_id = null`. If an Aluno executes
+`Course::all()`, `OrgScope` applies `whereRaw('1 = 0')` as a safety fallback. If
+a developer bypasses this by removing `OrgScope`, the Aluno sees all courses from
+all tenants!
 
 ```php
 // ❌ DANGEROUS: Bypassing global scope for Alunos leaks all tenant courses!
@@ -218,7 +235,10 @@ $enrolledCourses = $user->courses() // BelongsToMany through course_user
 
 ### 8. Polymorphic / Loose Foreign Key Validation
 
-**Vulnerability**: Tables like `course_completion_rules.target_id` or `forum_reports.postable_id` carry target IDs without database foreign key constraints. An attacker could submit a `target_id` belonging to a different tenant.
+**Vulnerability**: Tables like `course_completion_rules.target_id` or
+`forum_reports.postable_id` carry target IDs without database foreign key
+constraints. An attacker could submit a `target_id` belonging to a different
+tenant.
 
 ```php
 // ❌ INSECURE: Accepts target_id without tenant validation
@@ -242,7 +262,7 @@ $rule = CourseCompletionRule::create([
 
 ---
 
-## 🚩 Security Red Flags & Rationalization Table
+## Security Red Flags & Rationalization Table
 
 | Rationalization / Excuse                                                   | Security Reality                                                                                                           |
 | -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
@@ -254,9 +274,9 @@ $rule = CourseCompletionRule::create([
 
 ---
 
-## 🔍 Code Review Security Checklist
+## Code Review Security Checklist
 
-When reviewing code for tenant security, verify every item on this checklist:
+Reviewing code for tenant security: verify every item.
 
 - [ ] **Directly Scoped Models**: Does every org-scoped model use the `OrgScope` trait?
 - [ ] **Cascade-Inherited Models**: Are `Module`, `Lesson`, `Quiz`, etc., scoped via parent relations (`whereHas('module.course')`) or Policy checks?

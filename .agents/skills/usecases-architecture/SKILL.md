@@ -1,14 +1,13 @@
 ---
 name: usecases-architecture
 description: >
-  Explains the Use Cases documentation architecture of the Plataforma EAD:
-  the three-pillar structure (full_spec.md, usecases/ individual files, and
-  usecases/index.md traceability matrix), the UC naming convention (UCxx-slug.md),
-  the mandatory 7-section template, and the zero-orphan-requirement policy (every
-  RF must link to ≥1 RN and ≥1 UC; every RN must link to ≥1 RF and be enforced
-  by ≥1 UC). Use whenever you need to understand how use-case documents are
-  organized, which files to touch when adding a new UC, or how traceability
-  between RF/RN/UC is maintained.
+  Use Cases documentation architecture of Plataforma EAD: three-pillar structure
+  (full_spec.md, usecases/ individual files, usecases/index.md traceability
+  matrix), UC naming convention (UCxx-slug.md), mandatory 7-section template,
+  zero-orphan-requirement policy (every RF links to >=1 RN and >=1 UC; every RN
+  links to >=1 RF and enforced by >=1 UC). Use when need to know how use-case
+  documents organized, which files to touch when adding new UC, or how
+  traceability between RF/RN/UC maintained.
 license: MIT
 metadata:
   feature: usecases
@@ -22,8 +21,8 @@ metadata:
 
 ## Overview
 
-The requirements and functional specification documentation is maintained under
-`spec/docs/` and organized around three fundamental pillars:
+Requirements and functional specification docs live under `spec/docs/`, organized
+around three pillars:
 
 ```
 spec/docs/
@@ -40,8 +39,7 @@ spec/docs/
 
 ### 1. `spec/docs/full_spec.md` — Master Document
 
-The consolidated technical specification for the EAD Multitenant System. It
-contains:
+Consolidated technical spec for EAD Multitenant System. Contains:
 
 - **Section 1**: Scope and vision
 - **Section 2**: Technical architecture (PHP 8.5 / Laravel 13, MariaDB/MySQL)
@@ -54,15 +52,15 @@ contains:
 
 ### 2. `spec/docs/usecases/` — Individual Use Case Files
 
-Each file describes a single Use Case in depth, derived by reverse-engineering
-the actual codebase (routes, controllers, actions, middleware, form requests,
-Blade views, and JS modules). Files follow the naming convention:
+Each file describes one Use Case in depth, derived by reverse-engineering actual
+codebase (routes, controllers, actions, middleware, form requests, Blade views,
+JS modules). Naming convention:
 
 ```
 UCxx-kebab-case-name.md
 ```
 
-Where `xx` is a zero-padded sequential integer (e.g., `UC01`, `UC10`, `UC23`).
+`xx` is zero-padded sequential integer (e.g., `UC01`, `UC10`, `UC23`).
 
 **Current UC inventory (UC01–UC23):**
 
@@ -94,9 +92,9 @@ Where `xx` is a zero-padded sequential integer (e.g., `UC01`, `UC10`, `UC23`).
 
 ### 3. `spec/docs/usecases/index.md` — Master Index & Traceability Matrix
 
-This file is the single source of truth for cross-referencing:
+Single source of truth for cross-referencing:
 
-- **Catalog of Use Cases by Module** (with relative links to each `UCxx` file)
+- **Catalog of Use Cases by Module** (relative links to each `UCxx` file)
 - **Complete Cross-Traceability Matrix** (RF vs RN vs UC)
 - **Business Rule Coverage Matrix** (RN vs RF vs UC)
 
@@ -104,30 +102,30 @@ This file is the single source of truth for cross-referencing:
 
 > **ZERO TOLERANCE FOR ORPHAN REQUIREMENTS:**
 >
-> 1. Every Functional Requirement (**RF**) MUST be linked to **at least one
->    Business Rule (RN)** and **at least one Use Case (UC)**.
-> 2. Every Business Rule (**RN**) MUST be linked to **at least one RF** and
+> 1. Every Functional Requirement (**RF**) MUST link to **at least one Business
+>    Rule (RN)** and **at least one Use Case (UC)**.
+> 2. Every Business Rule (**RN**) MUST link to **at least one RF** and be
 >    enforced by **at least one UC**.
-> 3. No Use Case can be created without explicitly declaring which RFs and RNs
->    it satisfies.
+> 3. No Use Case created without explicitly declaring which RFs and RNs it
+>    satisfies.
 
 ## Mandatory 7-Section UC Template
 
 Every file in `spec/docs/usecases/` MUST follow this structure:
 
 1. **Identification** — ID, name, module, actors, version
-2. **Linked RFs & RNs** — a table of every RF and RN the UC satisfies
-3. **Overview & Goal** — concise description of the UC's functional purpose
+2. **Linked RFs & RNs** — table of every RF and RN the UC satisfies
+3. **Overview & Goal** — concise description of UC's functional purpose
 4. **System Conditions** — Pre-conditions and Post-conditions
 5. **Execution Flows** — Happy path + alternative paths (step-by-step, referencing
-   exact route, controller, service, view, and JS module names)
-6. **Exception Flows** — Each error case: trigger, HTTP status, and exact UI message
+   exact route, controller, service, view, JS module names)
+6. **Exception Flows** — Each error case: trigger, HTTP status, exact UI message
 7. **Technical Signature** — Routes, middleware, controllers/services, JS & Blade
    component names
 
-## Module → UC Mapping
+## Module to UC Mapping
 
-Each UC belongs to one of the platform's modules:
+Each UC belongs to one platform module:
 
 | Module | UCs |
 | :--- | :--- |

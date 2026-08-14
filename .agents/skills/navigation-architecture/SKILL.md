@@ -1,15 +1,14 @@
 ---
 name: navigation-architecture
 description: >
-  Explains the Dynamic Navigation Menu & Access-Control domain (SPEC-17):
-  the `NavigationRegistry` → `NavigationService` → `NavigationComposer`
-  pipeline that replaced the previously hardcoded Blade sidebar/topbar,
-  the three-gate access filter (role allow-list → permission checks →
-  contextual route resolver) guaranteeing menu/route-middleware parity
-  (RN40), the active-pattern sub-route highlighting (RF37), the org-scoped
-  pending-count badges (RF38, RN41), and the contextual Aluno forum URL
-  (RF39). Use whenever adding/changing a sidebar or topbar entry, wiring a
-  new role-gated screen into the menu, or auditing link/permission parity.
+  Dynamic Navigation Menu & Access-Control domain (SPEC-17):
+  `NavigationRegistry` -> `NavigationService` -> `NavigationComposer`
+  pipeline that killed hardcoded Blade sidebar/topbar. Three-gate access
+  filter (roles, permissions, route resolver) = menu/route-middleware
+  parity (RN40). Active-pattern sub-route highlight (RF37). Org-scoped
+  pending badges (RF38, RN41). Contextual Aluno forum URL (RF39). Use when
+  adding/changing sidebar or topbar entry, wiring role-gated screen into
+  menu, auditing link/permission parity.
 license: MIT
 metadata:
   feature: navigation
@@ -23,97 +22,44 @@ metadata:
 
 ## Overview
 
-SPEC-17 retired the imperative, role-guarded Blade sidebar/topbar (which
-hardcoded non-existent route names like `admin.students.index` /
-`admin.courses.index` / `student.forum.index` that silently degraded to
-dead `#` links) in favour of a centralized, declarative pipeline:
+SPEC-17 killed imperative role-guarded Blade sidebar/topbar. Old code hardcoded route names that did not exist (`admin.students.index`, `admin.courses.index`, `student.forum.index`) and degraded to dead `#` links. New pipeline is declarative and centralized:
 
-1. **`App\Services\Navigation\NavigationRegistry`** — the single
-   read-only declaration of every menu item (`NavigationItem` value
-   object: `key`, `label`, `route`, `activePatterns`, `icon`, `roles`,
-   `permissions`, `section`, optional `routeResolver`/`badgeCallback`).
-2. **`App\Services\Navigation\NavigationService`** — stateless filter that
-   reads the registry, applies the three-gate access pipeline per item
-   for the acting user, resolves URLs and badges, drops empty sections,
-   and returns a list of `NavigationSection` value objects.
-3. **`App\Http\View\Composers\NavigationComposer`** — bound (in
-   `AppServiceProvider::boot()`) to `components.layout.sidebar` and
-   `components.layout.topbar`; injects `$navigationSections` plus the
-   shell-only `$brandUrl`/`$loginUrl`/`$logoutUrl`.
+1. **`App\Services\Navigation\NavigationRegistry`** — single read-only declaration of every menu item. `NavigationItem` value object: `key`, `label`, `route`, `activePatterns`, `icon`, `roles`, `permissions`, `section`, optional `routeResolver`/`badgeCallback`.
+2. **`App\Services\Navigation\NavigationService`** — stateless filter. Reads registry, runs three-gate pipeline per item for acting user, resolves URLs and badges, drops empty sections, returns `NavigationSection` list.
+3. **`App\Http\View\Composers\NavigationComposer`** — bound in `AppServiceProvider::boot()` to `components.layout.sidebar` and `components.layout.topbar`. Injects `$navigationSections` plus shell-only `$brandUrl`/`$loginUrl`/`$logoutUrl`.
 
-The Blade components now only `@foreach($navigationSections as $section)`
-→ `@foreach($section->items as $item)`. **No role checks, `Route::has()`
-guards, or `route()` calls live in Blade anymore** — adding those back
-re-introduces the dead-link and link-leak classes of bugs this spec fixed.
+Blade only does `@foreach($navigationSections as $section)` then `@foreach($section->items as $item)`. **No role check, no `Route::has()` guard, no `route()` call in Blade.** Adding them back brings dead links and link leaks straight back.
 
-## The Three-Gate Access Pipeline (RN38/RN40)
+## Three-Gate Access Pipeline (RN38/RN40)
 
-`NavigationService::resolve()` hides an item unless ALL gates pass:
+`NavigationService::resolve()` hides item unless ALL gates pass:
 
-1. **`roles` allow-list** — `passesRoleGate()`: non-empty array
-   intersected against `$user->hasRole(...)`; empty array = any
-   authenticated user. This is the menu's mirror of the route's own
-   `role:admin|gestor` / `role:aluno` middleware group.
-2. **`permissions`** — `passesPermissionGate()`: optional explicit
-   `$user->can(...)` checks (AND-ed); empty = no extra permission gate.
-3. **`routeResolver` / `Route::has()`** — `resolveUrl()`: if a resolver
-   closure is set, its non-null return is the URL (null hides the item —
-   used by RF39's contextual forum link). Otherwise the item's `route`
-   name MUST be a registered route or the item is hidden (RF36 — never a
-   dead `#` link).
+1. **`roles` allow-list** — `passesRoleGate()`: non-empty array intersected with `$user->hasRole(...)`. Empty array = any authenticated user. Mirrors route's own `role:admin|gestor` / `role:aluno` middleware.
+2. **`permissions`** — `passesPermissionGate()`: optional `$user->can(...)` checks, AND-ed. Empty = no extra gate.
+3. **`routeResolver` / `Route::has()`** — `resolveUrl()`: resolver closure's non-null return = URL; null hides item (RF39 forum link). No resolver: `route` name MUST be registered or item hides (RF36 — never dead `#`).
 
-Parity rule (RN40): the `roles` declared on a `NavigationItem` MUST match
-the `role:` middleware on the route it points at. If a route returns 403
-for a role, that role must not appear in the item's `roles` array.
+Parity rule (RN40): `roles` on a `NavigationItem` MUST match `role:` middleware of its route. Route 403s for a role, that role stays out of `roles`.
 
-## Active-Pattern Highlighting (RF37)
+## Active-Pattern Highlight (RF37)
 
-Each item declares `activePatterns` — `routeIs()` wildcards. The parent
-"Alunos & Usuários" item uses `['users.*']` so it stays highlighted on
-`users.create` / `users.edit` sub-routes. `NavigationService::isActive()`
-reads the acting `Request` (injected via the service constructor) and
-returns true if any pattern matches. **Do not** narrow a pattern to a
-single route name or sub-pages will lose the parent highlight.
+Item declares `activePatterns` — `routeIs()` wildcards. Parent "Alunos & Usuários" uses `['users.*']`, stays highlighted on `users.create`/`users.edit`. `NavigationService::isActive()` reads acting `Request` (constructor-injected), true if any pattern matches. **Do not** narrow pattern to single route name — sub-pages lose parent highlight.
 
 ## Org-Scoped Badges (RF38/RN41)
 
-`NavigationBadges` holds the two pending-count resolvers wired into the
-registry via `badgeCallback`:
+`NavigationBadges` holds two pending-count resolvers, wired via `badgeCallback`:
 
-- **`pendingEssayCount()`** — `QuizAttempt` where
-  `status = awaiting_manual_grading` AND `whereHas('quiz.lesson.module.course')`.
-  The `whereHas` subquery engages `Course`'s `OrgScope`, so the count is
-  org-scoped for a Gestor and scoped to `session('active_org_id')` for an
-  Admin impersonating an Org.
-- **`pendingForumReportCount()`** — `ForumReport` has **no** `OrgScope`
-  (pseudo-polymorphic, no `org_id` column), so it is scoped here by
-  resolving each pending report's `postable()` and keeping only those the
-  acting user can `view` via `ForumTopicPolicy`/`ForumReplyPolicy`'s
-  same-org gate — the exact gate `ForumModerationController::index()` uses
-  on the page the badge links to. **Never** replace this with a bare
-  `ForumReport::where('status','pending')->count()` — that leaks a
-  cross-tenant count (the original review-found RN41 violation).
+- **`pendingEssayCount()`** — `QuizAttempt` where `status = awaiting_manual_grading` AND `whereHas('quiz.lesson.module.course')`. `whereHas` triggers `Course`'s `OrgScope`, so count is org-scoped for Gestor and follows `session('active_org_id')` for Admin impersonating Org.
+- **`pendingForumReportCount()`** — `ForumReport` has **no** `OrgScope` (pseudo-polymorphic, no `org_id` column). Scope by resolving each pending report's `postable()`, keep only those the user can `view` via `ForumTopicPolicy`/`ForumReplyPolicy` same-org gate — same gate `ForumModerationController::index()` uses on the linked page. **Never** use bare `ForumReport::where('status','pending')->count()` — cross-tenant leak (original RN41 violation).
 
-A zero count renders no badge at all (`resolveBadge()` returns null).
+Zero count renders no badge (`resolveBadge()` returns null).
 
 ## Contextual Aluno Forum URL (RF39)
 
-The forum lives under `courses/{course}/forum`, so there is no canonical
-URL. `NavigationRegistry::resolveForumRoute()` resolves the most recently
-updated active enrollment's course and links to its `forum.index`, or
-returns `null` (hiding the item) when the Aluno has no active enrollment.
-The `route` field on a resolver-driven item is inert — the resolver is
-the sole source of the href.
+Forum lives at `courses/{course}/forum` — no canonical URL. `NavigationRegistry::resolveForumRoute()` picks most recently updated active enrollment's course, links to its `forum.index`. No active enrollment = `null`, item hidden. `route` field on resolver-driven item is inert; resolver is sole href source.
 
-## Relationship to Other Modules
+## Related Modules
 
-- **`tenancy-*`** — `OrgScope` (on `Course`) is what makes the essay
-  badge org-scoped; the forum badge cannot lean on it and must use the
-  Policy gate instead (see above).
-- **`auth-orgs-*`** — `roles` arrays here mirror the Spatie role names
-  (`admin`/`gestor`/`aluno`) used by the `role:` route middleware.
-- **`forum-*` / `quizzes-*`** — the moderation/essay-grading badge
-  counts must stay consistent with those modules' controller scoping.
-- **`dashboard-*`** — the brand link (`NavigationComposer::brandUrl()`)
-  routes Admin/Gestor to `admin.dashboard`, Aluno to
-  `student.courses.index`.
+- **`tenancy-*`** — `OrgScope` on `Course` makes essay badge org-scoped. Forum badge cannot lean on it, uses Policy gate.
+- **`auth-orgs-*`** — `roles` arrays mirror Spatie role names (`admin`/`gestor`/`aluno`) from `role:` middleware.
+- **`forum-*` / `quizzes-*`** — badge counts must match those modules' controller scoping.
+- **`dashboard-*`** — brand link (`NavigationComposer::brandUrl()`): Admin/Gestor to `admin.dashboard`, Aluno to `student.courses.index`.

@@ -1,15 +1,15 @@
 ---
 name: quizzes-architecture
 description: >
-  Explains the Quizzes/Evaluations domain (SPEC-08): the
+  Quizzes/Evaluations domain (SPEC-08):
   quizzes/quiz_questions/quiz_options/quiz_attempts/quiz_answers schema,
-  cascade-inherited tenancy through the Lesson, the correction engine's
-  branching between automatic (single_choice/multiple_choice/true_false)
-  and manual (essay) grading, and the max_attempts/time_limit_minutes
-  enforcement rules. Use whenever designing or reviewing a feature that
-  touches Quiz/QuizQuestion/QuizOption/QuizAttempt/QuizAnswer data, before
-  adding a new question type, or when deciding how a quiz-taking or
-  essay-grading screen should be scoped and gated.
+  cascade-inherited tenancy through Lesson, correction engine branching
+  between automatic (single_choice/multiple_choice/true_false) and manual
+  (essay) grading, max_attempts/time_limit_minutes enforcement. Use when
+  designing or reviewing feature touching
+  Quiz/QuizQuestion/QuizOption/QuizAttempt/QuizAnswer data, before adding
+  new question type, or when deciding how quiz-taking or essay-grading
+  screen gets scoped and gated.
 license: MIT
 metadata:
   feature: quizzes
@@ -23,14 +23,14 @@ metadata:
 
 ## Overview
 
-RF08 gives a Gestor (`role:gestor`) CRUD over the single Quiz attached to
-one of their Lessons (`type = quiz`) and its Questions/Options. RF09 gives
-an Aluno (`role:aluno`) the ability to submit an attempt against that Quiz
-and, for `essay` questions, RN11 requires a Gestor to manually grade the
-attempt before it counts. This feature never mutates `courses`/`modules`/
-`lessons` themselves (SPEC-05 owns those) beyond reading `lessons.type` and
-writing `lesson_progress` on a passed attempt (SPEC-07's
-`MarkLessonCompleteAction`, reused — never re-implemented here).
+RF08 gives Gestor (`role:gestor`) CRUD over single Quiz attached to one of
+their Lessons (`type = quiz`) plus its Questions/Options. RF09 lets Aluno
+(`role:aluno`) submit attempt against that Quiz. For `essay` questions,
+RN11 demands Gestor grade attempt by hand before it counts. This feature
+never mutates `courses`/`modules`/`lessons` (SPEC-05 owns those) beyond
+reading `lessons.type` and writing `lesson_progress` on passed attempt
+(SPEC-07's `MarkLessonCompleteAction`, reused — never re-implemented
+here).
 
 ## Schema (SPEC-00 §2.1.7–2.1.11)
 
@@ -42,12 +42,12 @@ writing `lesson_progress` on a passed attempt (SPEC-07's
 | `quiz_attempts` | `quiz_id`, `user_id`, `score_percentage` (nullable), `is_passed` (nullable), `status` (`in_progress`\|`awaiting_manual_grading`\|`graded`), `started_at`, `completed_at` | Cascade-inherited via `quiz_id` |
 | `quiz_answers` | `attempt_id`, `question_id`, `selected_option_ids` (JSON array, nullable), `essay_answer` (nullable), `is_correct` (nullable — `null` means "not yet graded"), `graded_by` (nullable), `graded_at` (nullable) | Cascade-inherited via `attempt_id` |
 
-None of these five models get the `OrgScope` trait — see each model's own
-docblock and `tenancy-architecture`. The tenant boundary is implied purely
-by the FK chain up to `courses.org_id`. `quiz_attempts`/`quiz_answers`
-additionally carry no `SoftDeletes` — an attempt, once submitted, is a
-permanent historical record (SPEC-08 §1.3's "cada attempt é preservado
-individualmente no histórico").
+None of these five models get `OrgScope` trait — see each model docblock
+and `tenancy-architecture`. Tenant boundary implied purely by FK chain up
+to `courses.org_id`. `quiz_attempts`/`quiz_answers` also carry no
+`SoftDeletes` — attempt, once submitted, is permanent historical record
+(SPEC-08 §1.3's "cada attempt é preservado individualmente no
+histórico").
 
 ## Question Types and Correction (SPEC-08 §1.2)
 
@@ -58,77 +58,76 @@ individualmente no histórico").
 | `true_false` | Automatic | A `single_choice` special case with exactly 2 fixed options (Verdadeiro/Falso). |
 | `essay` | **Manual** | No `quiz_options` rows. `essay_answer` holds free text, `is_correct = null` until a Gestor grades it via `GradeEssayAnswerAction`. |
 
-An empty `selected_option_ids` is always incorrect — never treat "no
-answer" as a vacuous match against an empty correct-set (impossible here
-since every non-essay question has ≥1 correct option, but never special
--case an empty answer as "skip"/"correct").
+Empty `selected_option_ids` always wrong. Never treat "no answer" as
+vacuous match against empty correct-set (impossible here since every
+non-essay question has ≥1 correct option, but never special-case empty
+answer as "skip"/"correct").
 
 ## Attempt Limits and Time (SPEC-08 §1.3)
 
-- `max_attempts` (nullable): when set, blocks a new submission once the
-  student has already reached N **completed** attempts — counting only
-  `status IN (awaiting_manual_grading, graded)`, never a stale
+- `max_attempts` (nullable): when set, blocks new submission once student
+  reached N **completed** attempts — count only
+  `status IN (awaiting_manual_grading, graded)`, never stale
   `in_progress` attempt (see edge case in `quizzes-conventions`). `null`
-  is unlimited, independent of `allow_retries`.
+  means unlimited, independent of `allow_retries`.
 - `allow_retries` (bool): when `false`, blocks any second submission
   outright regardless of `max_attempts`.
-- `time_limit_minutes` (nullable): the timer starts at
-  `quiz_attempts.started_at`. An over-limit submission is **accepted, not
-  blocked** — network races must never cost a student their answers — but
-  is forced `is_passed = false`. There is no `notes`/warning column on
-  `quiz_attempts` in the current schema (SPEC-00 §2.1 doesn't define one);
-  the "Tempo excedido" state must be **computed on read** from
-  `started_at`/`completed_at`/`time_limit_minutes`, not persisted as text,
-  unless a follow-up migration is explicitly approved.
-- Best score across attempts: any UI/certificate logic showing the
-  student's standing on a Quiz uses `MAX(score_percentage)` across their
-  `status = graded` attempts, not the latest attempt — every attempt still
-  remains individually queryable in history.
+- `time_limit_minutes` (nullable): timer starts at
+  `quiz_attempts.started_at`. Over-limit submission is **accepted, not
+  blocked** — network races must never cost student their answers — but
+  forced `is_passed = false`. No `notes`/warning column on
+  `quiz_attempts` in current schema (SPEC-00 §2.1 defines none).
+  "Tempo excedido" state must be **computed on read** from
+  `started_at`/`completed_at`/`time_limit_minutes`, never persisted as
+  text, unless follow-up migration explicitly approved.
+- Best score across attempts: any UI/certificate logic showing student
+  standing on Quiz uses `MAX(score_percentage)` across their
+  `status = graded` attempts, not latest attempt. Every attempt still
+  individually queryable in history.
 
 ## The Correction Engine (`SubmitQuizAttemptAction`, SPEC-08 §2)
 
-1. Verify the student has an active enrollment in the Quiz's Course's Org
-   (same `hasActiveOrCompletedEnrollment()` check `EnsureStudentIsEnrolled`
+1. Verify student has active enrollment in Quiz's Course's Org (same
+   `hasActiveOrCompletedEnrollment()` check `EnsureStudentIsEnrolled`
    uses — see `learning-architecture`).
-2. Enforce `allow_retries`/`max_attempts` (above) — block with a
-   domain exception before touching `quiz_attempts` at all.
+2. Enforce `allow_retries`/`max_attempts` (above) — block with domain
+   exception before touching `quiz_attempts` at all.
 3. Auto-grade every `single_choice`/`multiple_choice`/`true_false`
-   question and persist `quiz_answers` for all of them, essay included
+   question, persist `quiz_answers` for all of them, essay included
    (essay rows get `is_correct = null`).
-4. If the quiz has **any** `essay` question: `status =
+4. If quiz has **any** `essay` question: `status =
    awaiting_manual_grading`, `score_percentage = null`, `is_passed = null`
-   — `lesson_progress` is **not** written yet, even if every
-   auto-graded question was answered correctly.
-5. If there is no pending essay question (either none exist, or
-   `GradeEssayAnswerAction` just finished grading the last one via
-   `finalizeGrading()`): `status = graded`, recompute
-   `score_percentage`, and if `is_passed` (score ≥
-   `min_score_percentage`), write `lesson_progress` with
-   `completion_source = quiz_passed` — dispatching
-   `LessonMarkedAsCompleted` (SPEC-07's existing event, reused unchanged;
-   see `learning-architecture`).
+   — `lesson_progress` **not** written yet, even if every auto-graded
+   question answered correctly.
+5. If no pending essay question (none exist, or `GradeEssayAnswerAction`
+   just finished grading last one via `finalizeGrading()`):
+   `status = graded`, recompute `score_percentage`, and if `is_passed`
+   (score ≥ `min_score_percentage`), write `lesson_progress` with
+   `completion_source = quiz_passed`, dispatching
+   `LessonMarkedAsCompleted` (SPEC-07's existing event, reused
+   unchanged; see `learning-architecture`).
 
 ## Manual Grading (`GradeEssayAnswerAction`, SPEC-08 §2.1)
 
-A Gestor's grading screen lists `quiz_attempts.status =
+Gestor grading screen lists `quiz_attempts.status =
 awaiting_manual_grading` scoped to their own Org (via
-`QuizAttemptPolicy`, mirroring `LessonPolicy`'s cascade-authorize
-pattern). Grading one `quiz_answers` row sets `is_correct`/`graded_by`/
-`graded_at`; once **every** essay answer on the attempt has a non-null
-`is_correct`, `finalizeGrading()` recomputes the whole attempt's
-`score_percentage` **using the exact same formula as auto-grading**
-(correct answers ÷ total questions × 100, with any unanswered question
-still counted in the denominator as wrong) and re-enters step 5 above.
+`QuizAttemptPolicy`, mirroring `LessonPolicy` cascade-authorize pattern).
+Grading one `quiz_answers` row sets `is_correct`/`graded_by`/
+`graded_at`. Once **every** essay answer on attempt has non-null
+`is_correct`, `finalizeGrading()` recomputes whole attempt
+`score_percentage` **using exact same formula as auto-grading** (correct
+answers ÷ total questions × 100, any unanswered question still counted in
+denominator as wrong) and re-enters step 5 above.
 
 ## Related Specs
 
 - `spec/specs/08-quizzes-and-evaluations-engine.md` — RF08, RF09, RN02,
-  RN03, RN04, RN11, this feature's full requirements.
+  RN03, RN04, RN11, full requirements for this feature.
 - `spec/specs/00-architecture-database-and-guardrails.md` §2.1.7–2.1.11 —
   full column/index/`onDelete` definitions.
-- `courses-architecture` — the Lesson this feature hangs off of, and the
+- `courses-architecture` — Lesson this feature hangs off, plus
   cascade-inherited-tenancy pattern this module copies one level deeper.
 - `learning-architecture` — `MarkLessonCompleteAction`,
   `LessonMarkedAsCompleted`, `EnsureStudentIsEnrolled`, all reused
-  unmodified by this feature's student-facing side.
+  unmodified by student-facing side of this feature.
 - `tenancy-architecture` — `OrgScope`, `RolesEnum`.

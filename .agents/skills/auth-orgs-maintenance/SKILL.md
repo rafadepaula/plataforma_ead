@@ -1,13 +1,12 @@
 ---
 name: auth-orgs-maintenance
 description: >
-  Debugging, testing, and edge-case guide for Aluno/Gestor CRUD (RF04) and the
-  chunked CSV import (RF05/RN09). Use when a `MultiTenantStudentImportTest` or
-  `UserCrudTest` is failing, an imported student is missing enrollment or has
-  a duplicated User row, `UnresolvedOrgContextException` fires unexpectedly
-  during import, or you're about to touch `UserImportService`,
-  `UserController`, `UserPolicy`, or `CsvImporter.js` and need to know what
-  else must change with it.
+  Debug, test, edge-case guide for Aluno/Gestor CRUD (RF04) and chunked CSV
+  import (RF05/RN09). Use when `MultiTenantStudentImportTest` or
+  `UserCrudTest` fails, imported student misses enrollment or duplicates a
+  User row, `UnresolvedOrgContextException` fires during import, or before
+  touching `UserImportService`, `UserController`, `UserPolicy`,
+  `CsvImporter.js`.
 license: MIT
 metadata:
   feature: auth-orgs
@@ -19,24 +18,15 @@ metadata:
 
 # Auth/Orgs Maintenance
 
-## Mandatory Test Coverage for This Module
+## Mandatory Test Coverage
 
-These tests guard the Bucket C contract and must stay green (PHPUnit, no
-Pest):
+Guard the Bucket C contract. PHPUnit, no Pest. Keep green:
 
-- `tests/Feature/MultiTenantStudentImportTest.php` — RN09: existing global
-  e-mail only gains a new enrollment (no duplicate `User`, no password
-  overwrite); new e-mail creates the `User` bound to the current `org_id`;
-  chunk boundary at exactly 50 rows; malformed rows are skipped without
-  aborting the batch; Admin with no `active_org_id` gets a 422 from the
-  import endpoint.
-- `tests/Feature/UserCrudTest.php` — Admin/Gestor CRUD scoping, a Gestor's
-  submitted `org_id` is always ignored server-side, Aluno is forbidden from
-  every `/users*` route.
-- `tests/Browser/MultiTenantStudentImportTest.php` — E2E: upload a CSV,
-  observe the chunked progress bar, verify the final course roster.
+- `tests/Feature/MultiTenantStudentImportTest.php` — RN09: existing global e-mail gains only a new enrollment (no duplicate `User`, no password overwrite); new e-mail creates `User` bound to current `org_id`; chunk boundary at exactly 50 rows; malformed rows skipped without aborting batch; Admin with no `active_org_id` gets 422.
+- `tests/Feature/UserCrudTest.php` — Admin/Gestor CRUD scoping; Gestor-submitted `org_id` always ignored server-side; Aluno forbidden on every `/users*` route.
+- `tests/Browser/MultiTenantStudentImportTest.php` — E2E: upload CSV, chunked progress bar, final course roster.
 
-Run the narrowest of these first after touching this module:
+Run narrowest first:
 
 ```bash
 vendor/bin/sail artisan test --filter=MultiTenantStudentImportTest
@@ -45,130 +35,69 @@ vendor/bin/sail artisan test --filter=UserCrudTest
 
 ## RN09 — Multi-Org Adaptive Enrollment
 
-`UserImportService::importChunk()` is the single place this rule is
-implemented. Per row:
+`UserImportService::importChunk()` = only place this rule lives. Per row:
 
-1. Look up the student **globally by e-mail** (`User::where('email', ...)`),
-   not scoped by `org_id` — a student already active at a different
-   Organization must be found.
-2. If found: do **not** touch `password` or `org_id` on that row. Only ensure
-   a `course_user` enrollment exists for the current chunk's `course_id`
-   (`firstOrCreate`-style existence check before `attach()`, so re-uploading
-   the same CSV twice is idempotent and never throws a pivot unique-constraint
-   violation).
-3. If not found: create the `User` with the resolved `org_id`, a random
-   (never client-supplied) password, `aluno` role, then enroll.
+1. Look up student **globally by e-mail** (`User::where('email', ...)`), not scoped by `org_id` — a student active at another Organization must be found.
+2. Found: do **not** touch `password` or `org_id`. Only ensure `course_user` enrollment exists for the chunk's `course_id` (`firstOrCreate`-style existence check before `attach()`), so re-uploading the same CSV is idempotent and never hits a pivot unique-constraint violation.
+3. Not found: create `User` with resolved `org_id`, random (never client-supplied) password, `aluno` role, then enroll.
 
-If you ever need a second import entry point (e.g. an API import), reuse this
-service — do not re-implement the "exists globally / reuse vs. create" branch
-a second time, that duplication is exactly how RN09 regresses silently.
+Second import entry point (API import) reuses this service. Re-implementing the "exists globally / reuse vs create" branch is exactly how RN09 regresses silently.
 
-## Diagnosing "Import Created a Duplicate User" or "Overwrote a Password"
+## Duplicate User or Overwritten Password
 
-- Confirm the lookup in step 1 above is unscoped by `org_id`/`OrgScope` — it
-  must query `User` directly (`User` intentionally never carries the
-  `OrgScope` trait; see `tenancy-maintenance`), not through an org-scoped
-  relation that would hide the other Organization's row and cause a
-  false-negative "not found" → duplicate create.
-- Confirm no code path calls `User::updateOrCreate(['email' => ...], [...])`
-  for this flow — `updateOrCreate` would silently overwrite `password`/`org_id`
-  on the matched row. The service always branches explicitly instead
-  (`if (! $user) { create } `), by design.
+- Step 1 lookup must be unscoped by `org_id`/`OrgScope` — query `User` directly (`User` never carries `OrgScope`, see `tenancy-maintenance`), not through an org-scoped relation that hides the other Org's row and produces false-negative "not found" then duplicate create.
+- No code path may call `User::updateOrCreate(['email' => ...], [...])` here — it silently overwrites `password`/`org_id` on the matched row. Service branches explicitly (`if (! $user) { create }`) by design.
 
-## Diagnosing "Chunk Boundary" / Partial-Batch Bugs
+## Chunk Boundary / Partial-Batch Bugs
 
-- The chunk size (50) lives in exactly two places that must stay in sync:
-  `UserImportService`/`ImportUsersChunkRequest` (`rows` max:50, enforced
-  server-side as a defensive cap) and `CsvImporter.js`'s `chunkSize` property
-  (the actual client-side splitter). If you ever tune the chunk size, change
-  both — a client sending 200-row batches against a `max:50` request rule
-  will get a 422 on every batch past the first, not a clean partial import.
-- A CSV whose row count isn't a multiple of 50 must still fully import: the
-  last chunk is simply shorter (`chunkRows()` uses `Array.slice`, no padding).
-  Regression-test this with a row count like 51 or 99, not only exact
-  multiples of 50.
-- Malformed rows (missing/blank `name` or `email`, or an e-mail that fails
-  `filter_var(..., FILTER_VALIDATE_EMAIL)`) are recorded in the `skipped`
-  array and otherwise ignored — they must never throw and abort the rest of
-  the chunk. If you add a new required column, extend this per-row check
-  inside the `foreach`, do not add a request-level `required` rule for it
-  (that would 422 the *entire* chunk over one bad row instead of skipping
-  just that row).
+- Chunk size 50 lives in two places that must stay in sync: `UserImportService`/`ImportUsersChunkRequest` (`rows` max:50, defensive server cap) and `CsvImporter.js` `chunkSize` (actual client splitter). Tuning it means changing both — client sending 200-row batches against `max:50` gets 422 on every batch past the first, not a clean partial import.
+- CSV whose row count is not a multiple of 50 must fully import: last chunk is shorter (`chunkRows()` uses `Array.slice`, no padding). Regression-test with 51 or 99, not only exact multiples.
+- Malformed rows (blank/missing `name` or `email`, or e-mail failing `filter_var(..., FILTER_VALIDATE_EMAIL)`) go into the `skipped` array and are ignored — never throw, never abort the chunk. New required column extends this per-row check inside the `foreach`. Do not add a request-level `required` rule — that 422s the *entire* chunk over one bad row.
 
-## Client-Driven Chunking — Why the Server Never Sees the Raw File
+## Client-Driven Chunking — Server Never Sees the Raw File
 
-Per the RF05 spec text ("streaming em chunks AJAX de 50 registros"),
-`CsvImporter.js` reads the selected `File` with `FileReader`, splits it into
-row objects with a small manual parser (no PapaParse/other dependency, per
-CLAUDE.md's "don't add dependencies without approval"), and POSTs each 50-row
-batch as JSON through `HttpClient`. `ImportUsersChunkRequest`/
-`UserImportController::chunk()` never receive multipart file bytes — only
-`course_id` + `rows` (+ optional `filename` metadata used only for a
-extension sanity check, not content validation). If a future requirement
-needs true server-side streaming of arbitrarily large files (e.g. an
-API-only bulk import with no browser involved), that is a different code
-path — do not bolt a raw file upload onto this endpoint, its request/response
-shape assumes small, client-chunked JSON payloads.
+Per RF05 ("streaming em chunks AJAX de 50 registros"), `CsvImporter.js` reads the `File` with `FileReader`, splits into row objects with a small manual parser (no PapaParse — CLAUDE.md forbids new dependencies), POSTs each 50-row batch as JSON via `HttpClient`. `ImportUsersChunkRequest`/`UserImportController::chunk()` never get multipart bytes — only `course_id` + `rows` (+ optional `filename` used for extension sanity check, not content validation). True server-side streaming of huge files (API-only bulk import) = different code path. Do not bolt raw file upload onto this endpoint; its request/response shape assumes small client-chunked JSON.
 
 ## `UnresolvedOrgContextException` During Import/CRUD
 
-`UserController`/`UserImportController` each carry a small
-`resolveOrgId(Request $request): int` method that mirrors
-`OrgScope::booted()`'s resolution order (`$user->org_id ?? session(
-'active_org_id')`) and throw `UnresolvedOrgContextException` on failure —
-`User` itself is not `OrgScope`d (see its docblock), so this has to be
-reimplemented at the controller boundary rather than inherited from a model
-trait. If you extract a shared helper for this later, keep the exact same
-`??` order and exception message shape used in `tenancy-conventions`, so
-`bootstrap/app.php`'s global handler keeps producing the same 422 JSON /
-redirect-back behavior for both Buckets B and C.
+`UserController`/`UserImportController` each carry `resolveOrgId(Request $request): int` mirroring `OrgScope::booted()` order (`$user->org_id ?? session('active_org_id')`), throwing `UnresolvedOrgContextException` on failure. `User` is not `OrgScope`d (see its docblock), so this is reimplemented at the controller boundary, not inherited. Extracting a shared helper later: keep the exact `??` order and exception message shape from `tenancy-conventions`, so `bootstrap/app.php`'s handler keeps producing the same 422 JSON / redirect-back for Buckets B and C.
 
 ## `UserPolicy` — Compares `org_id`, Not Just Role
 
-Unlike `OrganizationPolicy` (a plain role check), `UserPolicy` additionally
-compares the target user's `org_id` against the acting user's resolved
-context (Admin: `session('active_org_id')`; Gestor: `$user->org_id`). A
-Gestor and an Admin impersonating a *different* Org must both get a 403 on
-another Org's user, not a 404 (the row exists, route-model-binding finds it —
-authorization is what fails). See `auth-orgs-conventions` for the shared
-`Gate::authorize()` pattern this policy plugs into.
+Unlike `OrganizationPolicy` (plain role check), `UserPolicy` also compares target user's `org_id` against acting user's resolved context (Admin: `session('active_org_id')`; Gestor: `$user->org_id`). Gestor and Admin impersonating a *different* Org both get 403 on another Org's user, not 404 — row exists, route-model-binding finds it, authorization fails. Plugs into the `Gate::authorize()` pattern in `auth-orgs-conventions`.
 
-## `UserHomeResolver` -- Must Stay in Sync When Roles Change (BUG-001)
+## `UserHomeResolver` Sync on Role Change (BUG-001)
 
-`App\Services\UserHomeResolver::resolve()` is the single source of truth for
-role-based post-login and guest-guard redirects. If a new role is added to
-`RolesEnum` that needs its own dashboard destination, **this method must be
-updated** -- otherwise the new role falls through to the `student.courses.index`
-branch (the default/catch-all). Both `AuthenticatedSessionController::store()`
-and `RedirectIfAuthenticated` middleware delegate to this resolver, so changing
-it in one place covers both code paths.
+`App\Services\UserHomeResolver::resolve()` = single source of truth for role-based post-login and guest-guard redirects. New role in `RolesEnum` needing its own dashboard **must** update this method, else it falls through to the `student.courses.index` catch-all. Both `AuthenticatedSessionController::store()` and `RedirectIfAuthenticated` delegate here, so one edit covers both paths.
 
-After updating `UserHomeResolver::resolve()`, run:
+After editing:
 ```bash
 vendor/bin/sail artisan test --filter=LoginTest
 ```
-The tests in `tests/Feature/Auth/LoginTest.php` assert role-specific redirect
-targets and will catch a missed update.
+`tests/Feature/Auth/LoginTest.php` asserts role-specific redirect targets and catches a missed update.
 
 ## Auto-Update Protocol (SPEC-03)
 
-Per `spec/specs/03-agentic-harness-and-self-updating-skills.md`: any change to
-`UserController`, `UserImportController`, `UserImportService`, `UserPolicy`,
-the `users*` routes, or `CsvImporter.js` **must** update all three auth-orgs
-skills (`auth-orgs-architecture`, `auth-orgs-conventions`,
-`auth-orgs-maintenance`) in the same change, before the task is considered
-done. Also re-check:
+Per `spec/specs/03-agentic-harness-and-self-updating-skills.md`: any change to `UserController`, `UserImportController`, `UserImportService`, `UserPolicy`, `users*` routes, or `CsvImporter.js` **must** update all three auth-orgs skills (`auth-orgs-architecture`, `auth-orgs-conventions`, `auth-orgs-maintenance`) in the same change before the task is done. Also:
 
-- `.agents/agents/code-reviewer.md` — if the change affects what a reviewer
-  must check for this module.
-- Run `vendor/bin/sail artisan harness:check-skills` — it fails the build if
-  any of the three `auth-orgs-*` skills is missing.
+- `.agents/agents/code-reviewer.md` — if the change alters what a reviewer checks for this module.
+- `vendor/bin/sail artisan harness:check-skills` — fails the build if any `auth-orgs-*` skill is missing.
 
-## Related Specs
+## Related
 
-- `spec/specs/04-auth-profile-organizations-and-user-management.md` — RF04,
-  RF05, RN09.
-- `tenancy-maintenance` — the underlying `OrgScope`/`RolesEnum` contract this
-  module builds on.
-- `spec/specs/03-agentic-harness-and-self-updating-skills.md` (this
-  auto-update protocol).
+- `spec/specs/04-auth-profile-organizations-and-user-management.md` — RF04, RF05, RN09.
+- `tenancy-maintenance` — underlying `OrgScope`/`RolesEnum` contract.
+- `spec/specs/03-agentic-harness-and-self-updating-skills.md` — auto-update protocol.
+
+---
+
+## E2E Coverage Lives in Lifecycle Chains
+
+`tests/Browser/` groups by **user journey (lifecycle chain)** — one method drives create, edit, state change, delete, consequence. Not by module, spec, or use case.
+
+- **Find coverage**: chain methods may sit in a file named after another module when the journey crosses boundaries. Search `grep -rn "<route name|dusk selector>" tests/Browser/`, not by file name. Missing per-module file is **not** a gap.
+- **Add coverage**: extend the journey's chain with a numbered step carrying UI **and** DB assertion. New method only for independent negatives (403, cross-tenant, other actor). New file only for genuinely new journey.
+- **Debug**: stack trace points at a step — match line to its `// N.` comment. Late failure usually means earlier step did not persist.
+- **Database**: no DB trait in `tests/Browser/*`; `DatabaseTruncation` inherited from `Tests\DuskTestCase`. Re-adding `DatabaseMigrations` = suite-wide slowdown. Files, cache, session not reset between methods.
+
+Full rule: `testing-conventions`. Chain debug: `testing-maintenance`.

@@ -1,25 +1,86 @@
 ---
 name: laravel-dusk
-description: Laravel Dusk - Browser automation and testing API for Laravel applications. Use when writing browser tests, automating UI testing, testing JavaScript interactions, or implementing end-to-end tests in Laravel.
+description: Laravel Dusk - browser automation and testing API for Laravel apps. Use when write browser tests, automate UI testing, test JavaScript interactions, or implement end-to-end tests in Laravel.
 ---
 
 # Laravel Dusk Skill
 
-Comprehensive assistance with Laravel Dusk browser automation and testing, providing expert guidance on writing expressive, easy-to-use browser tests for your Laravel applications.
+Laravel Dusk browser automation and testing. Expert guidance for expressive browser tests in Laravel apps.
 
 ## When to Use This Skill
 
-This skill should be triggered when:
+Trigger when:
 
-- Writing or debugging browser automation tests for Laravel
-- Testing user interfaces and JavaScript interactions
-- Implementing end-to-end (E2E) testing workflows
-- Setting up automated UI testing in Laravel applications
-- Working with form submissions, authentication flows, or page navigation tests
-- Configuring ChromeDriver or alternative browser drivers
-- Using the Page Object pattern for test organization
-- Testing Vue.js components or waiting for JavaScript events
-- Troubleshooting browser test failures or timing issues
+- Write or debug browser automation tests for Laravel
+- Test user interfaces and JavaScript interactions
+- Implement E2E testing workflows
+- Set up automated UI testing in Laravel apps
+- Work with form submissions, auth flows, page navigation tests
+- Configure ChromeDriver or alternative browser drivers
+- Use Page Object pattern for test organization
+- Test Vue.js components or wait for JavaScript events
+- Troubleshoot browser test failures or timing issues
+
+## Project Rule #1 — Group by Lifecycle Chain, Not by Module
+
+**In this repo, unit of organization for Dusk test is the lifecycle chain
+(user journey), NOT module, spec, or use case.** One test method drives
+entity's whole journey — create, edit, change state, delete, verify
+consequence — asserting UI *and* database at every step. Test file belongs
+to journey, so it may cross module/spec boundaries when journey does.
+
+Why: every Dusk method pays fixed cost — DB reset, WebDriver session boot,
+login, navigation — that dwarfs assertions themselves. Split one lifecycle
+into 4 atomic methods, pay that cost 4× and test *fewer* real state
+transitions.
+
+```php
+// ❌ Old pattern: atomic methods, one module per file.
+public function test_gestor_can_create_a_user_via_the_ui(): void {}
+public function test_gestor_can_edit_a_user_via_the_ui(): void {}
+public function test_gestor_can_deactivate_a_user_via_the_ui(): void {}
+public function test_a_deactivated_user_cannot_login(): void {}
+
+// ✅ Current pattern: one chained journey, one login, one DB reset.
+public function test_gestor_user_management_full_lifecycle(): void
+{
+    $this->browse(function (Browser $browser) use ($gestor): void {
+        // 1. Criação  → assertSee + assertDatabaseHas
+        // 2. Edição   → assertSee + assertDatabaseHas
+        // 3. Inativação
+        // 4. Consequência: login do usuário inativo é bloqueado
+    });
+}
+```
+
+**Mandatory rules for a chain**
+
+1. Intermediate assertions at **every** step (UI assertion + DB assertion
+   whenever step writes). Chain without checkpoints is anti-pattern — see
+   `validate-test-quality`.
+2. Numbered step comments (`// 1. …`) so failing line maps to step.
+3. Naming: `test_{actor}_{entity|journey}_lifecycle` for chains,
+   `test_{entity}_validation_rejections` for grouped rejections in one
+   form session, `test_{rule}_blocked` / `_isolation` for negatives.
+4. **Do not chain what is independent**: multitenant isolation, 403
+   authorization negatives, scenarios needing different actor/tenant stay
+   in own methods. Chaining them hides failure origin.
+5. Chaining happens *inside* one method. No method may rely on state left
+   by another (truncation wipes it between tests).
+6. **Unit/Feature tests stay atomic** — one behavior per method. Lifecycle
+   chaining is browser-E2E-only rule.
+
+**Performance guardrails**
+
+- Target ≤ 1 `loginAs()` per test method. Reuse session with `visit()`
+  instead of login again.
+- Never `pause()`/`sleep()` as wait — direct wall-clock cost.
+- `tests/Browser/*` file with more than ~6 methods signals fragmentation.
+  Look for chain to unify.
+- Before write new E2E test, look for **existing chain already covering
+  that journey and extend it**. New file per module is retired pattern.
+
+Full rule, with canonical example, lives in `testing-conventions`.
 
 ## Quick Reference
 
@@ -165,21 +226,49 @@ $browser->scrollToElement('#footer')
 
 ### 8. Database Management in Tests
 
+**Project rule: `DatabaseTruncation` is declared once in the base class
+`Tests\DuskTestCase`; test classes declare no DB trait at all.**
+
 ```php
-use Illuminate\Foundation\Testing\DatabaseMigrations;
-use Illuminate\Foundation\Testing\DatabaseTruncation;
-
-class ExampleTest extends DuskTestCase
+// tests/DuskTestCase.php — the ONLY place the trait belongs
+abstract class DuskTestCase extends BaseTestCase
 {
-    // Option 1: Run migrations before each test (slower)
-    use DatabaseMigrations;
-
-    // Option 2: Truncate tables after first migration (faster)
     use DatabaseTruncation;
 
-    // Exclude specific tables from truncation
-    protected $exceptTables = ['migrations'];
+    // `roles`/`permissions` are seeded by the create_permission_tables
+    // MIGRATION (not a seeder), so truncating them would break the whole
+    // suite from the 2nd test on with
+    // "There is no role named `admin` for guard `web`".
+    protected $exceptTables = [
+        'migrations',
+        'roles',
+        'permissions',
+        'role_has_permissions',
+    ];
 }
+
+// tests/Browser/AnyTest.php — no DB trait here
+class AnyTest extends DuskTestCase
+{
+    public function test_some_lifecycle(): void { /* ... */ }
+}
+```
+
+- `DatabaseMigrations` runs `migrate:fresh` **per test method** (~30
+  migrations × N methods) — retired in this repo. Re-adding it to a
+  `tests/Browser/*` class silently costs the whole suite minutes; it is
+  only acceptable with a written justification in the file (e.g. a test
+  that mutates schema at runtime).
+- `RefreshDatabase` is **forbidden** in Dusk: its transaction lives in the
+  test process' connection and is never visible to the HTTP server process.
+- Truncation resets the DB only. Files (`storage/app/public`), cache and
+  session survive between methods — chains that upload must use unique
+  names or clean up.
+
+Audit command:
+
+```bash
+grep -rn "DatabaseMigrations\|RefreshDatabase" tests/Browser/   # expect: empty
 ```
 
 ### 9. JavaScript Execution
@@ -342,7 +431,7 @@ Use the reference file when you need:
 ### For Intermediate Users
 
 1. **Implement Page Objects**: Organize complex tests with the Page pattern
-2. **Use database traits**: Choose between `DatabaseMigrations` or `DatabaseTruncation`
+2. **Database traits**: in this repo the choice is already made — `DatabaseTruncation` in `DuskTestCase`, nothing in the child class
 3. **Create browser macros**: Define reusable methods for common workflows
 4. **Test authentication**: Use `loginAs()` to bypass login screens
 5. **Handle JavaScript**: Use `waitUntil()` for dynamic content and AJAX
@@ -434,13 +523,13 @@ The reference documentation includes:
 1. **Use Dusk selectors** (`dusk` attributes) instead of CSS classes for stability
 2. **Wait explicitly** with `waitFor()` methods instead of arbitrary `pause()`
 3. **Organize with Page Objects** for complex test scenarios
-4. **Leverage database truncation** for faster test execution
+4. **Leverage database truncation** for faster test execution (inherited from `DuskTestCase`)
 5. **Create browser macros** for frequently repeated actions
 6. **Scope selectors** with `with()` or `elsewhere()` for specific page regions
 7. **Test user behavior** rather than implementation details
 8. **Use authentication shortcuts** like `loginAs()` to skip login flows
 9. **Take screenshots** with `screenshot()` for debugging failures
-10. **Group related tests** and use `--group` flag for targeted execution
+10. **Group by lifecycle chain** (Project Rule #1), not by module — and use `--filter` for targeted execution of a chain
 
 ## Troubleshooting
 
