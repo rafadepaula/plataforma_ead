@@ -5,6 +5,7 @@ namespace Tests;
 use Facebook\WebDriver\Chrome\ChromeOptions;
 use Facebook\WebDriver\Remote\DesiredCapabilities;
 use Facebook\WebDriver\Remote\RemoteWebDriver;
+use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Support\Collection;
 use Laravel\Dusk\Browser;
 use Laravel\Dusk\TestCase as BaseTestCase;
@@ -24,13 +25,39 @@ use PHPUnit\Framework\Attributes\BeforeClass;
  * of (or fight) Dusk's own environment swap and risk touching the
  * `plataforma_ead` dev database instead of `testing`.
  *
- * Every concrete test in tests/Browser/* is responsible for its own
- * `DatabaseMigrations` (or `DatabaseTruncation`) trait, which is what
- * actually confines migrations/truncation to whichever database the
- * swapped `.env` resolved to.
+ * O isolamento de dados é centralizado aqui via `DatabaseTruncation`: as
+ * migrações rodam **uma única vez** por execução da suíte e, entre os
+ * métodos de teste, apenas um `TRUNCATE` rápido é emitido nas tabelas
+ * tocadas — sempre na conexão ativa, ou seja, na base que o `.env`
+ * trocado pelo Dusk resolveu. Classes em tests/Browser/* NÃO devem
+ * declarar `DatabaseMigrations` (migrate:fresh por método, regressão de
+ * desempenho) nem `RefreshDatabase` (transação invisível ao processo HTTP).
  */
 abstract class DuskTestCase extends BaseTestCase
 {
+    use DatabaseTruncation;
+
+    /**
+     * Tabelas preservadas entre os testes.
+     *
+     * `roles`/`permissions`/`role_has_permissions` são dados de referência
+     * populados pela migração `create_permission_tables` (que roda
+     * `Role::findOrCreate()` para cada caso de `RolesEnum`), e não por um
+     * seeder. Como as migrações rodam uma única vez por suíte sob
+     * `DatabaseTruncation`, truncar essas tabelas deixaria a suíte inteira
+     * quebrada a partir do segundo teste com
+     * "There is no role named `admin` for guard `web`". As atribuições
+     * usuário→role (`model_has_roles`) continuam sendo truncadas.
+     *
+     * @var array<int, string>
+     */
+    protected $exceptTables = [
+        'migrations',
+        'roles',
+        'permissions',
+        'role_has_permissions',
+    ];
+
     /**
      * Prepare for Dusk test execution.
      */

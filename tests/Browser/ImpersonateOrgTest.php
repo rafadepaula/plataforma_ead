@@ -5,7 +5,6 @@ namespace Tests\Browser;
 use App\Enums\Permissions\RolesEnum;
 use App\Models\Organization;
 use App\Models\User;
-use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 
@@ -15,8 +14,6 @@ use Tests\DuskTestCase;
  */
 class ImpersonateOrgTest extends DuskTestCase
 {
-    use DatabaseMigrations;
-
     public function test_admin_can_impersonate_and_exit_an_organization_via_the_ui(): void
     {
         $admin = User::factory()->create(['org_id' => null]);

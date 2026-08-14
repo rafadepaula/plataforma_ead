@@ -5,7 +5,6 @@ namespace Tests\Browser\Navigation;
 use App\Enums\Permissions\RolesEnum;
 use App\Models\Organization;
 use App\Models\User;
-use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 
@@ -15,14 +14,17 @@ use Tests\DuskTestCase;
  * Organization-scoped items appear (and disappear) with the "Impersonate
  * Org" context, grouped under their own "Impersonate" heading.
  *
- * The whole rule lives in `NavigationRegistry`/`NavigationService`, so
- * the desktop `<aside>` and the mobile Offcanvas consume the same
- * resolved array — both renders are asserted here.
+ * The whole rule lives in `NavigationRegistry`/`NavigationService`, so the
+ * desktop `<aside>` and the mobile Offcanvas consume the same resolved
+ * array — both renders are asserted here.
+ *
+ * Agrupado por cadeia de ciclo de vida (ver `testing-conventions`): o
+ * mesmo Admin percorre contexto global → assumir Organização → link real →
+ * encerrar contexto no desktop; o espelho no Offcanvas mobile é a mesma
+ * jornada num viewport estreito.
  */
 class AdminSidebarScopeTest extends DuskTestCase
 {
-    use DatabaseMigrations;
-
     /** @var list<string> The Organization-scoped item keys (UX-001). */
     private const OPERATIONAL_KEYS = ['courses', 'quiz-attempts', 'forum-moderation'];
 
@@ -35,12 +37,15 @@ class AdminSidebarScopeTest extends DuskTestCase
      */
     private const IMPERSONATE_HEADING = 'IMPERSONATE';
 
-    public function test_admin_without_impersonation_sees_no_organization_scoped_items(): void
+    public function test_admin_sidebar_scope_lifecycle(): void
     {
+        $org = Organization::factory()->create(['name' => 'Organização Alvo']);
         $admin = User::factory()->create(['org_id' => null]);
         $admin->assignRole(RolesEnum::ADMIN->value);
 
-        $this->browse(function (Browser $browser) use ($admin): void {
+        $this->browse(function (Browser $browser) use ($admin, $org): void {
+            // 1. Contexto global: nenhum item de Organização, nenhuma seção
+            //    "Impersonate", e o Admin não é aprendiz.
             $browser->loginAs($admin)
                 ->visit(route('admin.dashboard'))
                 ->waitFor('@admin-dashboard')
@@ -52,23 +57,13 @@ class AdminSidebarScopeTest extends DuskTestCase
                     ->assertMissing('@sidebar-'.$key.'-link-mobile');
             }
 
-            // UX-001 — the Admin is not a learner.
             $browser->assertMissing('@sidebar-student-courses-link')
                 ->assertMissing('@sidebar-student-courses-link-mobile')
                 ->assertDontSee('Meus Cursos')
                 ->assertDontSee('APRENDIZADO');
-        });
-    }
 
-    public function test_impersonating_an_org_reveals_the_impersonate_section_and_hiding_it_again_on_exit(): void
-    {
-        $org = Organization::factory()->create(['name' => 'Organização Alvo']);
-        $admin = User::factory()->create(['org_id' => null]);
-        $admin->assignRole(RolesEnum::ADMIN->value);
-
-        $this->browse(function (Browser $browser) use ($admin, $org): void {
-            $browser->loginAs($admin)
-                ->visit(route('organizations.index'))
+            // 2. Assumir a Organização revela a seção inteira.
+            $browser->visit(route('organizations.index'))
                 ->waitFor('@impersonate-'.$org->id)
                 ->click('@impersonate-'.$org->id)
                 ->waitForLocation('/organizations')
@@ -80,13 +75,13 @@ class AdminSidebarScopeTest extends DuskTestCase
                     ->assertPresent('@sidebar-'.$key.'-link-mobile');
             }
 
-            // The grouped link is real and reachable (RF36).
+            // 3. O link agrupado é real e alcançável (RF36).
             $browser->click('@sidebar-courses-link')
                 ->waitForLocation('/courses')
                 ->assertDontSee('Selecione uma Organização ativa antes de continuar.');
 
-            // Ending the context drops the whole section again. UX-002 §4.4
-            // made the destination deterministic (`admin.dashboard`).
+            // 4. Encerrar o contexto derruba a seção inteira de novo. UX-002
+            //    §4.4 tornou o destino determinístico (`admin.dashboard`).
             $browser->visit(route('organizations.index'))
                 ->waitFor('@exit-impersonation')
                 ->click('@exit-impersonation')
@@ -102,8 +97,8 @@ class AdminSidebarScopeTest extends DuskTestCase
     }
 
     /**
-     * UX-001 — the mobile Offcanvas consumes the very same resolved
-     * array, so the desktop and mobile menus must always agree.
+     * UX-001 — o Offcanvas mobile consome exatamente o mesmo array
+     * resolvido, então os dois menus sempre têm que concordar.
      */
     public function test_mobile_offcanvas_mirrors_the_desktop_scope_rules(): void
     {
@@ -112,6 +107,7 @@ class AdminSidebarScopeTest extends DuskTestCase
         $admin->assignRole(RolesEnum::ADMIN->value);
 
         $this->browse(function (Browser $browser) use ($admin, $org): void {
+            // 1. Contexto global no viewport estreito.
             $browser->loginAs($admin)
                 ->resize(390, 844)
                 ->visit(route('admin.dashboard'))
@@ -123,8 +119,8 @@ class AdminSidebarScopeTest extends DuskTestCase
                 ->assertMissing('@sidebar-courses-link-mobile')
                 ->assertMissing('@sidebar-student-courses-link-mobile');
 
-            // Now with an Organization impersonated (via the real UI —
-            // "Entrar como" is a POST form).
+            // 2. Com a Organização assumida pela UI real ("Entrar como" é um
+            //    POST de formulário), o Offcanvas espelha o desktop.
             $browser->visit(route('organizations.index'))
                 ->waitFor('@impersonate-'.$org->id)
                 ->click('@impersonate-'.$org->id)
@@ -136,7 +132,8 @@ class AdminSidebarScopeTest extends DuskTestCase
                 ->assertSee(self::IMPERSONATE_HEADING)
                 ->assertVisible('@sidebar-courses-link-mobile')
                 ->assertVisible('@sidebar-quiz-attempts-link-mobile')
-                ->assertVisible('@sidebar-forum-moderation-link-mobile');
+                ->assertVisible('@sidebar-forum-moderation-link-mobile')
+                ->resize(1920, 1080);
         });
     }
 }

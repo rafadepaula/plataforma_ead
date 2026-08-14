@@ -4,7 +4,6 @@ namespace Tests\Browser\Auth;
 
 use App\Enums\Permissions\RolesEnum;
 use App\Models\User;
-use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Laravel\Dusk\Browser;
@@ -12,65 +11,69 @@ use Tests\DuskTestCase;
 
 /**
  * SPEC-04 RF01 — E2E coverage of the login screen (SPEC-00 §5 mandates
- * Dusk coverage of every screen). Uses DatabaseMigrations (not
- * RefreshDatabase) since Dusk drives the browser and the app server as
- * separate HTTP processes/connections.
+ * Dusk coverage de todas as telas). Isolamento via `DatabaseTruncation`
+ * herdado de `Tests\DuskTestCase` (nunca `RefreshDatabase`, pois o Dusk
+ * dirige navegador e app como processos/conexões HTTP separados).
+ *
+ * Agrupado por cadeia de ciclo de vida (ver `testing-conventions`): a
+ * jornada de sessão (entrar → destino por papel → sair), as rejeições de
+ * credencial na mesma tela de login, e a jornada de recuperação de senha
+ * (solicitar → token inválido → token válido → entrar com a nova senha).
  */
 class LoginTest extends DuskTestCase
 {
-    use DatabaseMigrations;
-
-    public function test_user_can_login_with_the_form(): void
+    public function test_login_redirects_by_role_and_logout_lifecycle(): void
     {
-        $user = User::factory()->create([
+        $aluno = User::factory()->create([
             'email' => 'aluno@example.com',
             'password' => bcrypt('correct-password'),
         ]);
-        $user->assignRole(RolesEnum::ALUNO->value);
+        $aluno->assignRole(RolesEnum::ALUNO->value);
 
-        $this->browse(function (Browser $browser) use ($user): void {
+        $gestor = User::factory()->gestor()->create([
+            'email' => 'gestor@example.com',
+            'password' => bcrypt('correct-password'),
+        ]);
+
+        $admin = User::factory()->create([
+            'org_id' => null,
+            'email' => 'admin@example.com',
+            'password' => bcrypt('correct-password'),
+        ]);
+        $admin->assignRole(RolesEnum::ADMIN->value);
+
+        $this->browse(function (Browser $browser) use ($aluno, $gestor, $admin): void {
+            // 1. Aluno entra pelo formulário e cai na sala de aula.
             $browser->visit('/login')
                 ->assertPresent('@login-form')
                 ->type('@login-email', 'aluno@example.com')
                 ->type('@login-password', 'correct-password')
                 ->press('@login-submit')
                 ->waitForLocation('/meus-cursos')
-                ->assertAuthenticatedAs($user);
-        });
-    }
+                ->assertAuthenticatedAs($aluno);
 
-    public function test_wrong_password_shows_a_validation_error(): void
-    {
-        User::factory()->create([
-            'email' => 'aluno@example.com',
-            'password' => bcrypt('correct-password'),
-        ]);
-
-        $this->browse(function (Browser $browser): void {
-            $browser->visit('/login')
-                ->type('@login-email', 'aluno@example.com')
-                ->type('@login-password', 'totally-wrong-password')
+            // 2. Gestor cai no dashboard administrativo.
+            $browser->logout()
+                ->visit('/login')
+                ->type('@login-email', 'gestor@example.com')
+                ->type('@login-password', 'correct-password')
                 ->press('@login-submit')
-                ->waitForText('These credentials do not match our records.')
-                ->assertGuest();
-        });
-    }
+                ->waitForLocation('/admin/dashboard')
+                ->assertAuthenticatedAs($gestor);
 
-    public function test_user_can_logout(): void
-    {
-        // The logout control lives in the app shell's topbar (see
-        // `resources/views/components/layout/topbar.blade.php`), which is
-        // only rendered by pages extending `layouts.app` (e.g. Organization
-        // CRUD, admin-only). The root `/` route still serves the framework's
-        // default `welcome` view (no topbar), so an authenticated admin
-        // visits an actual app screen here rather than `/`.
-        $user = User::factory()->create();
-        $user->assignRole(RolesEnum::ADMIN->value);
+            // 3. Admin idem.
+            $browser->logout()
+                ->visit('/login')
+                ->type('@login-email', 'admin@example.com')
+                ->type('@login-password', 'correct-password')
+                ->press('@login-submit')
+                ->waitForLocation('/admin/dashboard')
+                ->assertAuthenticatedAs($admin);
 
-        $this->browse(function (Browser $browser) use ($user): void {
-            $browser->loginAs($user)
-                ->visit('/organizations')
-                ->assertAuthenticatedAs($user)
+            // 4. Sair pelo controle do topbar encerra a sessão de verdade.
+            //    (O controle vive no app shell — `layouts.app` —, por isso a
+            //    saída acontece a partir de uma tela administrativa real.)
+            $browser->visit('/organizations')
                 ->waitFor('form[action$="/logout"] button')
                 ->click('form[action$="/logout"] button')
                 ->waitForLocation('/')
@@ -78,18 +81,36 @@ class LoginTest extends DuskTestCase
         });
     }
 
-    public function test_inactive_user_cannot_login(): void
+    /**
+     * Rejeições de credencial exercitadas em sequência na MESMA tela de
+     * login: senha errada e usuário inativo (RN — `status=active` guarda o
+     * login) devolvem a mesma mensagem genérica e nunca autenticam.
+     */
+    public function test_login_credential_rejections(): void
     {
-        $user = User::factory()->create([
+        User::factory()->create([
             'email' => 'aluno@example.com',
+            'password' => bcrypt('correct-password'),
+        ]);
+
+        $inactive = User::factory()->create([
+            'email' => 'inativo@example.com',
             'password' => bcrypt('correct-password'),
             'status' => 'inactive',
         ]);
-        $user->assignRole(RolesEnum::ALUNO->value);
+        $inactive->assignRole(RolesEnum::ALUNO->value);
 
         $this->browse(function (Browser $browser): void {
+            // 1. Senha errada.
             $browser->visit('/login')
                 ->type('@login-email', 'aluno@example.com')
+                ->type('@login-password', 'totally-wrong-password')
+                ->press('@login-submit')
+                ->waitForText('These credentials do not match our records.')
+                ->assertGuest();
+
+            // 2. Usuário inativo, senha correta, mesma tela.
+            $browser->type('@login-email', 'inativo@example.com')
                 ->type('@login-password', 'correct-password')
                 ->press('@login-submit')
                 ->waitForText('These credentials do not match our records.')
@@ -97,7 +118,7 @@ class LoginTest extends DuskTestCase
         });
     }
 
-    public function test_user_can_reset_the_password_through_the_forgot_password_flow(): void
+    public function test_password_reset_lifecycle(): void
     {
         $user = User::factory()->create([
             'email' => 'reset@example.com',
@@ -105,21 +126,32 @@ class LoginTest extends DuskTestCase
         ]);
         $user->assignRole(RolesEnum::ALUNO->value);
 
-        $this->browse(function (Browser $browser): void {
+        $this->browse(function (Browser $browser) use ($user): void {
+            // 1. Solicitação do link de recuperação.
             $browser->visit('/forgot-password')
                 ->assertPresent('@forgot-password-form')
                 ->type('@forgot-password-email', 'reset@example.com')
                 ->press('@forgot-password-submit')
                 ->waitForText('We have emailed your password reset link.');
-        });
 
-        $this->assertDatabaseHas('password_reset_tokens', [
-            'email' => 'reset@example.com',
-        ]);
+            $this->assertDatabaseHas('password_reset_tokens', [
+                'email' => 'reset@example.com',
+            ]);
 
-        $token = Password::broker()->createToken($user);
+            // 2. Token inválido é rejeitado e não troca a senha.
+            $browser->visit(route('password.reset', 'token-totalmente-invalido'))
+                ->assertPresent('@reset-password-form')
+                ->type('@reset-password-email', 'reset@example.com')
+                ->type('@reset-password-password', 'new-password-123')
+                ->type('@reset-password-password-confirmation', 'new-password-123')
+                ->press('@reset-password-submit')
+                ->waitForText('This password reset token is invalid.');
 
-        $this->browse(function (Browser $browser) use ($user, $token): void {
+            $this->assertTrue(Hash::check('old-password', $user->fresh()->password));
+
+            // 3. Token válido troca a senha e o login novo funciona.
+            $token = Password::broker()->createToken($user);
+
             $browser->visit(route('password.reset', $token))
                 ->assertPresent('@reset-password-form')
                 ->type('@reset-password-email', 'reset@example.com')
@@ -134,64 +166,7 @@ class LoginTest extends DuskTestCase
                 ->waitForLocation('/meus-cursos')
                 ->assertAuthenticatedAs($user);
         });
-    }
 
-    public function test_invalid_password_reset_token_is_rejected(): void
-    {
-        $user = User::factory()->create([
-            'email' => 'reset-invalid@example.com',
-            'password' => bcrypt('old-password'),
-        ]);
-        $user->assignRole(RolesEnum::ALUNO->value);
-
-        $this->browse(function (Browser $browser): void {
-            $browser->visit(route('password.reset', 'token-totalmente-invalido'))
-                ->assertPresent('@reset-password-form')
-                ->type('@reset-password-email', 'reset-invalid@example.com')
-                ->type('@reset-password-password', 'new-password-123')
-                ->type('@reset-password-password-confirmation', 'new-password-123')
-                ->press('@reset-password-submit')
-                ->waitForText('This password reset token is invalid.');
-        });
-
-        $this->assertTrue(Hash::check('old-password', $user->fresh()->password));
-    }
-
-    public function test_admin_is_redirected_to_the_admin_dashboard_after_login(): void
-    {
-        $user = User::factory()->create([
-            'org_id' => null,
-            'email' => 'admin@example.com',
-            'password' => bcrypt('correct-password'),
-        ]);
-        $user->assignRole(RolesEnum::ADMIN->value);
-
-        $this->browse(function (Browser $browser) use ($user): void {
-            $browser->visit('/login')
-                ->assertPresent('@login-form')
-                ->type('@login-email', 'admin@example.com')
-                ->type('@login-password', 'correct-password')
-                ->press('@login-submit')
-                ->waitForLocation('/admin/dashboard')
-                ->assertAuthenticatedAs($user);
-        });
-    }
-
-    public function test_gestor_is_redirected_to_the_admin_dashboard_after_login(): void
-    {
-        $user = User::factory()->gestor()->create([
-            'email' => 'gestor@example.com',
-            'password' => bcrypt('correct-password'),
-        ]);
-
-        $this->browse(function (Browser $browser) use ($user): void {
-            $browser->visit('/login')
-                ->assertPresent('@login-form')
-                ->type('@login-email', 'gestor@example.com')
-                ->type('@login-password', 'correct-password')
-                ->press('@login-submit')
-                ->waitForLocation('/admin/dashboard')
-                ->assertAuthenticatedAs($user);
-        });
+        $this->assertTrue(Hash::check('new-password-123', $user->fresh()->password));
     }
 }

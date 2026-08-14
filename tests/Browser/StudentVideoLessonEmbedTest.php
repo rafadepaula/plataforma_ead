@@ -8,7 +8,6 @@ use App\Models\Lesson;
 use App\Models\Module;
 use App\Models\Organization;
 use App\Models\User;
-use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Support\Facades\DB;
 use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
@@ -19,24 +18,20 @@ use Tests\DuskTestCase;
  * embeddable `youtube.com/embed/{id}` src (YouTube answers anything else with
  * `X-Frame-Options: SAMEORIGIN` — the "refused to connect" sad face), and an
  * unrecognizable stored value must surface an explicit notice rather than a
- * broken frame. The iframe's `src` attribute is asserted without ever loading
- * YouTube itself, which is network-bound and out of scope here.
+ * broken frame.
+ *
+ * Agrupado por cadeia de ciclo de vida (ver `testing-conventions`): o mesmo
+ * Aluno matriculado percorre as duas lições do mesmo Curso — a com URL
+ * legada reconhecível e a com URL irreconhecível — numa sessão só.
  */
 class StudentVideoLessonEmbedTest extends DuskTestCase
 {
-    use DatabaseMigrations;
-
     /**
-     * Creates a published video lesson holding the given raw stored value
-     * (bypassing every sanitizing write path) plus an enrolled ALUNO.
-     *
-     * @return array{0: Lesson, 1: User}
+     * Cria uma lição de vídeo publicada carregando o valor bruto informado
+     * (contornando todo caminho de escrita sanitizador).
      */
-    private function videoLessonWithStoredUrl(string $storedYoutubeUrl): array
+    private function videoLessonWithStoredUrl(Module $module, string $storedYoutubeUrl): Lesson
     {
-        $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
-        $module = Module::factory()->create(['course_id' => $course->id]);
         $lesson = Lesson::factory()->create([
             'module_id' => $module->id,
             'type' => 'content',
@@ -45,44 +40,50 @@ class StudentVideoLessonEmbedTest extends DuskTestCase
 
         DB::table('lessons')->where('id', $lesson->id)->update(['youtube_url' => $storedYoutubeUrl]);
 
+        return $lesson->fresh();
+    }
+
+    public function test_student_video_embed_states_lifecycle(): void
+    {
+        $org = Organization::factory()->create();
+        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $module = Module::factory()->create(['course_id' => $course->id]);
+
+        $legacyLesson = $this->videoLessonWithStoredUrl($module, 'https://www.youtube.com/watch?v=dQw4w9WgXcQ');
+        $brokenLesson = $this->videoLessonWithStoredUrl($module, 'https://vimeo.com/123456789');
+
         $student = User::factory()->create();
         $student->assignRole(RolesEnum::ALUNO->value);
         $course->students()->attach($student->id, ['enrolled_at' => now(), 'status' => 'active']);
 
-        return [$lesson->fresh(), $student];
-    }
-
-    public function test_a_legacy_watch_url_still_renders_an_embeddable_iframe_for_the_student(): void
-    {
-        [$lesson, $student] = $this->videoLessonWithStoredUrl('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
-
-        // The static `<iframe>` is deliberately NOT asserted here: `YT.Player()`
-        // swaps that whole container out for its own frame as soon as the
-        // IFrame API finishes loading, so any assertion on it races the
-        // network. Its `src` is covered deterministically by
-        // `LessonYoutubeEmbedRenderingTest`; what matters in the browser is
-        // that the player container carries the real 11-char video id
-        // (`"watch"` would silently kill progress reporting).
-        $this->browse(function (Browser $browser) use ($student, $lesson): void {
+        $this->browse(function (Browser $browser) use ($student, $legacyLesson, $brokenLesson): void {
+            // 1. URL legada `watch?v=`: o container do player carrega o id real
+            //    de 11 caracteres.
+            //
+            //    O `<iframe>` estático deliberadamente NÃO é asserido aqui:
+            //    `YT.Player()` troca o container inteiro pelo próprio frame
+            //    assim que a IFrame API carrega, então qualquer asserção sobre
+            //    ele disputa com a rede. O `src` é coberto de forma
+            //    determinística por `LessonYoutubeEmbedRenderingTest`; o que
+            //    importa no navegador é o id do vídeo (`"watch"` mataria
+            //    silenciosamente o reporte de progresso).
             $browser->loginAs($student)
-                ->visit(route('classroom.lesson', $lesson))
-                ->waitFor('@video-player-'.$lesson->id)
-                ->assertAttribute('@video-player-'.$lesson->id, 'data-video-id', 'dQw4w9WgXcQ')
-                ->assertMissing('@video-unavailable-'.$lesson->id)
+                ->visit(route('classroom.lesson', $legacyLesson))
+                ->waitFor('@video-player-'.$legacyLesson->id)
+                ->assertAttribute('@video-player-'.$legacyLesson->id, 'data-video-id', 'dQw4w9WgXcQ')
+                ->assertMissing('@video-unavailable-'.$legacyLesson->id)
                 ->assertSee('O progresso é salvo automaticamente ao assistir o vídeo.');
-        });
-    }
 
-    public function test_an_unrecognizable_url_degrades_to_a_visible_notice_instead_of_a_broken_iframe(): void
-    {
-        [$lesson, $student] = $this->videoLessonWithStoredUrl('https://vimeo.com/123456789');
-
-        $this->browse(function (Browser $browser) use ($student, $lesson): void {
-            $browser->loginAs($student)
-                ->visit(route('classroom.lesson', $lesson))
-                ->waitFor('@video-unavailable-'.$lesson->id)
-                ->assertSeeIn('@video-unavailable-'.$lesson->id, 'Vídeo indisponível')
-                ->assertMissing('@video-player-'.$lesson->id.' iframe');
+            // 2. URL irreconhecível: aviso explícito, nunca um frame quebrado.
+            $browser->visit(route('classroom.lesson', $brokenLesson))
+                ->waitFor('@video-unavailable-'.$brokenLesson->id)
+                ->assertSeeIn('@video-unavailable-'.$brokenLesson->id, 'Vídeo indisponível')
+                ->assertMissing('@video-player-'.$brokenLesson->id.' iframe');
         });
+
+        $this->assertDatabaseHas('lessons', [
+            'id' => $brokenLesson->id,
+            'youtube_url' => 'https://vimeo.com/123456789',
+        ]);
     }
 }

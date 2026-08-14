@@ -9,7 +9,6 @@ use App\Models\Lesson;
 use App\Models\Module;
 use App\Models\Organization;
 use App\Models\User;
-use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 
@@ -24,8 +23,6 @@ use Tests\DuskTestCase;
  */
 class VideoThresholdCompletionTest extends DuskTestCase
 {
-    use DatabaseMigrations;
-
     public function test_reaching_90_percent_watched_auto_completes_the_lesson_and_updates_course_progress(): void
     {
         $org = Organization::factory()->create();

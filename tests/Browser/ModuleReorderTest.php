@@ -7,7 +7,6 @@ use App\Models\Course;
 use App\Models\Module;
 use App\Models\Organization;
 use App\Models\User;
-use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 
@@ -21,8 +20,6 @@ use Tests\DuskTestCase;
  */
 class ModuleReorderTest extends DuskTestCase
 {
-    use DatabaseMigrations;
-
     public function test_reordering_modules_persists_after_reload(): void
     {
         $org = Organization::factory()->create();

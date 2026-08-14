@@ -3,26 +3,28 @@
 namespace Tests\Browser;
 
 use App\Models\User;
-use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Support\Facades\Hash;
 use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 
 /**
  * SPEC-18 (UC02/RF01/RF34) — E2E coverage of the profile self-service
- * screen (`profile.edit`/`profile.update`/`password.update`): editing
- * cadastral data, changing the password, duplicate email/cpf rejection,
- * wrong `current_password` rejection, and the guest redirect (RN08).
+ * screen (`profile.edit`/`profile.update`/`password.update`).
+ *
+ * Agrupado por cadeia de ciclo de vida (ver `testing-conventions`): a
+ * jornada de autoatendimento (editar dados → trocar senha) é um método, e
+ * as três rejeições inline (e-mail duplicado, CPF com checksum inválido,
+ * `current_password` errada) são exercitadas na MESMA sessão de formulário.
+ * O redirect do visitante é negativa independente.
  */
 class ProfileTest extends DuskTestCase
 {
-    use DatabaseMigrations;
-
-    public function test_user_edits_name_email_and_cpf_successfully(): void
+    public function test_user_profile_and_password_update_lifecycle(): void
     {
         $user = User::factory()->create(['cpf' => null]);
 
         $this->browse(function (Browser $browser) use ($user): void {
+            // 1. Edição dos dados cadastrais
             $browser->loginAs($user)
                 ->visit(route('profile.edit'))
                 ->waitFor('@profile-form')
@@ -36,22 +38,16 @@ class ProfileTest extends DuskTestCase
                 ->waitForText('Perfil atualizado com sucesso.')
                 ->assertInputValue('name', 'Novo Nome do Usuário')
                 ->assertInputValue('email', 'novo.email@example.com');
-        });
 
-        $user->refresh();
-        $this->assertSame('Novo Nome do Usuário', $user->name);
-        $this->assertSame('novo.email@example.com', $user->email);
-        $this->assertSame('52998224725', $user->cpf);
-    }
+            $this->assertDatabaseHas('users', [
+                'id' => $user->id,
+                'name' => 'Novo Nome do Usuário',
+                'email' => 'novo.email@example.com',
+                'cpf' => '52998224725',
+            ]);
 
-    public function test_user_updates_password_successfully(): void
-    {
-        $user = User::factory()->create();
-
-        $this->browse(function (Browser $browser) use ($user): void {
-            $browser->loginAs($user)
-                ->visit(route('profile.edit'))
-                ->waitFor('@password-form')
+            // 2. Troca de senha, na mesma tela e mesma sessão
+            $browser->waitFor('@password-form')
                 ->type('current_password', 'password')
                 ->type('password', 'NovaSenhaForte123!')
                 ->type('password_confirmation', 'NovaSenhaForte123!')
@@ -63,12 +59,19 @@ class ProfileTest extends DuskTestCase
         $this->assertTrue(Hash::check('NovaSenhaForte123!', $user->password));
     }
 
-    public function test_duplicate_email_shows_inline_validation_error_without_redirecting_away(): void
+    /**
+     * As três rejeições inline exercitadas em sequência na mesma sessão de
+     * formulário: nenhuma delas pode redirecionar para fora de `/profile`,
+     * e nenhuma pode persistir dado algum.
+     */
+    public function test_profile_form_inline_validation_rejections(): void
     {
-        $existing = User::factory()->create(['email' => 'ocupado@example.com']);
-        $user = User::factory()->create();
+        User::factory()->create(['email' => 'ocupado@example.com']);
+        $user = User::factory()->create(['cpf' => null]);
+        $originalEmail = $user->email;
 
         $this->browse(function (Browser $browser) use ($user): void {
+            // 1. E-mail já usado por outro usuário
             $browser->loginAs($user)
                 ->visit(route('profile.edit'))
                 ->waitFor('@profile-form')
@@ -77,39 +80,18 @@ class ProfileTest extends DuskTestCase
                 ->waitForReload(fn (Browser $b) => $b->click('@profile-submit'))
                 ->assertPathIs('/profile')
                 ->assertSee('already been taken');
-        });
 
-        $user->refresh();
-        $this->assertNotSame('ocupado@example.com', $user->email);
-    }
-
-    public function test_checksum_invalid_cpf_shows_inline_validation_error_without_redirecting_away(): void
-    {
-        $user = User::factory()->create(['cpf' => null]);
-
-        $this->browse(function (Browser $browser) use ($user): void {
-            $browser->loginAs($user)
-                ->visit(route('profile.edit'))
-                ->waitFor('@profile-form')
+            // 2. CPF com checksum inválido (UC02 §6.2 — fluxo de exceção
+            //    próprio, não confundir com o duplicado do §6.1).
+            $browser->waitFor('@profile-form')
                 ->clear('cpf')
                 ->type('cpf', '52998224726')
                 ->waitForReload(fn (Browser $b) => $b->click('@profile-submit'))
                 ->assertPathIs('/profile')
                 ->assertSee('O CPF informado é inválido.');
-        });
 
-        $user->refresh();
-        $this->assertNull($user->cpf);
-    }
-
-    public function test_wrong_current_password_shows_inline_error_and_password_is_unchanged(): void
-    {
-        $user = User::factory()->create();
-
-        $this->browse(function (Browser $browser) use ($user): void {
-            $browser->loginAs($user)
-                ->visit(route('profile.edit'))
-                ->waitFor('@password-form')
+            // 3. `current_password` errada no formulário de senha
+            $browser->waitFor('@password-form')
                 ->type('current_password', 'senha-errada-qualquer')
                 ->type('password', 'OutraSenhaForte123!')
                 ->type('password_confirmation', 'OutraSenhaForte123!')
@@ -119,6 +101,8 @@ class ProfileTest extends DuskTestCase
         });
 
         $user->refresh();
+        $this->assertSame($originalEmail, $user->email);
+        $this->assertNull($user->cpf);
         $this->assertTrue(Hash::check('password', $user->password));
     }
 

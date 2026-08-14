@@ -6,52 +6,36 @@ use App\Enums\Permissions\RolesEnum;
 use App\Models\Course;
 use App\Models\Organization;
 use App\Models\User;
-use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 
 /**
- * RF05/RN09 E2E — upload a CSV, observe the chunked AJAX progress bar,
- * and verify the final course roster reflects every imported row.
+ * RF05/RN09 E2E — upload a CSV, observe the chunked AJAX progress bar, and
+ * verify the final course roster reflects every imported row.
  *
- * Uses DatabaseMigrations (not RefreshDatabase) because Dusk drives the
- * browser and the app server as separate HTTP processes/connections.
+ * Agrupado por cadeia de ciclo de vida (ver `testing-conventions`): a
+ * jornada de importação (upload válido → segundo upload com e-mail já
+ * existente em outra Organização) é um método, as rejeições de arquivo são
+ * exercitadas na mesma sessão de formulário em outro, e o bloqueio do Admin
+ * sem contexto é negativa independente.
+ *
+ * Isolamento via `DatabaseTruncation` herdado de `Tests\DuskTestCase`
+ * (nunca `RefreshDatabase` — Dusk dirige navegador e app como processos/
+ * conexões HTTP separados).
  */
 class MultiTenantStudentImportTest extends DuskTestCase
 {
-    use DatabaseMigrations;
+    /**
+     * Arquivos temporários criados pelo teste, removidos no `tearDown()`.
+     *
+     * @var list<string>
+     */
+    private array $csvFixtures = [];
 
-    public function test_gestor_can_upload_a_csv_and_see_the_chunked_progress_bar(): void
+    public function test_csv_import_success_and_duplicate_handling_lifecycle(): void
     {
-        $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
-
-        $gestor = User::factory()->create(['org_id' => $org->id]);
-        $gestor->assignRole(RolesEnum::GESTOR->value);
-
-        $csvPath = tempnam(sys_get_temp_dir(), 'csv_import_').'.csv';
-        file_put_contents($csvPath, "name,email,cpf\nMaria Aluna,maria.aluna@example.com,\nJoao Aluno,joao.aluno@example.com,\n");
-
-        $this->browse(function (Browser $browser) use ($gestor, $course, $csvPath): void {
-            $browser->loginAs($gestor)
-                ->visit(route('users.import.create'))
-                ->waitFor('[dusk="csv-import-form"]')
-                ->select('@csv-course-select', (string) $course->id)
-                ->attach('@csv-file-input', $csvPath)
-                ->press('@csv-import-submit')
-                ->waitFor('[dusk="csv-import-results"]', 15)
-                ->assertSeeIn('[dusk="csv-import-results"]', 'Importação concluída');
-        });
-
-        unlink($csvPath);
-
-        $this->assertSame(2, $course->fresh()->students()->count());
-        $this->assertTrue(User::where('email', 'maria.aluna@example.com')->exists());
-        $this->assertTrue(User::where('email', 'joao.aluno@example.com')->exists());
-    }
-
-    public function test_a_duplicate_email_in_the_csv_reuses_the_existing_user(): void
-    {
+        // Usuário já existente em OUTRA Organização: RN09 manda reaproveitar
+        // a linha de `users` e nunca sobrescrever seu `org_id`.
         $otherOrg = Organization::factory()->create();
         $existingUser = User::factory()->create([
             'org_id' => $otherOrg->id,
@@ -67,39 +51,92 @@ class MultiTenantStudentImportTest extends DuskTestCase
         $gestor = User::factory()->create(['org_id' => $org->id]);
         $gestor->assignRole(RolesEnum::GESTOR->value);
 
-        $csvPath = tempnam(sys_get_temp_dir(), 'csv_import_').'.csv';
-        file_put_contents($csvPath, "name,email,cpf\nNome Diferente No CSV,ja.existe@example.com,\nNova Aluna,nova.aluna@example.com,\n");
+        $firstCsv = $this->makeCsv("name,email,cpf\nMaria Aluna,maria.aluna@example.com,\nJoao Aluno,joao.aluno@example.com,\n");
+        $secondCsv = $this->makeCsv("name,email,cpf\nNome Diferente No CSV,ja.existe@example.com,\nNova Aluna,nova.aluna@example.com,\n");
 
-        $this->browse(function (Browser $browser) use ($gestor, $course, $csvPath): void {
+        $this->browse(function (Browser $browser) use ($gestor, $course, $firstCsv, $secondCsv, $existingUser, $otherOrg): void {
+            // 1. Importação válida: 2 alunos novos entram na turma.
             $browser->loginAs($gestor)
                 ->visit(route('users.import.create'))
                 ->waitFor('[dusk="csv-import-form"]')
                 ->select('@csv-course-select', (string) $course->id)
-                ->attach('@csv-file-input', $csvPath)
+                ->attach('@csv-file-input', $firstCsv)
+                ->press('@csv-import-submit')
+                ->waitFor('[dusk="csv-import-results"]', 15)
+                ->assertSeeIn('[dusk="csv-import-results"]', 'Importação concluída');
+
+            $this->assertSame(2, $course->fresh()->students()->count());
+            $this->assertDatabaseHas('users', ['email' => 'maria.aluna@example.com', 'org_id' => $course->org_id]);
+            $this->assertDatabaseHas('users', ['email' => 'joao.aluno@example.com', 'org_id' => $course->org_id]);
+
+            // 2. Segunda importação na mesma sessão: um e-mail já cadastrado em
+            //    outra Organização é reaproveitado (RN09), o outro é criado.
+            $browser->visit(route('users.import.create'))
+                ->waitFor('[dusk="csv-import-form"]')
+                ->select('@csv-course-select', (string) $course->id)
+                ->attach('@csv-file-input', $secondCsv)
                 ->press('@csv-import-submit')
                 ->waitFor('[dusk="csv-import-results"]', 15)
                 ->assertSeeIn('[dusk="csv-import-results"]', 'Importação concluída: 1 usuário(s) criado(s), 2 matrícula(s) realizada(s), 0 linha(s) ignorada(s).');
+
+            // Nenhuma segunda linha de `users`, nome e org originais intactos.
+            $this->assertSame(1, User::where('email', 'ja.existe@example.com')->count());
+            $freshExistingUser = $existingUser->fresh();
+            $this->assertSame('Nome Original', $freshExistingUser->name);
+            $this->assertSame($otherOrg->id, $freshExistingUser->org_id);
+
+            $newUser = User::where('email', 'nova.aluna@example.com')->firstOrFail();
+
+            $this->assertDatabaseHas('course_user', [
+                'user_id' => $existingUser->id,
+                'course_id' => $course->id,
+            ]);
+            $this->assertDatabaseHas('course_user', [
+                'user_id' => $newUser->id,
+                'course_id' => $course->id,
+            ]);
         });
 
-        unlink($csvPath);
+        $this->assertSame(4, $course->fresh()->students()->count());
+    }
 
-        $this->assertSame(1, User::where('email', 'ja.existe@example.com')->count());
+    /**
+     * As duas rejeições de arquivo exercitadas em sequência no MESMO
+     * formulário: nenhuma delas pode criar usuário ou matrícula.
+     */
+    public function test_csv_import_validation_rejections(): void
+    {
+        $org = Organization::factory()->create();
+        $course = Course::factory()->create(['org_id' => $org->id]);
 
-        $freshExistingUser = $existingUser->fresh();
-        $this->assertSame('Nome Original', $freshExistingUser->name);
-        $this->assertSame($otherOrg->id, $freshExistingUser->org_id);
+        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor->assignRole(RolesEnum::GESTOR->value);
 
-        $newUser = User::where('email', 'nova.aluna@example.com')->first();
-        $this->assertNotNull($newUser);
+        $usersCountBefore = User::count();
 
-        $this->assertDatabaseHas('course_user', [
-            'user_id' => $existingUser->id,
-            'course_id' => $course->id,
-        ]);
-        $this->assertDatabaseHas('course_user', [
-            'user_id' => $newUser->id,
-            'course_id' => $course->id,
-        ]);
+        $wrongHeaderCsv = $this->makeCsv("nome,e-mail\nMaria Aluna,maria.aluna@example.com\n");
+        $missingColumnCsv = $this->makeCsv("name,cpf\nMaria Aluna,12345678900\n");
+
+        $this->browse(function (Browser $browser) use ($gestor, $course, $wrongHeaderCsv, $missingColumnCsv): void {
+            // 1. Cabeçalho totalmente diferente do contrato.
+            $browser->loginAs($gestor)
+                ->visit(route('users.import.create'))
+                ->waitFor('[dusk="csv-import-form"]')
+                ->select('@csv-course-select', (string) $course->id)
+                ->attach('@csv-file-input', $wrongHeaderCsv)
+                ->press('@csv-import-submit')
+                ->waitFor('[dusk="csv-import-results"]', 15)
+                ->assertSeeIn('[dusk="csv-import-results"]', 'Cabeçalho inválido');
+
+            // 2. Mesmo formulário, cabeçalho sem a coluna obrigatória `email`.
+            $browser->attach('@csv-file-input', $missingColumnCsv)
+                ->press('@csv-import-submit')
+                ->waitFor('[dusk="csv-import-results"]', 15)
+                ->assertSeeIn('[dusk="csv-import-results"]', 'Cabeçalho inválido');
+        });
+
+        $this->assertDatabaseCount('users', $usersCountBefore);
+        $this->assertSame(0, $course->fresh()->students()->count());
     }
 
     public function test_an_admin_without_an_impersonated_org_cannot_open_the_csv_import_screen(): void
@@ -116,63 +153,25 @@ class MultiTenantStudentImportTest extends DuskTestCase
         });
     }
 
-    public function test_a_csv_with_an_invalid_header_is_rejected_before_upload(): void
+    private function makeCsv(string $contents): string
     {
-        $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $path = tempnam(sys_get_temp_dir(), 'csv_import_').'.csv';
+        file_put_contents($path, $contents);
+        $this->csvFixtures[] = $path;
 
-        $gestor = User::factory()->create(['org_id' => $org->id]);
-        $gestor->assignRole(RolesEnum::GESTOR->value);
-
-        $usersCountBefore = User::count();
-
-        $csvPath = tempnam(sys_get_temp_dir(), 'csv_import_').'.csv';
-        file_put_contents($csvPath, "nome,e-mail\nMaria Aluna,maria.aluna@example.com\n");
-
-        $this->browse(function (Browser $browser) use ($gestor, $course, $csvPath): void {
-            $browser->loginAs($gestor)
-                ->visit(route('users.import.create'))
-                ->waitFor('[dusk="csv-import-form"]')
-                ->select('@csv-course-select', (string) $course->id)
-                ->attach('@csv-file-input', $csvPath)
-                ->press('@csv-import-submit')
-                ->waitFor('[dusk="csv-import-results"]', 15)
-                ->assertSeeIn('[dusk="csv-import-results"]', 'Cabeçalho inválido');
-        });
-
-        unlink($csvPath);
-
-        $this->assertDatabaseCount('users', $usersCountBefore);
-        $this->assertSame(0, $course->fresh()->students()->count());
+        return $path;
     }
 
-    public function test_a_csv_missing_a_required_column_is_rejected(): void
+    protected function tearDown(): void
     {
-        $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        foreach ($this->csvFixtures as $path) {
+            if (file_exists($path)) {
+                unlink($path);
+            }
+        }
 
-        $gestor = User::factory()->create(['org_id' => $org->id]);
-        $gestor->assignRole(RolesEnum::GESTOR->value);
+        $this->csvFixtures = [];
 
-        $usersCountBefore = User::count();
-
-        $csvPath = tempnam(sys_get_temp_dir(), 'csv_import_').'.csv';
-        file_put_contents($csvPath, "name,cpf\nMaria Aluna,12345678900\n");
-
-        $this->browse(function (Browser $browser) use ($gestor, $course, $csvPath): void {
-            $browser->loginAs($gestor)
-                ->visit(route('users.import.create'))
-                ->waitFor('[dusk="csv-import-form"]')
-                ->select('@csv-course-select', (string) $course->id)
-                ->attach('@csv-file-input', $csvPath)
-                ->press('@csv-import-submit')
-                ->waitFor('[dusk="csv-import-results"]', 15)
-                ->assertSeeIn('[dusk="csv-import-results"]', 'Cabeçalho inválido');
-        });
-
-        unlink($csvPath);
-
-        $this->assertDatabaseCount('users', $usersCountBefore);
-        $this->assertSame(0, $course->fresh()->students()->count());
+        parent::tearDown();
     }
 }

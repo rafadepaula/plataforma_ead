@@ -6,22 +6,26 @@ use App\Enums\Permissions\RolesEnum;
 use App\Models\Course;
 use App\Models\Organization;
 use App\Models\User;
-use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 
 /**
  * UC04 / RF04 — E2E coverage for user management screens.
+ *
+ * Agrupado por cadeia de ciclo de vida (ver `testing-conventions`): a
+ * jornada do Gestor sobre um usuário (criar → editar → inativar →
+ * consequência no login) é um único método, e a jornada de matrícula
+ * (matricular → revogar) é outro. Negativas independentes (cross-tenant,
+ * rejeições de validação) seguem em métodos próprios.
  */
 class UserManagementTest extends DuskTestCase
 {
-    use DatabaseMigrations;
-
-    public function test_gestor_can_create_a_user_via_the_ui(): void
+    public function test_gestor_user_management_full_lifecycle(): void
     {
         $gestor = User::factory()->gestor()->create();
 
         $this->browse(function (Browser $browser) use ($gestor): void {
+            // 1. Criação
             $browser->loginAs($gestor)
                 ->visit(route('users.create'))
                 ->waitFor('@user-form')
@@ -35,27 +39,18 @@ class UserManagementTest extends DuskTestCase
                 ->waitForLocation('/users')
                 ->assertSee('Usuário criado com sucesso.')
                 ->assertSee('Aluno Dusk');
-        });
 
-        $this->assertDatabaseHas('users', [
-            'name' => 'Aluno Dusk',
-            'email' => 'aluno.dusk@example.com',
-            'cpf' => '98765432100',
-            'org_id' => $gestor->org_id,
-        ]);
-    }
+            $this->assertDatabaseHas('users', [
+                'name' => 'Aluno Dusk',
+                'email' => 'aluno.dusk@example.com',
+                'cpf' => '98765432100',
+                'org_id' => $gestor->org_id,
+            ]);
 
-    public function test_gestor_can_edit_a_user_via_the_ui(): void
-    {
-        $gestor = User::factory()->gestor()->create();
-        $aluno = User::factory()->aluno()->create([
-            'org_id' => $gestor->org_id,
-            'name' => 'Aluno Original',
-        ]);
+            $aluno = User::where('email', 'aluno.dusk@example.com')->firstOrFail();
 
-        $this->browse(function (Browser $browser) use ($gestor, $aluno): void {
-            $browser->loginAs($gestor)
-                ->visit(route('users.index'))
+            // 2. Edição, a partir da listagem, na mesma sessão
+            $browser->visit(route('users.index'))
                 ->waitFor('@edit-user-'.$aluno->id)
                 ->click('@edit-user-'.$aluno->id)
                 ->waitFor('@user-form')
@@ -65,26 +60,14 @@ class UserManagementTest extends DuskTestCase
                 ->waitForLocation('/users')
                 ->assertSee('Usuário atualizado com sucesso.')
                 ->assertSee('Aluno Editado');
-        });
 
-        $this->assertDatabaseHas('users', [
-            'id' => $aluno->id,
-            'name' => 'Aluno Editado',
-        ]);
-    }
+            $this->assertDatabaseHas('users', [
+                'id' => $aluno->id,
+                'name' => 'Aluno Editado',
+            ]);
 
-    public function test_gestor_can_deactivate_a_user_via_the_ui(): void
-    {
-        $gestor = User::factory()->gestor()->create();
-        $aluno = User::factory()->aluno()->create([
-            'org_id' => $gestor->org_id,
-            'name' => 'Aluno Para Inativar',
-            'status' => 'active',
-        ]);
-
-        $this->browse(function (Browser $browser) use ($gestor, $aluno): void {
-            $browser->loginAs($gestor)
-                ->visit(route('users.edit', $aluno))
+            // 3. Inativação
+            $browser->visit(route('users.edit', $aluno))
                 ->waitFor('@user-form')
                 ->select('@user-status-select', 'inactive')
                 ->type('@user-status-reason', 'Aluno solicitou o encerramento do acesso.')
@@ -95,55 +78,33 @@ class UserManagementTest extends DuskTestCase
                 // Selenium's getText() returns the rendered (transformed)
                 // text — so the badge reads INATIVO, not Inativo.
                 ->assertSeeIn('@user-status-'.$aluno->id, 'INATIVO');
-        });
 
-        $this->assertDatabaseHas('users', [
-            'id' => $aluno->id,
-            'status' => 'inactive',
-        ]);
+            $this->assertDatabaseHas('users', [
+                'id' => $aluno->id,
+                'status' => 'inactive',
+            ]);
+            $this->assertDatabaseHas('audit_logs', [
+                'event' => 'user.status_changed',
+            ]);
 
-        $this->assertDatabaseHas('audit_logs', [
-            'event' => 'user.status_changed',
-        ]);
-    }
-
-    public function test_a_deactivated_user_cannot_login(): void
-    {
-        $gestor = User::factory()->gestor()->create();
-        $aluno = User::factory()->aluno()->create([
-            'org_id' => $gestor->org_id,
-            'email' => 'aluno.inativado@example.com',
-            'password' => bcrypt('correct-password'),
-            'status' => 'active',
-        ]);
-
-        $this->browse(function (Browser $browser) use ($gestor, $aluno): void {
-            $browser->loginAs($gestor)
-                ->visit(route('users.edit', $aluno))
-                ->waitFor('@user-form')
-                ->select('@user-status-select', 'inactive')
-                ->type('@user-status-reason', 'Desligamento da organização.')
-                ->press('Salvar Alterações')
-                ->waitForText('Usuário atualizado com sucesso.')
-                ->logout();
-        });
-
-        $this->browse(function (Browser $browser): void {
-            $browser->visit('/login')
-                ->type('@login-email', 'aluno.inativado@example.com')
-                ->type('@login-password', 'correct-password')
+            // 4. Consequência da inativação: o próprio usuário não loga mais.
+            $browser->logout()
+                ->visit('/login')
+                ->type('@login-email', 'aluno.dusk@example.com')
+                ->type('@login-password', 'password')
                 ->press('@login-submit')
                 ->waitForText('These credentials do not match our records.')
                 ->assertGuest();
         });
 
         $this->assertDatabaseHas('users', [
-            'id' => $aluno->id,
+            'email' => 'aluno.dusk@example.com',
+            'name' => 'Aluno Editado',
             'status' => 'inactive',
         ]);
     }
 
-    public function test_gestor_can_manually_enroll_a_student_in_a_course(): void
+    public function test_gestor_course_enrollment_and_revocation_lifecycle(): void
     {
         $org = Organization::factory()->create();
         $gestor = User::factory()->create(['org_id' => $org->id]);
@@ -153,41 +114,27 @@ class UserManagementTest extends DuskTestCase
         $course = Course::factory()->create(['org_id' => $org->id]);
 
         $this->browse(function (Browser $browser) use ($gestor, $aluno, $course): void {
+            // 1. Matrícula manual
             $browser->loginAs($gestor)
                 ->visit(route('courses.enrollments.index', $course))
                 ->waitFor('@manual-enroll-form')
                 ->type('user_id', (string) $aluno->id)
                 ->press('Matricular')
                 ->waitForText('Aluno matriculado com sucesso.')
-                ->assertSee('Aluno matriculado com sucesso.')
                 ->assertSee('Aluno Matriculável');
-        });
 
-        $this->assertDatabaseHas('course_user', [
-            'course_id' => $course->id,
-            'user_id' => $aluno->id,
-            'status' => 'active',
-        ]);
-    }
+            $this->assertDatabaseHas('course_user', [
+                'course_id' => $course->id,
+                'user_id' => $aluno->id,
+                'status' => 'active',
+            ]);
 
-    public function test_gestor_can_revoke_a_student_enrollment(): void
-    {
-        $org = Organization::factory()->create();
-        $gestor = User::factory()->create(['org_id' => $org->id]);
-        $gestor->assignRole(RolesEnum::GESTOR->value);
-        $aluno = User::factory()->create(['org_id' => $org->id, 'name' => 'Aluno Matriculado']);
-        $aluno->assignRole(RolesEnum::ALUNO->value);
-        $course = Course::factory()->create(['org_id' => $org->id]);
-        $course->students()->attach($aluno->id, ['enrolled_at' => now(), 'status' => 'active']);
-
-        $this->browse(function (Browser $browser) use ($gestor, $aluno, $course): void {
-            $browser->loginAs($gestor)
-                ->visit(route('courses.enrollments.index', $course))
+            // 2. Revogação da matrícula recém-criada
+            $browser->visit(route('courses.enrollments.index', $course))
                 ->waitFor('@revoke-enrollment-'.$aluno->id)
                 ->click('@revoke-enrollment-'.$aluno->id)
                 ->waitForText('Matrícula revogada com sucesso.')
-                ->assertSee('Matrícula revogada com sucesso.')
-                ->assertSee('Aluno Matriculado')
+                ->assertSee('Aluno Matriculável')
                 ->assertMissing('@revoke-enrollment-form-'.$aluno->id);
         });
 
@@ -198,7 +145,11 @@ class UserManagementTest extends DuskTestCase
         ]);
     }
 
-    public function test_creating_a_user_with_a_duplicate_email_is_rejected(): void
+    /**
+     * Rejeições de validação agrupadas na MESMA sessão de formulário — sem
+     * recarregar navegador nem refazer login entre elas.
+     */
+    public function test_create_user_validation_rejections(): void
     {
         $gestor = User::factory()->gestor()->create();
         User::factory()->aluno()->create([
@@ -207,6 +158,7 @@ class UserManagementTest extends DuskTestCase
         ]);
 
         $this->browse(function (Browser $browser) use ($gestor): void {
+            // 1. E-mail duplicado
             $browser->loginAs($gestor)
                 ->visit(route('users.create'))
                 ->waitFor('@user-form')
@@ -220,8 +172,25 @@ class UserManagementTest extends DuskTestCase
                 ->waitForText('The email has already been taken.')
                 ->assertPathIs('/users/create')
                 ->assertSee('The email has already been taken.');
+
+            $this->assertDatabaseCount('users', 2);
+
+            // 2. Confirmação de senha divergente, mesma tela
+            $browser->waitFor('@user-form')
+                ->clear('name')
+                ->type('name', 'Aluno Sem Confirmação')
+                ->clear('email')
+                ->type('email', 'sem.confirmacao@example.com')
+                ->type('cpf', '98765432100')
+                ->select('role', 'aluno')
+                ->type('password', 'password')
+                ->type('password_confirmation', 'outra-senha-qualquer')
+                ->press('Criar Usuário')
+                ->waitForText('The password field confirmation does not match.')
+                ->assertPathIs('/users/create');
         });
 
+        $this->assertDatabaseMissing('users', ['email' => 'sem.confirmacao@example.com']);
         $this->assertDatabaseCount('users', 2);
     }
 

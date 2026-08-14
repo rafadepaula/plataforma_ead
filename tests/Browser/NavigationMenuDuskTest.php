@@ -6,7 +6,6 @@ use App\Enums\Permissions\RolesEnum;
 use App\Models\Course;
 use App\Models\Organization;
 use App\Models\User;
-use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Laravel\Dusk\Browser;
 use Tests\Browser\Navigation\AdminSidebarScopeTest;
 use Tests\DuskTestCase;
@@ -18,47 +17,21 @@ use Tests\DuskTestCase;
  * the expected sidebar links are present/absent in the live DOM plus the
  * active-highlight behaviour on a sub-route. Mirrors the Feature-level
  * `RoleMenuVisibilityTest` but drives a real browser.
+ *
+ * Agrupado por cadeia de ciclo de vida (ver `testing-conventions`): há uma
+ * cadeia por ator (Admin, Gestor, Aluno), porque a navegação é justamente
+ * função do ator e do contexto — não uma tela isolada por módulo.
  */
 class NavigationMenuDuskTest extends DuskTestCase
 {
-    use DatabaseMigrations;
-
     /**
-     * UX-001 — in global context the Admin's sidebar is the *system*
-     * administration surface only. The Organization-scoped items
-     * (`courses`, `quiz-attempts`, `forum-moderation`) and the learner
-     * item (`student-courses`) are covered by
+     * UX-001 / BUG-005 — cadeia do Admin: em contexto global o sidebar é a
+     * superfície de administração *de sistema* apenas; depois de "Entrar
+     * como", o item operacional de usuários volta e realmente funciona.
+     * O detalhamento por seção do sidebar vive em
      * {@see AdminSidebarScopeTest}.
      */
-    public function test_admin_sidebar_renders_every_system_administration_link(): void
-    {
-        $admin = User::factory()->create(['org_id' => null]);
-        $admin->assignRole(RolesEnum::ADMIN->value);
-
-        $this->browse(function (Browser $browser) use ($admin): void {
-            $browser->loginAs($admin)
-                ->visit(route('admin.dashboard'))
-                ->waitFor('@admin-dashboard')
-                ->assertPresent('@sidebar-dashboard-link')
-                ->assertPresent('@sidebar-organizations-link')
-                ->assertPresent('@sidebar-audit-logs-link')
-                ->assertPresent('@sidebar-settings-link')
-                // BUG-005 — `Alunos & Usuários` is single-org and thus
-                // unreachable for an Admin in global context; it only
-                // appears while impersonating (test below).
-                ->assertMissing('@sidebar-users-link')
-                ->assertMissing('@sidebar-users-link-mobile');
-        });
-    }
-
-    /**
-     * BUG-005 — after "Entrar como", the operational users screen becomes
-     * reachable, so the menu offers it again (desktop + mobile Offcanvas)
-     * and the click actually lands on the rendered list instead of
-     * bouncing back with "Selecione uma Organização ativa antes de
-     * continuar.".
-     */
-    public function test_admin_impersonating_an_org_gets_a_working_users_link(): void
+    public function test_admin_navigation_lifecycle(): void
     {
         $org = Organization::factory()->create();
         $admin = User::factory()->create(['org_id' => null]);
@@ -67,22 +40,48 @@ class NavigationMenuDuskTest extends DuskTestCase
         $aluno->assignRole(RolesEnum::ALUNO->value);
 
         $this->browse(function (Browser $browser) use ($admin, $org, $aluno): void {
+            // 1. Contexto global: só navegação de sistema.
             $browser->loginAs($admin)
-                ->visit(route('organizations.index'))
+                ->visit(route('admin.dashboard'))
+                ->waitFor('@admin-dashboard')
+                ->assertPresent('@sidebar-dashboard-link')
+                ->assertPresent('@sidebar-organizations-link')
+                ->assertPresent('@sidebar-audit-logs-link')
+                ->assertPresent('@sidebar-settings-link')
+                // BUG-005 — `Alunos & Usuários` é single-org e portanto
+                // inalcançável para um Admin em contexto global.
+                ->assertMissing('@sidebar-users-link')
+                ->assertMissing('@sidebar-users-link-mobile');
+
+            // 2. Assumir o contexto da Organização devolve o item operacional
+            //    (desktop + Offcanvas mobile).
+            $browser->visit(route('organizations.index'))
                 ->waitFor('@impersonate-'.$org->id)
                 ->click('@impersonate-'.$org->id)
                 ->waitForLocation('/organizations')
                 ->waitFor('@sidebar-users-link')
-                ->assertPresent('@sidebar-users-link-mobile')
-                ->click('@sidebar-users-link')
+                ->assertPresent('@sidebar-users-link-mobile');
+
+            // 3. O link é real: clicar leva à listagem renderizada, sem
+            //    ricochetear no guard de contexto.
+            $browser->click('@sidebar-users-link')
                 ->waitForLocation('/users')
                 ->waitFor('@user-row-'.$aluno->id)
                 ->assertDontSee('Selecione uma Organização ativa antes de continuar.')
                 ->assertSee('Aluno Da Org');
+
+            // 4. Encerrar o contexto esconde o item de novo (UX-002 §4.4 —
+            //    destino determinístico no dashboard).
+            $browser->visit(route('organizations.index'))
+                ->waitFor('@exit-impersonation')
+                ->click('@exit-impersonation')
+                ->waitForLocation('/admin/dashboard')
+                ->waitUntilMissing('@sidebar-users-link')
+                ->assertMissing('@sidebar-users-link-mobile');
         });
     }
 
-    public function test_gestor_sidebar_hides_organizations_but_shows_the_rest(): void
+    public function test_gestor_navigation_scope(): void
     {
         $org = Organization::factory()->create();
         $gestor = User::factory()->create(['org_id' => $org->id]);
@@ -99,13 +98,21 @@ class NavigationMenuDuskTest extends DuskTestCase
         });
     }
 
-    public function test_aluno_sidebar_has_no_administration_links(): void
+    /**
+     * RF39 — o Aluno não tem nenhum link administrativo, e o link do fórum
+     * aparece apenas quando existe matrícula: as duas metades são o mesmo
+     * ator, então são etapas da mesma cadeia (a matrícula é criada entre
+     * elas e a tela é recarregada).
+     */
+    public function test_aluno_navigation_scope_and_enrolled_forum_link(): void
     {
         $org = Organization::factory()->create();
+        $course = Course::factory()->for($org)->create();
         $aluno = User::factory()->create(['org_id' => $org->id]);
         $aluno->assignRole(RolesEnum::ALUNO->value);
 
-        $this->browse(function (Browser $browser) use ($aluno): void {
+        $this->browse(function (Browser $browser) use ($aluno, $course): void {
+            // 1. Sem matrícula: nenhum link administrativo, nem o do fórum.
             $browser->loginAs($aluno)
                 ->visit(route('student.courses.index'))
                 ->waitFor('@no-enrollments')
@@ -118,22 +125,21 @@ class NavigationMenuDuskTest extends DuskTestCase
                 ->assertMissing('@sidebar-audit-logs-link')
                 ->assertMissing('@sidebar-settings-link')
                 ->assertMissing('@sidebar-forum-link');
-        });
-    }
 
-    public function test_aluno_with_an_enrollment_sees_the_forum_link(): void
-    {
-        $org = Organization::factory()->create();
-        $course = Course::factory()->for($org)->create();
-        $aluno = User::factory()->create(['org_id' => $org->id]);
-        $aluno->assignRole(RolesEnum::ALUNO->value);
-        $aluno->courses()->attach($course->id, ['status' => 'active', 'enrolled_at' => now()]);
+            // 2. Com matrícula ativa: o link contextual do fórum aparece.
+            $aluno->courses()->attach($course->id, ['status' => 'active', 'enrolled_at' => now()]);
+            $this->assertDatabaseHas('course_user', [
+                'user_id' => $aluno->id,
+                'course_id' => $course->id,
+                'status' => 'active',
+            ]);
 
-        $this->browse(function (Browser $browser) use ($aluno, $course): void {
-            $browser->loginAs($aluno)
-                ->visit(route('student.courses.index'))
+            $browser->visit(route('student.courses.index'))
                 ->waitFor('@open-classroom-'.$course->id)
-                ->assertPresent('@sidebar-forum-link');
+                ->assertPresent('@sidebar-forum-link')
+                // Continua sem qualquer superfície administrativa.
+                ->assertMissing('@sidebar-audit-logs-link')
+                ->assertMissing('@sidebar-settings-link');
         });
     }
 

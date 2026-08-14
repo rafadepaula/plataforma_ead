@@ -6,7 +6,6 @@ use App\Models\Certificate;
 use App\Models\Course;
 use App\Models\Organization;
 use App\Models\User;
-use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Support\Carbon;
 use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
@@ -16,19 +15,19 @@ use Tests\DuskTestCase;
  * `/validar-certificado/{hash}` page (`certificates.verify`): a "Válido"
  * certificate shows student/course/org/workload/issued_at, a "Revogado"
  * one still responds (never a 404) with the revoked banner + reason
- * without hiding the original data, and no authentication is ever
- * required to reach either state.
+ * without hiding the original data, an unknown hash 404s, and no
+ * authentication is ever required to reach any of those states.
  *
- * Depends on Bucket B's `PublicCertificateController`/routes and Bucket
- * A's `Certificate` write-path being merged; certificates are seeded
- * directly here (no `CertificateFactory` yet — Bucket A) using the
+ * Agrupado por cadeia de ciclo de vida (ver `testing-conventions`): os três
+ * estados da página pública são percorridos como VISITANTE numa única
+ * sessão de navegador; a tela autenticada do Aluno é jornada de outro ator.
+ *
+ * Certificates are seeded directly here using the
  * `hash('sha256', user_id.course_id.issued_at->format('Y-m-d H:i:s').APP_KEY)`
  * formula documented in the `certificates-conventions` skill.
  */
 class CertificateVerificationTest extends DuskTestCase
 {
-    use DatabaseMigrations;
-
     private function makeCertificate(Course $course, User $user, array $overrides = []): Certificate
     {
         $issuedAt = $overrides['issued_at'] ?? Carbon::now();
@@ -43,62 +42,61 @@ class CertificateVerificationTest extends DuskTestCase
         ], $overrides));
     }
 
-    public function test_guest_sees_valid_certificate_data_without_authentication(): void
+    public function test_public_certificate_verification_states_lifecycle(): void
     {
         $org = Organization::factory()->create(['name' => 'Instituto Dusk']);
         $course = Course::factory()->create(['org_id' => $org->id, 'title' => 'Curso Válido Dusk', 'workload_hours' => 40]);
         $student = User::factory()->create(['org_id' => null, 'name' => 'Aluno Válido Dusk']);
 
-        $certificate = $this->makeCertificate($course, $student);
+        $validCertificate = $this->makeCertificate($course, $student);
 
-        $this->browse(function (Browser $browser) use ($certificate): void {
-            $browser->visit('/validar-certificado/'.$certificate->validation_hash)
-                ->waitFor('@certificate-valid-banner')
-                ->assertSee('Certificado Válido')
-                ->assertSeeIn('@certificate-student-name', 'Aluno Válido Dusk')
-                ->assertSeeIn('@certificate-course-title', 'Curso Válido Dusk')
-                ->assertSeeIn('@certificate-org-name', 'Instituto Dusk')
-                ->assertSeeIn('@certificate-workload', '40h');
-        });
-    }
+        $revokedOrg = Organization::factory()->create(['name' => 'Instituto Revogado Dusk']);
+        $revokedCourse = Course::factory()->create(['org_id' => $revokedOrg->id, 'title' => 'Curso Revogado Dusk']);
+        $revokedStudent = User::factory()->create(['org_id' => null, 'name' => 'Aluno Revogado Dusk']);
+        $revoker = User::factory()->create(['org_id' => $revokedOrg->id]);
 
-    public function test_guest_sees_revoked_banner_and_reason_without_a_404(): void
-    {
-        $org = Organization::factory()->create(['name' => 'Instituto Revogado Dusk']);
-        $course = Course::factory()->create(['org_id' => $org->id, 'title' => 'Curso Revogado Dusk']);
-        $student = User::factory()->create(['org_id' => null, 'name' => 'Aluno Revogado Dusk']);
-        $revoker = User::factory()->create(['org_id' => $org->id]);
-
-        $certificate = $this->makeCertificate($course, $student, [
+        $revokedCertificate = $this->makeCertificate($revokedCourse, $revokedStudent, [
             'revoked_at' => Carbon::now(),
             'revoked_by' => $revoker->id,
             'revoke_reason' => 'Fraude identificada na prova final do curso.',
         ]);
 
-        $this->browse(function (Browser $browser) use ($certificate): void {
-            $browser->visit('/validar-certificado/'.$certificate->validation_hash)
+        $this->browse(function (Browser $browser) use ($validCertificate, $revokedCertificate): void {
+            // 1. Certificado válido, sem qualquer autenticação.
+            $browser->visit('/validar-certificado/'.$validCertificate->validation_hash)
+                ->waitFor('@certificate-valid-banner')
+                ->assertGuest()
+                ->assertSee('Certificado Válido')
+                ->assertSeeIn('@certificate-student-name', 'Aluno Válido Dusk')
+                ->assertSeeIn('@certificate-course-title', 'Curso Válido Dusk')
+                ->assertSeeIn('@certificate-org-name', 'Instituto Dusk')
+                ->assertSeeIn('@certificate-workload', '40h');
+
+            // 2. Certificado revogado: NUNCA 404 — banner + motivo, sem
+            //    esconder os dados originais.
+            $browser->visit('/validar-certificado/'.$revokedCertificate->validation_hash)
                 ->waitFor('@certificate-revoked-banner')
                 ->assertSee('Certificado Revogado em')
                 ->assertSeeIn('@certificate-revoke-reason', 'Fraude identificada na prova final do curso.')
                 ->assertSeeIn('@certificate-student-name', 'Aluno Revogado Dusk')
                 ->assertSeeIn('@certificate-course-title', 'Curso Revogado Dusk');
-        });
-    }
 
-    public function test_unknown_hash_returns_a_404_not_the_certificate_page(): void
-    {
-        $this->browse(function (Browser $browser): void {
+            // 3. Hash inexistente: 404, e não a página de certificado.
             $browser->visit('/validar-certificado/'.str_repeat('0', 64))
                 ->assertSee('404');
         });
+
+        $this->assertDatabaseHas('certificates', [
+            'id' => $revokedCertificate->id,
+            'revoke_reason' => 'Fraude identificada na prova final do curso.',
+        ]);
     }
 
     /**
-     * UC13 — the Aluno's classroom shows "Certificado indisponível. X%"
-     * (RN-implied, see `ClassroomController::show()`) when no `Certificate`
-     * row exists yet for the student/course pair, reusing the exact same
-     * `course_user.progress_percentage` the progress bar already shows —
-     * never a separately-computed value.
+     * UC13 — a sala de aula do Aluno mostra "Certificado indisponível. X%"
+     * quando ainda não existe `Certificate` para o par aluno/curso,
+     * reaproveitando exatamente o `course_user.progress_percentage` que a
+     * barra de progresso já exibe — nunca um valor recalculado à parte.
      */
     public function test_student_without_a_certificate_sees_the_unavailable_banner_with_progress(): void
     {
@@ -120,5 +118,7 @@ class CertificateVerificationTest extends DuskTestCase
                 ->assertSeeIn('@certificate-unavailable', 'Certificado indisponível. 45%')
                 ->assertMissing('@download-certificate');
         });
+
+        $this->assertDatabaseCount('certificates', 0);
     }
 }

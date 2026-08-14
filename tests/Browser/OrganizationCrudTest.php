@@ -5,18 +5,20 @@ namespace Tests\Browser;
 use App\Enums\Permissions\RolesEnum;
 use App\Models\Organization;
 use App\Models\User;
-use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 
 /**
  * SPEC-04 §2 / RF23 — E2E coverage for the Organization CRUD screens.
+ *
+ * Agrupado por cadeia de ciclo de vida (ver `testing-conventions`): criar →
+ * editar → abrir modal de remoção e cancelar → confirmar soft delete é uma
+ * jornada única. A checagem do preview de logo (UX-004) é outra jornada, e
+ * a negativa de autorização do Gestor segue isolada.
  */
 class OrganizationCrudTest extends DuskTestCase
 {
-    use DatabaseMigrations;
-
     /**
      * Caminhos gravados no disco `public` real por este teste, apagados no
      * `tearDown()`.
@@ -25,12 +27,13 @@ class OrganizationCrudTest extends DuskTestCase
      */
     private array $publicDiskFixtures = [];
 
-    public function test_admin_can_create_an_organization_via_the_ui(): void
+    public function test_admin_organization_crud_lifecycle(): void
     {
         $admin = User::factory()->create(['org_id' => null]);
         $admin->assignRole(RolesEnum::ADMIN->value);
 
         $this->browse(function (Browser $browser) use ($admin): void {
+            // 1. Criação
             $browser->loginAs($admin)
                 ->visit(route('organizations.create'))
                 ->waitFor('@organization-form')
@@ -39,40 +42,30 @@ class OrganizationCrudTest extends DuskTestCase
                 ->waitForLocation('/organizations')
                 ->assertSee('Instituto Dusk')
                 ->assertSee('Organização criada com sucesso.');
-        });
-    }
 
-    public function test_admin_can_edit_an_organization_via_the_ui(): void
-    {
-        $admin = User::factory()->create(['org_id' => null]);
-        $admin->assignRole(RolesEnum::ADMIN->value);
-        $organization = Organization::factory()->create(['name' => 'Nome Original']);
+            $this->assertDatabaseHas('organizations', ['name' => 'Instituto Dusk']);
 
-        $this->browse(function (Browser $browser) use ($admin, $organization): void {
-            $browser->loginAs($admin)
-                ->visit(route('organizations.index'))
+            $organization = Organization::where('name', 'Instituto Dusk')->firstOrFail();
+
+            // 2. Edição a partir da listagem
+            $browser->visit(route('organizations.index'))
                 ->waitFor('@edit-organization-'.$organization->id)
                 ->click('@edit-organization-'.$organization->id)
                 ->waitFor('@organization-form')
                 ->clear('name')
-                ->type('name', 'Nome Editado')
+                ->type('name', 'Instituto Dusk Editado')
                 ->press('Salvar Alterações')
                 ->waitForLocation('/organizations')
-                ->assertSee('Nome Editado');
-        });
-    }
+                ->assertSee('Instituto Dusk Editado');
 
-    public function test_admin_can_soft_delete_an_organization_via_the_ui(): void
-    {
-        $admin = User::factory()->create(['org_id' => null]);
-        $admin->assignRole(RolesEnum::ADMIN->value);
-        $organization = Organization::factory()->create(['name' => 'Organização Removível']);
+            $this->assertDatabaseHas('organizations', [
+                'id' => $organization->id,
+                'name' => 'Instituto Dusk Editado',
+            ]);
 
-        $this->browse(function (Browser $browser) use ($admin, $organization): void {
-            $browser->loginAs($admin)
-                ->visit(route('organizations.index'))
+            // 3. UX-003 — modal de remoção nasce fechado; cancelar preserva.
+            $browser->visit(route('organizations.index'))
                 ->waitFor('@delete-organization-'.$organization->id)
-                // UX-003 — nenhum modal nasce aberto (ver BUG-003).
                 ->assertMissing('.modal.show')
                 ->assertMissing('.modal-backdrop')
                 ->click('@delete-organization-'.$organization->id)
@@ -80,91 +73,75 @@ class OrganizationCrudTest extends DuskTestCase
                 // em movimento é a fonte nº 1 de flake aqui.
                 ->waitForModalShown('delete-organization-'.$organization->id)
                 // O modal identifica a Organização pelo nome.
-                ->assertSeeIn('#delete-organization-'.$organization->id, 'Organização Removível')
-                ->click('@confirm-modal-delete-organization-'.$organization->id.'-confirm')
-                ->waitForLocation('/organizations')
-                ->assertSee('Organização removida com sucesso.')
-                ->assertDontSee('Organização Removível');
-        });
-
-        $this->assertSoftDeleted($organization);
-    }
-
-    public function test_admin_can_cancel_the_organization_deletion(): void
-    {
-        $admin = User::factory()->create(['org_id' => null]);
-        $admin->assignRole(RolesEnum::ADMIN->value);
-        $organization = Organization::factory()->create(['name' => 'Organização Preservada']);
-
-        $this->browse(function (Browser $browser) use ($admin, $organization): void {
-            $browser->loginAs($admin)
-                ->visit(route('organizations.index'))
-                ->waitFor('@delete-organization-'.$organization->id)
-                ->assertMissing('.modal.show')
-                ->assertMissing('.modal-backdrop')
-                ->click('@delete-organization-'.$organization->id)
-                ->waitForModalShown('delete-organization-'.$organization->id)
+                ->assertSeeIn('#delete-organization-'.$organization->id, 'Instituto Dusk Editado')
                 ->click('@confirm-modal-delete-organization-'.$organization->id.'-cancel')
                 // O backdrop só some no fim da transição de fechamento.
                 ->waitForModalClosed('delete-organization-'.$organization->id)
                 ->assertMissing('.modal.show')
                 ->assertVisible('@organization-row-'.$organization->id)
-                ->assertSee('Organização Preservada')
                 ->assertDontSee('Organização removida com sucesso.');
+
+            $this->assertNotSoftDeleted($organization);
+
+            // 4. Confirmar remoção: soft delete e desaparecimento do DOM
+            $browser->click('@delete-organization-'.$organization->id)
+                ->waitForModalShown('delete-organization-'.$organization->id)
+                ->click('@confirm-modal-delete-organization-'.$organization->id.'-confirm')
+                ->waitForLocation('/organizations')
+                ->assertSee('Organização removida com sucesso.')
+                ->assertDontSee('Instituto Dusk Editado')
+                ->assertMissing('@organization-row-'.$organization->id);
         });
 
-        $this->assertNotSoftDeleted($organization);
+        $this->assertSoftDeleted(Organization::withTrashed()->where('name', 'Instituto Dusk Editado')->firstOrFail());
     }
 
     /**
      * UX-004 — o logo já salvo aparece como imagem carregada (não como
-     * caminho de arquivo) na tela de edição.
+     * caminho de arquivo) na tela de edição; sem logo salvo, nenhum `<img>`
+     * é renderizado (nem na tela de criação).
      */
-    public function test_edit_screen_shows_the_current_logo_as_a_loaded_image(): void
+    public function test_organization_logo_preview_presence_and_absence(): void
     {
         $admin = User::factory()->create(['org_id' => null]);
         $admin->assignRole(RolesEnum::ADMIN->value);
 
-        $logoPath = 'organizations/logos/dusk-logo.png';
+        // Nome único por execução: `DatabaseTruncation` não limpa o disco
+        // `public`, então o fixture precisa não colidir com sobras.
+        $logoPath = 'organizations/logos/dusk-logo-'.uniqid().'.png';
         Storage::disk('public')->put($logoPath, $this->onePixelPng());
         $this->publicDiskFixtures[] = $logoPath;
 
-        $organization = Organization::factory()->create([
+        $withLogo = Organization::factory()->create([
             'name' => 'Org Com Logo',
             'logo_path' => $logoPath,
         ]);
+        $withoutLogo = Organization::factory()->create([
+            'name' => 'Org Sem Logo',
+            'logo_path' => null,
+        ]);
 
-        $this->browse(function (Browser $browser) use ($admin, $organization, $logoPath): void {
+        $this->browse(function (Browser $browser) use ($admin, $withLogo, $withoutLogo, $logoPath): void {
+            // 1. Com logo salvo: `<img>` presente, carregado e sem caminho cru.
             $browser->loginAs($admin)
-                ->visit(route('organizations.edit', $organization))
+                ->visit(route('organizations.edit', $withLogo))
                 ->waitFor('@organization-form')
                 ->assertVisible('@organization-logo-preview')
-                // O caminho cru do arquivo não é mais exibido ao usuário.
                 ->assertDontSee($logoPath)
                 ->assertDontSee('Logo atual:')
                 ->assertAttribute('@organization-logo-preview', 'alt', 'Logo da Organização Org Com Logo')
                 // A imagem realmente carregou: sem o symlink `public/storage`
                 // isto seria 0 (404), que é exatamente o modo de falha real.
                 ->waitUntil('document.querySelector(\'[dusk="organization-logo-preview"]\').naturalWidth > 0');
-        });
-    }
 
-    /**
-     * UX-004 — sem logo salvo, nenhum `<img>` é renderizado (nem na criação).
-     */
-    public function test_logo_preview_is_absent_without_a_logo_and_on_the_create_screen(): void
-    {
-        $admin = User::factory()->create(['org_id' => null]);
-        $admin->assignRole(RolesEnum::ADMIN->value);
-        $organization = Organization::factory()->create(['logo_path' => null]);
-
-        $this->browse(function (Browser $browser) use ($admin, $organization): void {
-            $browser->loginAs($admin)
-                ->visit(route('organizations.edit', $organization))
+            // 2. Sem logo salvo: nenhum `<img>`.
+            $browser->visit(route('organizations.edit', $withoutLogo))
                 ->waitFor('@organization-form')
                 ->assertMissing('@organization-logo-preview')
-                ->assertDontSee('Logo atual:')
-                ->visit(route('organizations.create'))
+                ->assertDontSee('Logo atual:');
+
+            // 3. Tela de criação: nunca há preview.
+            $browser->visit(route('organizations.create'))
                 ->waitFor('@organization-form')
                 ->assertMissing('@organization-logo-preview');
         });

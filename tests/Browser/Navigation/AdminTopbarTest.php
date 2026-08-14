@@ -5,7 +5,6 @@ namespace Tests\Browser\Navigation;
 use App\Enums\Permissions\RolesEnum;
 use App\Models\Organization;
 use App\Models\User;
-use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 
@@ -14,14 +13,15 @@ use Tests\DuskTestCase;
  * removed and the "Impersonate Org" badge took its place.
  *
  * The badge is rendered by `components/layout/topbar.blade.php` from the
- * `$activeOrganization` injected by `NavigationComposer`, so it is
- * present on *every* authenticated screen — asserted here on more than
- * one route.
+ * `$activeOrganization` injected by `NavigationComposer`, so it is present
+ * on *every* authenticated screen — asserted here on more than one route.
+ *
+ * Agrupado por cadeia de ciclo de vida (ver `testing-conventions`): um
+ * único Admin percorre contexto global → assumir Organização → badge em
+ * várias telas → viewport estreito → encerrar contexto.
  */
 class AdminTopbarTest extends DuskTestCase
 {
-    use DatabaseMigrations;
-
     /**
      * `.badge` carries `text-transform: uppercase`
      * (`resources/scss/components/_index.scss:57`) and Dusk asserts
@@ -34,91 +34,62 @@ class AdminTopbarTest extends DuskTestCase
 
     private const ORG_NAME_RENDERED = 'ORGANIZAÇÃO ALVO';
 
-    public function test_the_dead_search_field_is_gone_from_authenticated_screens(): void
+    public function test_admin_topbar_impersonation_badge_lifecycle(): void
     {
+        $organization = Organization::factory()->create(['name' => self::ORG_NAME]);
         $admin = $this->systemAdmin();
 
-        $this->browse(function (Browser $browser) use ($admin): void {
+        $this->browse(function (Browser $browser) use ($admin, $organization): void {
+            // 1. Contexto global: sem badge, e o campo de busca morto continua
+            //    fora de qualquer tela autenticada.
             $browser->loginAs($admin)
                 ->visit(route('admin.dashboard'))
                 ->waitFor('@topbar-profile-link')
                 ->assertMissing('input[placeholder="Buscar cursos, aulas..."]')
+                ->assertMissing('@topbar-impersonation')
+                ->assertMissing('@topbar-exit-impersonation')
                 ->visit(route('organizations.index'))
                 ->waitFor('@topbar-profile-link')
                 ->assertMissing('input[placeholder="Buscar cursos, aulas..."]');
-        });
-    }
 
-    public function test_no_impersonation_badge_is_rendered_in_global_context(): void
-    {
-        $admin = $this->systemAdmin();
-
-        $this->browse(function (Browser $browser) use ($admin): void {
-            $browser->loginAs($admin)
-                ->visit(route('admin.dashboard'))
-                ->waitFor('@topbar-profile-link')
-                ->assertMissing('@topbar-impersonation')
-                ->assertMissing('@topbar-exit-impersonation');
-        });
-    }
-
-    public function test_the_badge_follows_the_admin_across_screens_and_exits_to_the_dashboard(): void
-    {
-        $organization = Organization::factory()->create(['name' => self::ORG_NAME]);
-        $admin = $this->systemAdmin();
-
-        $this->browse(function (Browser $browser) use ($admin, $organization): void {
-            $browser->loginAs($admin)
-                ->visit(route('organizations.index'))
-                ->waitFor('@impersonate-'.$organization->id)
+            // 2. Assumir a Organização acende o badge.
+            $browser->waitFor('@impersonate-'.$organization->id)
                 ->click('@impersonate-'.$organization->id)
                 ->waitForLocation('/organizations')
                 ->waitFor('@topbar-impersonation')
                 ->assertSeeIn('@topbar-active-org-badge', self::ORG_NAME_RENDERED);
 
-            // Screen 2: a route that has nothing to do with Organizations.
+            // 3. O badge acompanha o Admin em telas sem relação com
+            //    Organizações e em telas operacionais da Organização.
             $browser->visit(route('admin.dashboard'))
                 ->waitFor('@topbar-impersonation')
                 ->assertSeeIn('@topbar-active-org-badge', self::ORG_NAME_RENDERED);
 
-            // Screen 3: an Organization-scoped operational screen.
             $browser->visit(route('courses.index'))
                 ->waitFor('@topbar-impersonation')
                 ->assertSeeIn('@topbar-active-org-badge', self::ORG_NAME_RENDERED);
 
-            // UX-002 §4.4 — leaving the context from the topbar always
-            // lands on the dashboard, never `back()` into a screen whose
-            // content depended on the context just dropped.
-            $browser->click('@topbar-exit-impersonation')
-                ->waitForLocation('/admin/dashboard')
-                ->waitUntilMissing('@topbar-impersonation')
-                ->assertMissing('@topbar-exit-impersonation')
-                ->assertDontSee(self::ORG_NAME_RENDERED);
-        });
-    }
-
-    /**
-     * The badge shares the right-hand cluster with the profile/logout
-     * controls, which must survive a narrow viewport.
-     */
-    public function test_the_topbar_controls_survive_a_narrow_viewport_with_the_badge_present(): void
-    {
-        $organization = Organization::factory()->create(['name' => self::ORG_NAME]);
-        $admin = $this->systemAdmin();
-
-        $this->browse(function (Browser $browser) use ($admin, $organization): void {
-            $browser->loginAs($admin)
-                ->visit(route('organizations.index'))
-                ->waitFor('@impersonate-'.$organization->id)
-                ->click('@impersonate-'.$organization->id)
-                ->waitForLocation('/organizations')
-                ->resize(768, 900)
+            // 4. Viewport estreito: badge e controles do cluster à direita
+            //    sobrevivem.
+            $browser->resize(768, 900)
                 ->visit(route('admin.dashboard'))
                 ->waitFor('@topbar-impersonation')
                 ->assertVisible('@topbar-active-org-badge')
                 ->assertVisible('@topbar-exit-impersonation')
                 ->assertVisible('@topbar-profile-link')
-                ->assertVisible('@mobile-menu-button');
+                ->assertVisible('@mobile-menu-button')
+                ->resize(1920, 1080);
+
+            // 5. UX-002 §4.4 — sair do contexto pelo topbar sempre cai no
+            //    dashboard, nunca num `back()` para uma tela cujo conteúdo
+            //    dependia do contexto recém-abandonado.
+            $browser->visit(route('admin.dashboard'))
+                ->waitFor('@topbar-exit-impersonation')
+                ->click('@topbar-exit-impersonation')
+                ->waitForLocation('/admin/dashboard')
+                ->waitUntilMissing('@topbar-impersonation')
+                ->assertMissing('@topbar-exit-impersonation')
+                ->assertDontSee(self::ORG_NAME_RENDERED);
         });
     }
 

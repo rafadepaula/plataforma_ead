@@ -241,4 +241,80 @@ class DashboardMetricsServiceTest extends TestCase
         $this->assertSame('Cancelado', $enrollment->status_label);
         $this->assertSame('accent-2', $enrollment->status_badge_variant);
     }
+
+    public function test_organizations_summary_counts_active_alunos_courses_and_non_revoked_certificates_per_org(): void
+    {
+        $orgA = Organization::factory()->create(['name' => 'Organização A']);
+        $orgB = Organization::factory()->create(['name' => 'Organização B']);
+
+        $courseA = Course::factory()->for($orgA)->create();
+        Course::factory()->for($orgB)->count(2)->create();
+
+        $activeAluno = User::factory()->create(['org_id' => $orgA->id, 'status' => 'active']);
+        $activeAluno->assignRole(RolesEnum::ALUNO->value);
+
+        $inactiveAluno = User::factory()->create(['org_id' => $orgA->id, 'status' => 'inactive']);
+        $inactiveAluno->assignRole(RolesEnum::ALUNO->value);
+
+        $gestor = User::factory()->create(['org_id' => $orgA->id, 'status' => 'active']);
+        $gestor->assignRole(RolesEnum::GESTOR->value);
+
+        Certificate::factory()->for($courseA)->for(User::factory())->create();
+        Certificate::factory()->for($courseA)->for(User::factory())->revoked()->create();
+
+        $summary = $this->service->organizationsSummary();
+
+        $rowA = $summary->firstWhere('id', $orgA->id);
+        $rowB = $summary->firstWhere('id', $orgB->id);
+
+        $this->assertSame('Organização A', $rowA->name);
+        $this->assertSame(1, $rowA->students_count);
+        $this->assertSame(1, $rowA->courses_count);
+        $this->assertSame(1, $rowA->certificates_count);
+
+        $this->assertSame('Organização B', $rowB->name);
+        $this->assertSame(0, $rowB->students_count);
+        $this->assertSame(2, $rowB->courses_count);
+        $this->assertSame(0, $rowB->certificates_count);
+    }
+
+    public function test_organizations_summary_bypasses_courses_org_scope_regardless_of_the_acting_user(): void
+    {
+        $orgA = Organization::factory()->create();
+        $orgB = Organization::factory()->create();
+        Course::factory()->for($orgA)->count(2)->create();
+        Course::factory()->for($orgB)->count(3)->create();
+
+        $gestor = User::factory()->create(['org_id' => $orgA->id]);
+        $gestor->assignRole(RolesEnum::GESTOR->value);
+        $this->actingAs($gestor);
+
+        $summary = $this->service->organizationsSummary();
+
+        $this->assertSame(2, $summary->firstWhere('id', $orgA->id)->courses_count);
+        $this->assertSame(3, $summary->firstWhere('id', $orgB->id)->courses_count);
+    }
+
+    public function test_organizations_summary_zero_fills_an_organization_with_no_related_data(): void
+    {
+        $org = Organization::factory()->create();
+
+        $summary = $this->service->organizationsSummary();
+
+        $row = $summary->firstWhere('id', $org->id);
+
+        $this->assertSame(0, $row->students_count);
+        $this->assertSame(0, $row->courses_count);
+        $this->assertSame(0, $row->certificates_count);
+    }
+
+    public function test_organizations_summary_excludes_soft_deleted_organizations(): void
+    {
+        $org = Organization::factory()->create();
+        $org->delete();
+
+        $summary = $this->service->organizationsSummary();
+
+        $this->assertNull($summary->firstWhere('id', $org->id));
+    }
 }

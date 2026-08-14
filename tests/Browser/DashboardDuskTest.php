@@ -6,23 +6,23 @@ use App\Models\Course;
 use App\Models\Organization;
 use App\Models\SystemSetting;
 use App\Models\User;
-use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 
 /**
  * SPEC-12 — E2E coverage of the Admin/Gestor Dashboard: KPI stat cards +
- * recent-enrollments table render for an Admin (global) and a Gestor
- * (org-scoped), the CSV export entry point exposes a working download
- * link, and the settings edit screen persists an org-level override.
+ * recent-enrollments table, the Organizations summary table (Admin-only,
+ * global context), the CSV export entry point, and the settings screen.
+ *
+ * Agrupado por cadeia de ciclo de vida (ver `testing-conventions`): uma
+ * cadeia por ator, porque tudo aqui é justamente função do escopo do ator —
+ * o Admin vê o global, o Gestor vê só a própria Organização.
  */
 class DashboardDuskTest extends DuskTestCase
 {
-    use DatabaseMigrations;
-
-    public function test_admin_dashboard_renders_metrics_and_recent_enrollments(): void
+    public function test_admin_dashboard_global_scope_lifecycle(): void
     {
-        $org = Organization::factory()->create();
+        $org = Organization::factory()->create(['name' => 'Instituto Alfa']);
         $course = Course::factory()->for($org)->create(['title' => 'NR12 — Segurança em Máquinas']);
 
         $admin = User::factory()->create(['org_id' => null]);
@@ -38,23 +38,49 @@ class DashboardDuskTest extends DuskTestCase
         ]);
 
         $this->browse(function (Browser $browser) use ($admin): void {
+            // 1. KPIs e matrículas recentes.
+            //
+            //    `<x-ui.stat-card>`'s kicker is `text-transform: uppercase`,
+            //    and Selenium's `getText()` (which backs `assertSee`) returns
+            //    the CSS-rendered text, not the literal DOM string (see
+            //    `laravel-dusk` skill) — assert against the rendered case.
             $browser->loginAs($admin)
                 ->visit(route('admin.dashboard'))
                 ->waitFor('@admin-dashboard')
                 ->assertSee('Dashboard')
-                // `<x-ui.stat-card>`'s kicker is `text-transform: uppercase`,
-                // and Selenium's `getText()` (which backs `assertSee`)
-                // returns the CSS-rendered text, not the literal DOM string
-                // (see `laravel-dusk` skill / `CertificateRevocationTest`
-                // precedent) — assert against the rendered case.
                 ->assertSee('ALUNOS ATIVOS')
                 ->waitFor('@recent-enrollments-table')
                 ->assertSee('Matrículas recentes')
                 ->assertSee('João Pereira');
+
+            // 2. Sem impersonation ativa, o Admin vê o resumo por Organização.
+            $browser->waitFor('@organizations-summary-table')
+                ->assertSee('Instituto Alfa');
+
+            // 3. Ponto de entrada do export aponta para a rota de streaming.
+            $browser->waitFor('@export-enrollments-csv')
+                ->assertAttribute('@export-enrollments-csv', 'href', route('reports.export', ['type' => 'enrollments']));
+
+            // 4. Tipo de relatório desconhecido é 404, não 500.
+            $browser->visit('/admin/reports/invalido/export')
+                ->assertSee('404');
+
+            // 5. Configurações do Admin gravam na linha GLOBAL.
+            $browser->visit(route('settings.edit'))
+                ->waitFor('@settings-form')
+                ->type('smtp_host', 'smtp.global.example')
+                ->click('@settings-submit')
+                ->waitForText('Configurações salvas com sucesso.');
         });
+
+        $this->assertDatabaseHas('system_settings', [
+            'setting_key' => 'smtp_host',
+            'org_id' => SystemSetting::GLOBAL_ORG_ID,
+            'setting_value' => 'smtp.global.example',
+        ]);
     }
 
-    public function test_gestor_dashboard_shows_only_their_own_orgs_scoped_data(): void
+    public function test_gestor_dashboard_org_scope_lifecycle(): void
     {
         $orgA = Organization::factory()->create();
         $orgB = Organization::factory()->create();
@@ -82,98 +108,48 @@ class DashboardDuskTest extends DuskTestCase
         ]);
 
         $this->browse(function (Browser $browser) use ($gestor): void {
+            // 1. Só as matrículas da própria Organização aparecem.
             $browser->loginAs($gestor)
                 ->visit(route('admin.dashboard'))
                 ->waitFor('@recent-enrollments-table')
                 ->assertSee('Ana Costa')
-                ->assertDontSee('Marcos Silva');
-        });
-    }
+                ->assertDontSee('Marcos Silva')
+                // 2. E o resumo por Organização é exclusivo do Admin.
+                ->assertMissing('@organizations-summary-table');
 
-    public function test_dashboard_csv_export_link_points_at_the_streaming_download_route(): void
-    {
-        $org = Organization::factory()->create();
-        $admin = User::factory()->create(['org_id' => null]);
-        $admin->assignRole('admin');
-
-        $this->browse(function (Browser $browser) use ($admin): void {
-            $browser->loginAs($admin)
-                ->visit(route('admin.dashboard'))
-                ->waitFor('@export-enrollments-csv')
-                ->assertAttribute('@export-enrollments-csv', 'href', route('reports.export', ['type' => 'enrollments']));
-        });
-    }
-
-    public function test_gestor_persists_a_settings_override_via_the_edit_screen(): void
-    {
-        $org = Organization::factory()->create();
-        $gestor = User::factory()->create(['org_id' => $org->id]);
-        $gestor->assignRole('gestor');
-
-        $this->browse(function (Browser $browser) use ($gestor): void {
-            $browser->loginAs($gestor)
-                ->visit(route('settings.edit'))
+            // 3. Override de configuração no nível da Organização persiste...
+            $browser->visit(route('settings.edit'))
                 ->waitFor('@settings-form')
                 ->type('signature', 'Diretoria Pedagógica — Minha Org')
-                // `waitForReload()` must WRAP the action, not follow it: on
-                // its own it starts polling for the current node to go stale
-                // only after the click, so a reload that lands first is never
+                ->type('smtp_host', 'smtp.org.example')
+                // `waitForReload()` must WRAP the action, not follow it: on its
+                // own it starts polling for the current node to go stale only
+                // after the click, so a reload that lands first is never
                 // observed and it times out. This was flaky in the full suite
                 // and passed in isolation for exactly that reason.
                 ->waitForReload(fn (Browser $b) => $b->click('@settings-submit'))
-                ->visit(route('settings.edit'))
+                ->waitForText('Configurações salvas com sucesso.');
+
+            // 4. ...e sobrevive ao recarregamento da tela.
+            $browser->visit(route('settings.edit'))
+                ->waitFor('@settings-form')
                 ->assertInputValue('signature', 'Diretoria Pedagógica — Minha Org');
         });
-    }
-
-    public function test_settings_are_scoped_to_the_global_row_for_an_admin_and_to_the_org_row_for_a_gestor(): void
-    {
-        $org = Organization::factory()->create();
-
-        $admin = User::factory()->create(['org_id' => null]);
-        $admin->assignRole('admin');
-
-        $gestor = User::factory()->create(['org_id' => $org->id]);
-        $gestor->assignRole('gestor');
-
-        $this->browse(function (Browser $browser) use ($admin, $gestor): void {
-            $browser->loginAs($admin)
-                ->visit(route('settings.edit'))
-                ->waitFor('@settings-form')
-                ->type('smtp_host', 'smtp.global.example')
-                ->click('@settings-submit')
-                ->waitForText('Configurações salvas com sucesso.');
-
-            $browser->loginAs($gestor)
-                ->visit(route('settings.edit'))
-                ->waitFor('@settings-form')
-                ->type('smtp_host', 'smtp.org.example')
-                ->click('@settings-submit')
-                ->waitForText('Configurações salvas com sucesso.');
-        });
 
         $this->assertDatabaseHas('system_settings', [
             'setting_key' => 'smtp_host',
-            'org_id' => SystemSetting::GLOBAL_ORG_ID,
-            'setting_value' => 'smtp.global.example',
-        ]);
-
-        $this->assertDatabaseHas('system_settings', [
-            'setting_key' => 'smtp_host',
-            'org_id' => $org->id,
+            'org_id' => $orgA->id,
             'setting_value' => 'smtp.org.example',
         ]);
-    }
-
-    public function test_an_unknown_report_type_returns_404(): void
-    {
-        $admin = User::factory()->create(['org_id' => null]);
-        $admin->assignRole('admin');
-
-        $this->browse(function (Browser $browser) use ($admin): void {
-            $browser->loginAs($admin)
-                ->visit('/admin/reports/invalido/export')
-                ->assertSee('404');
-        });
+        $this->assertDatabaseHas('system_settings', [
+            'setting_key' => 'signature',
+            'org_id' => $orgA->id,
+            'setting_value' => 'Diretoria Pedagógica — Minha Org',
+        ]);
+        // O Gestor jamais grava na linha global.
+        $this->assertDatabaseMissing('system_settings', [
+            'setting_key' => 'smtp_host',
+            'org_id' => SystemSetting::GLOBAL_ORG_ID,
+        ]);
     }
 }

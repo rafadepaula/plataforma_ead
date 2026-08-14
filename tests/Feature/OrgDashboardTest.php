@@ -128,4 +128,65 @@ class OrgDashboardTest extends TestCase
 
         $response->assertForbidden();
     }
+
+    public function test_admin_with_no_impersonated_org_sees_organizations_summary_with_correct_counts(): void
+    {
+        $orgA = Organization::factory()->create();
+        $orgWithoutData = Organization::factory()->create();
+
+        $courseA = Course::factory()->for($orgA)->create();
+
+        $studentA = User::factory()->create(['org_id' => $orgA->id]);
+        $studentA->assignRole('aluno');
+
+        $courseA->students()->attach($studentA->id, [
+            'enrolled_at' => now(),
+            'status' => 'active',
+            'progress_percentage' => 40,
+        ]);
+
+        $this->actingAsAdmin();
+
+        $response = $this->get(route('admin.dashboard'));
+
+        $response->assertOk();
+        $response->assertSee('Organizações');
+        $response->assertSee($orgA->name);
+        $response->assertSee($orgWithoutData->name);
+        $response->assertViewHas('organizationsSummary');
+
+        $summary = $response->viewData('organizationsSummary')->keyBy('id');
+
+        $this->assertSame(1, (int) $summary[$orgA->id]->students_count);
+        $this->assertSame(1, (int) $summary[$orgA->id]->courses_count);
+
+        $this->assertSame(0, (int) $summary[$orgWithoutData->id]->students_count);
+        $this->assertSame(0, (int) $summary[$orgWithoutData->id]->courses_count);
+        $this->assertSame(0, (int) $summary[$orgWithoutData->id]->certificates_count);
+    }
+
+    public function test_gestor_never_receives_organizations_summary(): void
+    {
+        $org = Organization::factory()->create();
+        $this->actingAsOrgUser($org, 'gestor');
+
+        $response = $this->get(route('admin.dashboard'));
+
+        $response->assertOk();
+        $response->assertViewHas('organizationsSummary', null);
+        $response->assertDontSee('organizations-summary-table', false);
+    }
+
+    public function test_admin_impersonating_an_org_does_not_receive_organizations_summary(): void
+    {
+        $org = Organization::factory()->create();
+
+        $this->actingAsAdmin($org);
+
+        $response = $this->get(route('admin.dashboard'));
+
+        $response->assertOk();
+        $response->assertViewHas('organizationsSummary', null);
+        $response->assertDontSee('organizations-summary-table', false);
+    }
 }

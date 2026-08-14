@@ -12,7 +12,6 @@ use App\Models\QuizAttempt;
 use App\Models\QuizOption;
 use App\Models\QuizQuestion;
 use App\Models\User;
-use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 
@@ -21,12 +20,16 @@ use Tests\DuskTestCase;
  * screen: opening it from the classroom's quiz-lesson placeholder,
  * answering every question in one submission, and seeing the resulting
  * grade/lesson-completion feedback.
+ *
+ * Agrupado por cadeia de ciclo de vida (ver `testing-conventions`): a
+ * jornada auto-corrigida (abrir da sala → responder → aprovar → lição
+ * concluída), a jornada dissertativa (aguardando correção manual) e os
+ * estados de bloqueio da tela (tentativas esgotadas, tempo esgotado,
+ * gabarito) — cada uma num único método, sempre com o mesmo Aluno.
  */
 class StudentQuizAttemptTest extends DuskTestCase
 {
-    use DatabaseMigrations;
-
-    public function test_student_takes_a_fully_auto_graded_quiz_from_the_classroom_and_passes(): void
+    public function test_student_auto_graded_quiz_attempt_lifecycle(): void
     {
         $org = Organization::factory()->create();
         $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
@@ -45,6 +48,7 @@ class StudentQuizAttemptTest extends DuskTestCase
         $course->students()->attach($student->id, ['enrolled_at' => now(), 'status' => 'active']);
 
         $this->browse(function (Browser $browser) use ($student, $course, $lesson, $correctOption): void {
+            // 1. Abrir o quiz a partir da sala de aula e responder.
             $browser->loginAs($student)
                 ->visit(route('classroom.show', $course))
                 ->waitFor('@open-lesson-'.$lesson->id)
@@ -57,8 +61,10 @@ class StudentQuizAttemptTest extends DuskTestCase
                 ->waitForText('concluída com sucesso');
         });
 
+        // 2. Consequências no banco: tentativa aprovada e lição concluída
+        //    pela fonte `quiz_passed`.
         $this->assertDatabaseHas('quiz_attempts', [
-            'quiz_id' => $quiz->id,
+            'quiz_id' => $lesson->quiz?->id ?? $quiz->id,
             'user_id' => $student->id,
             'status' => 'graded',
             'is_passed' => 1,
@@ -71,7 +77,7 @@ class StudentQuizAttemptTest extends DuskTestCase
         ]);
     }
 
-    public function test_a_quiz_with_an_essay_question_leaves_the_student_awaiting_manual_grading(): void
+    public function test_student_essay_quiz_awaits_manual_grading(): void
     {
         $org = Organization::factory()->create();
         $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
@@ -101,63 +107,77 @@ class StudentQuizAttemptTest extends DuskTestCase
             'user_id' => $student->id,
             'status' => 'awaiting_manual_grading',
         ]);
-    }
-
-    public function test_a_student_who_exhausted_their_attempts_sees_the_form_hidden_not_a_500(): void
-    {
-        $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
-        $module = Module::factory()->for($course)->create();
-        $lesson = Lesson::factory()->for($module)->create(['type' => 'quiz', 'is_published' => true]);
-        $quiz = Quiz::factory()->for($lesson)->create(['allow_retries' => false]);
-        QuizQuestion::factory()->for($quiz)->singleChoice()->create();
-
-        $student = User::factory()->create(['org_id' => null]);
-        $student->assignRole(RolesEnum::ALUNO->value);
-        $course->students()->attach($student->id, ['enrolled_at' => now(), 'status' => 'active']);
-
-        QuizAttempt::factory()->for($quiz)->for($student)->graded()->create();
-
-        $this->browse(function (Browser $browser) use ($student, $lesson): void {
-            $browser->loginAs($student)
-                ->visit(route('student.quizzes.show', $lesson))
-                ->waitFor('@quiz-cannot-attempt')
-                ->assertSee('não permite novas tentativas')
-                ->assertMissing('@quiz-attempt-form');
-        });
+        $this->assertDatabaseMissing('lesson_progress', [
+            'user_id' => $student->id,
+            'lesson_id' => $lesson->id,
+            'is_completed' => true,
+        ]);
     }
 
     /**
-     * The cosmetic `[data-quiz-timer]` countdown seeds `data-started-at`
-     * from the page's own render time (see `quizzes-conventions` —
-     * `StudentQuizController::show()` never creates a `QuizAttempt` up
-     * front, so there is no persisted `started_at` to key a real countdown
-     * off of). To exercise the "already expired" state without sleeping
-     * the test for a real `time_limit_minutes` minute, this pushes the
-     * container's `data-started-at` into the past via the browser and
-     * re-invokes the already-bound `window.QuizTimer.bind()` (exposed by
-     * `resources/js/app.js`) — the same code path a real expiry runs,
-     * just re-triggered with a deadline that is already behind `now()`.
+     * Os três estados de bloqueio/feedback da tela do Aluno, percorridos
+     * pelo mesmo Aluno numa única sessão de navegador — cada um com sua
+     * própria configuração de `Quiz` no mesmo Curso.
      */
-    public function test_an_expired_quiz_timer_shows_the_time_is_up_state_without_submitting(): void
+    public function test_student_quiz_screen_gating_states(): void
     {
         $org = Organization::factory()->create();
         $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
         $module = Module::factory()->for($course)->create();
-        $lesson = Lesson::factory()->for($module)->create(['type' => 'quiz', 'is_published' => true]);
-        $quiz = Quiz::factory()->for($lesson)->create(['time_limit_minutes' => 1]);
-
-        $question = QuizQuestion::factory()->for($quiz)->singleChoice()->create();
-        QuizOption::factory()->for($question, 'question')->correct()->create();
-        QuizOption::factory()->for($question, 'question')->incorrect()->create();
 
         $student = User::factory()->create(['org_id' => null]);
         $student->assignRole(RolesEnum::ALUNO->value);
         $course->students()->attach($student->id, ['enrolled_at' => now(), 'status' => 'active']);
 
-        $this->browse(function (Browser $browser) use ($student, $lesson): void {
+        // (a) Quiz sem novas tentativas, já com uma tentativa corrigida.
+        $noRetryLesson = Lesson::factory()->for($module)->create(['type' => 'quiz', 'is_published' => true]);
+        $noRetryQuiz = Quiz::factory()->for($noRetryLesson)->create(['allow_retries' => false]);
+        QuizQuestion::factory()->for($noRetryQuiz)->singleChoice()->create();
+        QuizAttempt::factory()->for($noRetryQuiz)->for($student)->graded()->create();
+
+        // (b) Quiz com limite de tempo (o contador é cosmético — ver abaixo).
+        $timedLesson = Lesson::factory()->for($module)->create(['type' => 'quiz', 'is_published' => true]);
+        $timedQuiz = Quiz::factory()->for($timedLesson)->create(['time_limit_minutes' => 1]);
+        $timedQuestion = QuizQuestion::factory()->for($timedQuiz)->singleChoice()->create();
+        QuizOption::factory()->for($timedQuestion, 'question')->correct()->create();
+        QuizOption::factory()->for($timedQuestion, 'question')->incorrect()->create();
+
+        // (c) Quiz com gabarito liberado após a tentativa corrigida.
+        $answerKeyLesson = Lesson::factory()->for($module)->create(['type' => 'quiz', 'is_published' => true]);
+        $answerKeyQuiz = Quiz::factory()->for($answerKeyLesson)->create(['show_correct_answers' => true]);
+        $answerKeyQuestion = QuizQuestion::factory()->for($answerKeyQuiz)->singleChoice()->create([
+            'question_text' => 'Qual é a capital do Brasil?',
+        ]);
+        $answerKeyCorrectOption = QuizOption::factory()->for($answerKeyQuestion, 'question')->correct()->create(['option_text' => 'Brasília']);
+        QuizOption::factory()->for($answerKeyQuestion, 'question')->incorrect()->create(['option_text' => 'São Paulo']);
+        QuizAttempt::factory()->for($answerKeyQuiz)->for($student)->graded()->create();
+
+        $this->browse(function (Browser $browser) use (
+            $student,
+            $noRetryLesson,
+            $timedLesson,
+            $timedQuiz,
+            $answerKeyLesson,
+            $answerKeyCorrectOption
+        ): void {
+            // 1. Tentativas esgotadas: formulário some, sem 500.
             $browser->loginAs($student)
-                ->visit(route('student.quizzes.show', $lesson))
+                ->visit(route('student.quizzes.show', $noRetryLesson))
+                ->waitFor('@quiz-cannot-attempt')
+                ->assertSee('não permite novas tentativas')
+                ->assertMissing('@quiz-attempt-form');
+
+            // 2. Tempo esgotado.
+            //
+            //    O contador `[data-quiz-timer]` semeia `data-started-at` do
+            //    próprio render (ver `quizzes-conventions`:
+            //    `StudentQuizController::show()` não cria `QuizAttempt` na
+            //    entrada, então não há `started_at` persistido). Para exercitar
+            //    o estado "já expirou" sem dormir um minuto real, empurramos o
+            //    `data-started-at` para o passado e reinvocamos
+            //    `window.QuizTimer.bind()` — mesmo caminho de código de uma
+            //    expiração real.
+            $browser->visit(route('student.quizzes.show', $timedLesson))
                 ->waitFor('@quiz-timer')
                 ->assertPresent('@quiz-attempt-form');
 
@@ -169,41 +189,19 @@ class StudentQuizAttemptTest extends DuskTestCase
             );
 
             $browser->waitForText('Tempo esgotado')
+                // Expirar NÃO submete nada por conta própria.
                 ->assertPresent('@quiz-attempt-form');
-        });
 
-        $this->assertDatabaseMissing('quiz_attempts', [
-            'quiz_id' => $quiz->id,
-            'user_id' => $student->id,
-        ]);
-    }
+            $this->assertDatabaseMissing('quiz_attempts', [
+                'quiz_id' => $timedQuiz->id,
+                'user_id' => $student->id,
+            ]);
 
-    public function test_the_answer_key_is_shown_when_show_correct_answers_is_enabled(): void
-    {
-        $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
-        $module = Module::factory()->for($course)->create();
-        $lesson = Lesson::factory()->for($module)->create(['type' => 'quiz', 'is_published' => true]);
-        $quiz = Quiz::factory()->for($lesson)->create(['show_correct_answers' => true]);
-
-        $question = QuizQuestion::factory()->for($quiz)->singleChoice()->create([
-            'question_text' => 'Qual é a capital do Brasil?',
-        ]);
-        $correctOption = QuizOption::factory()->for($question, 'question')->correct()->create(['option_text' => 'Brasília']);
-        QuizOption::factory()->for($question, 'question')->incorrect()->create(['option_text' => 'São Paulo']);
-
-        $student = User::factory()->create(['org_id' => null]);
-        $student->assignRole(RolesEnum::ALUNO->value);
-        $course->students()->attach($student->id, ['enrolled_at' => now(), 'status' => 'active']);
-
-        QuizAttempt::factory()->for($quiz)->for($student)->graded()->create();
-
-        $this->browse(function (Browser $browser) use ($student, $lesson, $correctOption): void {
-            $browser->loginAs($student)
-                ->visit(route('student.quizzes.show', $lesson))
+            // 3. Gabarito exibido quando `show_correct_answers` está ligado.
+            $browser->visit(route('student.quizzes.show', $answerKeyLesson))
                 ->waitFor('@quiz-answer-key')
                 ->assertSee('Gabarito')
-                ->assertSeeIn('@answer-key-option-'.$correctOption->id, '(resposta correta)');
+                ->assertSeeIn('@answer-key-option-'.$answerKeyCorrectOption->id, '(resposta correta)');
         });
     }
 }
