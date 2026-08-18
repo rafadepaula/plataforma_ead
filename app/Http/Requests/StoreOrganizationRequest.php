@@ -7,7 +7,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 /**
- * SPEC-04 §2 / RF23 — validates a new Organization submission. Slug is
+ * validates a new Organization submission. Slug is
  * optional here: `OrganizationController::store()` auto-derives it from
  * `name` when absent.
  */

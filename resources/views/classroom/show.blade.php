@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 {{--
-    SPEC-07 RF20 — Classroom entry point for a single Course: the Module /
+    Classroom entry point for a single Course: the Module /
     Lesson tree plus a progress bar bound to `course_user.progress_percentage`.
 
     Expected `ClassroomController@show` contract (Bucket 2):

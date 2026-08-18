@@ -11,12 +11,12 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 /**
- * SPEC-07 RF20 — the two write endpoints behind `student.enrolled`
+ * the two write endpoints behind `student.enrolled`
  * (see `routes/web.php`): manual "Marcar como concluída" clicks
  * (text/PDF/image lessons only) and the video player's 5s progress poll
  * (video lessons only). Both delegate the actual write to
  * `MarkLessonCompleteAction`, the single write path for `lesson_progress`
- * shared with the future SPEC-08 `SubmitQuizAttemptAction`.
+ * shared with the future  `SubmitQuizAttemptAction`.
  */
 class LessonProgressController extends Controller
 {
@@ -25,13 +25,13 @@ class LessonProgressController extends Controller
     /**
      * POST /lessons/{lesson}/complete — manual completion is only valid
      * for text/PDF/image lessons: a `type=quiz` lesson (reserved for
-     * SPEC-08's `SubmitQuizAttemptAction`) or a lesson carrying a
+     * 's `SubmitQuizAttemptAction`) or a lesson carrying a
      * `youtube_url` (which must reach completion via the 90%
      * video-threshold endpoint instead) is rejected with a 422.
      */
     public function complete(Request $request, Lesson $lesson): JsonResponse
     {
-        // SPEC-07 line 32 — an unpublished/draft Lesson does not exist
+        // an unpublished/draft Lesson does not exist
         // from the Aluno's perspective (mirrors `ClassroomController`'s
         // `is_published` filter); Admin/Gestor retain preview access.
         if (! $lesson->is_published && $request->user()->hasRole(RolesEnum::ALUNO->value)) {
@@ -56,7 +56,7 @@ class LessonProgressController extends Controller
      * POST /lessons/{lesson}/progress — the AJAX polling target hit every
      * 5s by `LessonPlayer.js` while a video lesson plays. Only valid for
      * video lessons: a `type=quiz` lesson (checked first, since quiz
-     * completion is reserved for SPEC-08's `SubmitQuizAttemptAction` even
+     * completion is reserved for 's `SubmitQuizAttemptAction` even
      * if malformed data also carries a `youtube_url`) or a lesson with an
      * empty `youtube_url` is rejected with a 422. Below the 90%
      * threshold, persists `watched_seconds` (GREATEST) without
@@ -65,7 +65,7 @@ class LessonProgressController extends Controller
      */
     public function updateProgress(UpdateLessonProgressRequest $request, Lesson $lesson): JsonResponse
     {
-        // SPEC-07 line 32 — an unpublished/draft Lesson does not exist
+        // an unpublished/draft Lesson does not exist
         // from the Aluno's perspective (mirrors `ClassroomController`'s
         // `is_published` filter); Admin/Gestor retain preview access.
         if (! $lesson->is_published && $request->user()->hasRole(RolesEnum::ALUNO->value)) {

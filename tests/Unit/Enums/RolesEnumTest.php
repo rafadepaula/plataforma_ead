@@ -6,7 +6,7 @@ use App\Enums\Permissions\RolesEnum;
 use PHPUnit\Framework\TestCase;
 
 /**
- * SPEC-00 §4 — RolesEnum backs the 3 fundamental Spatie roles and exposes
+ * RolesEnum backs the 3 fundamental Spatie roles and exposes
  * a human-readable label per role.
  */
 class RolesEnumTest extends TestCase

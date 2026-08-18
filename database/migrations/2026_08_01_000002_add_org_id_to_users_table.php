@@ -9,7 +9,7 @@ return new class extends Migration
     /**
      * Run the migrations.
      *
-     * SPEC-00 §2.1.2 — alters the pre-existing base `users` table (added by
+     * alters the pre-existing base `users` table (added by
      * `0001_01_01_000000_create_users_table.php`, intentionally left
      * untouched) with the multitenancy/domain columns. `admin` rows carry
      * `org_id = null`; `gestor` rows always have `org_id` set; `aluno` rows

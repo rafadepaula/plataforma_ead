@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
 
 /**
- * SPEC-07 RF20 — `EnsureStudentIsEnrolled` gates the student-facing
+ * `EnsureStudentIsEnrolled` gates the student-facing
  * classroom/lesson/progress routes. Bucket 2 wires the real routes; this
  * test registers ad-hoc routes behind the `student.enrolled` alias to
  * exercise the middleware in isolation against its fixed contract.

@@ -9,11 +9,10 @@ use Illuminate\Support\Facades\Notification;
 use Throwable;
 
 /**
- * SPEC-13 §2 gatilho 1 — auto-discovered (type-hinted `handle()`
+ * auto-discovered (type-hinted `handle()`
  * parameter). Sends `InvitationSentNotification` to the link creator's
  * e-mail via `Notification::route('mail', $email)` — there is no `User`
- * "invitee" yet to call `->notify()` on. Per SPEC-13 §3/RN, a mail
- * transport failure must never bubble up and abort the request that
+ * "invitee" yet to call `->notify()` on. * transport failure must never bubble up and abort the request that
  * created the `InvitationLink`, so the send is wrapped in try/catch and
  * logged rather than left to propagate.
  */

@@ -5,7 +5,7 @@ namespace App\Exceptions;
 use InvalidArgumentException;
 
 /**
- * SPEC-05 — thrown by `YoutubeSanitizerService::sanitize()` when the given
+ * thrown by `YoutubeSanitizerService::sanitize()` when the given
  * URL is not a genuine `youtube.com`/`youtu.be` link with an extractable
  * 11-character video ID (malformed URLs, non-YouTube domains, and
  * XSS/embed-injection attempts such as `javascript:` URIs all fail the

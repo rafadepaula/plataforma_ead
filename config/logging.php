@@ -123,7 +123,7 @@ return [
             'handler' => NullHandler::class,
         ],
 
-        // SPEC-15 — dedicated channel `AuditService` writes every audit
+        // Dedicated channel `AuditService` writes every audit
         // event to, independent of the DB `audit_logs` copy. Rotation here
         // is governed by `days` below, NOT by `audit.retention_days`
         // (that config only governs the `audit-logs:prune` command's

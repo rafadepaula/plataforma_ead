@@ -1,5 +1,5 @@
 /**
- * QuizBuilder - SPEC-08 RF08 SOLID JavaScript module for the Gestor-facing
+ * QuizBuilder - SOLID JavaScript module for the Gestor-facing
  * dynamic question+options builder used by
  * `resources/views/quizzes/partials/_question-form.blade.php` (rendered
  * once per modal on `quizzes/edit.blade.php` — one "create" instance, one
@@ -18,8 +18,7 @@
  *   validation boundary.
  * - Enforce "at most one correct option" for `single_choice`/`true_false`
  *   by unchecking siblings on click — `multiple_choice` leaves every
- *   `is_correct` checkbox independent (SPEC-08 §1.2's N >= 1 correct
- *   options rule).
+ *   `is_correct` checkbox independent (N >= 1 correct options rule).
  * - Add/remove option rows, cloning the form's own inert `<template>` and
  *   reindexing `options[__INDEX__]` names. Removing a row (persisted or
  *   not) simply drops it from the DOM — `QuizQuestionController::update()`

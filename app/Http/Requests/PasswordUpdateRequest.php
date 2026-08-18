@@ -6,7 +6,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rules\Password;
 
 /**
- * SPEC-18 (UC02) — validates a self-service password change.
+ * validates a self-service password change.
  * `current_password` uses Laravel's native rule, which re-checks the
  * plain value against the authenticated guard's stored hash.
  */

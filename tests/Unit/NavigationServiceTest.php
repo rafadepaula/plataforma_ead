@@ -19,7 +19,7 @@ use Illuminate\Routing\Route;
 use Tests\TestCase;
 
 /**
- * SPEC-17 — `NavigationService::build()` is the single filter/resolution
+ * `NavigationService::build()` is the single filter/resolution
  * gate for the sidebar/topbar. These tests assert the per-role visibility
  * matrix (RN38/RN39), RF36 (no dead `#` links), RF37 (active-pattern
  * highlighting), RF38 (badge counts) and RF39 (contextual forum URL)
@@ -134,9 +134,10 @@ class NavigationServiceTest extends TestCase
         $admin->assignRole(RolesEnum::ADMIN->value);
 
         $this->assertSame(['Administração'], $this->sectionTitlesFor($admin));
-        // `users` is absent here by BUG-005 (no resolvable tenant).
+        // `users` is absent here by BUG-005 (no resolvable tenant);
+        // `admin-users`  is always visible to an Admin.
         $this->assertSame(
-            ['dashboard', 'organizations', 'audit-logs', 'settings'],
+            ['dashboard', 'organizations', 'admin-users', 'audit-logs', 'settings'],
             $this->keysInSection($admin, 'Administração'),
         );
     }
@@ -169,10 +170,11 @@ class NavigationServiceTest extends TestCase
             ['courses', 'quiz-attempts', 'forum-moderation'],
             $this->keysInSection($admin, 'Impersonate'),
         );
-        // The system block keeps its own 5 items (`users` is back because
-        // the impersonated Organization resolves a tenant — BUG-005).
+        // The system block keeps its own items (`users` is back because
+        // the impersonated Organization resolves a tenant — BUG-005;
+        // `admin-users` from  is always visible to an Admin).
         $this->assertSame(
-            ['dashboard', 'organizations', 'users', 'audit-logs', 'settings'],
+            ['dashboard', 'organizations', 'users', 'admin-users', 'audit-logs', 'settings'],
             $this->keysInSection($admin, 'Administração'),
         );
     }

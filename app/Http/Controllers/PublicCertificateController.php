@@ -6,7 +6,7 @@ use App\Models\Certificate;
 use Illuminate\Contracts\View\View;
 
 /**
- * SPEC-09 §2 / RF17 — fully public, unauthenticated, cross-tenant
+ * fully public, unauthenticated, cross-tenant
  * certificate validation (`GET /validar-certificado/{hash}`,
  * `certificates.verify`). `Certificate` carries no `OrgScope` of its own
  * and `Course` (cascade-inherited `OrgScope`) is deliberately read

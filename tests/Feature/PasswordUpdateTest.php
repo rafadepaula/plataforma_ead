@@ -8,7 +8,7 @@ use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
 
 /**
- * SPEC-18 UC02 / RF34 — self-service password change, gated by the
+ * self-service password change, gated by the
  * native `current_password` rule and rate-limited via `throttle:6,1`.
  */
 class PasswordUpdateTest extends TestCase
@@ -96,7 +96,7 @@ class PasswordUpdateTest extends TestCase
     }
 
     /**
-     * SPEC-18 §2 — `throttle:6,1` on `password.update` stops `current_password`
+     * `throttle:6,1` on `password.update` stops `current_password`
      * from being a brute-force oracle against the active session's password.
      */
     public function test_password_update_is_rate_limited_after_six_attempts(): void

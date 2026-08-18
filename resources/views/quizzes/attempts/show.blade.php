@@ -1,5 +1,5 @@
 {{--
-    SPEC-08 §2.1 — Gestor grades every pending `essay` `QuizAnswer` of one
+    Gestor grades every pending `essay` `QuizAnswer` of one
     `QuizAttempt` in a single screen/submission.
     `GradeEssayAnswerAction::finalizeGrading()` (Bucket 1) only recomputes
     `score_percentage`/`status` once **every** essay answer on the attempt

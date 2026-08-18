@@ -6,7 +6,7 @@ use App\Models\AuditLog;
 use Illuminate\Console\Command;
 
 /**
- * SPEC-15 — deletes `audit_logs` rows older than `config('audit.retention_days')`.
+ * deletes `audit_logs` rows older than `config('audit.retention_days')`.
  * Runs `withoutGlobalScopes()` to bypass `AuditLog`'s `OrgScope` — pruning
  * is a global maintenance operation, not scoped to any single tenant (and
  * there's no authenticated user in a scheduled/console context for
@@ -26,7 +26,7 @@ class PruneAuditLogsCommand extends Command
      *
      * @var string
      */
-    protected $description = 'Remove registros de audit_logs mais antigos que audit.retention_days (SPEC-15)';
+    protected $description = 'Remove registros de audit_logs mais antigos que audit.retention_days';
 
     /**
      * Execute the console command.

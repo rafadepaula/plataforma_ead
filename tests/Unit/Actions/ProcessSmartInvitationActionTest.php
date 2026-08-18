@@ -15,7 +15,7 @@ use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
 /**
- * SPEC-06 RF03/RN09 — unit coverage for `ProcessSmartInvitationAction`: the
+ * unit coverage for `ProcessSmartInvitationAction`: the
  * `/convite/{token}` consumption transaction (new-account branch,
  * existing-account branch, link-state guards, and the multi-org
  * no-duplicate-account guarantee).

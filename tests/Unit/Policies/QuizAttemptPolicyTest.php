@@ -14,7 +14,7 @@ use App\Policies\QuizAttemptPolicy;
 use Tests\TestCase;
 
 /**
- * SPEC-08 §2.1 — `QuizAttemptPolicy` gates the Gestor's manual essay
+ * `QuizAttemptPolicy` gates the Gestor's manual essay
  * -grading screen. The "not admin/gestor" branch is already blocked at
  * the `role:admin|gestor` route-middleware layer for every controller
  * that reaches this Policy (see `routes/web.php`), so it is exercised

@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 
 /**
- * SPEC-00 §3 — Eloquent trait applied to every *directly* org-scoped model
+ * Eloquent trait applied to every *directly* org-scoped model
  * (`Course`, `InvitationLink`, `ForumTopic`, `HelpArticle`,
  * `SystemSetting`). Do NOT apply to `User` or to cascade-inherited models
  * (see the `tenancy-architecture` skill for the full list) — those inherit

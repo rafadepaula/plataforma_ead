@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Coverage gate used by SPEC-00 §5 quality guardrails.
+ * Coverage gate used by quality guardrails.
  *
  * Parses storage/coverage/clover.xml, calculates line coverage percentage,
  * and fails (exit code 1) when line coverage drops below the required

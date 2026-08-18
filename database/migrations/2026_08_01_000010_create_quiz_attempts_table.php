@@ -9,7 +9,7 @@ return new class extends Migration
     /**
      * Run the migrations.
      *
-     * SPEC-00 §2.1.10 — `quiz_attempts` cascade-inherited (org implied by
+     * `quiz_attempts` cascade-inherited (org implied by
      * `quizzes` -> ... -> `courses.org_id`).
      */
     public function up(): void

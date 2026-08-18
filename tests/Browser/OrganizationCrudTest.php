@@ -10,7 +10,7 @@ use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 
 /**
- * SPEC-04 §2 / RF23 — E2E coverage for the Organization CRUD screens.
+ * E2E coverage for the Organization CRUD screens.
  *
  * Agrupado por cadeia de ciclo de vida (ver `testing-conventions`): criar →
  * editar → abrir modal de remoção e cancelar → confirmar soft delete é uma

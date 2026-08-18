@@ -8,7 +8,7 @@ use App\Models\Module;
 use App\Models\User;
 
 /**
- * SPEC-05 — `Module` is cascade-inherited and has no `OrgScope` of its own
+ * `Module` is cascade-inherited and has no `OrgScope` of its own
  * (see `courses-architecture`), so this Policy is the only place a
  * cross-tenant Module access attempt (e.g. a Gestor guessing another
  * org's `/courses/{course}/modules/{module}` URL) gets rejected — defense

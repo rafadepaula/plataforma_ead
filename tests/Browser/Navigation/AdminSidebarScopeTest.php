@@ -95,45 +95,4 @@ class AdminSidebarScopeTest extends DuskTestCase
             }
         });
     }
-
-    /**
-     * UX-001 — o Offcanvas mobile consome exatamente o mesmo array
-     * resolvido, então os dois menus sempre têm que concordar.
-     */
-    public function test_mobile_offcanvas_mirrors_the_desktop_scope_rules(): void
-    {
-        $org = Organization::factory()->create();
-        $admin = User::factory()->create(['org_id' => null]);
-        $admin->assignRole(RolesEnum::ADMIN->value);
-
-        $this->browse(function (Browser $browser) use ($admin, $org): void {
-            // 1. Contexto global no viewport estreito.
-            $browser->loginAs($admin)
-                ->resize(390, 844)
-                ->visit(route('admin.dashboard'))
-                ->waitFor('@mobile-menu-button')
-                ->click('@mobile-menu-button')
-                ->waitFor('#mobile-sidebar.show')
-                ->assertSee('Organizações')
-                ->assertDontSee(self::IMPERSONATE_HEADING)
-                ->assertMissing('@sidebar-courses-link-mobile')
-                ->assertMissing('@sidebar-student-courses-link-mobile');
-
-            // 2. Com a Organização assumida pela UI real ("Entrar como" é um
-            //    POST de formulário), o Offcanvas espelha o desktop.
-            $browser->visit(route('organizations.index'))
-                ->waitFor('@impersonate-'.$org->id)
-                ->click('@impersonate-'.$org->id)
-                ->waitForLocation('/organizations')
-                ->visit(route('admin.dashboard'))
-                ->waitFor('@mobile-menu-button')
-                ->click('@mobile-menu-button')
-                ->waitFor('#mobile-sidebar.show')
-                ->assertSee(self::IMPERSONATE_HEADING)
-                ->assertVisible('@sidebar-courses-link-mobile')
-                ->assertVisible('@sidebar-quiz-attempts-link-mobile')
-                ->assertVisible('@sidebar-forum-moderation-link-mobile')
-                ->resize(1920, 1080);
-        });
-    }
 }

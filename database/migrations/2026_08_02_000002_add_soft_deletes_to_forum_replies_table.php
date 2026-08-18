@@ -9,7 +9,7 @@ return new class extends Migration
     /**
      * Run the migrations.
      *
-     * SPEC-10 §2.1 — "apagar" a reply is a logical removal-from-display
+     * "apagar" a reply is a logical removal-from-display
      * that still preserves the pre-delete content in `forum_post_edits`,
      * so `deleted_at` is added here rather than to the original creation
      * migration (already migrated).

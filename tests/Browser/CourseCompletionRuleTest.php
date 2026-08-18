@@ -9,7 +9,7 @@ use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 
 /**
- * UC13 (SPEC-09 §1.1) — E2E coverage of the Gestor's completion-rule CRUD
+ * E2E coverage of the Gestor's completion-rule CRUD
  * screen (`courses.completion-rules.*`).
  *
  * Agrupado por cadeia de ciclo de vida (ver `testing-conventions`): criar a

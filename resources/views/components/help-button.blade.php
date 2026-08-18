@@ -1,5 +1,5 @@
 {{--
-    SPEC-11 (RF12/RN05) — the contextual help button, mounted on every
+    the contextual help button, mounted on every
     authenticated screen (topbar) and every public screen (Landing Page,
     `/convite/*`, `/validar-certificado/*`). The `HelpButton` component
     class already resolved `$article` (org-specific > global > null) —

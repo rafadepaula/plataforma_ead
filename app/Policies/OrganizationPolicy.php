@@ -7,7 +7,7 @@ use App\Models\Organization;
 use App\Models\User;
 
 /**
- * SPEC-04 §2 / RF23 — Organization CRUD is reserved to `role:admin`. Kept
+ * Organization CRUD is reserved to `role:admin`. Kept
  * as an explicit Policy (rather than relying solely on route middleware)
  * so authorization is enforced the same way whether it's reached via a
  * web route, a Blade `@can` check, or a future API endpoint.

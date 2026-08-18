@@ -12,7 +12,7 @@ use App\Models\User;
 use Tests\TestCase;
 
 /**
- * SPEC-10 §2.2/RF26 — `ReportForumPostAction`'s HTTP wiring: any enrolled
+ * `ReportForumPostAction`'s HTTP wiring: any enrolled
  * Aluno or Org Gestor can denounce a topic/reply via `forum-reports.store`,
  * and the Gestor's `GET forum/moderation` (`forum-moderation.index`)
  * queue, scoped to their own Org, exposes "Descartar"

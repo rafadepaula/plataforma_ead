@@ -11,9 +11,8 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
- * SPEC-12 §4 — computes the Admin/Gestor dashboard's stat cards and
- * "Matrículas recentes" table (`spec/docs/mockups/07-dashboard-admin.md`
- * §3/§4).
+ * Computes the Admin/Gestor dashboard's stat cards and
+ * "Matrículas recentes" table.
  *
  * `Certificate` and `course_user` (the `courses`↔`users` pivot) carry no
  * `OrgScope` of their own (cascade-inherited tenancy through `Course` —
@@ -100,7 +99,7 @@ class DashboardMetricsService
     }
 
     /**
-     * SPEC-001 (admin-dashboard-organizations-summary-table) — per-Organization
+     * per-Organization
      * counts for ALL Organizations (Admin-only, non-impersonated view), in a
      * single N+1-free query via correlated subqueries. Zero-filled when an
      * Organization has no related data. Never reads `Auth::user()`/

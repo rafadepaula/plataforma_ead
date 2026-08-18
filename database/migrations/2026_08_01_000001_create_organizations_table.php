@@ -9,7 +9,7 @@ return new class extends Migration
     /**
      * Run the migrations.
      *
-     * SPEC-00 §2.1.1 — `organizations` is the master tenant table.
+     * `organizations` is the master tenant table.
      */
     public function up(): void
     {

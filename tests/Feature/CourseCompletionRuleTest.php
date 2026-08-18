@@ -11,7 +11,7 @@ use App\Models\Quiz;
 use Tests\TestCase;
 
 /**
- * UC13 (SPEC-09 §1.1) — HTTP-layer coverage for
+ * HTTP-layer coverage for
  * `CourseCompletionRuleController`: creating each of the 3 `rule_type`s,
  * `target_id` cross-field validation (required for
  * `min_quiz_score`/`specific_module`, prohibited for `all_lessons`,

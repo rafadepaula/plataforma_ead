@@ -9,7 +9,7 @@ return new class extends Migration
     /**
      * Run the migrations.
      *
-     * SPEC-00 §2.1.14 — `certificates` is cascade-inherited (org implied by
+     * `certificates` is cascade-inherited (org implied by
      * `course_id`/`user_id`). Revocation is logical (`revoked_at`,
      * `revoke_reason`), never a soft-delete of the row: the validation hash
      * must keep resolving publicly with a "Revogado" status.

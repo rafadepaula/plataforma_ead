@@ -10,7 +10,7 @@ use App\Models\User;
  * {@see NavigationService} before reaching the Blade view.
  *
  * Visibility is controlled by three cooperating gates, ALL of which must
- * pass for the item to render (SPEC-17 RN38/RN40 — parity between the
+ * pass for the item to render ( RN38/RN40 — parity between the
  * menu and the route's own `role:`/Policy middleware):
  *
  *  1. `roles`          — non-empty allow-list of Spatie role names
@@ -33,7 +33,7 @@ use App\Models\User;
  *
  * `activePatterns` are `routeIs()` wildcards — e.g. `['users.*']` keeps
  * the "Alunos & Usuários" parent highlighted on `users.create` /
- * `users.edit` sub-routes (SPEC-17 RF37).
+ * `users.edit` sub-routes .
  */
 final class NavigationItem
 {

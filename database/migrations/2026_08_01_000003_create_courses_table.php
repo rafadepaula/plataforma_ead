@@ -9,7 +9,7 @@ return new class extends Migration
     /**
      * Run the migrations.
      *
-     * SPEC-00 §2.1.3 — `courses` is directly org-scoped (`OrgScope` trait
+     * `courses` is directly org-scoped (`OrgScope` trait
      * applies). Deletion guard against active enrollments is enforced at
      * the application layer (Course model / controller), not here.
      */

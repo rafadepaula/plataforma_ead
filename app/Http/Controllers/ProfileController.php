@@ -8,7 +8,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 /**
- * SPEC-18 UC02 / RF34 — self-service profile management, available to any
+ * self-service profile management, available to any
  * authenticated user regardless of role. Unlike `UserController`
  * (Admin/Gestor managing OTHER users), this controller only ever acts on
  * `$request->user()` — there is no `{user}` route param by design (RN08),

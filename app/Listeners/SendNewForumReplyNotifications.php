@@ -11,12 +11,12 @@ use Illuminate\Support\Facades\Log;
 use Throwable;
 
 /**
- * SPEC-13 §2 gatilho 3 — auto-discovered (type-hinted `handle()`
+ * auto-discovered (type-hinted `handle()`
  * parameter). Recipients are the topic author plus every distinct prior
  * replier in the same topic, minus whoever just posted this reply — a
  * `Set`-style dedupe via `unique()` guarantees the topic author, even if
  * they had also replied earlier, gets exactly one notification, not two.
- * Per SPEC-13 §3/RN, each recipient's `->notify()` call is wrapped in its
+ * 's `->notify()` call is wrapped in its
  * own try/catch so one recipient's mail transport failure never prevents
  * the others (or the `database` row `CertificateIssuedNotification`-style
  * channel ordering already guarantees) from being delivered.

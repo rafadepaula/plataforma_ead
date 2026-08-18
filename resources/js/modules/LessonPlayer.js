@@ -1,5 +1,5 @@
 /**
- * LessonPlayer - SPEC-07 RF20 SOLID JavaScript module for the classroom
+ * LessonPlayer - SOLID JavaScript module for the classroom
  * lesson player.
  *
  * Two independent responsibilities, mirroring the two non-quiz completion

@@ -11,8 +11,8 @@ use App\Services\DashboardMetricsService;
 use Tests\TestCase;
 
 /**
- * SPEC-12 §4 — `DashboardMetricsService` computes the mockup's exact stat
- * shape (`spec/docs/mockups/07-dashboard-admin.md` §4). `Certificate` and
+ * `DashboardMetricsService` computes the dashboard stat shape.
+ * `Certificate` and
  * `course_user` carry no `OrgScope` (cascade-inherited through `Course`),
  * so every stat here is filtered by an explicitly-passed `$orgId` via a
  * join through `courses.org_id` — never by relying on an ambient

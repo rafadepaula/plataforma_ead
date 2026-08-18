@@ -9,7 +9,7 @@ return new class extends Migration
     /**
      * Run the migrations.
      *
-     * SPEC-00 §2.1.4 — `course_user` is the multi-org enrollment pivot.
+     * `course_user` is the multi-org enrollment pivot.
      * Intentionally NOT org-scoped: it is how a student enrolls across
      * multiple Organizations.
      */

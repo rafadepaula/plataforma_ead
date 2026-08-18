@@ -11,7 +11,7 @@ use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 
 /**
- * SPEC-09 §2 — E2E coverage of the fully public, unauthenticated
+ * E2E coverage of the fully public, unauthenticated
  * `/validar-certificado/{hash}` page (`certificates.verify`): a "Válido"
  * certificate shows student/course/org/workload/issued_at, a "Revogado"
  * one still responds (never a 404) with the revoked banner + reason

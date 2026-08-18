@@ -5,7 +5,7 @@ namespace App\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * SPEC-08 RF08 — validates updates to an existing Quiz. Same rule shape
+ * validates updates to an existing Quiz. Same rule shape
  * as {@see StoreQuizRequest}.
  */
 class UpdateQuizRequest extends FormRequest

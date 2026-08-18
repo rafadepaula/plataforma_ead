@@ -9,7 +9,7 @@ use App\Models\User;
 use Tests\TestCase;
 
 /**
- * SPEC-06 RF21 — Gestor/Admin panel for manually enrolling and revoking a
+ * Gestor/Admin panel for manually enrolling and revoking a
  * Course's `course_user` rows via `EnrollmentController`. Authorization is
  * against the parent `Course` (`CoursePolicy::update`) since `course_user`
  * is a pivot only — no dedicated `Enrollment` model/policy exists.

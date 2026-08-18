@@ -8,7 +8,7 @@ use App\Services\HelpArticleResolverService;
 use Tests\TestCase;
 
 /**
- * SPEC-11 (RF12/RN05) — `HelpArticleResolverService::resolve()` is the
+ * `HelpArticleResolverService::resolve()` is the
  * single source of truth for the org-specific-first, global-fallback
  * lookup used by the contextual `<x-help-button>`. It must bypass
  * `OrgScope` entirely (both org-specific and global rows must be visible
@@ -82,7 +82,7 @@ class HelpArticleResolverServiceTest extends TestCase
 
     public function test_hard_deleting_the_org_specific_article_falls_back_to_global_on_the_next_resolution(): void
     {
-        // `help_articles` has no soft-deletes (see SPEC-00 §2.1.20's
+        // `help_articles` has no soft-deletes (see  §2.1.20's
         // SoftDelete table list) — removing an org-specific override is a
         // hard delete, and the very next `resolve()` call must cleanly
         // fall back to the global article, with no stale cache.

@@ -12,7 +12,7 @@ class NotificationSeeder extends Seeder
     /**
      * Run the database seeds.
      *
-     * SPEC-16 §2.2 / SPEC-13 — Seeds unread and read database notifications
+     *  §2.2 /  — Seeds unread and read database notifications
      * for users using deterministic UUIDs and firstOrCreate for idempotency.
      */
     public function run(): void

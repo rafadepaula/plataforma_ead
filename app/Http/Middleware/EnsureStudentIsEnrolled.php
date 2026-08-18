@@ -11,7 +11,7 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * SPEC-07 RF20 — gates the student-facing classroom/lesson/progress routes.
+ * gates the student-facing classroom/lesson/progress routes.
  * Resolves the `Course` from either a `{course}` or `{lesson}` route
  * parameter (supporting both bucket-2 route shapes), then:
  *

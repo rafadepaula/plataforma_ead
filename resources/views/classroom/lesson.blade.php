@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 {{--
-    SPEC-07 RF20 — single-lesson player, dispatching by content shape.
+    single-lesson player, dispatching by content shape.
 
     Expected `ClassroomController@showLesson` contract (Bucket 2):
       - `$lesson`         the bound Lesson (with `module.course` loaded).
@@ -10,7 +10,7 @@
                            (video lessons only, used to resume polling state).
 
     Dispatch order matters: `type === 'quiz'` takes priority over any
-    stray `youtube_url`/`pdf_path` (SPEC-07 edge case — malformed data
+    stray `youtube_url`/`pdf_path` (edge case — malformed data
     should never fall through to a completable player for a quiz lesson).
 --}}
 

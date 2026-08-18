@@ -12,7 +12,7 @@ use App\Models\User;
 use Tests\TestCase;
 
 /**
- * SPEC-07 RF19/RF20 — "Meus Cursos" (student.courses.index) grouped by
+ * "Meus Cursos" (student.courses.index) grouped by
  * Organization, and the `student.enrolled`-gated classroom/lesson routes:
  * a multi-org Aluno only sees/accesses Courses they hold an
  * active/completed `course_user` enrollment for, and Admin/Gestor access

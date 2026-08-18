@@ -9,7 +9,7 @@ use App\Models\Quiz;
 use App\Models\User;
 
 /**
- * SPEC-08 RF08 — `Quiz` CRUD, reserved to `role:admin|gestor`. Cascade
+ * `Quiz` CRUD, reserved to `role:admin|gestor`. Cascade
  * -inherited two levels deeper than `Lesson` (`lesson -> module ->
  * course.org_id`), so this mirrors `LessonPolicy::parentCourse()` one
  * level further down.

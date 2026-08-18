@@ -14,7 +14,7 @@ class ForumSeeder extends Seeder
     /**
      * Run the database seeds.
      *
-     * SPEC-16 §2.2 / SPEC-10 — Seeds forum topics (pinned and standard) and replies
+     *  §2.2 /  — Seeds forum topics (pinned and standard) and replies
      * with explicit org_id and withoutEvents() event suppression.
      */
     public function run(): void

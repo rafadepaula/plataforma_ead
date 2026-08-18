@@ -17,7 +17,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
 /**
- * SPEC-10 §2/RF22 — `ForumReply` creation/edit/delete
+ * `ForumReply` creation/edit/delete
  * (`store`/`update`/`destroy`) plus the AJAX `since_id` polling endpoint
  * (`fetchNew`, `throttle:60,1` — see `routes/web.php`). `ForumReply`
  * itself carries no `OrgScope` (cascade-inherited via its `ForumTopic`),
@@ -81,7 +81,7 @@ class ForumReplyController extends Controller
     }
 
     /**
-     * SPEC-10 §2 — `fetchNewReplies` AJAX polling
+     * `fetchNewReplies` AJAX polling
      * (`ForumPolling.js`, every 10s), paginated by `since_id`: only rows
      * with `id > since_id` are ever returned, ordered ascending, capped at
      * 50 per call so a long-idle tab can't pull an unbounded backlog in

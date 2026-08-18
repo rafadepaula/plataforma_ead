@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Password;
 
 /**
- * SPEC-04 RF02 — sends the single-use password-reset token link via the
+ * sends the single-use password-reset token link via the
  * configured SMTP mailer (`config/mail.php`).
  */
 class PasswordResetLinkController extends Controller

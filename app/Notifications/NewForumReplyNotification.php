@@ -10,7 +10,7 @@ use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 /**
- * SPEC-13 §2 gatilho 3 — dispatched by `SendNewForumReplyNotifications`
+ * dispatched by `SendNewForumReplyNotifications`
  * for every recipient (topic author + prior distinct repliers, minus
  * whoever just posted) once per `ForumReply` created. `database` is
  * listed before `mail` in {@see self::via()} so the in-app row is

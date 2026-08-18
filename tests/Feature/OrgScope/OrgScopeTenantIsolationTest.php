@@ -8,7 +8,7 @@ use App\Models\User;
 use Tests\TestCase;
 
 /**
- * SPEC-00 §3 — the OrgScope global scope must transparently isolate every
+ * the OrgScope global scope must transparently isolate every
  * org-scoped query so a user from Org A never sees Org B's rows.
  */
 class OrgScopeTenantIsolationTest extends TestCase

@@ -7,7 +7,7 @@ use App\Models\Course;
 use Illuminate\Http\UploadedFile;
 
 /**
- * SPEC-05 §3 — stores Lesson media (cover images, PDFs) on the `public`
+ * stores Lesson media (cover images, PDFs) on the `public`
  * disk under a per-tenant, per-course isolated path:
  * `storage/app/public/orgs/{org_id}/courses/{course_id}/{images|pdfs}/...`.
  *

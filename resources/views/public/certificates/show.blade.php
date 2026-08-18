@@ -1,5 +1,5 @@
 {{--
-    SPEC-09 §2 — fully public, unauthenticated verification page for
+    fully public, unauthenticated verification page for
     `GET /validar-certificado/{hash}` (`certificates.verify`, rendered by
     `App\Http\Controllers\PublicCertificateController::show()`, Bucket B).
 

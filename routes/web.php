@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\UserAdminController;
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\CertificateController;
 use App\Http\Controllers\ClassroomController;
@@ -34,12 +35,12 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserImportController;
 use Illuminate\Support\Facades\Route;
 
-// SPEC-11 / RF11 — public, unauthenticated Landing Page. Replaces the
+// public, unauthenticated Landing Page. Replaces the
 // Laravel default `welcome` stub; kept outside any `auth` middleware and
 // registered before `auth.php`'s routes.
 Route::get('/', [LandingPageController::class, 'show'])->name('landing.show');
 
-// SPEC-04 §2 / RF23 & UC18 — Organization CRUD + Impersonate Org, both
+// Organization CRUD + Impersonate Org, both
 // reserved to `role:admin` (see `auth-orgs-conventions` skill).
 Route::middleware(['auth', 'role:admin'])->group(function (): void {
     Route::resource('organizations', OrganizationController::class)->except(['show']);
@@ -49,16 +50,27 @@ Route::middleware(['auth', 'role:admin'])->group(function (): void {
     Route::delete('impersonate-org', [ImpersonateOrgController::class, 'destroy'])
         ->name('impersonate-org.destroy');
 
-    // SPEC-15 §5/RF33 — Admin-side audit trail UI. See the `role:gestor`
+    // Admin-side audit trail UI. See the `role:gestor`
     // block below for the Gestor-side counterpart pointing at the same
     // controller methods (see `audit-logs-conventions` for why these are
     // two distinct route names/prefixes rather than one shared
     // `role:admin|gestor` group).
     Route::get('admin/audit-logs', [AuditLogController::class, 'index'])->name('admin.audit-logs.index');
     Route::get('admin/audit-logs/export', [AuditLogController::class, 'export'])->name('admin.audit-logs.export');
+
+    // cross-org, all-roles Admin user-management screen.
+    // Registered here (not the `role:admin|gestor` group below that
+    // serves the operational `users.*` resource) so "inacessível a
+    // Gestores e Alunos" is enforced by middleware, not just the Policy.
+    Route::get('admin/users', [UserAdminController::class, 'index'])->name('admin.users.index');
+    Route::get('admin/users/{user}', [UserAdminController::class, 'show'])->name('admin.users.show');
+    Route::get('admin/users/{user}/edit', [UserAdminController::class, 'edit'])->name('admin.users.edit');
+    Route::put('admin/users/{user}', [UserAdminController::class, 'update'])->name('admin.users.update');
+    Route::patch('admin/users/{user}/status', [UserAdminController::class, 'updateStatus'])->name('admin.users.status');
+    Route::delete('admin/users/{user}', [UserAdminController::class, 'destroy'])->name('admin.users.destroy');
 });
 
-// SPEC-15 §5/RF33 — Gestor-side audit trail UI, same controller as the
+// Gestor-side audit trail UI, same controller as the
 // Admin block above. `AuditLog`'s `OrgScope` global scope restricts a
 // Gestor's query to their own `org_id` automatically.
 Route::middleware(['auth', 'role:gestor'])->group(function (): void {
@@ -75,7 +87,7 @@ Route::middleware(['auth', 'role:admin|gestor'])->group(function (): void {
     Route::resource('users', UserController::class)->except(['show']);
 });
 
-// SPEC-05 §1 / RF06 & RF07 — Course/Module/Lesson CRUD + AJAX reorder,
+// Course/Module/Lesson CRUD + AJAX reorder,
 // restricted to Admin/Gestor (see the `courses-conventions` skill).
 Route::middleware(['auth', 'role:admin|gestor'])->group(function (): void {
     Route::resource('courses', CourseController::class)->except(['show']);
@@ -89,7 +101,7 @@ Route::middleware(['auth', 'role:admin|gestor'])->group(function (): void {
     Route::resource('modules.lessons', LessonController::class)->shallow()->except(['show']);
 });
 
-// SPEC-08 RF08 — Quiz (1:1 with a Lesson) + nested QuizQuestion/QuizOption
+// Quiz (1:1 with a Lesson) + nested QuizQuestion/QuizOption
 // CRUD + reorder, restricted to Admin/Gestor (see the
 // `quizzes-conventions` skill). `quizzes.{create,store}` are reached via
 // `{lesson}` (mirroring `modules.lessons`' shallow nesting one level
@@ -115,7 +127,7 @@ Route::middleware(['auth', 'role:admin|gestor'])->group(function (): void {
     Route::delete('quiz-questions/{quiz_question}', [QuizQuestionController::class, 'destroy'])
         ->name('quiz-questions.destroy');
 
-    // SPEC-08 §2.1 — the Gestor's pending manual-grading queue + grade
+    // the Gestor's pending manual-grading queue + grade
     // action, gated by `QuizAttemptPolicy` rather than a Course/Module
     // /Lesson route parameter.
     Route::get('quiz-attempts/pending', [EssayGradingController::class, 'pending'])->name('quiz-attempts.pending');
@@ -123,7 +135,7 @@ Route::middleware(['auth', 'role:admin|gestor'])->group(function (): void {
     Route::post('quiz-attempts/{quizAttempt}/grade', [EssayGradingController::class, 'grade'])->name('quiz-attempts.grade');
 });
 
-// SPEC-09 §1.2 / RF25 — Gestor/Admin per-course certificate list +
+// Gestor/Admin per-course certificate list +
 // revocation + PDF download, restricted to Admin/Gestor (see the
 // `certificates-conventions` skill). Not a `Route::resource()` —
 // `certificates` has no `create`/`store`/`edit`/`update` staff-facing
@@ -158,7 +170,7 @@ Route::middleware('auth')->group(function (): void {
         ->name('certificates.download');
 });
 
-// SPEC-18 UC02 / RF34 — self-service profile management, available to any
+// self-service profile management, available to any
 // authenticated user regardless of role (no `role:` restriction, unlike
 // most groups in this file). `password.update` is throttled like the
 // existing `routes/auth.php` login/reset endpoints; it must not collide
@@ -172,7 +184,7 @@ Route::middleware('auth')->group(function (): void {
         ->name('password.update');
 });
 
-// SPEC-06 RF03 & RF21 — Invitation Link management + manual enrollment
+// Invitation Link management + manual enrollment
 // panels, restricted to Admin/Gestor (see the `invitations-conventions`
 // skill).
 Route::middleware(['auth', 'role:admin|gestor'])->group(function (): void {
@@ -192,7 +204,7 @@ Route::middleware(['auth', 'role:admin|gestor'])->group(function (): void {
         ->name('courses.enrollments.destroy');
 });
 
-// SPEC-06 RF03/RN09 — public, unauthenticated Smart Invitation flow: a
+// public, unauthenticated Smart Invitation flow: a
 // student joins the platform (or authenticates into an already-existing
 // account, per the multi-org adaptive flow) purely from a
 // `/convite/{token}` link, with no prior session (see the
@@ -203,7 +215,7 @@ Route::middleware('guest')->group(function (): void {
     Route::post('convite/{token}', [InvitationController::class, 'store'])->name('invitation.store');
 });
 
-// SPEC-07 RF19 — "Meus Cursos", the Aluno's own enrollments across every
+// "Meus Cursos", the Aluno's own enrollments across every
 // Organization they belong to. `role:aluno` rather than
 // `student.enrolled` — this listing IS the enrollment data, with no
 // single `{course}`/`{lesson}` route parameter to gate (see
@@ -212,7 +224,7 @@ Route::middleware(['auth', 'role:aluno'])->group(function (): void {
     Route::get('meus-cursos', [StudentCourseController::class, 'index'])->name('student.courses.index');
 });
 
-// SPEC-07 RF20 — the student-facing classroom/lesson/progress routes,
+// the student-facing classroom/lesson/progress routes,
 // gated by `student.enrolled` (registered in `bootstrap/app.php`) rather
 // than `role:aluno`/`CoursePolicy`/`LessonPolicy`: distinct from the
 // Admin/Gestor `modules.lessons` management block above, this middleware
@@ -224,7 +236,7 @@ Route::middleware(['auth', 'student.enrolled'])->group(function (): void {
     Route::post('lessons/{lesson}/complete', [LessonProgressController::class, 'complete'])->name('lessons.complete');
     Route::post('lessons/{lesson}/progress', [LessonProgressController::class, 'updateProgress'])->name('lessons.progress');
 
-    // SPEC-08 RF09 — the Aluno's quiz-taking flow, nested under `{lesson}`
+    // the Aluno's quiz-taking flow, nested under `{lesson}`
     // (never a bare `{quiz}`) so `EnsureStudentIsEnrolled::resolveCourse()`
     // keeps working unmodified (see the `quizzes-architecture` skill).
     // `submit` is a distinct `/quiz/submit` suffix — not the same
@@ -235,7 +247,7 @@ Route::middleware(['auth', 'student.enrolled'])->group(function (): void {
     Route::post('lessons/{lesson}/quiz/submit', [StudentQuizController::class, 'submit'])->name('student.quizzes.submit');
 });
 
-// SPEC-10 §2/RF22/RF26 — the course discussion forum: Topic/Reply CRUD,
+// the course discussion forum: Topic/Reply CRUD,
 // `since_id` AJAX polling, and the "Denunciar" report action, all nested
 // under `{course}` and gated by `student.enrolled` — mirrors the
 // `classroom.*`/`student.quizzes.*` block above's middleware choice since
@@ -243,7 +255,7 @@ Route::middleware(['auth', 'student.enrolled'])->group(function (): void {
 // `EnsureStudentIsEnrolled` middleware). `{topic}`/`{reply}` are plain
 // route parameters, not typed model bindings — see
 // `ForumTopicController`'s docblock for why. `forum-replies.fetch` is the
-// only route in this group carrying its own `throttle:60,1` (SPEC-10 §2),
+// only route in this group carrying its own `throttle:60,1`
 // scoped to just the polling endpoint rather than the whole group so
 // posting/editing/deleting are never throttled by it.
 Route::middleware(['auth', 'student.enrolled'])->prefix('courses/{course}/forum')->group(function (): void {
@@ -265,7 +277,7 @@ Route::middleware(['auth', 'student.enrolled'])->prefix('courses/{course}/forum'
     Route::post('/report', [ForumReportController::class, 'store'])->name('forum-reports.store');
 });
 
-// SPEC-10 §2/§2.2/RF26 — Gestor/Admin-only forum moderation: the direct
+// Gestor/Admin-only forum moderation: the direct
 // pin toggle (independent of any report) and the pending-report queue's
 // dismiss/remove actions, restricted to `role:admin|gestor` rather than
 // `student.enrolled` (mirrors `quiz-attempts.pending`'s same role-gated,
@@ -281,7 +293,7 @@ Route::middleware(['auth', 'role:admin|gestor'])->group(function (): void {
         ->name('forum-moderation.remove');
 });
 
-// SPEC-12 — Admin/Gestor dashboard, CSV export, and org-level system
+// Admin/Gestor dashboard, CSV export, and org-level system
 // settings, restricted to `role:admin|gestor` (no dedicated Policy, see
 // `dashboard-conventions`). The `admin.dashboard` route name is
 // load-bearing: `components/layout/sidebar.blade.php` checks
@@ -298,7 +310,7 @@ Route::middleware(['auth', 'role:admin|gestor'])->group(function (): void {
     Route::put('admin/settings', [SystemSettingController::class, 'update'])->name('settings.update');
 });
 
-// SPEC-13 §Bucket 2 — the AJAX endpoints backing the topbar notification
+// the AJAX endpoints backing the topbar notification
 // bell. `DatabaseNotification` has no Policy/OrgScope of its own, so
 // `NotificationController` manually scopes every query to
 // `$request->user()->notifications()` rather than relying on a route-model
@@ -312,7 +324,7 @@ Route::middleware('auth')->group(function (): void {
         ->name('notifications.read');
 });
 
-// SPEC-09 §2 / RF17 — fully public, cross-tenant certificate validation.
+// fully public, cross-tenant certificate validation.
 // Deliberately OUTSIDE any `auth`/`guest`/`role` group — unlike
 // `convite/*` below (which IS `guest`-gated, since an already
 // -authenticated visitor is redirected away from it), this route must
@@ -322,6 +334,5 @@ Route::middleware('auth')->group(function (): void {
 Route::get('validar-certificado/{hash}', [PublicCertificateController::class, 'show'])
     ->name('certificates.verify');
 
-// SPEC-04 RF01/RF02 — Authentication + Password Reset (see the
-// `auth-orgs-architecture` skill).
+// Authentication + Password Reset routes.
 require __DIR__.'/auth.php';

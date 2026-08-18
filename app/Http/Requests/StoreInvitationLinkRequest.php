@@ -6,7 +6,7 @@ use App\Models\InvitationLink;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * SPEC-06 RF03 — validates generation of an `InvitationLink` for a Course.
+ * validates generation of an `InvitationLink` for a Course.
  * `course_id`/`org_id`/`token`/`created_by` are intentionally absent from
  * these rules: `course_id` is resolved from the route-bound `{course}`
  * segment, `org_id` from `OrgScope::booted()`'s `creating` hook, and

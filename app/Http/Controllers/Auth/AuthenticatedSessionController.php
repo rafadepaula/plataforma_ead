@@ -11,7 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 /**
- * SPEC-04 RF01 — login form, session creation and logout.
+ * login form, session creation and logout.
  */
 class AuthenticatedSessionController extends Controller
 {
@@ -44,7 +44,7 @@ class AuthenticatedSessionController extends Controller
     {
         Auth::guard('web')->logout();
 
-        // Clear any Admin "Impersonate Org" context (SPEC-04 §2) — an
+        // Clear any Admin "Impersonate Org" context  — an
         // impersonated org must never leak into the next session.
         $request->session()->forget('active_org_id');
 

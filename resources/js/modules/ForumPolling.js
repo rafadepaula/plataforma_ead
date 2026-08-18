@@ -1,10 +1,10 @@
 /**
- * ForumPolling - SOLID JavaScript module for SPEC-10 §2's
+ * ForumPolling - SOLID JavaScript module for
  * `fetchNewReplies` AJAX polling: every 10s, fetches only replies newer
  * than the last one already on the page (`since_id`-based, never a full
  * thread refetch) and appends them to the DOM.
  *
- * The spec calls for "jQuery polling", but jQuery is not an installed
+ * Standard polling implementation without jQuery (using native fetch API)
  * dependency of this project (see `package.json` and CLAUDE.md's "don't
  * add dependencies without approval") — same rationale as
  * `ModuleReorder.js`'s native drag-and-drop fallback — so this uses the

@@ -11,7 +11,7 @@ use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 
 /**
- * SPEC-13 §4 (RF28) — E2E coverage of the topbar notification bell:
+ * E2E coverage of the topbar notification bell:
  * visibility is role-gated (gestor/aluno only, never Admin), the badge
  * reflects the unread count, the dropdown lists the 10 most recent
  * notifications (`ORDER BY created_at DESC`), clicking an item marks it
@@ -26,7 +26,7 @@ use Tests\DuskTestCase;
  * Bucket 1's Notification classes aren't the system under test here, so
  * rows are inserted directly via the framework's own
  * `Illuminate\Notifications\DatabaseNotification` model — the same
- * `notifications` table shape any of the 4 SPEC-13 §2 triggers writes to.
+ * `notifications` table shape any of the 4  §2 triggers writes to.
  */
 class NotificationBellTest extends DuskTestCase
 {
@@ -71,7 +71,7 @@ class NotificationBellTest extends DuskTestCase
                 ->waitFor('@notifications-bell')
                 ->assertVisible('@notifications-bell');
 
-            // 3. Admin nunca vê (SPEC-13: Admin não recebe nenhum dos 4 tipos).
+            // 3. Admin nunca vê (: Admin não recebe nenhum dos 4 tipos).
             $browser->loginAs($admin)
                 ->visit(route('admin.dashboard'))
                 ->waitFor('@admin-dashboard')

@@ -1,5 +1,5 @@
 /**
- * NotificationBell - SOLID JavaScript module for SPEC-13 §4's (RF28)
+ * NotificationBell - SOLID JavaScript module for the topbar
  * topbar bell: polls `GET notifications.unread-count` every 30s to keep
  * the badge fresh, wires "marcar todas como lidas" to
  * `PATCH notifications.read-all`, and marks a single notification read

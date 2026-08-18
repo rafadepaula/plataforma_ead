@@ -9,7 +9,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 /**
- * UC13 (SPEC-09 §1.1) — validates creation of a `CourseCompletionRule` for
+ * UC13  — validates creation of a `CourseCompletionRule` for
  * the route-bound `{course}`. `target_id` is a pseudo-polymorphic pointer
  * with no real DB foreign key (see `CourseCompletionRule`'s docblock), so
  * this Request is the only place its integrity is enforced: required for

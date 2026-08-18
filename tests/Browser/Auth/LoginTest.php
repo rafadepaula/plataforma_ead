@@ -10,7 +10,7 @@ use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 
 /**
- * SPEC-04 RF01 — E2E coverage of the login screen (SPEC-00 §5 mandates
+ * E2E coverage of the login screen ( §5 mandates
  * Dusk coverage de todas as telas). Isolamento via `DatabaseTruncation`
  * herdado de `Tests\DuskTestCase` (nunca `RefreshDatabase`, pois o Dusk
  * dirige navegador e app como processos/conexões HTTP separados).

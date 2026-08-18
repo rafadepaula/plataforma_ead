@@ -8,7 +8,7 @@ use App\Models\User;
 use Tests\TestCase;
 
 /**
- * SPEC-18 UC02 / RF34 — any authenticated user managing their own profile
+ * any authenticated user managing their own profile
  * (`name`/`email`/`cpf`). `org_id` and `status` are never mutable via this
  * endpoint (RN08/RN12), unlike the Admin/Gestor-only `UserController`.
  */

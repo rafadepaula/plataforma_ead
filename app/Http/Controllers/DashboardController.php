@@ -8,7 +8,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 
 /**
- * SPEC-12 §4 — `GET /admin/dashboard` (route name `admin.dashboard`,
+ * `GET /admin/dashboard` (route name `admin.dashboard`,
  * see `dashboard-conventions` for why that exact name is load-bearing).
  * Restricted to `role:admin|gestor` (see `routes/web.php`), no dedicated
  * Policy — mirrors the `quiz-attempts.pending`/`forum-moderation.index`

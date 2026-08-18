@@ -12,7 +12,7 @@ use App\Models\User;
 use Tests\TestCase;
 
 /**
- * SPEC-07 RF20 — POST /lessons/{lesson}/complete: manual completion is
+ * POST /lessons/{lesson}/complete: manual completion is
  * only valid for text/PDF/image lessons (never `type=quiz` nor a lesson
  * carrying a `youtube_url`, which must go through the video-threshold
  * endpoint instead).

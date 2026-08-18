@@ -9,7 +9,7 @@ use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
 /**
- * SPEC-00 §4 & SPEC-16 §2.2 — seeds the 3 fundamental Spatie roles
+ *  §4 &  §2.2 — seeds the 3 fundamental Spatie roles
  * (`admin`, `gestor`, `aluno`) and default permissions for the platform.
  */
 class RolesAndPermissionsSeeder extends Seeder

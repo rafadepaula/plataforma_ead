@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\View;
 use Tests\TestCase;
 
 /**
- * SPEC-17 §2 — `NavigationComposer` is bound to the sidebar and topbar
+ * `NavigationComposer` is bound to the sidebar and topbar
  * Blade components and must inject the four shell-only variables they
  * render from. This exercises the composer through Laravel's view
  * factory directly (no HTTP), so it asserts the data contract rather

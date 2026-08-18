@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Route;
 /**
  * Reads the declarative {@see NavigationRegistry} and produces the
  * fully filtered, URL-resolved, badge-enriched list of
- * {@see NavigationSection}s for the acting user (SPEC-17 §2 — the
+ * {@see NavigationSection}s for the acting user ( §2 — the
  * service layer that replaces the previously imperative Blade menu).
  *
  * Filtering pipeline per item (all gates must pass — RN38/RN40 parity

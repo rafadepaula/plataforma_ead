@@ -11,7 +11,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
 
 /**
- * SPEC-06 RF21 — Gestor/Admin panel for manually enrolling/revoking a
+ * Gestor/Admin panel for manually enrolling/revoking a
  * Course's `course_user` rows, nested under `{course}` (`index`/`store`
  * reached via `{course}` alone, `destroy` via `{course}` + `{user}` — not a
  * `Route::resource()`, see `routes/web.php`). No separate `Enrollment`

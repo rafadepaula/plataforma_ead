@@ -1,5 +1,5 @@
 {{--
-    SPEC-15 §5/RF33 — `/admin/audit-logs` (`admin.audit-logs.index`) and
+    `/admin/audit-logs` (`admin.audit-logs.index`) and
     `/gestor/audit-logs` (`gestor.audit-logs.index`), both served by the
     same `App\Http\Controllers\AuditLogController::index()` (Bucket B).
 

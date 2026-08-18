@@ -12,7 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
 /**
- * SPEC-10 §2.2/RF26 — the Gestor/Admin pending-report queue
+ * the Gestor/Admin pending-report queue
  * (`GET forum/moderation`), plus `dismiss`/`remove` per report.
  * Restricted to `role:admin|gestor` (see `routes/web.php`); `ForumReport`
  * carries no `OrgScope` of its own (pseudo-polymorphic, no `org_id`

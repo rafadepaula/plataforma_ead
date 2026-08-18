@@ -11,7 +11,7 @@ use App\Policies\ForumTopicPolicy;
 use Tests\TestCase;
 
 /**
- * SPEC-10 §2/§2.1 — `ForumTopic` is directly `OrgScope`d, but the Policy
+ * `ForumTopic` is directly `OrgScope`d, but the Policy
  * still must gate `view`/`create` to an enrolled Aluno (RN10) or a
  * same-org Gestor/Admin, and reserve `update`/`delete` to the author or a
  * same-org Gestor/Admin (author has no time-limit), and `pin` to

@@ -16,7 +16,7 @@ use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 
 /**
- * SPEC-08 §2.1 — E2E coverage do fluxo do Gestor sobre questionários: fila
+ * E2E coverage do fluxo do Gestor sobre questionários: fila
  * de correções vazia, criação de quiz pela UI, rejeição de questão de
  * escolha única sem gabarito, e correção manual de uma resposta
  * dissertativa (que finaliza a tentativa em `status = graded`).

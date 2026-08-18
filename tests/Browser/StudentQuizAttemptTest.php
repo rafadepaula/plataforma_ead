@@ -16,7 +16,7 @@ use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 
 /**
- * SPEC-08 RF09 — E2E coverage of the Aluno's single-page quiz-taking
+ * E2E coverage of the Aluno's single-page quiz-taking
  * screen: opening it from the classroom's quiz-lesson placeholder,
  * answering every question in one submission, and seeing the resulting
  * grade/lesson-completion feedback.

@@ -1,10 +1,8 @@
 {{--
-    SPEC-08 RF09 — single-page Aluno quiz-taking screen. Visual reference
-    only from `spec/docs/mockups/05-quiz-avaliacao.md` (its per-question,
-    multi-page/`page=` navigation is NOT followed here — SPEC-08 §2's
+    Single-page Aluno quiz-taking screen.
     `SubmitQuizAttemptAction` is a single correction pass over the whole
     attempt, so every question is answered and POSTed together in one
-    request; see this bucket's plan "edge case" note).
+    request.
 
     Nested under `{lesson}` (not a bare `{quiz}`) so
     `EnsureStudentIsEnrolled`'s existing Course-resolution logic (which

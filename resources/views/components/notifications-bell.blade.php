@@ -1,7 +1,7 @@
 {{--
-    SPEC-13 §4 (RF28) — the topbar notification bell. Only visible to
+    the topbar notification bell. Only visible to
     `role:gestor`/`role:aluno` (Admin doesn't receive Org-specific business
-    notifications, see spec §4). Renders the badge (server-side initial
+    notifications\). Renders the badge (server-side initial
     unread count, kept fresh client-side by `NotificationBell.js`'s 30s
     polling of `notifications.unread-count`) and a dropdown with the 10
     most recent `notifications` rows (`ORDER BY created_at DESC`), a

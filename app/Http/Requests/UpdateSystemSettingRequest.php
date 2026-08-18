@@ -5,7 +5,7 @@ namespace App\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * SPEC-12 — validates the `settings.update` submission (SMTP + logo +
+ * validates the `settings.update` submission (SMTP + logo +
  * certificate signature org-override). `smtp_password` is optional: a
  * blank value means "keep the currently stored password" (see
  * `SystemSettingController::update()`), never overwritten with an empty

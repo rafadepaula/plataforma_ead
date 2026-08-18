@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 
 /**
- * SPEC-06 RF03 — Gestor/Admin panel for generating and revoking a
+ * Gestor/Admin panel for generating and revoking a
  * Course's `/convite/{token}` invitation links, nested under `{course}`
  * (shallow — `index`/`create`/`store` reached via `{course}`, `destroy`
  * via `{invitation_link}` alone). `Course`'s own `OrgScope` already keeps

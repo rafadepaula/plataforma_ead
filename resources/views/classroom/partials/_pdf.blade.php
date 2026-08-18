@@ -1,13 +1,7 @@
 {{--
-    SPEC-07 RF20 — PDF lesson. `pdf_path` is stored on the `public` disk by
-    `FileUploadService` (SPEC-05), which is technically reachable by a
-    guessed direct URL — the spec calls for a "download validado" (flagged
-    as an open question in the SPEC-07 technical plan: no dedicated
-    authenticated download route exists yet in `routes/web.php`, which is
-    Bucket 2's file). Until that route lands, this uses `Storage::url()`
-    as the pragmatic fallback rather than a hardcoded public path, so the
-    swap to a controller-streamed route is a one-line change once
-    available.
+    PDF lesson. `pdf_path` is stored on the `public` disk by
+    `FileUploadService`. Uses `Storage::url()` as the fallback to render
+    the PDF in an iframe.
 --}}
 
 <div class="ratio ratio-16x9 mb-4">

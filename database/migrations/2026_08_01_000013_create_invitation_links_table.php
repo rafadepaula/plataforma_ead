@@ -9,7 +9,7 @@ return new class extends Migration
     /**
      * Run the migrations.
      *
-     * SPEC-00 §2.1.13 — `invitation_links` is directly org-scoped
+     * `invitation_links` is directly org-scoped
      * (`OrgScope` trait applies).
      */
     public function up(): void

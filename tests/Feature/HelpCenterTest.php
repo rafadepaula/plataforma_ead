@@ -7,7 +7,7 @@ use App\Models\Organization;
 use Tests\TestCase;
 
 /**
- * SPEC-11 (RF12/RN05) — `<x-help-button>` must be present on every
+ * `<x-help-button>` must be present on every
  * authenticated screen (wired once into `components/layout/topbar.blade.php`,
  * present in every `layouts.app`-based view) across the 3 roles, and must
  * render the resolved `HelpArticle`'s content once opened.

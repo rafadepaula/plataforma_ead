@@ -12,7 +12,7 @@ use App\Models\User;
 use Tests\TestCase;
 
 /**
- * SPEC-10 §2.1/RF27 — the public edit-history contract: every edit writes
+ * the public edit-history contract: every edit writes
  * a `forum_post_edits` row with `previous_content`, and the "ver
  * histórico" modal (rendered by
  * `resources/views/forum/partials/_edit-history-modal.blade.php`) is

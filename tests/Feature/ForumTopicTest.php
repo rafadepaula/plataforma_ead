@@ -11,7 +11,7 @@ use App\Models\User;
 use Tests\TestCase;
 
 /**
- * SPEC-10 RF22/§2 — the Aluno/Gestor-facing forum HTTP layer: topic
+ * the Aluno/Gestor-facing forum HTTP layer: topic
  * list ordering (pinned first), topic/reply CRUD, enrollment gating, and
  * the `fetchNewReplies` since_id-based polling endpoint (§2). Wired
  * against Bucket 2's `forum.*`/`forum-replies.*` route contract:

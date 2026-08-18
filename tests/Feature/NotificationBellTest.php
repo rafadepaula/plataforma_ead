@@ -8,7 +8,7 @@ use Illuminate\Support\Str;
 use Tests\TestCase;
 
 /**
- * SPEC-13 §Bucket 2 — the AJAX endpoints backing the topbar notification
+ * the AJAX endpoints backing the topbar notification
  * bell (unread count, mark-all-read, mark-single-read). Every query is
  * implicitly scoped to `$request->user()->notifications()` (the
  * `Notifiable` trait's `MorphMany`), which already guarantees RN12 (no
@@ -19,7 +19,7 @@ class NotificationBellTest extends TestCase
     /**
      * Inserts a `DatabaseNotification` row directly on the given
      * notifiable, without depending on any concrete `Notification` class
-     * (SPEC-13's Bucket 1 domain classes are implemented independently).
+     * ('s Bucket 1 domain classes are implemented independently).
      */
     protected function createNotification(User $user, ?string $readAt = null, array $data = []): DatabaseNotification
     {

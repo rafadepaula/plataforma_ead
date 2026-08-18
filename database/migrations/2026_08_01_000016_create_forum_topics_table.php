@@ -9,7 +9,7 @@ return new class extends Migration
     /**
      * Run the migrations.
      *
-     * SPEC-00 §2.1.16 — `forum_topics` is directly org-scoped (`OrgScope`
+     * `forum_topics` is directly org-scoped (`OrgScope`
      * trait applies).
      */
     public function up(): void

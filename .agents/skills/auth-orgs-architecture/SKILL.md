@@ -15,6 +15,7 @@ metadata:
   specs:
     - spec/specs/04-auth-profile-organizations-and-user-management.md
     - spec/specs/00-architecture-database-and-guardrails.md
+    - spec/to_refine/specs/SPEC-002-admin-global-user-management-screen.md
 ---
 
 # Auth + Orgs Architecture
@@ -75,9 +76,22 @@ Uses Laravel's password broker (`Illuminate\Auth\Passwords`), not a custom token
 - Reset tests use `Notification::fake()` + `Notification::assertSentTo($user, ResetPasswordNotification::class, fn ($n) => ...)` to pull the real `$notification->token` and drive the form (`tests/Feature/Auth/PasswordResetTest.php`). Never assert a hardcoded token.
 - Dusk (`tests/Browser/Auth/LoginTest.php`) declares no DB trait — `DatabaseTruncation` comes from `Tests\DuskTestCase` (never `RefreshDatabase`; Dusk drives a separate HTTP process). Targets `dusk="login-*"` attributes, not CSS classes.
 
+## SPEC-002 — Global Admin User-Management Screen (`admin.users.*`)
+
+The operational `users.index` (above/`UserController`) is single-Organization by design: `ResolvesOrgContext` throws `UnresolvedOrgContextException` for an Admin with no `session('active_org_id')`, and the query is hard-scoped to `aluno`/`gestor`. SPEC-002 adds a **second, deliberately separate** screen — `admin/users` (`admin.users.index|show|edit|update|status|destroy`) — for cross-org administration of all three roles (admin/gestor/aluno), registered inside the `role:admin`-only route group (not `role:admin|gestor`), so Gestor/Aluno are blocked by middleware first, Policy second.
+
+`App\Http\Controllers\Admin\UserAdminController` does **not** extend `UserController` and does **not** use `ResolvesOrgContext` — the listing is global by definition (no `org_id` is ever resolved from the acting Admin's session; `org_id` only appears as an optional *filter* from the request). It reuses `User`/`RolesEnum`/the `user.status_changed` audit event, but is otherwise a fully independent controller/request/view stack from Bucket B/C of SPEC-04.
+
+Authorization is a second, parallel set of `UserPolicy` abilities — `viewAnyGlobal`/`viewGlobal`/`updateGlobal`/`deleteGlobal` — plain `hasRole(ADMIN)` checks with **no** `sharesOrgContext()` involved (an Admin here acts globally, there is nothing to compare `org_id` against). The existing `sharesOrgContext()`-driven `viewAny`/`view`/`update`/`delete` abilities that gate the operational screen are untouched, so relaxing global admin access can never accidentally loosen multi-tenant isolation on `users.index`. `deleteGlobal` additionally blocks self-deletion (`$user->id !== $model->id`); `UserAdminController::update()`/`updateStatus()` separately guard against self-deactivation and self-demotion-from-admin in the controller body (403, not validation).
+
+`destroy()` performs two pre-flight existence checks before the hard delete, since `users` has no `deleted_at` and both FKs are `ON DELETE RESTRICT`: `certificates.user_id` (`UserHasIssuedCertificatesException`) and `invitation_links.created_by` (`UserHasCreatedInvitationLinksException`, checked with `withoutGlobalScope('org')` since `InvitationLink` **is** `OrgScope`d and an Admin with no active impersonation would otherwise miss links from other Organizations). Both exist to turn a raw 500 `QueryException` into a friendly, catchable error.
+
+`UpdateUserAdminRequest` (distinct from `UpdateUserRequest`) is the "full profile" editor: `role` accepts all 3 `RolesEnum` values (not just aluno/gestor), and `org_id` is editable — required unless `role === 'admin'`, forced to `null` in `prepareForValidation()` whenever `role === 'admin'` regardless of what stale value the form posted.
+
 ## Related
 
 - `tenancy-architecture` — `RolesEnum`, `OrgScope`, Impersonate Org. Assumed here.
-- `auth-orgs-conventions` — controller/policy/form-request conventions for Org CRUD, User CRUD, CSV Import (SPEC-04 Buckets B/C).
-- `auth-orgs-maintenance` — RN09 edge cases, coverage checklist.
+- `auth-orgs-conventions` — controller/policy/form-request conventions for Org CRUD, User CRUD, CSV Import (SPEC-04 Buckets B/C), and the SPEC-002 global-admin patterns.
+- `auth-orgs-maintenance` — RN09 edge cases, coverage checklist, SPEC-002 test contract.
 - `spec/specs/04-auth-profile-organizations-and-user-management.md` — RF01/RF02/RF23/RF04/RF05.
+- `spec/to_refine/specs/SPEC-002-admin-global-user-management-screen.md` — global Admin user-management screen.

@@ -8,7 +8,7 @@ use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 /**
- * SPEC-00 §4 — seeds exactly the 3 fundamental, global (non-team-scoped)
+ * seeds exactly the 3 fundamental, global (non-team-scoped)
  * roles backing `RolesEnum`.
  */
 class RolesAndPermissionsSeederTest extends TestCase

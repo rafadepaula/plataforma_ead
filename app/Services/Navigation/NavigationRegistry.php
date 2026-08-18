@@ -14,8 +14,8 @@ use Illuminate\Support\Facades\Route;
  * Route names here MUST mirror the registered `routes/web.php` names —
  * never the legacy `admin.students.index` / `admin.courses.index` /
  * `student.forum.index` names that previously degraded to dead `#`
- * links (SPEC-17 RF36). The official item/route/active-pattern matrix
- * is the single source of truth documented in SPEC-17 §3.
+ * links . The official item/route/active-pattern matrix
+ * is the single source of truth documented in  §3.
  */
 final class NavigationRegistry
 {
@@ -82,13 +82,28 @@ final class NavigationRegistry
                 // rather than offering a link that dead-ends in a
                 // `back()` + "Selecione uma Organização ativa" flash
                 // (RN38/RN40). The cross-org administration screen is
-                // separate, future work (SPEC-002).
+                // separate, future work .
                 route: 'users.index',
                 activePatterns: ['users.*'],
                 icon: $this->usersIcon(),
                 roles: self::ADMIN_GESTOR,
                 section: 'Administração',
                 routeResolver: fn ($user) => $this->resolveUsersRoute($user),
+            ),
+            // cross-org, all-roles Admin user-management
+            // screen. Distinct from `users.index` above (which stays
+            // operational, single-org, aluno/gestor only): this item
+            // belongs to the reduced Admin-only set UX-001 keeps in
+            // "Administração", never the "Impersonate" section, so
+            // `roles` is `['admin']` only (no Gestor).
+            new NavigationItem(
+                key: 'admin-users',
+                label: 'Usuários do Sistema',
+                route: 'admin.users.index',
+                activePatterns: ['admin.users.*'],
+                icon: $this->usersIcon(),
+                roles: ['admin'],
+                section: 'Administração',
             ),
             // ── Operação da Organização ──────────────────────────────
             // UX-001 — the three items below act *inside* one

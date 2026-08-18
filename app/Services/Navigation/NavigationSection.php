@@ -7,7 +7,7 @@ namespace App\Services\Navigation;
  * "Sistema") holding its already-filtered {@see NavigationItem}s. Built
  * by {@see NavigationService::build()} after per-item access checks;
  * sections with zero visible items are dropped entirely so the Blade
- * `@foreach` never emits an empty heading (SPEC-17 RN38).
+ * `@foreach` never emits an empty heading .
  */
 final class NavigationSection
 {

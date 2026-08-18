@@ -17,7 +17,7 @@ use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
 /**
- * SPEC-08 §2 — `SubmitQuizAttemptAction`'s correction engine: RN02/RN03
+ * `SubmitQuizAttemptAction`'s correction engine: RN02/RN03
  * exact-set correctness for `single_choice`/`multiple_choice`/
  * `true_false`, RN11's `essay` -> `awaiting_manual_grading` branch, and
  * the lesson-completion handoff to `MarkLessonCompleteAction` on a

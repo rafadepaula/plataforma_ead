@@ -9,7 +9,7 @@ use App\Models\User;
 use Tests\TestCase;
 
 /**
- * SPEC-00 §3 — the mandatory guardrail test for the OrgScope trait's
+ * the mandatory guardrail test for the OrgScope trait's
  * `booted::creating` hook: creating a scoped model must never silently
  * persist `org_id = null` when neither the acting user's `org_id` nor
  * `session('active_org_id')` can resolve a tenant.

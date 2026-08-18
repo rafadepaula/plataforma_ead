@@ -9,7 +9,7 @@ use App\Models\User;
 use Tests\TestCase;
 
 /**
- * SPEC-17 RN38/RN40 — the rendered sidebar/topbar HTML must NEVER leak
+ * the rendered sidebar/topbar HTML must NEVER leak
  * a link to a route the acting user cannot access. These tests log in
  * as each role and load a real authenticated page, then assert the
  * presence/absence of restricted URLs in the served HTML — covering

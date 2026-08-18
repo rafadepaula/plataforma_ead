@@ -11,7 +11,7 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
- * SPEC-15 §5/RF33 — read/query surface for the audit trail, served at
+ * read/query surface for the audit trail, served at
  * both `/admin/audit-logs` (`admin.audit-logs.index`) and
  * `/gestor/audit-logs` (`gestor.audit-logs.index`) — two distinct routes
  * pointing at the same controller methods (see `routes/web.php` and

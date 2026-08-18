@@ -12,7 +12,7 @@ use App\Models\User;
 use Tests\TestCase;
 
 /**
- * SPEC-10 §2.2 — `forum_post_edits`/`forum_reports` intentionally have no
+ * `forum_post_edits`/`forum_reports` intentionally have no
  * DB FK/morphTo for `postable_type`/`postable_id`; `postable()` resolves
  * the pseudo-polymorphic pair at the application layer, including a
  * soft-deleted target (moderation must not crash on it — see the plan's

@@ -86,7 +86,7 @@ class LessonController extends Controller
 
         $module = $lesson->module;
 
-        // SPEC-15 §3 — captured BEFORE the delete so title/id are
+        // captured BEFORE the delete so title/id are
         // available; see `CourseController::destroy()` for the
         // `AuditableTrait` double-audit note.
         try {
@@ -107,7 +107,7 @@ class LessonController extends Controller
             report($e);
         }
 
-        // SPEC-00 — soft-delete only; `lesson_progress` rows must never be
+        // soft-delete only; `lesson_progress` rows must never be
         // cascade-purged by this action (see `courses-architecture`).
         $lesson->delete();
 

@@ -15,7 +15,7 @@ use Illuminate\Validation\Rule;
  * `{module}` segment by `LessonController::store()`, never trusted from
  * request input.
  *
- * SPEC-08 owns quiz question authoring; this form only exposes
+ *  owns quiz question authoring; this form only exposes
  * `type = content` fields (Rich Text / Imagem / PDF / YouTube — RF07's
  * four supported content kinds), all optional/nullable so a Gestor can
  * fill in exactly one of them.

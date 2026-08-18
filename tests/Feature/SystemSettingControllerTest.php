@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 /**
- * SPEC-12 — `GET`/`PUT /admin/settings` (`settings.edit`/`settings.update`).
+ * `GET`/`PUT /admin/settings` (`settings.edit`/`settings.update`).
  * A Gestor reads/writes their own Organization's override row, an Admin
  * with no active Impersonate Org session reads/writes the global row, an
  * Aluno is forbidden entirely, and a blank `smtp_password` never

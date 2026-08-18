@@ -1,5 +1,5 @@
 {{--
-    SPEC-10 §2.1 — the "Editado em {edited_at}" badge + "ver histórico"
+    the "Editado em {edited_at}" badge + "ver histórico"
     modal. Visible to ANY user with access to the topic (not just the
     author or a Gestor/Admin) per §2.1's transparency requirement, so this
     partial applies no authorization check of its own — the parent

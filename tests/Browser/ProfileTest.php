@@ -8,7 +8,7 @@ use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 
 /**
- * SPEC-18 (UC02/RF01/RF34) — E2E coverage of the profile self-service
+ * E2E coverage of the profile self-service
  * screen (`profile.edit`/`profile.update`/`password.update`).
  *
  * Agrupado por cadeia de ciclo de vida (ver `testing-conventions`): a

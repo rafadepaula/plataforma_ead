@@ -17,7 +17,7 @@ use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
 /**
- * SPEC-08 §1.3 — `allow_retries`/`max_attempts`/`time_limit_minutes`
+ * `allow_retries`/`max_attempts`/`time_limit_minutes`
  * enforcement inside `SubmitQuizAttemptAction`.
  */
 class QuizAttemptLimitsTest extends TestCase
@@ -122,7 +122,7 @@ class QuizAttemptLimitsTest extends TestCase
         // Crafted directly (bypassing the Action's own started_at
         // stamping) so `completed_at - started_at` exceeds
         // `time_limit_minutes`, exercising `finalizeGrading()`'s
-        // computed-on-read time check (SPEC-08 §1.3 — an over-limit
+        // computed-on-read time check ( §1.3 — an over-limit
         // submission is accepted, only `is_passed` is forced to `false`).
         $attempt = QuizAttempt::factory()
             ->for($quiz)

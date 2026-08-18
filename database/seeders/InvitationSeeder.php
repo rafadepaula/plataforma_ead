@@ -13,7 +13,7 @@ class InvitationSeeder extends Seeder
     /**
      * Run the database seeds.
      *
-     * SPEC-16 §2.2 / SPEC-06 — Seeds active and expired InvitationLink records for test
+     *  §2.2 /  — Seeds active and expired InvitationLink records for test
      * organizations using explicit org_id and withoutEvents() event suppression.
      */
     public function run(): void

@@ -9,7 +9,7 @@ use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 
 /**
- * SPEC-11 (RF12/RN05) — E2E coverage of the contextual Help Center.
+ * E2E coverage of the contextual Help Center.
  *
  * Agrupado por cadeia de ciclo de vida (ver `testing-conventions`): a
  * jornada do botão de ajuda na tela "Meus Cursos" — sem artigo (placeholder)

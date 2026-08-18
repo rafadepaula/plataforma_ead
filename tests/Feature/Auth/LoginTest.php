@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\RateLimiter;
 use Tests\TestCase;
 
 /**
- * SPEC-04 RF01 — e-mail+password login (bcrypt) with Spatie role
+ * e-mail+password login (bcrypt) with Spatie role
  * verification, `status=active` gate and rate limiting.
  */
 class LoginTest extends TestCase

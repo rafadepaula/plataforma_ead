@@ -11,7 +11,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 
 /**
- * SPEC-07 RF20 — the student-facing classroom: a Course's module/lesson
+ * the student-facing classroom: a Course's module/lesson
  * tree with per-lesson completion state (`show`), and the individual
  * lesson player (`showLesson`). Both routes sit behind the
  * `student.enrolled` middleware (see `routes/web.php`) — distinct from
@@ -72,7 +72,7 @@ class ClassroomController extends Controller
     {
         $user = $request->user();
 
-        // SPEC-07 line 32 — an unpublished/draft Lesson does not exist
+        // an unpublished/draft Lesson does not exist
         // from the Aluno's perspective (mirrors `show()`'s `is_published`
         // filter on the module's lessons); Admin/Gestor retain preview
         // access for course management purposes.

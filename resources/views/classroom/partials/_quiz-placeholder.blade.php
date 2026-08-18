@@ -1,5 +1,5 @@
 {{--
-    SPEC-07 RF20 / SPEC-08 RF09 — quiz lessons hand off to the dedicated
+    quiz lessons hand off to the dedicated
     student quiz-taking screen (`StudentQuizController@show`), which owns
     completion via `SubmitQuizAttemptAction`/`MarkLessonCompleteAction`
     (`completion_source = quiz_passed`). No "Marcar como concluída"

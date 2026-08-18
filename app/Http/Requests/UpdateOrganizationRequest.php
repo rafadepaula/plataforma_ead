@@ -6,7 +6,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 /**
- * SPEC-04 §2 / RF23 — validates an Organization update. Uniqueness rules
+ * validates an Organization update. Uniqueness rules
  * ignore the current record (route-bound `organization`).
  */
 class UpdateOrganizationRequest extends FormRequest

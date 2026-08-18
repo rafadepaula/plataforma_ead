@@ -10,7 +10,7 @@ use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 
 /**
- * SPEC-12 — E2E coverage of the Admin/Gestor Dashboard: KPI stat cards +
+ * E2E coverage of the Admin/Gestor Dashboard: KPI stat cards +
  * recent-enrollments table, the Organizations summary table (Admin-only,
  * global context), the CSV export entry point, and the settings screen.
  *

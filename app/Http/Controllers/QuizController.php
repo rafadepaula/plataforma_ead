@@ -11,7 +11,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
 
 /**
- * SPEC-08 RF08 — Gestor CRUD of the 1:1 Lesson<->Quiz, reserved to
+ * Gestor CRUD of the 1:1 Lesson<->Quiz, reserved to
  * `role:admin|gestor` (see `routes/web.php` and `QuizPolicy`).
  * `quizzes.lesson_id` is UNIQUE at the schema level — `create()`/`store()`
  * both guard against a Lesson that already has a Quiz with a redirect

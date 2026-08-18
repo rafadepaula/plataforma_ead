@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 /**
- * SPEC-16 §4.3 — PHPUnit Feature test verifying that running seeders in
+ * PHPUnit Feature test verifying that running seeders in
  * development/testing environment creates all expected records across feature
  * entities (InvitationLinks, Certificates, ForumTopics, ForumReplies, DatabaseNotifications)
  * with explicit org_id binding, idempotency, and proper event/mail suppression.

@@ -7,7 +7,7 @@ use App\Services\AuditService;
 use Illuminate\Auth\Events\Login;
 
 /**
- * SPEC-15 §3 — auto-discovered (no `EventServiceProvider` in this
+ * auto-discovered (no `EventServiceProvider` in this
  * codebase, see `audit-logs-architecture`) listener for the stock
  * `Illuminate\Auth\Events\Login` event, fired on every successful
  * authentication. Logs `login.success` with the actual password value

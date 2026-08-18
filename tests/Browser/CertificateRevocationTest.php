@@ -12,7 +12,7 @@ use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 
 /**
- * SPEC-09 §1.2/RF25 — E2E coverage: a Gestor revokes a certificate from
+ * E2E coverage: a Gestor revokes a certificate from
  * `courses/{course}/certificates` (`courses.certificates.index`), the
  * `revoke_reason` min:10 validation blocks a too-short reason, and the
  * resulting public verification page immediately reflects the revoked

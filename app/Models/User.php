@@ -43,7 +43,7 @@ class User extends Authenticatable
     }
 
     /**
-     * Send the password reset notification (SPEC-04 RF02 — overridden to
+     * Send the password reset notification ( RF02 — overridden to
      * use the localized `ResetPasswordNotification` instead of the
      * framework's default English copy).
      */
@@ -79,6 +79,14 @@ class User extends Authenticatable
     }
 
     /**
+     * @return HasMany<InvitationLink, $this>
+     */
+    public function createdInvitationLinks(): HasMany
+    {
+        return $this->hasMany(InvitationLink::class, 'created_by');
+    }
+
+    /**
      * @return HasMany<QuizAttempt, $this>
      */
     public function quizAttempts(): HasMany
@@ -95,7 +103,7 @@ class User extends Authenticatable
     }
 
     /**
-     * SPEC-07 RF20 — used by `EnsureStudentIsEnrolled` to gate an Aluno's
+     * used by `EnsureStudentIsEnrolled` to gate an Aluno's
      * access to a Course's classroom/lesson/progress routes. Reads the
      * `course_user` pivot bypassing `Course`'s `OrgScope` (mirrors
      * `ProcessSmartInvitationAction`'s convention) — a `cancelled` status
@@ -111,7 +119,7 @@ class User extends Authenticatable
     }
 
     /**
-     * SPEC-08 §1.3/RN04 — multiple attempts are always considered by
+     * multiple attempts are always considered by
      * their best score: `MAX(score_percentage)` across this student's
      * `graded` attempts of the given Quiz (an `awaiting_manual_grading`
      * or `in_progress` attempt is excluded — only a fully graded attempt

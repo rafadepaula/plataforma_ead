@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
 /**
- * SPEC-06 RF03/RN09 — consumes an `InvitationLink`: creates (or
+ * consumes an `InvitationLink`: creates (or
  * authenticates) the `User`, enrolls them into the link's `course_id`, and
  * auto-logs them in. Runs inside a `lockForUpdate` transaction so two
  * concurrent requests against the same link at exactly `max_uses` cannot

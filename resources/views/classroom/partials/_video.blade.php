@@ -1,8 +1,7 @@
 {{--
-    SPEC-07 RF20 — video lesson. BUG-002: this view no longer trusts the
-    stored format. `youtube_url` *should* already be in sanitized embed form
-    (`YoutubeSanitizerService`, SPEC-05), but nothing in the database enforces
-    that, so the video id is resolved through `Lesson::$youtube_video_id` —
+    Video lesson. Resolves the video id through `Lesson::$youtube_video_id` —
+    which accepts `embed/`, `watch?v=` and `youtu.be/` alike and returns
+    `null` for anything unrecognizable.
     which accepts `embed/`, `watch?v=` and `youtu.be/` alike and returns
     `null` for anything unrecognizable. When it is `null` we degrade to an
     explicit notice instead of emitting an `<iframe>` YouTube would refuse to

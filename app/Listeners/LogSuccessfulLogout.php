@@ -7,7 +7,7 @@ use App\Services\AuditService;
 use Illuminate\Auth\Events\Logout;
 
 /**
- * SPEC-15 §3 — auto-discovered listener for the stock
+ * auto-discovered listener for the stock
  * `Illuminate\Auth\Events\Logout` event.
  */
 class LogSuccessfulLogout

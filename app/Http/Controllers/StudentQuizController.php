@@ -11,7 +11,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Validation\ValidationException;
 
 /**
- * SPEC-08 RF09 — the Aluno's quiz-taking flow, behind `student.enrolled`
+ * the Aluno's quiz-taking flow, behind `student.enrolled`
  * (see `routes/web.php`) and nested under `{lesson}` (not a bare
  * `{quiz}`) so `EnsureStudentIsEnrolled`'s existing Course-resolution
  * logic keeps working unmodified. The UI is a single-page form — `show()`

@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Log;
 use Throwable;
 
 /**
- * SPEC-09 §1.1 — the certificate-eligibility engine, called synchronously
+ * the certificate-eligibility engine, called synchronously
  * by `IssueCertificateOnCourseCompletion` (`QUEUE_CONNECTION=sync`) right
  * after `CourseCompletedByStudent` fires. Evaluates **every**
  * `course_completion_rules` row of the Course — all 3 `rule_type`s must
@@ -68,12 +68,11 @@ class IssueCertificateAction
                 ->first();
         }
 
-        // SPEC-13 §2 gatilho 2 — only a genuine insert fires the
+        // only a genuine insert fires the
         // notification; `firstOrCreate`'s idempotent re-fetch of an
         // already-existing row (e.g. a later progress recalculation for a
         // student who was already issued a certificate) must never
-        // re-notify. Per SPEC-13 §3/RN, a mail transport failure must
-        // never bubble up and roll back the caller's business transaction,
+        // re-notify. 's business transaction,
         // so the send is wrapped in try/catch and logged rather than left
         // to propagate.
         if ($certificate->wasRecentlyCreated) {
@@ -86,7 +85,7 @@ class IssueCertificateAction
                 ]);
             }
 
-            // SPEC-15 §3 — only a genuine issuance is audited, mirroring
+            // only a genuine issuance is audited, mirroring
             // the notification's own `wasRecentlyCreated` guard above.
             try {
                 AuditService::log(

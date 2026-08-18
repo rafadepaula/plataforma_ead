@@ -7,7 +7,7 @@ use App\Services\AuditService;
 use Illuminate\Auth\Events\PasswordReset;
 
 /**
- * SPEC-15 §3 — auto-discovered listener for the stock
+ * auto-discovered listener for the stock
  * `Illuminate\Auth\Events\PasswordReset` event, fired by
  * `NewPasswordController::store()` once the single-use reset token is
  * consumed. Covers the completion stage only — see

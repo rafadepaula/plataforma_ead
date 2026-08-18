@@ -12,7 +12,7 @@ use Laravel\Dusk\TestCase as BaseTestCase;
 use PHPUnit\Framework\Attributes\BeforeClass;
 
 /**
- * SPEC-14 / RN13 — dev-DB isolation for the Dusk suite.
+ * dev-DB isolation for the Dusk suite.
  *
  * `vendor/bin/sail dusk` (Laravel\Dusk\Console\DuskCommand) natively backs
  * up the running `.env`, swaps in `.env.dusk.{app.environment}` — which

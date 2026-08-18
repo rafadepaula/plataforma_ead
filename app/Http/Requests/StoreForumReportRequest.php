@@ -8,7 +8,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 /**
- * SPEC-10 §2.2/RF26 — payload for the "Denunciar" button
+ * payload for the "Denunciar" button
  * (`POST courses/{course}/forum/report`, `ForumReportModal.js`).
  * `postable_type` is the short string `forum_topic`/`forum_reply` the
  * view/JS use (the button's own `data-postable-type` attribute) —

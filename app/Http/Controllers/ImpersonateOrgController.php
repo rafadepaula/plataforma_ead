@@ -10,12 +10,12 @@ use Illuminate\Validation\ValidationException;
 use Throwable;
 
 /**
- * SPEC-04 §2 / UC18 — lets an Admin set/clear `session('active_org_id')`,
+ * lets an Admin set/clear `session('active_org_id')`,
  * which `OrgScope` reads to filter every org-scoped model to a single
  * Organization (see `tenancy-architecture` skill). Route access is
  * restricted to `role:admin` (see `routes/web.php`).
  *
- * SPEC-15 §3 — `impersonate.start`/`impersonate.stop` are audited here
+ * `impersonate.start`/`impersonate.stop` are audited here
  * (not via `AuditableTrait`, since no model mutation happens — only the
  * session). Audit failures never break the primary flow (see
  * `audit-logs-conventions`).

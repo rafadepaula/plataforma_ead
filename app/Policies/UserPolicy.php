@@ -62,4 +62,38 @@ class UserPolicy
 
         return false;
     }
+
+    /**
+     * cross-org abilities for the global Admin user-management
+     * screen (`admin.users.*`). Deliberately separate from
+     * {@see self::viewAny()}/{@see self::view()}/{@see self::update()}/
+     * {@see self::delete()} above, which stay driven by
+     * {@see self::sharesOrgContext()} for the operational `users.*`
+     * screen — an Admin is global by definition here, so there is no
+     * `session('active_org_id')`/`org_id` comparison to make.
+     */
+    public function viewAnyGlobal(User $user): bool
+    {
+        return $user->hasRole(RolesEnum::ADMIN->value);
+    }
+
+    public function viewGlobal(User $user, User $model): bool
+    {
+        return $user->hasRole(RolesEnum::ADMIN->value);
+    }
+
+    public function updateGlobal(User $user, User $model): bool
+    {
+        return $user->hasRole(RolesEnum::ADMIN->value);
+    }
+
+    /**
+     * An Admin may not delete their own account from this screen — doing
+     * so would let them lock themselves out of the platform with no
+     * other Admin necessarily available to undo it.
+     */
+    public function deleteGlobal(User $user, User $model): bool
+    {
+        return $user->hasRole(RolesEnum::ADMIN->value) && $user->id !== $model->id;
+    }
 }

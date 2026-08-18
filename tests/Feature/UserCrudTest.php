@@ -132,7 +132,7 @@ class UserCrudTest extends TestCase
      * safely: the strict `ResolvesOrgContext` resolution stays in place
      * and the global handler turns it into a `back()` + flash error,
      * never a 500 and never a cross-org listing (that screen belongs to
-     * SPEC-002).
+     * ).
      */
     public function test_admin_without_active_org_context_is_redirected_back_from_the_users_index(): void
     {

@@ -3,7 +3,7 @@
 namespace App\Enums\Permissions;
 
 /**
- * SPEC-00 §4 — the 3 fundamental Spatie roles for the platform.
+ * the 3 fundamental Spatie roles for the platform.
  */
 enum RolesEnum: string
 {

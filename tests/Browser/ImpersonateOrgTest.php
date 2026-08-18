@@ -9,7 +9,7 @@ use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 
 /**
- * SPEC-04 §2 / UC18 — E2E coverage for the "Entrar como" (Impersonate Org)
+ * E2E coverage for the "Entrar como" (Impersonate Org)
  * flow from the Organizations index.
  */
 class ImpersonateOrgTest extends DuskTestCase

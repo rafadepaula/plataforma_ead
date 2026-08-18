@@ -6,7 +6,7 @@ use App\Models\SystemSetting;
 use Illuminate\Database\Seeder;
 
 /**
- * SPEC-12 & SPEC-16 §2.2 — seeds global default system settings
+ *  &  §2.2 — seeds global default system settings
  * (`org_id = 0` sentinel) using idempotent `firstOrCreate`.
  */
 class SystemSettingSeeder extends Seeder

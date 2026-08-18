@@ -5,7 +5,7 @@ namespace App\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * SPEC-06 §3 — validates the public, unauthenticated AJAX payload for
+ * validates the public, unauthenticated AJAX payload for
  * `/convite/check-email`. Always authorized: this endpoint is deliberately
  * reachable by guests, gated by the route middleware group instead.
  */

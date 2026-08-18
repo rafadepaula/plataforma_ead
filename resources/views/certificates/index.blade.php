@@ -1,5 +1,5 @@
 {{--
-    SPEC-09 §1.2 — Gestor/Admin per-course certificate list, reached via
+    Gestor/Admin per-course certificate list, reached via
     `GET courses/{course}/certificates` (`courses.certificates.index`,
     `App\Http\Controllers\CertificateController::index()`, Bucket B).
 

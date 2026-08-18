@@ -7,10 +7,10 @@ use InvalidArgumentException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
- * SPEC-12 — streams a CSV export for the "Central de Exportação" via
+ * streams a CSV export for the "Central de Exportação" via
  * `response()->streamDownload()` + `fputcsv()`, reading rows in
  * `chunk()`-ed batches so peak memory stays O(1) regardless of dataset
- * size (SPEC-00 §1.2's 128M shared-hosting constraint) — never buffer the
+ * size ( §1.2's 128M shared-hosting constraint) — never buffer the
  * full result set into an array/Collection first.
  *
  * `certificates`/`course_user` are cascade-inherited tenancy (no

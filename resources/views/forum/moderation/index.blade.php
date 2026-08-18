@@ -1,5 +1,5 @@
 {{--
-    SPEC-10 §2.2 — the Gestor/Admin's pending forum-report queue. Reached
+    the Gestor/Admin's pending forum-report queue. Reached
     via `GET forum/moderation` (`forum-moderation.index`,
     `App\Http\Controllers\ForumModerationController::index()`, Bucket 2),
     restricted to `role:admin|gestor` and scoped to the Gestor's own Org

@@ -6,7 +6,7 @@ use App\Models\SystemSetting;
 use Illuminate\Support\Facades\Cache;
 
 /**
- * SPEC-12 — reads/writes org-override `system_settings` rows
+ * reads/writes org-override `system_settings` rows
  * (SMTP/logo/signature, etc.), mirroring `HelpArticleResolverService`'s
  * org-specific-first, global-fallback resolution: an org-specific row for
  * `$orgId` wins, otherwise the global (`SystemSetting::GLOBAL_ORG_ID`

@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
 /**
- * SPEC-18 UC02 / RF34 — self-service password change. `Auth::logoutOtherDevices()`
+ * self-service password change. `Auth::logoutOtherDevices()`
  * is called before the password is rotated (RN14): it re-hashes and saves the
  * CURRENT (pre-rotation) password while invalidating every other session's
  * remember-token/session-password pairing, so a hijacked session does not

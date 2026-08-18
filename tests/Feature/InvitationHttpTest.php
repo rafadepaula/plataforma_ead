@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use Tests\TestCase;
 
 /**
- * SPEC-06 Bucket 2 — HTTP-level wiring for the public `/convite/{token}`
+ * HTTP-level wiring for the public `/convite/{token}`
  * flow and the Gestor/Admin Invitation Link + Enrollment panels. Full
  * end-to-end coverage (multi-org, race conditions, adaptive form) lives in
  * Bucket 3's `SmartInvitationTest`/`EnrollmentManagementTest`; this file

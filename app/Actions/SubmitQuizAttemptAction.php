@@ -10,7 +10,7 @@ use App\Models\User;
 use Illuminate\Validation\ValidationException;
 
 /**
- * SPEC-08 §2 — the quiz correction engine. A single call corrects every
+ * the quiz correction engine. A single call corrects every
  * auto-gradable question (`single_choice`/`multiple_choice`/`true_false`)
  * and records any `essay` answer for later manual grading (RN11).
  *
@@ -95,7 +95,7 @@ class SubmitQuizAttemptAction
     }
 
     /**
-     * SPEC-08 §2.1 — recomputes `score_percentage` over every question
+     * recomputes `score_percentage` over every question
      * (auto-graded + manually-graded essay) once every essay answer of an
      * `awaiting_manual_grading` attempt has been graded, then finalizes
      * the same completion flow §2 step 5 describes.
@@ -147,7 +147,7 @@ class SubmitQuizAttemptAction
     }
 
     /**
-     * SPEC-08 §1.3 — computed on read from `started_at`/`completed_at`/
+     * computed on read from `started_at`/`completed_at`/
      * `time_limit_minutes` rather than persisted as text (the schema has
      * no notes/warning column). An over-limit submission is still
      * accepted, only `is_passed` is forced to `false`.
@@ -162,7 +162,7 @@ class SubmitQuizAttemptAction
     }
 
     /**
-     * SPEC-08 §1.2/RN02/RN03 — `single_choice`/`true_false` require an
+     * `single_choice`/`true_false` require an
      * exact 1-id match; `multiple_choice` requires the selected set to be
      * exactly the correct set (no partial credit). An empty
      * `selected_option_ids` is always incorrect, never a vacuous match.
@@ -188,7 +188,7 @@ class SubmitQuizAttemptAction
     }
 
     /**
-     * SPEC-08 §2 step 1 — the student.enrolled middleware (bucket 2) is
+     * the student.enrolled middleware (bucket 2) is
      * the primary HTTP-layer guard, but this Action re-verifies at the
      * business-rule layer too (defense in depth, and so it can be tested
      * directly without a full HTTP stack — mirrors
@@ -207,7 +207,7 @@ class SubmitQuizAttemptAction
     }
 
     /**
-     * SPEC-08 §1.3 — counts only completed submissions (`status` in
+     * counts only completed submissions (`status` in
      * `awaiting_manual_grading`/`graded`), never an abandoned
      * `in_progress` attempt.
      */

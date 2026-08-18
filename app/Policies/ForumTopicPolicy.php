@@ -8,7 +8,7 @@ use App\Models\ForumTopic;
 use App\Models\User;
 
 /**
- * SPEC-10 §2/§2.1 — `ForumTopic` is directly `OrgScope`d, but course
+ * `ForumTopic` is directly `OrgScope`d, but course
  * access still must be checked explicitly here: `view`/`create` are
  * gated to an enrolled Aluno (RN10) or a same-org Gestor/Admin;
  * `update`/`delete` are reserved to the post's author (no time limit,

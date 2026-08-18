@@ -7,7 +7,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 /**
- * SPEC-08 §1.2 — validates updates to an existing `QuizQuestion` + its
+ * validates updates to an existing `QuizQuestion` + its
  * nested `quiz_options`. Same rule shape as {@see StoreQuizQuestionRequest};
  * authorization reuses `QuizPolicy::update()` against the question's
  * parent `Quiz`.

@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\View\View;
 
 /**
- * SPEC-17 §2 — the single source of navigation data for the layout
+ * the single source of navigation data for the layout
  * shell. Bound (in `AppServiceProvider`) to the sidebar and topbar Blade
  * components, it hands each render a `$navigationSections` list already
  * filtered for the acting user.

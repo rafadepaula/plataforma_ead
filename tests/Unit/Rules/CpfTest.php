@@ -8,7 +8,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 /**
- * SPEC-18 — unit tests for the `App\Rules\Cpf` checksum-digit algorithm,
+ * unit tests for the `App\Rules\Cpf` checksum-digit algorithm,
  * exercised in isolation via `Validator::make` (no DB, no HTTP layer).
  */
 class CpfTest extends TestCase

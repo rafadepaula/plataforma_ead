@@ -8,9 +8,9 @@ use App\Models\LessonProgress;
 use App\Models\User;
 
 /**
- * SPEC-07 RF20 — the single write path for `lesson_progress`, reused by
+ * the single write path for `lesson_progress`, reused by
  * `LessonProgressController` (manual click / video threshold, bucket 2)
- * and, eventually, SPEC-08's `SubmitQuizAttemptAction`.
+ * and, eventually, 's `SubmitQuizAttemptAction`.
  *
  * `is_completed` is idempotent (never unset once `true`); `watched_seconds`
  * is persisted as `GREATEST(current, reported)` whenever a value is passed

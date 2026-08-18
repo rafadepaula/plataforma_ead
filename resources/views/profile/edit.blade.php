@@ -1,5 +1,5 @@
 {{--
-    SPEC-18 (UC02/RF01/RF34) — profile self-service screen. RN08: no
+    profile self-service screen. RN08: no
     `{user}` route param exists, the target is always `Auth::user()`.
     RN05's global help coverage already comes from `layouts.app`'s
     topbar, which mounts `<x-help-button :key="Route::currentRouteName()" />`

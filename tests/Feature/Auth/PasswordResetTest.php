@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Password;
 use Tests\TestCase;
 
 /**
- * SPEC-04 RF02 — single-use password-reset token flow, delivered via the
+ * single-use password-reset token flow, delivered via the
  * SMTP mailer configured in `config/mail.php`.
  */
 class PasswordResetTest extends TestCase

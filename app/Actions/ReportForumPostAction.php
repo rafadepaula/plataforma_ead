@@ -9,7 +9,7 @@ use App\Models\User;
 use App\Services\ForumContentSanitizerService;
 
 /**
- * SPEC-10 §2.2/RF26 — creates a pending `forum_reports` row for a
+ * creates a pending `forum_reports` row for a
  * "Denunciar" submission against a `ForumTopic` or `ForumReply`.
  *
  * `postable_type` is written as the model's FQCN (`ForumTopic::class`/

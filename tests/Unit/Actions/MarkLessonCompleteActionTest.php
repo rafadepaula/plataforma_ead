@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
 
 /**
- * SPEC-07 RF20 — `MarkLessonCompleteAction` is the single write path for
+ * `MarkLessonCompleteAction` is the single write path for
  * `lesson_progress`: idempotent completion, `GREATEST` watched_seconds,
  * `completed_at` set once, `LessonMarkedAsCompleted` dispatched only on
  * the false -> true transition.

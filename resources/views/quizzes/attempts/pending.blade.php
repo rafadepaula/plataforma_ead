@@ -1,5 +1,5 @@
 {{--
-    SPEC-08 §2.1 — Gestor's manual-grading queue: every `QuizAttempt` with
+    Gestor's manual-grading queue: every `QuizAttempt` with
     `status = awaiting_manual_grading`, scoped to the Gestor's own Org (via
     `QuizAttemptPolicy`/the controller query — see `quizzes-conventions`).
 
@@ -12,7 +12,7 @@
 @extends('layouts.app')
 
 @section('content')
-    <x-layout.page-header kicker="SPEC-08" title="Correções Pendentes" />
+    <x-layout.page-header kicker="Avaliações" title="Correções Pendentes" />
 
     <x-ui.table :headers="['Aluno', 'Curso / Quiz', 'Enviado em', 'Ações']">
         @forelse($attempts as $attempt)

@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  * `->for(Module::factory())` / `->create(['module_id' => $module->id])`.
  *
  * The base definition leaves all four content columns
- * (`content_text`/`image_path`/`pdf_path`/`youtube_url`) empty — SPEC-07's
+ * (`content_text`/`image_path`/`pdf_path`/`youtube_url`) empty — 's
  * four content kinds are each opt-in via a dedicated state so a test only
  * populates the column(s) relevant to the kind it is exercising.
  */

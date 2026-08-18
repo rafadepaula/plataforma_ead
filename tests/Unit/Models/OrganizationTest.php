@@ -8,7 +8,7 @@ use App\Models\User;
 use Tests\TestCase;
 
 /**
- * SPEC-00 §2.1.1 — `organizations` is the master tenant table and uses
+ * `organizations` is the master tenant table and uses
  * `SoftDeletes`.
  */
 class OrganizationTest extends TestCase

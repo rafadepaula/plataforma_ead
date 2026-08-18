@@ -10,7 +10,7 @@ use App\Models\User;
 use Tests\TestCase;
 
 /**
- * SPEC-10 §2.1 — "apagar" a topic is a logical removal-from-display, not a
+ * "apagar" a topic is a logical removal-from-display, not a
  * hard delete, so `ForumTopic` must support `SoftDeletes`.
  */
 class ForumTopicTest extends TestCase

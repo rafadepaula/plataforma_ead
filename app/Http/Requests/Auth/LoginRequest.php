@@ -10,7 +10,7 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 /**
- * SPEC-04 RF01 — validates email/password, throttles repeated failed
+ * validates email/password, throttles repeated failed
  * attempts, and authenticates only `status=active` users (an `inactive`
  * user must never obtain a session, even with correct credentials).
  */

@@ -11,7 +11,7 @@ use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 /**
- * SPEC-16 §4.3 — Validates that running DatabaseSeeder in production
+ * Validates that running DatabaseSeeder in production
  * environment seeds ONLY baseline data (Super Admin, Roles, System Settings)
  * and never populates test data or demo organizations.
  */

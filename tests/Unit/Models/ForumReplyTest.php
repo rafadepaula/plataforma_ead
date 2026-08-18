@@ -10,7 +10,7 @@ use App\Models\User;
 use Tests\TestCase;
 
 /**
- * SPEC-10 §2.1 — "apagar" a reply is a logical removal-from-display, not a
+ * "apagar" a reply is a logical removal-from-display, not a
  * hard delete, so `ForumReply` must support `SoftDeletes`.
  */
 class ForumReplyTest extends TestCase

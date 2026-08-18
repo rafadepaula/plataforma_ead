@@ -20,7 +20,7 @@
         dusk="lesson-type-select"
     />
     <p class="form-text mb-3">
-        Quiz será habilitado em uma etapa futura (SPEC-08). Selecione "Conteúdo" para cadastrar Rich Text, Imagem, PDF ou vídeo do YouTube.
+        Quiz será habilitado em uma etapa futura. Selecione "Conteúdo" para cadastrar Rich Text, Imagem, PDF ou vídeo do YouTube.
     </p>
 
     <div id="lesson-content-fields" data-lesson-content-fields>

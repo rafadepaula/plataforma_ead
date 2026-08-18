@@ -16,7 +16,7 @@ return [
     | Supported: "file", "cookie", "database", "memcached",
     |            "redis", "dynamodb", "array"
     |
-    | SPEC-00 §1.2 (shared hosting): use "database" or "file" — both work
+    | For shared hosting, use "database" or "file" — both work
     | without Redis/Memcached being available on the host.
     |
     */

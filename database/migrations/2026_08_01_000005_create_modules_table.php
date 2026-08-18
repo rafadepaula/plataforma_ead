@@ -9,7 +9,7 @@ return new class extends Migration
     /**
      * Run the migrations.
      *
-     * SPEC-00 §2.1.5 — `modules` is cascade-inherited (org implied by
+     * `modules` is cascade-inherited (org implied by
      * `courses.org_id`), no own `org_id` column and no `OrgScope` trait.
      */
     public function up(): void

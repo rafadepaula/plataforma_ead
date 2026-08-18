@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
 
 /**
- * SPEC-07 RF20 — `RecalculateCourseProgress` recomputes
+ * `RecalculateCourseProgress` recomputes
  * `course_user.progress_percentage` for the completing student and
  * completes the enrollment when a `rule_type = all_lessons` rule's
  * `required_percentage` is reached.

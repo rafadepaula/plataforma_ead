@@ -9,7 +9,7 @@ use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 /**
- * SPEC-13 §2 gatilho 4 — dispatched by `SendEnrollmentConfirmedNotification`
+ * dispatched by `SendEnrollmentConfirmedNotification`
  * whenever a `course_user` row is created or transitions into `active`
  * (brand-new enrollment or a reactivated one), from both
  * `EnrollmentController::store()` (Gestor-driven, RF21) and

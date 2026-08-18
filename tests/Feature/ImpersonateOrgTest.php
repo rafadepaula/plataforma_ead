@@ -8,7 +8,7 @@ use App\Models\Organization;
 use Tests\TestCase;
 
 /**
- * SPEC-04 §2 / UC18 — Admin can set/clear `session('active_org_id')` via
+ * Admin can set/clear `session('active_org_id')` via
  * `ImpersonateOrgController`, which `OrgScope` then reads to filter data.
  */
 class ImpersonateOrgTest extends TestCase
@@ -114,7 +114,7 @@ class ImpersonateOrgTest extends TestCase
     }
 
     /**
-     * Non-regression for SPEC-15 §3: changing the redirect must not
+     * Non-regression: changing the redirect must not
      * disturb the audit trail.
      */
     public function test_ending_the_impersonation_is_still_audited(): void

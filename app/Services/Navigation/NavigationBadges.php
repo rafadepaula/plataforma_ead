@@ -7,7 +7,7 @@ use App\Models\QuizAttempt;
 use App\Models\User;
 
 /**
- * Pending-count badge resolvers for SPEC-17 RF38. Kept as a single
+ * Pending-count badge resolvers for  RF38. Kept as a single
  * invokable collection (rather than inline closures inside the registry)
  * so they can be unit-tested in isolation and stay close to the Eloquent
  * queries they wrap.

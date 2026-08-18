@@ -10,7 +10,7 @@ use App\Models\User;
 use Tests\TestCase;
 
 /**
- * SPEC-10 §2.2 — `ForumReport`'s `reporter`/`reviewer` relationships and
+ * `ForumReport`'s `reporter`/`reviewer` relationships and
  * its `postable()` pseudo-polymorphic resolver (kept in sync with
  * `ForumPostEdit::postable()`).
  */

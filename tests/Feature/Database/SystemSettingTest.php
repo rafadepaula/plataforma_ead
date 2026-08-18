@@ -8,7 +8,7 @@ use Illuminate\Database\QueryException;
 use Tests\TestCase;
 
 /**
- * SPEC-00 §2.1.21 — `system_settings` composite primary key
+ * `system_settings` composite primary key
  * `(setting_key, org_id)` edge case: a literal nullable `org_id` cannot
  * participate in a MySQL/MariaDB composite PK, so global settings use a
  * `0` sentinel (`SystemSetting::GLOBAL_ORG_ID`) instead of `NULL` (see the

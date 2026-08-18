@@ -1,5 +1,5 @@
 {{--
-    SPEC-15 §5 — the "Ver diff" modal shared by every row in
+    the "Ver diff" modal shared by every row in
     `audit-logs/index.blade.php`. Unlike `forum/partials/_edit-history-modal.blade.php`
     (one modal per post), a single shared modal is used here — each
     "Ver diff" button inlines its own `old_values`/`new_values` as

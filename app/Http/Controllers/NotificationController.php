@@ -6,9 +6,9 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 /**
- * SPEC-13 §Bucket 2 — AJAX endpoints backing the topbar notification bell.
+ * AJAX endpoints backing the topbar notification bell.
  * `DatabaseNotification` carries no `OrgScope`/Policy of its own (see
- * SPEC-00's guardrails), so every query here is manually scoped to
+ * 's guardrails), so every query here is manually scoped to
  * `$request->user()->notifications()` (the `Notifiable` trait's
  * `MorphMany`) rather than a route-model-bound `{notification}` — this is
  * what guarantees RN12 (no cross-user leak) without a dedicated Policy.

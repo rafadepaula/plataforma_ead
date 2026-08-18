@@ -8,7 +8,7 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
 /**
- * SPEC-04 RF01/RF02 & SPEC-16 §2.2 — seeds the global Super Admin user
+ *  RF01/RF02 &  §2.2 — seeds the global Super Admin user
  * with `role:admin` and configurable credentials from environment.
  */
 class AdminSeeder extends Seeder

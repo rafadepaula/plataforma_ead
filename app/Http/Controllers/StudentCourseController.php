@@ -6,7 +6,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 
 /**
- * SPEC-07 RF19 — "Meus Cursos": an Aluno's own enrollments, grouped by
+ * "Meus Cursos": an Aluno's own enrollments, grouped by
  * `org_id`. Restricted to `role:aluno` (see `routes/web.php`) — not
  * `student.enrolled`, since this listing IS the enrollment data itself,
  * with no single `{course}`/`{lesson}` route parameter to gate. Reads

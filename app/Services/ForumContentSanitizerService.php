@@ -3,7 +3,7 @@
 namespace App\Services;
 
 /**
- * SPEC-10 §2 — strips every HTML tag from forum topic/reply content and
+ * strips every HTML tag from forum topic/reply content and
  * report reasons before persisting them. No HTML-purifier package is
  * installed (see CLAUDE.md's "no dependencies without approval"), so
  * `strip_tags()` is the entire write-side XSS defense; Blade's default

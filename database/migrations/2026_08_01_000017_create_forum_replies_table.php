@@ -9,7 +9,7 @@ return new class extends Migration
     /**
      * Run the migrations.
      *
-     * SPEC-00 §2.1.17 — `forum_replies` cascade-inherited from
+     * `forum_replies` cascade-inherited from
      * `forum_topics`.
      */
     public function up(): void

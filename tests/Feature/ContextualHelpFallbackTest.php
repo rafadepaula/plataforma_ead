@@ -8,7 +8,7 @@ use App\Services\HelpArticleResolverService;
 use Tests\TestCase;
 
 /**
- * SPEC-11 (RF12/RN05) — `HelpArticleResolverService::resolve()`'s
+ * `HelpArticleResolverService::resolve()`'s
  * fallback contract: an org-specific `HelpArticle` wins over a global one
  * for the same `target_page_key`, a global article is served when no
  * org-specific one exists, and resolution is null-safe (no exception, no

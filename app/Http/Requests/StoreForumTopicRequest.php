@@ -5,7 +5,7 @@ namespace App\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * SPEC-10 §2/RF22 — payload for creating a `ForumTopic`
+ * payload for creating a `ForumTopic`
  * (`POST courses/{course}/forum`). Authorization is deferred to
  * `Gate::authorize('create', $course)` in `ForumTopicController::store()`
  * rather than checked here: the route already sits behind the

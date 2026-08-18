@@ -94,7 +94,7 @@ class UserController extends Controller
         $user->update($data);
         $user->syncRoles([$role]);
 
-        // SPEC-15 §3 — `user.status_changed` is a critical-action event
+        // `user.status_changed` is a critical-action event
         // distinct from `AuditableTrait`'s generic `user.updated` mutation
         // row (which already fires on every `update()` call); it is only
         // recorded when `status` actually changed, not on every edit.

@@ -13,7 +13,7 @@ class CertificateSeeder extends Seeder
     /**
      * Run the database seeds.
      *
-     * SPEC-16 §2.2 / SPEC-09 — Seeds issued certificates (valid active and revoked)
+     *  §2.2 /  — Seeds issued certificates (valid active and revoked)
      * with fixed SHA-256 validation hashes for verification testing.
      */
     public function run(): void

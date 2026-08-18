@@ -33,7 +33,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 use Tests\TestCase;
 
 /**
- * SPEC-15 — System Audit Logging & Monitoring.
+ * System Audit Logging & Monitoring.
  *
  * Bucket A (AuditableTrait/AuditObserver/AuditService/AuditLog/OrgScope
  * bypass/audit-logs:prune) is fully implemented and exercised below.

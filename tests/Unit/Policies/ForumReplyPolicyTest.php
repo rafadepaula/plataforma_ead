@@ -12,7 +12,7 @@ use App\Policies\ForumReplyPolicy;
 use Tests\TestCase;
 
 /**
- * SPEC-10 §2/§2.1 — `ForumReply` is cascade-inherited (no `OrgScope`,
+ * `ForumReply` is cascade-inherited (no `OrgScope`,
  * mirrors `QuizPolicy::parentCourse()`'s cascade pattern), so the parent
  * `Course`/tenancy check is resolved via `reply->topic->course`.
  */

@@ -10,7 +10,7 @@ use App\Models\User;
 use Tests\TestCase;
 
 /**
- * SPEC-09 §2 / RF17 — the fully public, unauthenticated, cross-tenant
+ * the fully public, unauthenticated, cross-tenant
  * `/validar-certificado/{hash}` route. No `auth`/`role`/tenant scoping
  * applies: any Organization's hash resolves for any anonymous visitor,
  * and a revoked certificate must still respond 200 (never 404) with its

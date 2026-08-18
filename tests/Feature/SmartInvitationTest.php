@@ -10,7 +10,7 @@ use App\Models\User;
 use Tests\TestCase;
 
 /**
- * SPEC-06 RF03/RN09 — full HTTP-level coverage of the public, unauthenticated
+ * full HTTP-level coverage of the public, unauthenticated
  * Smart Invitation flow (`/convite/{token}`, `/convite/check-email`): link
  * state guards (expired/exhausted/revoked/unknown), the adaptive
  * check-email AJAX lookup, and `store()`'s two branches (new account vs.

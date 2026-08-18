@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 
 /**
- * SPEC-08 §1.2 — nested question+option CRUD + reorder, scoped to a Quiz.
+ * nested question+option CRUD + reorder, scoped to a Quiz.
  * There is no dedicated `quiz-questions/create|edit` full-page screen —
  * per `quizzes/edit.blade.php`'s contract (Bucket 3), Questions are
  * authored via modals on the parent Quiz's single edit screen, so only

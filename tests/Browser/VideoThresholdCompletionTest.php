@@ -13,7 +13,7 @@ use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 
 /**
- * SPEC-07 RF20 — E2E coverage of the video auto-completion threshold.
+ * E2E coverage of the video auto-completion threshold.
  * Reaching 90% watched must auto-complete the lesson and recompute course
  * progress, without a page reload. Rather than depending on YouTube's real
  * network-bound IFrame API inside a headless browser, this drives

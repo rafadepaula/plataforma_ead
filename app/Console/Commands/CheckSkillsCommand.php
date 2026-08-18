@@ -19,7 +19,7 @@ class CheckSkillsCommand extends Command
      *
      * @var string
      */
-    protected $description = 'Verify feature skill coverage and mandatory harness skills for SPEC compliance';
+    protected $description = 'Verify feature skill coverage and mandatory harness skills';
 
     /**
      * Execute the console command.

@@ -5,7 +5,7 @@ namespace App\Services;
 use App\Models\HelpArticle;
 
 /**
- * SPEC-11 (RF12/RN05) — resolves the `HelpArticle` shown by
+ * resolves the `HelpArticle` shown by
  * `<x-help-button>` for a given screen: an org-specific article for
  * `$orgId` wins, otherwise the global (`org_id = null`) article for the
  * same `target_page_key` is served, otherwise `null` (no article authored

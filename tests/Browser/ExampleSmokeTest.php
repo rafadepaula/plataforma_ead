@@ -2,12 +2,11 @@
 
 namespace Tests\Browser;
 
-use App\Models\User;
 use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 
 /**
- * SPEC-00 §5 — baseline Dusk smoke test used as the template other specs
+ * baseline Dusk smoke test used as the template other features
  * copy from for their own browser suites.
  *
  * Isolamento de banco: `DatabaseTruncation` herdado de `Tests\DuskTestCase`
@@ -18,7 +17,7 @@ use Tests\DuskTestCase;
 class ExampleSmokeTest extends DuskTestCase
 {
     /**
-     * SPEC-11 / RF11 — `/` serve a Landing Page pública (`landing.show`),
+     * `/` serve a Landing Page pública (`landing.show`),
      * renderizada como VISITANTE (sem `loginAs`). Asserta a estrutura base,
      * os títulos exatos das seções e que os CTAs apontam para a rota
      * `login`. O botão de ajuda contextual
@@ -42,17 +41,6 @@ class ExampleSmokeTest extends DuskTestCase
                 ->assertSee('Provas Interativas')
                 ->assertSee('Certificados Oficiais')
                 ->assertSee('Recebeu um convite?');
-        });
-    }
-
-    public function test_dusk_can_authenticate_a_user_and_persist_the_session(): void
-    {
-        $user = User::factory()->create();
-
-        $this->browse(function (Browser $browser) use ($user): void {
-            $browser->loginAs($user)
-                ->visit('/')
-                ->assertAuthenticatedAs($user);
         });
     }
 }

@@ -1,15 +1,14 @@
 <?php
 
 /**
- * Dev-DB preservation guard for SPEC-14 (RN13).
+ * Dev-DB preservation guard.
  *
  * Laravel Dusk swaps `.env` for `.env.dusk.local` (which points at the
  * dedicated `testing` MySQL database) for the duration of `sail dusk`, then
- * restores the original `.env` afterwards. This script is the *practical*
- * proof step from SPEC-14 §4 ("Validação prática... confirmando que o banco
- * plataforma_ead não sofreu alterações"): it snapshots a checksum + row
- * count per table of the dev database (`plataforma_ead` by default) before
- * a Dusk run, then re-checks after, failing loudly on any diff.
+ * restores the original `.env` afterwards. This script is the practical
+ * proof step confirming that the dev database did not undergo alterations:
+ * it snapshots a checksum + row count per table of the dev database (`plataforma_ead` by default)
+ * before a Dusk run, then re-checks after, failing loudly on any diff.
  *
  * It talks to MySQL directly via PDO and never boots the Laravel
  * application, so it is safe to run before/after `.env` gets swapped by the
@@ -45,7 +44,7 @@ foreach (array_slice($argv, 2) as $arg) {
 }
 
 if (isset($options['help']) || ! in_array($command, ['snapshot', 'verify'], true)) {
-    fwrite(STDOUT, "Guarda de preservação do banco de desenvolvimento (SPEC-14 / RN13)\n");
+    fwrite(STDOUT, "Guarda de preservação do banco de desenvolvimento\n");
     fwrite(STDOUT, "Uso: php scripts/verify-dev-db-preserved.php <snapshot|verify> [opções]\n\n");
     fwrite(STDOUT, "Opções:\n");
     fwrite(STDOUT, "  --env=<caminho>       Arquivo .env a ler as credenciais MySQL (padrão: .env)\n");

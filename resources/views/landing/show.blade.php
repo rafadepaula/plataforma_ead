@@ -1,5 +1,5 @@
 {{--
-    SPEC-11 / RF11 — the public, unauthenticated Landing Page
+    the public, unauthenticated Landing Page
     (`GET /`, `landing.show`, rendered by
     `App\Http\Controllers\LandingPageController::show()`). Deliberately NOT
     `@extends('layouts.app')` (requires an authenticated session/sidebar)

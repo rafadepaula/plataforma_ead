@@ -1,5 +1,5 @@
 {{--
-    SPEC-07 RF20 — text/image lesson: plain content render + an explicit
+    text/image lesson: plain content render + an explicit
     "Marcar como concluída" button (hidden once `is_completed`), bound to
     POST `lessons.complete` by `resources/js/modules/LessonPlayer.js`.
 --}}

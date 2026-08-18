@@ -1,7 +1,7 @@
 @php
     use Illuminate\Support\Facades\Route;
 
-    // SPEC-17 — `$brandUrl`, `$loginUrl`, `$logoutUrl` are injected by
+    // `$brandUrl`, `$loginUrl`, `$logoutUrl` are injected by
     // `NavigationComposer`. The brand link was previously hardcoded to
     // `student.courses.index` (always a dead `#` for an Admin/Gestor
     // who lands on the dashboard) — it is now role-aware.

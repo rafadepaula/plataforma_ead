@@ -13,7 +13,7 @@ use App\Policies\QuizPolicy;
 use Tests\TestCase;
 
 /**
- * SPEC-08 §1–§2.1 — `QuizPolicy` cascades `lesson -> module -> course.
+ * `QuizPolicy` cascades `lesson -> module -> course.
  * org_id` (mirrors `ModulePolicy`/`LessonPolicy` one level further down).
  * `view()` has no dedicated HTTP route wired to it yet (question authoring
  * happens on `quizzes.edit`), so it is exercised directly here.

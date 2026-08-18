@@ -6,7 +6,7 @@ use App\Models\Quiz;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * SPEC-08 RF08 — validates creation of a Lesson's 1:1 Quiz. `lesson_id`
+ * validates creation of a Lesson's 1:1 Quiz. `lesson_id`
  * is intentionally absent: it is always resolved from the route-bound
  * `{lesson}` segment by `QuizController::store()`, never trusted from
  * request input (mirrors `StoreLessonRequest`'s `module_id` convention).

@@ -1,6 +1,6 @@
 /**
  * AuditLogDiffModal - SOLID JavaScript module backing the "Ver diff"
- * button on `resources/views/audit-logs/index.blade.php` (SPEC-15 §5).
+ * button on `resources/views/audit-logs/index.blade.php` 
  *
  * A single shared `#audit-diff-modal` (see
  * `resources/views/audit-logs/partials/_diff-modal.blade.php`) is reused

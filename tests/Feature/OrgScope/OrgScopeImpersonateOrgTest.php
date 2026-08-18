@@ -8,7 +8,7 @@ use App\Models\User;
 use Tests\TestCase;
 
 /**
- * SPEC-00 §3 — Admins have `org_id = null` and are queried across every
+ * Admins have `org_id = null` and are queried across every
  * organization by default, but MUST scope down to a single Organization
  * once they "Impersonate Org" via `session('active_org_id')`.
  */

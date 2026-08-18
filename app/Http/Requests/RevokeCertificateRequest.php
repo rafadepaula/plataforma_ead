@@ -5,7 +5,7 @@ namespace App\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * SPEC-09 §1.2 — payload for the Gestor/Admin certificate revocation
+ * payload for the Gestor/Admin certificate revocation
  * action (`PUT certificates/{certificate}/revoke`). Authorization mirrors
  * `GradeEssayAnswerRequest`'s convention: delegated entirely to the
  * Policy via the route-bound model rather than re-checked in the

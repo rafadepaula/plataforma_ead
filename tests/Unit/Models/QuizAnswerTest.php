@@ -15,7 +15,7 @@ use App\Models\User;
 use Tests\TestCase;
 
 /**
- * SPEC-08 §2.1 — `QuizAnswer` is cascade-inherited (no `OrgScope`, see
+ * `QuizAnswer` is cascade-inherited (no `OrgScope`, see
  * `quizzes-architecture` skill); this covers its relationships directly.
  */
 class QuizAnswerTest extends TestCase

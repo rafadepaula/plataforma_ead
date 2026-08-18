@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
 
 /**
- * SPEC-00 §4/§5 — Spatie's `role:` middleware gate must correctly restrict
+ * Spatie's `role:` middleware gate must correctly restrict
  * access per the 3 fundamental roles (`admin`, `gestor`, `aluno`).
  */
 class RolesMiddlewareTest extends TestCase

@@ -1,7 +1,7 @@
 @php
     use Illuminate\Support\Arr;
 
-    // SPEC-17 — the sidebar is driven entirely by `$navigationSections`,
+    // the sidebar is driven entirely by `$navigationSections`,
     // injected by `NavigationComposer` (one filtered, URL-resolved,
     // badge-enriched list per acting user). No role checks or
     // `Route::has()` guards live here anymore: the service layer is the

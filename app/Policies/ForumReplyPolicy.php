@@ -9,7 +9,7 @@ use App\Models\ForumTopic;
 use App\Models\User;
 
 /**
- * SPEC-10 §2/§2.1 — `ForumReply` is cascade-inherited two levels deeper
+ * `ForumReply` is cascade-inherited two levels deeper
  * than `ForumTopic` (`reply -> topic -> course.org_id`), mirroring
  * `QuizPolicy::parentCourse()`'s cascade pattern one level further down.
  * `view`/`create` are gated to an enrolled Aluno (RN10) or a same-org

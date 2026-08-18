@@ -8,7 +8,7 @@ use Illuminate\Database\QueryException;
 use Tests\TestCase;
 
 /**
- * SPEC-11 (RF12/RN05) — `help_articles.slug` schema-level guarantees.
+ * `help_articles.slug` schema-level guarantees.
  */
 class HelpArticleTest extends TestCase
 {

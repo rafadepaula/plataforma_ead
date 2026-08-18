@@ -9,8 +9,8 @@ return new class extends Migration
     /**
      * Run the migrations.
      *
-     * SPEC-00 §2.1.18 — `forum_post_edits` is the public edit-history log
-     * (see SPEC-10 §2.2). `postable_type`/`postable_id` are a
+     * `forum_post_edits` is the public edit-history log
+     * . `postable_type`/`postable_id` are a
      * pseudo-polymorphic pair (`forum_topic` or `forum_reply`) with
      * intentionally NO database foreign key — integrity is validated at
      * the application layer only.

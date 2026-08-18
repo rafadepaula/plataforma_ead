@@ -9,7 +9,7 @@ return new class extends Migration
     /**
      * Run the migrations.
      *
-     * SPEC-00 §2.1.9 — `quiz_options` cascade-inherited from
+     * `quiz_options` cascade-inherited from
      * `quiz_questions`. Not applicable to `type=essay` questions
      * (enforced at the application layer, not the schema).
      */

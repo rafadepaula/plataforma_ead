@@ -8,7 +8,7 @@ use App\Services\AuditService;
 use Throwable;
 
 /**
- * SPEC-08 §2.1 — the Gestor's manual essay-grading write path. Grades 1+
+ * the Gestor's manual essay-grading write path. Grades 1+
  * pending `essay` `quiz_answers` of an `awaiting_manual_grading`
  * `QuizAttempt`, then delegates to
  * {@see SubmitQuizAttemptAction::finalizeGrading()} once every essay
@@ -41,7 +41,7 @@ class GradeEssayAnswerAction
                 'graded_at' => now(),
             ]);
 
-            // SPEC-15 §3 — one `essay.graded` event per graded question.
+            // one `essay.graded` event per graded question.
             try {
                 AuditService::log(
                     event: 'essay.graded',

@@ -12,7 +12,7 @@ use Illuminate\Support\ViewErrorBag;
 use Tests\TestCase;
 
 /**
- * SPEC-04 §2 / RF23 — Organization CRUD is reserved to `role:admin`.
+ * Organization CRUD is reserved to `role:admin`.
  */
 class OrganizationCrudTest extends TestCase
 {

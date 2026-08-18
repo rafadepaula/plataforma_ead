@@ -8,5 +8,5 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-// SPEC-15 — daily prune of `audit_logs` rows past `audit.retention_days`.
+// Daily prune of `audit_logs` rows past `audit.retention_days`.
 Schedule::command('audit-logs:prune')->daily();

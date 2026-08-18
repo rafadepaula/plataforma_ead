@@ -9,7 +9,7 @@ return new class extends Migration
     /**
      * Run the migrations.
      *
-     * SPEC-00 §2.1.11 — `quiz_answers` cascade-inherited from
+     * `quiz_answers` cascade-inherited from
      * `quiz_attempts`/`quiz_questions`.
      */
     public function up(): void

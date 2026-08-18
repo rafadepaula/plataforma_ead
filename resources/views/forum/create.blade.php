@@ -1,5 +1,5 @@
 {{--
-    SPEC-10 RF22 — standalone "novo tópico" page, reached via
+    standalone "novo tópico" page, reached via
     `GET courses/{course}/forum/create` (`forum.create`,
     `App\Http\Controllers\ForumTopicController::create()`). The primary UX
     for creating a topic is the inline modal on `forum.index`

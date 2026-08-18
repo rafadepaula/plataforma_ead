@@ -1,11 +1,11 @@
 /**
- * QuizTimer - SPEC-08 RF09 SOLID JavaScript module for the student-facing
+ * QuizTimer - SOLID JavaScript module for the student-facing
  * quiz countdown shown on `resources/views/student/quizzes/show.blade.php`
  * (`[data-quiz-timer]`, only rendered when `quizzes.time_limit_minutes` is
  * set).
  *
  * Purely cosmetic. Real `time_limit_minutes` enforcement (accept-but-fail,
- * per SPEC-08 §1.3 — an over-limit submission is never blocked) happens
+ * an over-limit submission is never blocked) happens
  * server-side in `SubmitQuizAttemptAction`, computed on read from
  * `started_at`/`completed_at`/`time_limit_minutes` — this module never
  * calls `submit()` on the form itself when the countdown reaches zero, it

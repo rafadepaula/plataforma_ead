@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * SPEC-15 — audit trail row. Uses `OrgScope` for its SELECT-side global
+ * audit trail row. Uses `OrgScope` for its SELECT-side global
  * scope only (Gestor restricted to own `org_id`, Admin sees all/
  * impersonated org on `index()`/queries) — every write MUST go through
  * `AuditService::log()`, which wraps the insert in `AuditLog::withoutEvents()`

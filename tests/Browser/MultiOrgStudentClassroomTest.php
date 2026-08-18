@@ -13,7 +13,7 @@ use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 
 /**
- * SPEC-07 RF19/RF20 — E2E coverage of the student learning experience:
+ * E2E coverage of the student learning experience:
  * "Meus Cursos" grouped by Organization, opening the classroom, manually
  * completing a text lesson, seeing the course progress bar reflect it, and
  * the idempotency of a second completion call.

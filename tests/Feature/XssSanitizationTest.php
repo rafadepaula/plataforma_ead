@@ -10,7 +10,7 @@ use App\Models\User;
 use Tests\TestCase;
 
 /**
- * SPEC-10 RF22 — XSS defense-in-depth for forum content: no HTML-purifier
+ * XSS defense-in-depth for forum content: no HTML-purifier
  * package is installed (CLAUDE.md forbids adding dependencies without
  * approval), so the write-path defense is `strip_tags()` via
  * `App\Services\ForumContentSanitizerService` (Bucket 2) applied to every

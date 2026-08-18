@@ -8,7 +8,7 @@ use App\Models\User;
 use Tests\TestCase;
 
 /**
- * SPEC-12 — `GET /admin/dashboard` (`admin.dashboard`) must render
+ * `GET /admin/dashboard` (`admin.dashboard`) must render
  * globally-aggregated KPIs/recentEnrollments for a system Admin with no
  * active "Impersonate Org" session, the scoped KPIs/recentEnrollments of
  * a single Organization once the Admin impersonates it, and only the

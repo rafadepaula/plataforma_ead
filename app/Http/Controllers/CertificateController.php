@@ -14,12 +14,12 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Gate;
 
 /**
- * SPEC-09 §1.2 / RF25 — the Gestor/Admin certificate management screen:
+ * the Gestor/Admin certificate management screen:
  * a per-course list (`index`), revocation (`revoke`, delegating the write
  * path to `RevokeCertificateAction`/`CertificatePolicy`), and PDF download
  * (`download`, delegating to `CertificatePdfService`). Certificates are
  * never created/edited here — issuance is fully automatic via
- * `IssueCertificateAction` (SPEC-09 §1.1).
+ * `IssueCertificateAction` .
  */
 class CertificateController extends Controller
 {

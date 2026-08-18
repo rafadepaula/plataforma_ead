@@ -11,7 +11,7 @@ use App\Models\User;
 use Tests\TestCase;
 
 /**
- * SPEC-07 RF20 — POST /lessons/{lesson}/progress: the AJAX polling target
+ * POST /lessons/{lesson}/progress: the AJAX polling target
  * hit every 5s by `LessonPlayer.js` while a video lesson plays. Only
  * persists `watched_seconds` (GREATEST) below the 90% threshold; calls
  * `MarkLessonCompleteAction` with `completion_source=video_threshold` once

@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Log;
 use Throwable;
 
 /**
- * SPEC-15 — single write path for the audit trail. Every call dual-writes:
+ * single write path for the audit trail. Every call dual-writes:
  * the `audit_logs` table (best-effort, wrapped in try/catch so a DB
  * failure never blocks the primary request — RN "duplo armazenamento")
  * and the dedicated `audit` Monolog channel (always attempted,

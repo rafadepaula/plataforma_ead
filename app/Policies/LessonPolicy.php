@@ -9,7 +9,7 @@ use App\Models\Module;
 use App\Models\User;
 
 /**
- * SPEC-05 — same pattern as `ModulePolicy`, one level deeper:
+ * same pattern as `ModulePolicy`, one level deeper:
  * `Lesson` is cascade-inherited via `Module` -> `Course`, so authorization
  * resolves the tenant through `$lesson->module->course` (or `$module->course`
  * on the `create` ability, where there is no `Lesson` instance yet).

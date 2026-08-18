@@ -16,7 +16,7 @@ abstract class TestCase extends BaseTestCase
      * Log in as a system Admin (`org_id = null`, `admin` role).
      *
      * Pass an Organization to also simulate an active "Impersonate Org"
-     * context (SPEC-00 §3) by seeding `session('active_org_id')`.
+     * context  by seeding `session('active_org_id')`.
      */
     protected function actingAsAdmin(?Organization $impersonatedOrg = null): User
     {

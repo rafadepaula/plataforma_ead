@@ -9,12 +9,12 @@ use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 /**
- * SPEC-13 §2 gatilho 2 — dispatched from inside `IssueCertificateAction`
+ * dispatched from inside `IssueCertificateAction`
  * right after `Certificate::firstOrCreate` performs a genuine insert
  * (`wasRecentlyCreated`), never on the idempotent re-fetch/race-recovery
  * paths. `database` is listed before `mail` in {@see self::via()} so the
  * in-app row is guaranteed to persist even if the `mail` channel's queued
- * job throws (see SPEC-13 §3 / the `notifications-conventions` skill).
+ * job throws (see  §3 / the `notifications-conventions` skill).
  */
 class CertificateIssuedNotification extends Notification implements ShouldQueue
 {

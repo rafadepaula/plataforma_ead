@@ -1,6 +1,6 @@
 /**
  * ForumReportModal - SOLID JavaScript module wiring every "Denunciar"
- * button (SPEC-10 §2.2/RF26) to the shared `#report-modal` on
+ * button to the shared `#report-modal` on
  * `forum/show.blade.php`. Each "Denunciar" button carries
  * `data-postable-type`/`data-postable-id` and opens the modal
  * declaratively through `data-bs-toggle="modal" data-bs-target="#report-modal"`

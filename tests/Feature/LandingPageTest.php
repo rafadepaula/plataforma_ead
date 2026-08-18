@@ -5,7 +5,7 @@ namespace Tests\Feature;
 use Tests\TestCase;
 
 /**
- * SPEC-11 / RF11 — the public, unauthenticated Landing Page
+ * the public, unauthenticated Landing Page
  * (`GET /`, `landing.show`).
  */
 class LandingPageTest extends TestCase

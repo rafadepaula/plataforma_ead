@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\View\Component;
 
 /**
- * SPEC-11 (RF12/RN05) — `<x-help-button key="...">`, present on every
+ * `<x-help-button key="...">`, present on every
  * authenticated screen (topbar) plus every public screen (Landing Page,
  * `/convite/*`, `/validar-certificado/*`). Resolution mirrors `OrgScope`'s
  * own admin-vs-org-user branching (see `tenancy-conventions`) but reads

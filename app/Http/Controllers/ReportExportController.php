@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
- * SPEC-12 — `GET /admin/reports/{type}/export` (route name
+ * `GET /admin/reports/{type}/export` (route name
  * `reports.export`, see `dashboard-conventions`). Streams a CSV via
  * `CsvStreamExportService`. The acting org is resolved the same way
  * `DashboardController` resolves it, replicating `OrgScope`'s own

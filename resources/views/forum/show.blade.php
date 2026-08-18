@@ -1,5 +1,5 @@
 {{--
-    SPEC-10 — a single `ForumTopic`'s thread: original post + replies,
+    a single `ForumTopic`'s thread: original post + replies,
     ordered oldest-first. Reached via `GET courses/{course}/forum/topics/{topic}`
     (`forum.show`, `App\Http\Controllers\ForumTopicController::show()`,
     Bucket 2), behind the same `student.enrolled` guard as `forum.index`.

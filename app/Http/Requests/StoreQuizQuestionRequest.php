@@ -7,7 +7,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 /**
- * SPEC-08 §1.2 — validates creation of a `QuizQuestion` + its nested
+ * validates creation of a `QuizQuestion` + its nested
  * `quiz_options`. `options` is required for every `type` except `essay`
  * (RN11 — `quiz_options` does not apply to essay questions); when present,
  * exactly 1 correct option is required for `single_choice`/`true_false`,

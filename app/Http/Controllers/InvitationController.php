@@ -14,7 +14,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Route;
 
 /**
- * SPEC-06 RF03/RN09 — the public, unauthenticated Smart Invitation flow:
+ * the public, unauthenticated Smart Invitation flow:
  * `/convite/{token}` (show + submit) and the `/convite/check-email` AJAX
  * lookup that drives the adaptive jQuery form (Bucket 3). No `Gate::
  * authorize` here — these routes are intentionally guest-reachable, see

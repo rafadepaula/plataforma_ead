@@ -9,8 +9,8 @@ return new class extends Migration
     /**
      * Run the migrations.
      *
-     * SPEC-00 §2.1.19 — `forum_reports` is the moderation/denunciation
-     * queue (see SPEC-10 §2.2). `postable_type`/`postable_id` are a
+     * `forum_reports` is the moderation/denunciation
+     * queue . `postable_type`/`postable_id` are a
      * pseudo-polymorphic pair with intentionally NO database foreign
      * key — integrity is validated at the application layer only.
      */

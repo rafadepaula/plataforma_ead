@@ -98,7 +98,7 @@ class Course extends Model
     }
 
     /**
-     * SPEC-05 — a Course may not be soft-deleted while a student still
+     * a Course may not be soft-deleted while a student still
      * holds an `active` `course_user` enrollment (cancelled/completed
      * enrollments do not block deletion). Checked by both `CoursePolicy`
      * (so `Gate::authorize`/`@can` short-circuit) and the controller's
@@ -119,7 +119,7 @@ class Course extends Model
     }
 
     /**
-     * SPEC-07 RF20 — total published Lessons across this Course's
+     * total published Lessons across this Course's
      * (non-soft-deleted) Modules, used as the denominator of the
      * student-progress percentage. `Module`/`Lesson` both carry
      * `SoftDeletes`, so a deleted Module/Lesson is excluded automatically
@@ -134,7 +134,7 @@ class Course extends Model
     }
 
     /**
-     * SPEC-07 RF20 — count of this Course's published Lessons the given
+     * count of this Course's published Lessons the given
      * User has completed (`lesson_progress.is_completed = true`), used as
      * the numerator of the student-progress percentage.
      */

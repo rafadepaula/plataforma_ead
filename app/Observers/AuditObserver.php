@@ -6,7 +6,7 @@ use App\Services\AuditService;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * SPEC-15 §4.1 — generic "Mutação Geral" observer attached via
+ * generic "Mutação Geral" observer attached via
  * `AuditableTrait`. Builds `old_values`/`new_values` from the model's own
  * change-tracking (`getChanges()`/`getOriginal()`), redacts sensitive
  * keys, then delegates persistence to `AuditService::log()` (which

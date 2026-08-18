@@ -6,7 +6,7 @@ use App\Models\HelpArticle;
 use Illuminate\Database\Seeder;
 
 /**
- * SPEC-11 (RF12/RN05) & SPEC-18 (UC02) — seeds the global (org_id = null)
+ *  (RF12/RN05) &  (UC02) — seeds the global (org_id = null)
  * `HelpArticle` rows resolved by `HelpArticleResolverService` for screens
  * that don't yet have org-specific overrides authored.
  *

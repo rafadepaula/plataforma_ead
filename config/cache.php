@@ -13,7 +13,7 @@ return [
     | framework. This connection is utilized if another isn't explicitly
     | specified when running a cache operation inside the application.
     |
-    | SPEC-00 §1.2 (shared hosting): use "database" or "file" — both work
+    | For shared hosting, use "database" or "file" — both work
     | without Redis/Memcached being available on the host.
     |
     */

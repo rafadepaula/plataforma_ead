@@ -67,7 +67,7 @@ class InvitationLink extends Model
     }
 
     /**
-     * SPEC-06 RF03 — a link past its `expires_at` may no longer be
+     * a link past its `expires_at` may no longer be
      * consumed, even if it still has uses remaining.
      */
     public function isExpired(): bool
@@ -76,7 +76,7 @@ class InvitationLink extends Model
     }
 
     /**
-     * SPEC-06 RF03 — a link with a `max_uses` cap that has been reached may
+     * a link with a `max_uses` cap that has been reached may
      * no longer be consumed. `max_uses = null` means unlimited uses.
      */
     public function isExhausted(): bool

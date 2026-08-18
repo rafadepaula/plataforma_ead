@@ -6,7 +6,7 @@ use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 
 /**
- * SPEC-18 — validates a Brazilian CPF's two verification digits (mod 11
+ * validates a Brazilian CPF's two verification digits (mod 11
  * checksum algorithm). Purely computational: no DB lookups, no
  * dependency on tenancy/uniqueness (that is handled separately by
  * `Rule::unique('users', 'cpf')` on the fields that use this rule).

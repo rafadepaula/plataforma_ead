@@ -65,7 +65,7 @@ class CourseController extends Controller
     }
 
     /**
-     * SPEC-05 — a Course with at least one `active` `course_user`
+     * a Course with at least one `active` `course_user`
      * enrollment may never be soft-deleted. `CoursePolicy::delete()`
      * already denies this with a plain 403, but the explicit guard here
      * gives the caller the more descriptive 422 the acceptance criteria
@@ -92,11 +92,11 @@ class CourseController extends Controller
         // Course may actually be deleted.
         Gate::authorize('delete', $course);
 
-        // SPEC-15 §3 — `content.deleted` is captured BEFORE the delete so
+        // `content.deleted` is captured BEFORE the delete so
         // the title/id are available; `Course` also carries `AuditableTrait`
         // (Bucket A), which independently fires a generic `course.deleted`
         // event from the same mutation — both are recorded under their own
-        // event names per spec §3's "Gestão Conteúdo" row.
+        // event names.
         try {
             AuditService::log(
                 event: 'content.deleted',

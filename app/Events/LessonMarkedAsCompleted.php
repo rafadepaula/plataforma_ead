@@ -8,7 +8,7 @@ use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
 /**
- * SPEC-07 RF20 — dispatched by `MarkLessonCompleteAction` only on the
+ * dispatched by `MarkLessonCompleteAction` only on the
  * `is_completed` false → true transition (never re-dispatched on an
  * idempotent re-completion). `RecalculateCourseProgress` is the sole
  * listener, auto-discovered from its `handle()` type-hint.

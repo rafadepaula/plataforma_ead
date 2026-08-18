@@ -8,7 +8,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 /**
- * SPEC-06 §3 — validates the public, unauthenticated `/convite/{token}`
+ * validates the public, unauthenticated `/convite/{token}`
  * submission. Rules are conditional on whether the submitted e-mail
  * already exists (mirrors the adaptive jQuery form built in Bucket 3):
  * an existing e-mail only requires the password (verified against the

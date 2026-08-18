@@ -5,7 +5,7 @@ namespace App\Services;
 use App\Exceptions\InvalidYoutubeUrlException;
 
 /**
- * SPEC-05 §3 — validates a Lesson's `youtube_url` input is a genuine
+ * validates a Lesson's `youtube_url` input is a genuine
  * `youtube.com`/`youtu.be` link and rewrites it to the canonical
  * `https://www.youtube.com/embed/{id}` form used for the sanitized embed
  * preview. Deliberately restricted to those two domains only (rejects

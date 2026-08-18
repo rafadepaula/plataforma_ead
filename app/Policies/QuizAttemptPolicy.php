@@ -8,7 +8,7 @@ use App\Models\QuizAttempt;
 use App\Models\User;
 
 /**
- * SPEC-08 §2.1 — gates the Gestor's manual essay-grading screen. Scoped
+ * gates the Gestor's manual essay-grading screen. Scoped
  * to attempts whose `Quiz`'s cascade-inherited `org_id` matches the
  * Gestor's own — an Admin may grade any Org's attempts.
  */

@@ -9,8 +9,8 @@ return new class extends Migration
     /**
      * Run the migrations.
      *
-     * SPEC-00 §2.1.22 — `notifications` follows Laravel's standard
-     * Notifications table shape (see SPEC-13). Never org-scoped directly:
+     * `notifications` follows Laravel's standard
+     * Notifications table shape . Never org-scoped directly:
      * org is implied indirectly through the `notifiable` (a `User`).
      */
     public function up(): void

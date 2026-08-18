@@ -7,7 +7,7 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\App;
 
 /**
- * SPEC-16 — Master Database Seeder and Environment Orchestrator.
+ * Master Database Seeder and Environment Orchestrator.
  *
  * Checks current environment: in `production`, executes ONLY baseline seeders
  * (Roles, Admin, System Settings). In non-production, executes the full

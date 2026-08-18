@@ -42,7 +42,7 @@ class ForumTopic extends Model
     }
 
     /**
-     * SPEC-10 §2 — pinned topics surface first in the per-course topic
+     * pinned topics surface first in the per-course topic
      * list, most-recent-first within each group.
      *
      * @param  Builder<ForumTopic>  $query

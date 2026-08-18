@@ -10,7 +10,7 @@ use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 
 /**
- * SPEC-15 §5/RF33 — E2E coverage of the `/admin/audit-logs` and
+ * E2E coverage of the `/admin/audit-logs` and
  * `/gestor/audit-logs` screens: loading, filtering, opening the shared
  * "Ver diff" modal, pagination, CSV export, and cross-org isolation
  * (a Gestor never sees another Org's rows nor the Admin-only Org filter

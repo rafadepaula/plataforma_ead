@@ -9,7 +9,7 @@ use Illuminate\Validation\ValidationException;
 use Throwable;
 
 /**
- * SPEC-09 §1.2 — the certificate revocation write path. Authorization
+ * the certificate revocation write path. Authorization
  * itself is `CertificatePolicy::revoke()`'s job (HTTP layer via
  * `RevokeCertificateRequest::authorize()`); this Action only performs the
  * write plus the business-rule guards that must hold no matter the

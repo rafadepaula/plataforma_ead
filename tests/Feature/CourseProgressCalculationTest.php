@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
 
 /**
- * SPEC-07 RF20 — end-to-end coverage of the completion pipeline: marking a
+ * end-to-end coverage of the completion pipeline: marking a
  * Lesson complete via `MarkLessonCompleteAction` dispatches
  * `LessonMarkedAsCompleted`, which (through Laravel's auto-discovered
  * `RecalculateCourseProgress` listener, `QUEUE_CONNECTION=sync`)

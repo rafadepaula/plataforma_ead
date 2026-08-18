@@ -6,7 +6,7 @@ use Illuminate\Auth\Notifications\ResetPassword as BaseResetPasswordNotification
 use Illuminate\Notifications\Messages\MailMessage;
 
 /**
- * SPEC-04 RF02 — localized (pt-BR) password-reset e-mail, delivered
+ * localized (pt-BR) password-reset e-mail, delivered
  * through the SMTP mailer configured in `config/mail.php`. Reuses the
  * framework's single-use token + `resetUrl()` (built from the
  * `password.reset` named route) and only overrides the message content.

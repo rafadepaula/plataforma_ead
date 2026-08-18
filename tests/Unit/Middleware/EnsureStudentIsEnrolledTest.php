@@ -12,7 +12,7 @@ use Illuminate\Routing\Route;
 use Tests\TestCase;
 
 /**
- * SPEC-07 RF20 — `EnsureStudentIsEnrolled::resolveCourse()`'s
+ * `EnsureStudentIsEnrolled::resolveCourse()`'s
  * `$courseParam instanceof Course` short-circuit (used whenever a route
  * type-hints `Course $course` and Laravel's own `SubstituteBindings`
  * middleware already resolved it, unlike every current `student.enrolled`

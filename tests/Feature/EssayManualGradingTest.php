@@ -16,7 +16,7 @@ use App\Models\User;
 use Tests\TestCase;
 
 /**
- * SPEC-08 §2.1 — `GradeEssayAnswerAction`'s manual-grading write path and
+ * `GradeEssayAnswerAction`'s manual-grading write path and
  * its `finalizeGrading()` handoff (delegated to
  * `SubmitQuizAttemptAction::finalizeGrading()`), plus `QuizAttemptPolicy`
  * org-scoping of the Gestor grading screen.

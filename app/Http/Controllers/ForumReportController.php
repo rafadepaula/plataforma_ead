@@ -10,7 +10,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Gate;
 
 /**
- * SPEC-10 §2.2/RF26 — the "Denunciar" button
+ * the "Denunciar" button
  * (`POST courses/{course}/forum/report`, `ForumReportModal.js`).
  *
  * The single boundary translating the `postable_type` value the request

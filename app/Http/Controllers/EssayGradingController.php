@@ -10,7 +10,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
 
 /**
- * SPEC-08 §2.1 — the Gestor's manual essay-grading screen: a pending
+ * the Gestor's manual essay-grading screen: a pending
  * -attempts queue (`pending`) and the per-attempt grading action
  * (`grade`). `QuizAttempt` carries no `OrgScope` of its own (cascade
  * -inherited), so `pending()` relies on `Course`'s own `OrgScope` being

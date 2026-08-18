@@ -44,7 +44,7 @@ class QuizAttemptFactory extends Factory
 
     /**
      * Auto-graded questions are done, but at least 1 `essay` answer is
-     * still pending a Gestor's manual grade (SPEC-08 §2 step 4).
+     * still pending a Gestor's manual grade .
      */
     public function awaitingManualGrading(): static
     {
@@ -58,7 +58,7 @@ class QuizAttemptFactory extends Factory
 
     /**
      * Fully graded — either purely auto-graded, or manual essay grading
-     * has finalized (SPEC-08 §2 step 5 / §2.1).
+     * has finalized .
      */
     public function graded(): static
     {

@@ -10,7 +10,7 @@ use App\Models\User;
 use Tests\TestCase;
 
 /**
- * SPEC-09 §1.2 / RF25 — HTTP-layer coverage for `CertificateController`:
+ * HTTP-layer coverage for `CertificateController`:
  * the Gestor/Admin `index` listing, the `revoke` endpoint (delegating to
  * `RevokeCertificateRequest`/`RevokeCertificateAction`), and the `download`
  * endpoint (delegating to `CertificatePdfService`). `CertificateRevocationTest`

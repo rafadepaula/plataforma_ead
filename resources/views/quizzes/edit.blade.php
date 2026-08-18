@@ -1,5 +1,5 @@
 {{--
-    SPEC-08 RF08 — Gestor edits a Quiz's metadata and manages its
+    Gestor edits a Quiz's metadata and manages its
     Questions/Options on a single screen (no dedicated
     `quiz-questions/create|edit` full pages exist — Questions are
     authored via the modals below, each wrapping

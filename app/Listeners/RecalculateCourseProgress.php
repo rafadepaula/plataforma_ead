@@ -6,7 +6,7 @@ use App\Events\CourseCompletedByStudent;
 use App\Events\LessonMarkedAsCompleted;
 
 /**
- * SPEC-07 RF20 — auto-discovered (type-hinted `handle()` parameter).
+ * auto-discovered (type-hinted `handle()` parameter).
  * Recomputes `course_user.progress_percentage` for the completing
  * student, scoped to published lessons whose module/course are not
  * soft-deleted, and — when a `rule_type = all_lessons`

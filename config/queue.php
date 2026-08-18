@@ -11,7 +11,7 @@ return [
     | API, giving you convenient access to each backend using identical
     | syntax for each. The default queue connection is defined below.
     |
-    | SPEC-00 §1.2 (shared hosting): default to "sync" since most shared
+    | Default to "sync" for shared hosting since most shared
     | hosting plans do not allow a persistent `queue:work` process. If a
     | queued driver is required, use "database" and drain it via a
     | minute-by-minute cron calling `schedule:run` (which invokes

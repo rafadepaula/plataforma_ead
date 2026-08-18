@@ -7,7 +7,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Barryvdh\DomPDF\PDF as DomPdf;
 
 /**
- * SPEC-09 §2 / RF16 — renders `resources/views/certificates/pdf.blade.php`
+ * renders `resources/views/certificates/pdf.blade.php`
  * via `barryvdh/laravel-dompdf`, personalized with the issuing
  * Organization's name/CNPJ/logo (`certificate->course->organization`,
  * read `withoutGlobalScopes()` — see `certificates-architecture` — so a

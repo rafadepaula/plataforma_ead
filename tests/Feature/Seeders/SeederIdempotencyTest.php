@@ -9,7 +9,7 @@ use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 /**
- * SPEC-16 §4.3 — Validates that all database seeders are fully idempotent.
+ * Validates that all database seeders are fully idempotent.
  * Re-running `db:seed` multiple times must never throw duplicate key exceptions
  * or produce duplicate records in the database.
  */

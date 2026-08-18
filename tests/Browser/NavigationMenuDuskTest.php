@@ -11,7 +11,7 @@ use Tests\Browser\Navigation\AdminSidebarScopeTest;
 use Tests\DuskTestCase;
 
 /**
- * SPEC-17 §4 — E2E coverage of the dynamic navigation menu: each role
+ * E2E coverage of the dynamic navigation menu: each role
  * logs in, opens an authenticated page rendered inside the app shell
  * (which mounts `components.layout.sidebar`/`topbar`), and Dusk verifies
  * the expected sidebar links are present/absent in the live DOM plus the

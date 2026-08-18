@@ -1,5 +1,5 @@
 {{--
-    SPEC-08 RF08 — Gestor creates the (1:1) Quiz for a Lesson of
+    Gestor creates the (1:1) Quiz for a Lesson of
     `type = quiz`. `quizzes.lesson_id` is UNIQUE — a Lesson that already
     has a Quiz never reaches this screen (`QuizController::create()` is
     expected to redirect back with a 422-style error instead).

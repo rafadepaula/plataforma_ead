@@ -8,7 +8,7 @@ use App\Models\InvitationLink;
 use App\Models\User;
 
 /**
- * SPEC-06 RF03 — `InvitationLink` management (generate/revoke) is reserved
+ * `InvitationLink` management (generate/revoke) is reserved
  * to `role:admin|gestor`. `InvitationLink` carries its own `OrgScope` (like
  * `Course`), so — mirroring `CoursePolicy` rather than `ModulePolicy` —
  * this Policy only needs the role check; `OrgScope` already keeps a

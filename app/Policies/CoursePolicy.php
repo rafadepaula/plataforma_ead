@@ -7,7 +7,7 @@ use App\Models\Course;
 use App\Models\User;
 
 /**
- * SPEC-05 §1 — Course CRUD is reserved to `role:admin|gestor`.
+ * Course CRUD is reserved to `role:admin|gestor`.
  * `OrgScope` already keeps a Gestor's queries confined to their own
  * `org_id`, so this Policy only needs the role check plus the delete-time
  * active-enrollment guard; it does not re-verify `org_id` itself (contrast

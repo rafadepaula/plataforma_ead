@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Skill Auditor Script per SPEC-03 Agentic Harness standards.
+ * Skill Auditor Script per Agentic Harness standards.
  *
  * Programmatically parses .agents/skills/ and verifies that required
  * feature modules contain the mandatory 3-skill triad:
@@ -22,7 +22,7 @@ declare(strict_types=1);
 $options = getopt('', ['dir::', 'skills-dir::', 'path::', 'modules::', 'help']);
 
 if (isset($options['help'])) {
-    fwrite(STDOUT, "Auditor de Skills (SPEC-03 Agentic Harness)\n");
+    fwrite(STDOUT, "Auditor de Skills (Agentic Harness)\n");
     fwrite(STDOUT, "Uso: php scripts/check-skills.php [opções]\n\n");
     fwrite(STDOUT, "Opções:\n");
     fwrite(STDOUT, "  --dir=<caminho>       Caminho para o diretório de skills (padrão: .agents/skills)\n");

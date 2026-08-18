@@ -5,7 +5,7 @@ namespace App\Models\Traits;
 use App\Observers\AuditObserver;
 
 /**
- * SPEC-15 §4.1 — opt-in trait for models whose `created`/`updated`/
+ * opt-in trait for models whose `created`/`updated`/
  * `deleted` mutations must be recorded to `audit_logs` as a
  * "Mutação Geral" event. Attach with `use AuditableTrait;` — no further
  * wiring required, `AuditObserver` does the work.

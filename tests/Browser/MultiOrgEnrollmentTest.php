@@ -12,7 +12,7 @@ use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 
 /**
- * SPEC-06 RF03/RN09 — E2E coverage of the multi-org adaptive invitation
+ * E2E coverage of the multi-org adaptive invitation
  * flow: a user already registered/enrolled under Organization A visits
  * Organization B's course invitation link, the form collapses to a
  * password-only prompt once their existing e-mail is recognized, and

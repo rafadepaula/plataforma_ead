@@ -12,7 +12,7 @@ use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
 /**
- * SPEC-09 §1.2 — `RevokeCertificateAction`'s write path and
+ * `RevokeCertificateAction`'s write path and
  * `CertificatePolicy::revoke()`'s Gestor-own-org/Admin-any-org
  * authorization boundary. Revocation is always logical: the row is never
  * soft- or hard-deleted, only `revoked_at`/`revoked_by`/`revoke_reason`

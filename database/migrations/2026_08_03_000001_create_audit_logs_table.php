@@ -9,7 +9,7 @@ return new class extends Migration
     /**
      * Run the migrations.
      *
-     * SPEC-15 — `audit_logs` persists every auditable event (auth,
+     * `audit_logs` persists every auditable event (auth,
      * mutation, critical action). `org_id`/`user_id` are intentionally
      * nullable with `nullOnDelete()` (not `cascadeOnDelete()`): the audit
      * trail must survive the deletion of the Organization or User it

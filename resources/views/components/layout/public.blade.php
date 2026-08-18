@@ -3,12 +3,11 @@
     usam `layouts.app` (exige sessão autenticada + topbar/sidebar) nem
     `layouts.guest` (painel esquerdo temático de login):
 
-      - `resources/views/landing/show.blade.php`            (RF11, `landing.show`)
-      - `resources/views/public/certificates/show.blade.php` (SPEC-09 §2, `certificates.verify`)
+      - `resources/views/landing/show.blade.php`            (`landing.show`)
+      - `resources/views/public/certificates/show.blade.php` (`certificates.verify`)
 
     Emite `<!doctype html>`, `<meta name="csrf-token">`, o `@vite` do projeto e
-    `<body class="bg-body text-body ...">`, conforme
-    `spec/front_migration/03-screen-inventory.md` (linhas 237-242).
+    `<body class="bg-body text-body ...">`.
 
     É `layout/` (e não `ui/`) porque é peça estrutural singular do chrome da
     página — mesmo namespace de `topbar`, `sidebar`, `footer` e `alerts`.

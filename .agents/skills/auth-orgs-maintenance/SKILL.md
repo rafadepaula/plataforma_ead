@@ -25,12 +25,17 @@ Guard the Bucket C contract. PHPUnit, no Pest. Keep green:
 - `tests/Feature/MultiTenantStudentImportTest.php` — RN09: existing global e-mail gains only a new enrollment (no duplicate `User`, no password overwrite); new e-mail creates `User` bound to current `org_id`; chunk boundary at exactly 50 rows; malformed rows skipped without aborting batch; Admin with no `active_org_id` gets 422.
 - `tests/Feature/UserCrudTest.php` — Admin/Gestor CRUD scoping; Gestor-submitted `org_id` always ignored server-side; Aluno forbidden on every `/users*` route.
 - `tests/Browser/MultiTenantStudentImportTest.php` — E2E: upload CSV, chunked progress bar, final course roster.
+- `tests/Feature/Admin/UserAdminManagementTest.php` (SPEC-002) — cross-org listing with all 3 roles; screen reachable without any Impersonate Org context; every filter (name/email/org_id/status/role/created_at range) individually and combined, still paginated; Gestor/Aluno 403 on every `admin.users.*` route (middleware, not just Policy); guest redirect; show/edit views; full-profile update including `org_id`/role across all 3 `RolesEnum` values; activate/deactivate + `user.status_changed` audit rows; self-deactivation/self-demotion/self-deletion guards; destroy + audit row + `certificates`/`invitation_links` RESTRICT guards; regression that `users.index` stays org-scoped to aluno/gestor only.
+- `tests/Unit/Policies/UserPolicyGlobalAbilitiesTest.php` (SPEC-002) — `viewAnyGlobal`/`viewGlobal`/`updateGlobal`/`deleteGlobal` (Admin-only, no org dependency, self-delete blocked) plus a regression guard that the original `sharesOrgContext()`-based abilities are unchanged.
+- `tests/Browser/AdminUserManagementTest.php` (SPEC-002) — full lifecycle as plain Admin with no impersonation: cross-org listing, filter by org, deactivate via confirm modal (`data-status` assertion, not badge text), delete via confirm modal, nav-item visibility restricted to Admin only.
 
 Run narrowest first:
 
 ```bash
 vendor/bin/sail artisan test --filter=MultiTenantStudentImportTest
 vendor/bin/sail artisan test --filter=UserCrudTest
+vendor/bin/sail artisan test --filter=UserAdminManagementTest
+vendor/bin/sail artisan test --filter=UserPolicyGlobalAbilitiesTest
 ```
 
 ## RN09 — Multi-Org Adaptive Enrollment
@@ -66,6 +71,14 @@ Per RF05 ("streaming em chunks AJAX de 50 registros"), `CsvImporter.js` reads th
 
 Unlike `OrganizationPolicy` (plain role check), `UserPolicy` also compares target user's `org_id` against acting user's resolved context (Admin: `session('active_org_id')`; Gestor: `$user->org_id`). Gestor and Admin impersonating a *different* Org both get 403 on another Org's user, not 404 — row exists, route-model-binding finds it, authorization fails. Plugs into the `Gate::authorize()` pattern in `auth-orgs-conventions`.
 
+## SPEC-002 — Global Admin User-Management Screen Edge Cases
+
+- **Badge text is uppercased by CSS, not by the string in the Blade file.** `.badge` has `text-transform: uppercase`, and Dusk reads *rendered* text — `assertSeeIn('@admin-user-status-1', 'Ativo')` fails; it must assert `'ATIVO'`, or (preferred, what `admin/users/index.blade.php` actually does) read the `data-status`/`data-role` attribute instead of the visible text. Same trap applies to any other `<x-ui.badge>` on a new screen.
+- **`admin.users.*` routes must live in the `role:admin`-only group**, never `role:admin|gestor` — putting them in the wrong group makes the "inacessível a Gestores" acceptance criterion pass by Policy alone, which regresses silently if the Policy is ever loosened. A Dusk/Feature test hitting the route as Gestor must assert a 403 that happens before the controller even runs.
+- **Self-action guards are 403s inside the controller, not validation errors** — `UserAdminController::update()`/`updateStatus()` `abort(403, ...)` when the acting Admin targets their own row for deactivation or a role-change away from `admin`; `UserPolicy::deleteGlobal()` blocks self-deletion at the Policy layer instead. Getting these two layers mixed up (e.g. moving the self-delete check into the controller only) means a test asserting `assertForbidden()` before any DB write would instead see a partial mutation.
+- **`destroy()` needs both RESTRICT-FK pre-checks or it 500s.** `certificates.user_id` and `invitation_links.created_by` are both `ON DELETE RESTRICT`; a User with either related row throws a dedicated exception (`UserHasIssuedCertificatesException`/`UserHasCreatedInvitationLinksException`) instead of letting `$user->delete()` crash raw. The `invitation_links` check must use `->withoutGlobalScope('org')` — `InvitationLink` is `OrgScope`d, so without the bypass an Admin with no active impersonation (the normal state on this screen) silently sees zero links and the delete proceeds straight into the DB-level crash.
+- **`UpdateUserAdminRequest` forces `org_id` to `null` when `role === admin`** in `prepareForValidation()` — a regression here (e.g. moving that logic into `rules()`, which runs after normalization) lets a stale `org_id` slip through validation on a role-change-to-admin submission and leaves the row `org_id`-set with an admin role, which nothing else in the app expects.
+
 ## `UserHomeResolver` Sync on Role Change (BUG-001)
 
 `App\Services\UserHomeResolver::resolve()` = single source of truth for role-based post-login and guest-guard redirects. New role in `RolesEnum` needing its own dashboard **must** update this method, else it falls through to the `student.courses.index` catch-all. Both `AuthenticatedSessionController::store()` and `RedirectIfAuthenticated` delegate here, so one edit covers both paths.
@@ -78,7 +91,7 @@ vendor/bin/sail artisan test --filter=LoginTest
 
 ## Auto-Update Protocol (SPEC-03)
 
-Per `spec/specs/03-agentic-harness-and-self-updating-skills.md`: any change to `UserController`, `UserImportController`, `UserImportService`, `UserPolicy`, `users*` routes, or `CsvImporter.js` **must** update all three auth-orgs skills (`auth-orgs-architecture`, `auth-orgs-conventions`, `auth-orgs-maintenance`) in the same change before the task is done. Also:
+Per `spec/specs/03-agentic-harness-and-self-updating-skills.md`: any change to `UserController`, `Admin\UserAdminController`, `UserImportController`, `UserImportService`, `UserPolicy`, `UpdateUserAdminRequest`, `users*`/`admin.users.*` routes, or `CsvImporter.js` **must** update all three auth-orgs skills (`auth-orgs-architecture`, `auth-orgs-conventions`, `auth-orgs-maintenance`) in the same change before the task is done. Also:
 
 - `.agents/agents/code-reviewer.md` — if the change alters what a reviewer checks for this module.
 - `vendor/bin/sail artisan harness:check-skills` — fails the build if any `auth-orgs-*` skill is missing.

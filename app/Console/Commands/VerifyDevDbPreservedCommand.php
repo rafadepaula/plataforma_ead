@@ -23,7 +23,7 @@ class VerifyDevDbPreservedCommand extends Command
      *
      * @var string
      */
-    protected $description = 'Guarda de preservação do banco de desenvolvimento (SPEC-14 / RN13): snapshot/verify via scripts/verify-dev-db-preserved.php';
+    protected $description = 'Guarda de preservação do banco de desenvolvimento: snapshot/verify via scripts/verify-dev-db-preserved.php';
 
     /**
      * Execute the console command.

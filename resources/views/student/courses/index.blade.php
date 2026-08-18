@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 {{--
-    SPEC-07 RF19 — "Meus Cursos": the Aluno's own enrollments across every
+    "Meus Cursos": the Aluno's own enrollments across every
     Organization they belong to, grouped by `org_id` (matches
     `StudentCourseController@index`'s
     `Auth::user()->courses()->with('organization')->get()->groupBy('org_id')`

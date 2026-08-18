@@ -1,5 +1,5 @@
 {{--
-    SPEC-10 — a single `ForumTopic` row within `forum.index`'s list.
+    a single `ForumTopic` row within `forum.index`'s list.
 
     Expected variables:
       - `$course`, `$topic`  (`user` loaded, `replies_count` via `withCount`).

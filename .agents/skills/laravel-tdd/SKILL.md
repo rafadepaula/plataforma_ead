@@ -217,6 +217,25 @@ everything through Sail. Note is narrow on purpose: RED→GREEN→REFACTOR cycle
 and Laravel patterns above still apply. Only test syntax and runner prefix
 differ for this codebase.
 
+Data-driven tests use the PHPUnit 12 **attribute** form, not the legacy
+docblock — this project's PHPUnit config does not recognize `@dataProvider`:
+
+```php
+use PHPUnit\Framework\Attributes\DataProvider;
+
+#[DataProvider('rolesProvider')]
+public function test_admin_can_set_any_role(string $role): void { ... }
+
+public static function rolesProvider(): array
+{
+    return [['admin'], ['gestor'], ['aluno']];
+}
+```
+
+(precedent: `tests/Unit/Rules/CpfTest.php`). A docblock `@dataProvider` silently
+runs the test zero times instead of failing loudly — verify a new
+data-provider test's assertion count/output before trusting a green run.
+
 ## Project Note: Resolve Constructor-Injected Actions From the Container, Never `new X()`
 
 This codebase single-purpose Action classes (e.g. `SubmitQuizAttemptAction`,

@@ -36,7 +36,7 @@ class UpdateUserRequest extends FormRequest
             'cpf' => ['nullable', 'string', 'max:14', new Cpf, Rule::unique('users', 'cpf')->ignore($target->id)],
             'role' => ['required', Rule::in([RolesEnum::ALUNO->value, RolesEnum::GESTOR->value])],
             'password' => ['nullable', 'string', 'min:8', 'confirmed'],
-            // SPEC-15 §3 — optional status toggle; when present and
+            // optional status toggle; when present and
             // different from the current value, `UserController::update()`
             // records a `user.status_changed` audit event (RF32).
             'status' => ['sometimes', Rule::in(['active', 'inactive'])],

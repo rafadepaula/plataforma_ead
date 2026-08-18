@@ -191,8 +191,7 @@ class LessonMultimediaTest extends TestCase
     }
 
     /**
-     * SPEC-00/SPEC-07 cross-ref — soft-deleting a Lesson (this spec's only
-     * delete mechanism, `deleted_at`) must never take its `lesson_progress`
+     * Soft-deleting a Lesson (`deleted_at`) must never take its `lesson_progress`
      * history down with it. The FK is `cascadeOnDelete()` at the DB level,
      * but that only fires on a real `DELETE`, which a soft delete never
      * issues (it's an `UPDATE ... SET deleted_at = ...`).

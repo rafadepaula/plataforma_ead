@@ -9,7 +9,7 @@ return new class extends Migration
     /**
      * Run the migrations.
      *
-     * SPEC-00 §2.1.7 — `quizzes` is cascade-inherited (org implied by
+     * `quizzes` is cascade-inherited (org implied by
      * `lessons` -> `modules` -> `courses.org_id`). One quiz per lesson.
      */
     public function up(): void

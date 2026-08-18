@@ -10,7 +10,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 /**
- * SPEC-12 — `GET`/`PUT /admin/settings` (route names `settings.edit`/
+ * `GET`/`PUT /admin/settings` (route names `settings.edit`/
  * `settings.update`, see `dashboard-conventions`). Reads/writes the
  * org-override SMTP/logo/signature settings via `SettingService`, which
  * already resolves the org-specific-then-global fallback — this

@@ -12,9 +12,9 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 use Tests\TestCase;
 
 /**
- * SPEC-12 — `CsvStreamExportService` streams a CSV export
+ * `CsvStreamExportService` streams a CSV export
  * (`response()->streamDownload()` + `fputcsv()`, chunked reads) rather
- * than buffering rows into an array first (SPEC-00 §1.2's 128M
+ * than buffering rows into an array first ( §1.2's 128M
  * shared-hosting O(1)-RAM constraint). Content assertions here render the
  * `StreamedResponse`'s callback directly (`sendContent()` + output
  * buffering) instead of dispatching a real HTTP request, keeping this

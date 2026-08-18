@@ -11,7 +11,7 @@ use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 
 /**
- * SPEC-10 §3 — E2E coverage of the forum's full browser-facing flow.
+ * E2E coverage of the forum's full browser-facing flow.
  *
  * Agrupado por cadeia de ciclo de vida (ver `testing-conventions`): a
  * jornada do Aluno autor (criar tópico → sanitização do conteúdo →

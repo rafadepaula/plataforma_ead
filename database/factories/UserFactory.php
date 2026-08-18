@@ -59,7 +59,7 @@ class UserFactory extends Factory
     }
 
     /**
-     * Attach a unique CPF (SPEC-00 §2.1.2) to the user.
+     * Attach a unique CPF  to the user.
      */
     public function withCpf(): static
     {

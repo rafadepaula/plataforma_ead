@@ -1,5 +1,5 @@
 {{--
-    SPEC-10 — a single `ForumReply` row within `forum.show`'s thread.
+    a single `ForumReply` row within `forum.show`'s thread.
 
     Expected variables (passed by the parent `@foreach`):
       - `$course`, `$topic`

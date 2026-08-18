@@ -17,7 +17,7 @@ use App\Models\User;
 use Tests\TestCase;
 
 /**
- * SPEC-09 §1.1 — `IssueCertificateAction` evaluates every
+ * `IssueCertificateAction` evaluates every
  * `course_completion_rules` row for the Course (AND logic across all 3
  * `rule_type`s) and idempotently issues a `Certificate` respecting the
  * `UNIQUE(user_id, course_id)` constraint.

@@ -16,7 +16,7 @@ use App\Models\User;
 use Tests\TestCase;
 
 /**
- * SPEC-08 RF08/§2.1 — the HTTP layer wiring Bucket 1's Actions/Policies/
+ * the HTTP layer wiring Bucket 1's Actions/Policies/
  * Requests: Gestor CRUD of the 1:1 Lesson<->Quiz, nested QuizQuestion
  * CRUD + reorder, and the Gestor's manual essay-grading screen. Student
  * quiz-taking (RF09) is covered at the Action level by
@@ -52,7 +52,7 @@ class QuizManagementTest extends TestCase
     }
 
     /**
-     * SPEC-08 RF08/RF09/§2.1 — the full HTTP round trip through every
+     * the full HTTP round trip through every
      * controller this bucket wires up: Gestor authors a Quiz + a
      * single_choice/essay question pair, an enrolled Aluno submits it via
      * `student.quizzes.submit` (whose payload shape — `answers` keyed by

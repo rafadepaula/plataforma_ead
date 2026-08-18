@@ -7,7 +7,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 /**
- * SPEC-18 (UC02) — validates a self-service profile update. Unlike
+ * validates a self-service profile update. Unlike
  * `UpdateUserRequest`, there is no `{user}` route parameter by design
  * (RN08/RN12): the target is always `$this->user()`, never a
  * route-bound model, so an authenticated user can only ever edit

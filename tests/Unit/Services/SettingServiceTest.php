@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
 
 /**
- * SPEC-12 — `SettingService` is the single source of truth for reading
+ * `SettingService` is the single source of truth for reading
  * and writing `system_settings` rows: org-specific-first, global-fallback
  * resolution (mirroring `HelpArticleResolverService`'s pattern), backed by
  * a `Cache::remember()` layer that `set()`/`forget()` must bust for both

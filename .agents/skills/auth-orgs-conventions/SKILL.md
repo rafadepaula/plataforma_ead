@@ -179,6 +179,81 @@ Authenticated user hitting `/login`, `/forgot-password`, `/reset-password/{token
 
 **Convention:** all role-based redirect logic lives in `UserHomeResolver::resolve()`. Never duplicate it in controller or middleware. Both `AuthenticatedSessionController::store()` and `RedirectIfAuthenticated` call `app(UserHomeResolver::class)->resolve($user)`. New role destination = edit only `UserHomeResolver::resolve()`.
 
+## Parallel "Global" Policy Abilities Instead of Relaxing `sharesOrgContext()`
+
+When a new screen needs an Admin to act across every Organization while an existing screen must keep enforcing tenant isolation for the *same* model, add a **second set of named abilities** rather than branching inside the existing ones. SPEC-002's global Admin user-management screen added `viewAnyGlobal`/`viewGlobal`/`updateGlobal`/`deleteGlobal` to `UserPolicy` next to the untouched `viewAny`/`view`/`update`/`delete`:
+
+```php
+public function viewGlobal(User $user, User $model): bool
+{
+    return $user->hasRole(RolesEnum::ADMIN->value);
+}
+
+// original, unchanged, still gates users.* :
+public function view(User $user, User $model): bool
+{
+    return $this->sharesOrgContext($user, $model);
+}
+```
+
+Route them to a **separate controller** (`Admin\UserAdminController`, not `UserController`) that never uses `ResolvesOrgContext`, and register the routes inside the `role:admin`-only middleware group — never `role:admin|gestor` — so the screen is unreachable to a Gestor at the middleware layer too, not just the Policy. Never add an `if ($isGlobalScreen)` branch to an existing ability; that is exactly how tenant isolation on the operational screen regresses.
+
+## Self-Action Guards Belong in the Controller, Not the Policy
+
+Blocking an actor from deactivating/deleting *themselves* is state that depends on which specific row is being mutated versus who is logged in — a business rule, not an authorization rule about the resource type. `UserPolicy::deleteGlobal()` does fold in `$user->id !== $model->id` (delete is unconditionally forbidden on your own row), but the softer "you may delete/deactivate other users, just not update your own status/role right now" checks live as explicit `abort(403, '...')` calls inside `UserAdminController::update()`/`updateStatus()`, after the Policy gate already passed:
+
+```php
+if (($data['status'] ?? null) === 'inactive' && $user->id === Auth::id()) {
+    abort(403, 'Você não pode desativar sua própria conta.');
+}
+```
+
+## Guard Hard Deletes Behind `ON DELETE RESTRICT` FKs
+
+`users` has no `deleted_at` (no `SoftDeletes`). Before calling `$user->delete()` on any screen, check every FK pointing at `users.id` that is `ON DELETE RESTRICT` and throw a dedicated, catchable exception instead of letting a raw `QueryException` 500 out:
+
+```php
+if ($user->certificates()->exists()) {
+    throw new UserHasIssuedCertificatesException(...);
+}
+
+// InvitationLink IS OrgScope'd — bypass the scope or an Admin with no
+// active impersonation (or impersonating a different Org) silently
+// misses links created in other Organizations and still crashes.
+if ($user->createdInvitationLinks()->withoutGlobalScope('org')->exists()) {
+    throw new UserHasCreatedInvitationLinksException(...);
+}
+```
+
+New FK referencing `users.id` with `ON DELETE RESTRICT` = add its own pre-flight check here (and in the operational `UserController::destroy()` if that path is also reachable).
+
+## Full-Profile vs Partial Form Requests for the Same Model
+
+`UpdateUserAdminRequest` (global screen) is a distinct Form Request from `UpdateUserRequest` (operational screen), not a superset flag on one class — `role` allows all 3 `RolesEnum` values, `org_id` is editable and conditionally required/prohibited via `Rule::requiredIf()`/`Rule::prohibitedIf()` keyed off the submitted `role`, forced to `null` for `role === admin` in `prepareForValidation()` so a stale `org_id` in the payload can never leak through when the caller only changed the role select:
+
+```php
+protected function prepareForValidation(): void
+{
+    if ($this->input('role') === RolesEnum::ADMIN->value) {
+        $this->merge(['org_id' => null]);
+    }
+}
+```
+
+Keep two Form Requests per model when the "same-looking" edit screen has a genuinely different validation surface for a different actor/scope — do not parameterize one Request class with a role/mode flag.
+
+## Confirm-Modal Row Actions That Need Extra Fields: Encode Them in the `action` URL
+
+`<x-ui.confirm-modal>`'s embedded `<form>` has no slot for hidden fields beyond its own confirm button. When a same-route action (e.g. the admin listing's ativar/desativar toggle, `admin.users.status`) needs one extra non-PII value alongside the route-bound model, append it to the modal's `:action` route call — `Illuminate\Http\Request` merges query string into `$request->validate()`/`->input()` reads:
+
+```blade
+<x-ui.confirm-modal id="confirm-status-{{ $user->id }}"
+                     :action="route('admin.users.status', ['user' => $user->id, 'status' => $toggledStatus])"
+                     method="PATCH" ... />
+```
+
+Only do this for non-sensitive scalars (a status enum value here) — never put name/e-mail/CPF or anything PII in a query string that ends up in server logs.
+
 ## `UserHomeResolver`
 
 ```php

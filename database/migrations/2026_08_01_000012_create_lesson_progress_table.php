@@ -9,7 +9,7 @@ return new class extends Migration
     /**
      * Run the migrations.
      *
-     * SPEC-00 §2.1.12 — `lesson_progress` cascade-inherited (org implied by
+     * `lesson_progress` cascade-inherited (org implied by
      * `lessons` -> ... -> `courses.org_id`).
      */
     public function up(): void

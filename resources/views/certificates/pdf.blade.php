@@ -1,5 +1,5 @@
 {{--
-    SPEC-09 §2 — printable certificate template rendered by
+    printable certificate template rendered by
     `App\Services\CertificatePdfService::generate()` (Bucket B) through
     `barryvdh/laravel-dompdf`. dompdf only understands a restricted CSS
     subset (no CSS custom properties, no modern flexbox/grid), so this

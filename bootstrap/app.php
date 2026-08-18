@@ -3,6 +3,8 @@
 use App\Exceptions\CourseHasActiveEnrollmentsException;
 use App\Exceptions\InvitationLinkInvalidException;
 use App\Exceptions\UnresolvedOrgContextException;
+use App\Exceptions\UserHasCreatedInvitationLinksException;
+use App\Exceptions\UserHasIssuedCertificatesException;
 use App\Http\Middleware\EnsureStudentIsEnrolled;
 use App\Http\Middleware\RedirectIfAuthenticated;
 use Illuminate\Foundation\Application;
@@ -23,46 +25,34 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // SPEC-18 RF34/RN14 — required for `Auth::logoutOtherDevices()`
-        // (see `PasswordController`) to actually have an effect: this
-        // appends `Illuminate\Session\Middleware\AuthenticateSession` to
-        // the `web` group, which compares the session's cached password
-        // hash against the DB on every request and force-logs-out any
-        // session left stale by a password change.
+        // Required for `Auth::logoutOtherDevices()` (see `PasswordController`)
+        // to actually have an effect: this appends `Illuminate\Session\Middleware\AuthenticateSession`
+        // to the `web` group, which compares the session's cached password hash against
+        // the DB on every request and force-logs-out any session left stale by a password change.
         $middleware->authenticateSessions();
 
-        // SPEC-00 §4 — `spatie/laravel-permission`'s route middleware
-        // aliases, matched against `RolesEnum` values (see the
-        // `tenancy-conventions` skill for usage).
+        // `spatie/laravel-permission`'s route middleware aliases, matched against `RolesEnum` values.
         $middleware->alias([
             'role' => RoleMiddleware::class,
             'permission' => PermissionMiddleware::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,
-            // SPEC-07 RF20 — gates the student-facing classroom/lesson
-            // /progress routes behind an active/completed enrollment.
+            // Gates the student-facing classroom/lesson/progress routes behind an active/completed enrollment.
             'student.enrolled' => EnsureStudentIsEnrolled::class,
-            // BUG-001 — custom role-aware guest redirect (replaces the
-            // framework default that falls back to `/` when no `home`
-            // route exists).
+            // Custom role-aware guest redirect (replaces the framework default that falls back to `/` when no `home` route exists).
             'guest' => RedirectIfAuthenticated::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        // SPEC-06 — `request->expectsJson()` is included alongside the
-        // `api/*` prefix check so AJAX callers on ordinary web routes
-        // (e.g. `/convite/check-email`, `postJson()` calls against the
-        // Gestor panel's `courses.enrollments.store`) get a JSON 422/4xx
-        // body instead of Laravel's default redirect-back-with-flashed
-        // -errors behavior.
+        // `request->expectsJson()` is included alongside the `api/*` prefix check
+        // so AJAX callers on ordinary web routes get a JSON 422/4xx body instead of
+        // Laravel's default redirect-back-with-flashed-errors behavior.
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
 
-        // SPEC-00 §3 — an org-scoped model created with no resolvable
-        // org_id (e.g. an Admin without an active Impersonate Org) must
-        // never surface as a raw 500. Content-negotiate: JSON/AJAX callers
-        // get a 422 body, web callers get a plain redirect-back (302) with
-        // a flashed error message.
+        // An org-scoped model created with no resolvable org_id (e.g. an Admin without an active
+        // Impersonate Org) must never surface as a raw 500. Content-negotiate: JSON/AJAX callers
+        // get a 422 body, web callers get a plain redirect-back (302) with a flashed error message.
         $exceptions->render(function (UnresolvedOrgContextException $e, Request $request) {
             $message = 'Selecione uma Organização ativa antes de continuar.';
 
@@ -73,10 +63,8 @@ return Application::configure(basePath: dirname(__DIR__))
             return back()->withInput()->with('error', $message);
         });
 
-        // SPEC-05 — a Course with at least one `active` `course_user`
-        // enrollment must never be soft-deleted out from under enrolled
-        // students. Same content-negotiation pattern as
-        // `UnresolvedOrgContextException` above.
+        // A Course with at least one `active` `course_user` enrollment must never be soft-deleted
+        // out from under enrolled students. Same content-negotiation pattern as `UnresolvedOrgContextException` above.
         $exceptions->render(function (CourseHasActiveEnrollmentsException $e, Request $request) {
             $message = 'Não é possível excluir um Curso com matrículas ativas.';
 
@@ -87,10 +75,32 @@ return Application::configure(basePath: dirname(__DIR__))
             return back()->with('error', $message);
         });
 
-        // SPEC-06 RF03 — a `/convite/{token}` that cannot be resolved to a
-        // usable `InvitationLink` (not found/expired/exhausted/revoked)
-        // must never surface as a raw 404/500. Same content-negotiation
-        // pattern as `CourseHasActiveEnrollmentsException` above.
+        // A User with issued Certificate(s) can never be hard-deleted from the global Admin user-management screen
+        // (`certificates.user_id` is `ON DELETE RESTRICT`).
+        $exceptions->render(function (UserHasIssuedCertificatesException $e, Request $request) {
+            $message = 'Não é possível excluir um usuário com certificados emitidos.';
+
+            if ($request->expectsJson()) {
+                return response()->json(['message' => $message], 422);
+            }
+
+            return back()->with('error', $message);
+        });
+
+        // A User who has created InvitationLink(s) can never be hard-deleted from the global Admin user-management screen
+        // (`invitation_links.created_by` is `ON DELETE RESTRICT`).
+        $exceptions->render(function (UserHasCreatedInvitationLinksException $e, Request $request) {
+            $message = 'Não é possível excluir um usuário que criou links de convite.';
+
+            if ($request->expectsJson()) {
+                return response()->json(['message' => $message], 422);
+            }
+
+            return back()->with('error', $message);
+        });
+
+        // A `/convite/{token}` that cannot be resolved to a usable `InvitationLink`
+        // (not found/expired/exhausted/revoked) must never surface as a raw 404/500.
         $exceptions->render(function (InvitationLinkInvalidException $e, Request $request) {
             $message = 'Este link de convite é inválido, expirou ou já atingiu o limite de usos.';
 
@@ -101,10 +111,8 @@ return Application::configure(basePath: dirname(__DIR__))
             return response($message, 404);
         });
 
-        // SPEC-00 §5 — a `role:`-gated route hit by a guest (no
-        // authenticated user at all) should redirect to login rather than
-        // surface Spatie's default 403 (which is reserved for an
-        // authenticated user missing the required role).
+        // A `role:`-gated route hit by a guest (no authenticated user at all) should redirect to login
+        // rather than surface Spatie's default 403 (which is reserved for an authenticated user missing the required role).
         $exceptions->render(function (UnauthorizedException $e, Request $request) {
             if (Auth::guest()) {
                 return redirect()->guest(Route::has('login') ? route('login') : '/login');

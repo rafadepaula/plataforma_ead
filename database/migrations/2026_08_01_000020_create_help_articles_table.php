@@ -9,7 +9,7 @@ return new class extends Migration
     /**
      * Run the migrations.
      *
-     * SPEC-00 §2.1.20 — `help_articles` is directly org-scoped, but
+     * `help_articles` is directly org-scoped, but
      * `org_id` is nullable: a `null` article is global (visible to every
      * Organization), while a non-null one is org-specific.
      */

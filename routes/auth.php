@@ -5,8 +5,7 @@ use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use Illuminate\Support\Facades\Route;
 
-// SPEC-04 RF01/RF02 — login + single-use password-reset token flow (see
-// the `auth-orgs-architecture` skill).
+// Authentication: login + single-use password-reset token flow.
 Route::middleware('guest')->group(function (): void {
     Route::get('login', [AuthenticatedSessionController::class, 'create'])
         ->name('login');

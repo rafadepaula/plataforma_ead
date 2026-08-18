@@ -1,5 +1,5 @@
 {{--
-    SPEC-10 §2.1 — "editar tópico" page, reached via
+    "editar tópico" page, reached via
     `GET courses/{course}/forum/topics/{topic}/edit` (`forum.edit`,
     `App\Http\Controllers\ForumTopicController::edit()`). Authorized the
     same way as `forum.update` (`ForumTopicPolicy::update()` — post author,

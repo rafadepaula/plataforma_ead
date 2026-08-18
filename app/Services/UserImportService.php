@@ -70,7 +70,7 @@ class UserImportService
             }
         }
 
-        // SPEC-15 §3 — `csv.import` is logged once per chunk request, since
+        // `csv.import` is logged once per chunk request, since
         // this service has no concept of a logical "import session" spanning
         // the multiple 50-row chunks `CsvImporter.js` sends per upload (see
         // `audit-logs-architecture`'s open question). Audit failures never

@@ -13,7 +13,7 @@
         </testsuite>
     </testsuites>
     <!--
-        SPEC-00 par.5 quality guardrail: the coverage gate below must report
+        Quality guardrail: the coverage gate below must report
         at least 95.00 percent line coverage. Run it with:
           XDEBUG_MODE=coverage vendor/bin/phpunit
           php scripts/check-coverage.php

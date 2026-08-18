@@ -1,5 +1,5 @@
 {{--
-    SPEC-10 RF22 — per-course forum topic list, pinned topics first, then
+    per-course forum topic list, pinned topics first, then
     newest first. Reached via `GET courses/{course}/forum` (`forum.index`,
     `App\Http\Controllers\ForumTopicController::index()`, Bucket 2),
     behind the enrollment-gated `student.enrolled` middleware (Aluno needs

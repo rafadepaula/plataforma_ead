@@ -12,7 +12,7 @@ return new class extends Migration
     /**
      * Run the migrations.
      *
-     * SPEC-00 §4 — adapted from the published `spatie/laravel-permission`
+     * adapted from the published `spatie/laravel-permission`
      * stub: after creating the package's own tables, also seeds the 3
      * fundamental, global (non-team-scoped) roles backing `RolesEnum`
      * directly here. This guarantees the roles exist immediately after

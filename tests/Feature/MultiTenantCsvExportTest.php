@@ -9,9 +9,9 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 use Tests\TestCase;
 
 /**
- * SPEC-12 — `GET /admin/reports/{type}/export` (`reports.export`) must
+ * `GET /admin/reports/{type}/export` (`reports.export`) must
  * genuinely stream (never buffer into an array first, see
- * `CsvStreamExportService`/O(1)-RAM contract in SPEC-00 §1.2): a Gestor's
+ * `CsvStreamExportService`/O(1)-RAM contract in  §1.2): a Gestor's
  * export only ever contains their own Organization's rows, an Admin with
  * no active "Impersonate Org" session gets every Organization's rows, and
  * an Admin impersonating a specific Org gets only that Org's rows. These

@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 /**
- * SPEC-04 §2 / RF23 — Organization CRUD, reserved to `role:admin` (see
+ * Organization CRUD, reserved to `role:admin` (see
  * `routes/web.php` and `OrganizationPolicy`).
  */
 class OrganizationController extends Controller
@@ -87,7 +87,7 @@ class OrganizationController extends Controller
     {
         Gate::authorize('delete', $organization);
 
-        // SPEC-00 §2.1.1 — `users.org_id` is `ON DELETE RESTRICT`, so a
+        // `users.org_id` is `ON DELETE RESTRICT`, so a
         // hard delete with existing users would fail at the DB level.
         // Only ever soft-delete here.
         $organization->delete();

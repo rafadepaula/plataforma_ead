@@ -19,7 +19,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
 /**
- * SPEC-10 §2/RF22 — per-course `ForumTopic` list (`index`), creation
+ * per-course `ForumTopic` list (`index`), creation
  * (`create`/`store`), thread view (`show`), edit/delete
  * (`edit`/`update`/`destroy`), and the Gestor/Admin-only pin toggle (`pin`).
  * Sits behind `student.enrolled` for every action except `pin` (see

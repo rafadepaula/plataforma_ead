@@ -9,7 +9,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 /**
- * SPEC-06 RF21 — validates manual enrollment of an existing `User` into a
+ * validates manual enrollment of an existing `User` into a
  * Course via the Gestor panel. `course_id` is resolved from the
  * route-bound `{course}` segment, never trusted from request input.
  */

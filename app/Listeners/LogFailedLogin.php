@@ -6,7 +6,7 @@ use App\Services\AuditService;
 use Illuminate\Auth\Events\Failed;
 
 /**
- * SPEC-15 §3 — auto-discovered listener for the stock
+ * auto-discovered listener for the stock
  * `Illuminate\Auth\Events\Failed` event. The attempting user is never
  * identified (bad credentials), so `org_id`/`user_id` both stay `null`
  * rather than guessing an Org from the unverified `email` string (see

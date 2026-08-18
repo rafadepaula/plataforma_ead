@@ -22,7 +22,7 @@ use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 /**
- * SPEC-13 §2 — covers the 4 notification triggers wired in Bucket 1: an
+ * covers the 4 notification triggers wired in Bucket 1: an
  * `InvitationLink` being created (gatilho 1), a `Certificate` being
  * genuinely issued (gatilho 2), a `ForumReply` being posted (gatilho 3),
  * and a `course_user` row transitioning into `active` (gatilho 4).
@@ -45,7 +45,7 @@ class NotificationTriggersTest extends TestCase
             fn (InvitationSentNotification $notification, array $channels, object $notifiable): bool => $notifiable->routes['mail'] === $gestor->email
         );
 
-        // Mail-only trigger per SPEC-13 §2's table — no `database` row for
+        // Mail-only trigger 's table — no `database` row for
         // this notification type, and no `User` "invitee" to attach it to.
         $this->assertDatabaseCount('notifications', 0);
     }
@@ -212,7 +212,7 @@ class NotificationTriggersTest extends TestCase
     }
 
     /**
-     * SPEC-13 §3/RN — a mail transport failure must never roll back (or
+     * a mail transport failure must never roll back (or
      * even fail) the business action that triggered the notification: the
      * `->notify()` call site is wrapped in try/catch and logged, so the
      * caller's own persisted state is unaffected regardless of the mail
@@ -224,7 +224,7 @@ class NotificationTriggersTest extends TestCase
     public function test_a_mail_delivery_failure_does_not_roll_back_the_enrollment_it_was_triggered_by(): void
     {
         Log::shouldReceive('error')->once();
-        // SPEC-15 — `AuditService::log()` unconditionally writes to the
+        // `AuditService::log()` unconditionally writes to the
         // `audit` Monolog channel (RN "duplo armazenamento") for the
         // `enrollment` mutation this flow also triggers; this mock is a
         // full replacement of the `Log` facade, so that channel write
@@ -254,7 +254,7 @@ class NotificationTriggersTest extends TestCase
     public function test_a_mail_delivery_failure_does_not_prevent_the_certificate_from_being_returned(): void
     {
         Log::shouldReceive('error')->once();
-        // SPEC-15 — see the note in the test above: `IssueCertificateAction`
+        // see the note in the test above: `IssueCertificateAction`
         // now also calls `AuditService::log()` for `certificate.issued`.
         Log::shouldReceive('channel')->with('audit')->andReturnSelf();
         Log::shouldReceive('info')->withAnyArgs();

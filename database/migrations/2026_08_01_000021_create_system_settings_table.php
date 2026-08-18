@@ -9,7 +9,7 @@ return new class extends Migration
     /**
      * Run the migrations.
      *
-     * SPEC-00 §2.1.21 — `system_settings` is directly org-scoped, but a
+     * `system_settings` is directly org-scoped, but a
      * literal nullable `org_id` cannot participate in a composite
      * PRIMARY KEY on MySQL/MariaDB (PK columns are implicitly NOT NULL).
      *

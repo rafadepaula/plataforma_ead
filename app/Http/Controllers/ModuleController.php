@@ -70,7 +70,7 @@ class ModuleController extends Controller
 
         $course = $module->course;
 
-        // SPEC-15 §3 — captured BEFORE the delete so title/id are
+        // captured BEFORE the delete so title/id are
         // available; see `CourseController::destroy()` for the
         // `AuditableTrait` double-audit note.
         try {
