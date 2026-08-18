@@ -9,8 +9,8 @@ use Illuminate\Queue\SerializesModels;
 
 /**
  * dispatched by `EnrollmentController::store()`
- * (RF21, Gestor-driven) and `ProcessSmartInvitationAction` (self-service
- * invite flow, RF03) only on an actual transition into an active
+ * (, Gestor-driven) and `ProcessSmartInvitationAction` (self-service
+ * invite flow, ) only on an actual transition into an active
  * enrollment: a brand-new `course_user` row, or a previously `cancelled`
  * one being reactivated — never on an already-active, unchanged
  * enrollment. `SendEnrollmentConfirmedNotification` is the sole listener,

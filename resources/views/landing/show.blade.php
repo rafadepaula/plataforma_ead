@@ -10,7 +10,7 @@
     declara o próprio `.container`. Não passa o slot `footer` — o rodapé
     padrão do layout já reproduz o texto desta tela.
 
-    Carrega `<x-help-button key="landing" />` per RF12/RN05's
+    Carrega `<x-help-button key="landing" />` per 's
     100%-of-screens coverage requirement.
 --}}
 <x-layout.public :title="config('app.name', 'Plataforma EAD').' — Capacitação técnica continuada'" :container="false">

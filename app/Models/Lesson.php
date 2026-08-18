@@ -49,7 +49,7 @@ class Lesson extends Model
     }
 
     /**
-     * BUG-002 — the 11-char YouTube video id resolved from `youtube_url`,
+     *  the 11-char YouTube video id resolved from `youtube_url`,
      * regardless of the stored form (`embed/`, `watch?v=`, `youtu.be/`), or
      * `null` when the column is empty or holds something that is not a
      * recognizable YouTube link. Consumers must branch on `null` instead of
@@ -65,7 +65,7 @@ class Lesson extends Model
     }
 
     /**
-     * BUG-002 — the canonical, embeddable `https://www.youtube.com/embed/{id}`
+     *  the canonical, embeddable `https://www.youtube.com/embed/{id}`
      * URL, or `null` when no video id can be resolved. YouTube refuses to be
      * framed from any other URL form, so this is the only value a consumer may
      * put in an `<iframe src>`.

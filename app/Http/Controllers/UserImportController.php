@@ -13,7 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
 /**
- * RF05/RN09 — GET renders the upload form (course picker + file input);
+ * GET renders the upload form (course picker + file input);
  * POST /users/import/chunk is hit repeatedly by `CsvImporter.js`, once per
  * client-side 50-row batch, until the whole CSV has streamed through.
  */

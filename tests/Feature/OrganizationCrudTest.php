@@ -219,7 +219,7 @@ class OrganizationCrudTest extends TestCase
     }
 
     /**
-     * UX-004 — the edit screen renders the stored logo as an actual `<img>`
+     *  the edit screen renders the stored logo as an actual `<img>`
      * resolved from the `public` disk, never the raw column value.
      */
     public function test_edit_form_renders_the_current_logo_as_an_image(): void
@@ -241,7 +241,7 @@ class OrganizationCrudTest extends TestCase
     }
 
     /**
-     * UX-004 — the raw `logo_path` string must no longer leak into the UI.
+     *  the raw `logo_path` string must no longer leak into the UI.
      */
     public function test_edit_form_no_longer_prints_the_raw_logo_path(): void
     {
@@ -257,7 +257,7 @@ class OrganizationCrudTest extends TestCase
     }
 
     /**
-     * UX-004 — no logo means no `<img>` at all, so there is never an empty
+     *  no logo means no `<img>` at all, so there is never an empty
      * `src` re-requesting the page's own HTML.
      */
     public function test_edit_form_renders_no_logo_preview_when_the_organization_has_none(): void
@@ -282,7 +282,7 @@ class OrganizationCrudTest extends TestCase
     }
 
     /**
-     * UX-004 — the logo field moved to `<x-ui.input type="file">`; the
+     *  the logo field moved to `<x-ui.input type="file">`; the
      * `id`/`name` contract and the accepted MIME filter must survive.
      */
     public function test_logo_field_keeps_its_input_contract_after_migrating_to_the_ui_component(): void
@@ -299,7 +299,7 @@ class OrganizationCrudTest extends TestCase
     }
 
     /**
-     * UX-004 failure path — a non-image upload is rejected and nothing is
+     *  failure path — a non-image upload is rejected and nothing is
      * written to the `public` disk nor to `logo_path`.
      */
     public function test_a_non_image_logo_upload_is_rejected_and_never_persisted(): void
@@ -323,7 +323,7 @@ class OrganizationCrudTest extends TestCase
     }
 
     /**
-     * UX-004 failure path (rendering) — with a `logo` error in the bag, the
+     *  failure path (rendering) — with a `logo` error in the bag, the
      * field is now rendered by `<x-ui.input>`, so the message comes out in
      * `.invalid-feedback` under `dusk="error-logo"` and the control itself
      * gets `.is-invalid`.

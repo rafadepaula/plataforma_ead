@@ -43,7 +43,7 @@ class User extends Authenticatable
     }
 
     /**
-     * Send the password reset notification ( RF02 — overridden to
+     * Send the password reset notification (  overridden to
      * use the localized `ResetPasswordNotification` instead of the
      * framework's default English copy).
      */

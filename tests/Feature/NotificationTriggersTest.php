@@ -276,7 +276,7 @@ class NotificationTriggersTest extends TestCase
     }
 
     /**
-     * RN12 — a Forum reply's recipient resolution must never cross an
+     *  a Forum reply's recipient resolution must never cross an
      * Org boundary: only users participating in this exact (single-org)
      * topic are notified.
      */

@@ -72,7 +72,7 @@ class ProcessSmartInvitationAction
                     'password' => Hash::make($data['password']),
                     'status' => 'active',
                     'email_verified_at' => now(),
-                    // RN09 — a student's `org_id` is set once, from their
+                    //  a student's `org_id` is set once, from their
                     // first invitation link ever consumed, and is never
                     // overwritten by a later invite from a different Org
                     // (tenancy for an already-enrolled student is derived
@@ -95,7 +95,7 @@ class ProcessSmartInvitationAction
 
                 EnrollmentConfirmed::dispatch($invitationLink->course()->withoutGlobalScopes()->firstOrFail(), $user);
             } elseif ($enrollment->pivot->status === 'cancelled') {
-                // A previously revoked enrollment (RF21) is reactivated
+                // A previously revoked enrollment  is reactivated
                 // rather than throwing on the `UNIQUE(user_id, course_id)`
                 // constraint by attempting a second insert.
                 $user->courses()->updateExistingPivot($invitationLink->course_id, [

@@ -12,8 +12,8 @@ use Illuminate\Notifications\Notification;
  * dispatched by `SendEnrollmentConfirmedNotification`
  * whenever a `course_user` row is created or transitions into `active`
  * (brand-new enrollment or a reactivated one), from both
- * `EnrollmentController::store()` (Gestor-driven, RF21) and
- * `ProcessSmartInvitationAction` (self-service invite flow, RF03). `database`
+ * `EnrollmentController::store()` (Gestor-driven, ) and
+ * `ProcessSmartInvitationAction` (self-service invite flow, ). `database`
  * is listed before `mail` in {@see self::via()} so the in-app row is
  * guaranteed to persist even if the `mail` channel's queued job throws.
  */

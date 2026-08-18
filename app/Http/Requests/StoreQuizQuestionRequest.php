@@ -9,7 +9,7 @@ use Illuminate\Validation\Rule;
 /**
  * validates creation of a `QuizQuestion` + its nested
  * `quiz_options`. `options` is required for every `type` except `essay`
- * (RN11 — `quiz_options` does not apply to essay questions); when present,
+ * ( `quiz_options` does not apply to essay questions); when present,
  * exactly 1 correct option is required for `single_choice`/`true_false`,
  * and at least 1 for `multiple_choice`.
  *
@@ -42,7 +42,7 @@ class StoreQuizQuestionRequest extends FormRequest
     }
 
     /**
-     * Cross-field RN11/§1.2 rules that `rules()` alone cannot express:
+     * Cross-field /§1.2 rules that `rules()` alone cannot express:
      * exactly 1 correct option for `single_choice`/`true_false`, at least
      * 1 for `multiple_choice`.
      */

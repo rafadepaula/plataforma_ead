@@ -12,7 +12,7 @@ use Illuminate\Auth\Events\Login;
  * `Illuminate\Auth\Events\Login` event, fired on every successful
  * authentication. Logs `login.success` with the actual password value
  * never touched — only the fixed `'[REDACTED]'` placeholder is recorded
- * (RN14).
+ * .
  */
 class LogSuccessfulLogin
 {

@@ -5,7 +5,7 @@ namespace App\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * RF06 — payload for the AJAX Module reorder endpoint. Only validates
+ *  payload for the AJAX Module reorder endpoint. Only validates
  * shape/existence here; `ModuleController::reorder()` is responsible for
  * confirming every id in `ordered_ids` actually belongs to the route-bound
  * `{course}` (an existence check alone would let a Gestor reorder/leak

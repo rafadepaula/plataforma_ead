@@ -200,7 +200,7 @@ if ($diffs !== []) {
 }
 
 fwrite(STDOUT, sprintf(
-    "SUCESSO: o banco \"%s\" permanece intacto (%d tabelas verificadas, RN13 preservada).\n",
+    "SUCESSO: o banco \"%s\" permanece intacto (%d tabelas verificadas, isolamento preservado).\n",
     $database,
     count($after)
 ));

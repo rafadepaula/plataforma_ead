@@ -78,7 +78,7 @@ Route::middleware(['auth', 'role:gestor'])->group(function (): void {
     Route::get('gestor/audit-logs/export', [AuditLogController::class, 'export'])->name('gestor.audit-logs.export');
 });
 
-// RF04/RF05 — Aluno/Gestor CRUD + chunked CSV import, restricted to
+// Aluno/Gestor CRUD + chunked CSV import, restricted to
 // Admin/Gestor (see the `auth-orgs-maintenance` skill).
 Route::middleware(['auth', 'role:admin|gestor'])->group(function (): void {
     Route::get('users/import', [UserImportController::class, 'create'])->name('users.import.create');
@@ -147,7 +147,7 @@ Route::middleware(['auth', 'role:admin|gestor'])->group(function (): void {
     Route::put('certificates/{certificate}/revoke', [CertificateController::class, 'revoke'])
         ->name('certificates.revoke');
 
-    // UC13 — the Gestor/Admin's Course-level completion-rule CRUD
+    //  the Gestor/Admin's Course-level completion-rule CRUD
     // (`index`/`store`/`destroy` only, see `CourseCompletionRuleController`'s
     // docblock). Mirrors `courses.enrollments.*`'s nesting-under-`{course}`
     // pattern one block above.
@@ -159,7 +159,7 @@ Route::middleware(['auth', 'role:admin|gestor'])->group(function (): void {
         ->name('courses.completion-rules.destroy');
 });
 
-// UC13 — `certificates.download` sits outside the `role:admin|gestor`
+//  `certificates.download` sits outside the `role:admin|gestor`
 // group above: unlike `index`/`revoke`, download is also reachable by the
 // Aluno who OWNS the certificate (their "Certificado indisponível. X%"
 // classroom banner turns into a download link once issued). Plain `auth`
@@ -251,7 +251,7 @@ Route::middleware(['auth', 'student.enrolled'])->group(function (): void {
 // `since_id` AJAX polling, and the "Denunciar" report action, all nested
 // under `{course}` and gated by `student.enrolled` — mirrors the
 // `classroom.*`/`student.quizzes.*` block above's middleware choice since
-// forum access is enrollment-gated (RN10), not just role-gated (see the
+// forum access is enrollment-gated , not just role-gated (see the
 // `EnsureStudentIsEnrolled` middleware). `{topic}`/`{reply}` are plain
 // route parameters, not typed model bindings — see
 // `ForumTopicController`'s docblock for why. `forum-replies.fetch` is the

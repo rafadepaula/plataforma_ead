@@ -86,7 +86,7 @@ class InvitationLink extends Model
 
     /**
      * Link-level revocation (distinct from `course_user.status =
-     * 'cancelled'`, the per-enrollment revocation used by RF21) — set by
+     * 'cancelled'`, the per-enrollment revocation used by ) — set by
      * `InvitationLinkController::destroy()`.
      */
     public function isRevoked(): bool

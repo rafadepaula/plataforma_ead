@@ -5,7 +5,7 @@ namespace App\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * RF06 — validates an update to a Course. Mirrors
+ *  validates an update to a Course. Mirrors
  * {@see StoreCourseRequest}; authorization is scoped to the route-bound
  * `course` instance (so `CoursePolicy::update()` can enforce the acting
  * Gestor's tenant boundary).

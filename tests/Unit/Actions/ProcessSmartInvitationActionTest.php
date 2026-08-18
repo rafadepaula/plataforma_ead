@@ -177,7 +177,7 @@ class ProcessSmartInvitationActionTest extends TestCase
     }
 
     /**
-     * RN09 — a student already registered/enrolled under Org A must not
+     *  a student already registered/enrolled under Org A must not
      * get a second `users` row nor have their original `org_id`
      * overwritten when they use an Org B course's invitation link; they
      * simply gain a second `course_user` row for Org B's course.
@@ -226,7 +226,7 @@ class ProcessSmartInvitationActionTest extends TestCase
     }
 
     /**
-     * A previously-cancelled enrollment (RF21 revocation) for the same
+     * A previously-cancelled enrollment ( revocation) for the same
      * user/course pair must be reactivated rather than blocked by the
      * `UNIQUE(user_id, course_id)` constraint on a second insert attempt.
      */

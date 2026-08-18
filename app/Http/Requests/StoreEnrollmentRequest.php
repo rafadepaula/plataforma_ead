@@ -31,7 +31,7 @@ class StoreEnrollmentRequest extends FormRequest
             'user_id' => [
                 'required',
                 'integer',
-                // RF21 — a Gestor may only manually enroll a User who
+                //  a Gestor may only manually enroll a User who
                 // already belongs to their own org, closing the same gap
                 // `ProcessSmartInvitationAction` guards for the
                 // self-service flow: no cross-org "guess the ID" force

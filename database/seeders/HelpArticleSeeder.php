@@ -6,7 +6,7 @@ use App\Models\HelpArticle;
 use Illuminate\Database\Seeder;
 
 /**
- *  (RF12/RN05) &  (UC02) — seeds the global (org_id = null)
+ *   &   — seeds the global (org_id = null)
  * `HelpArticle` rows resolved by `HelpArticleResolverService` for screens
  * that don't yet have org-specific overrides authored.
  *

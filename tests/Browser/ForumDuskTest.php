@@ -40,7 +40,7 @@ class ForumDuskTest extends DuskTestCase
         $this->browse(function (Browser $browser) use ($student, $course): void {
             // 1. Criação do tópico, com conteúdo hostil no corpo.
             //
-            //    RN14 — `ForumContentSanitizerService::sanitize()` é um
+            //     `ForumContentSanitizerService::sanitize()` é um
             //    `trim(strip_tags($content))`: remove as TAGS `<script>` mas
             //    não o texto entre elas, então o que persiste é
             //    `alert('xss')Texto legítimo` (inerte), e o escape padrão do
@@ -76,7 +76,7 @@ class ForumDuskTest extends DuskTestCase
                 'content' => 'Minha resposta ao tópico.',
             ]);
 
-            // 3. UC15 — o autor edita o tópico...
+            // 3.  o autor edita o tópico...
             $browser->visit(route('forum.show', [$course, $topic]))
                 ->waitFor('@edit-topic-'.$topic->id)
                 ->click('@edit-topic-'.$topic->id)
@@ -159,7 +159,7 @@ class ForumDuskTest extends DuskTestCase
     }
 
     /**
-     * UC15 — `ForumTopicPolicy::update()` only grants the post's author or a
+     *  `ForumTopicPolicy::update()` only grants the post's author or a
      * same-org Gestor/Admin; another enrolled Aluno must neither see the
      * "Editar" button nor be able to reach `forum.edit` directly.
      */

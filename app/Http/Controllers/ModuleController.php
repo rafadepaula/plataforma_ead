@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Gate;
 use Throwable;
 
 /**
- * RF06 — Module CRUD, nested under a Course (`courses.modules`, shallow —
+ *  Module CRUD, nested under a Course (`courses.modules`, shallow —
  * `index`/`create`/`store` are reached via `{course}`, `edit`/`update`/
  * `destroy` via `{module}` alone). `Module` has no `OrgScope` of its own
  * (see `courses-architecture`), so every action is guarded by
@@ -98,7 +98,7 @@ class ModuleController extends Controller
     }
 
     /**
-     * RF06 — AJAX reorder endpoint. `ReorderModulesRequest` only checks
+     *  AJAX reorder endpoint. `ReorderModulesRequest` only checks
      * that every id exists in `modules`; here we additionally confirm
      * every id belongs to `$course` before writing anything, otherwise a
      * Gestor could reorder (and thereby probe the existence of) another

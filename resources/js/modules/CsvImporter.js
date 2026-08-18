@@ -1,6 +1,6 @@
 /**
  * CsvImporter - SOLID JavaScript module for chunked (50-row) AJAX CSV
- * student import (RF05/RN09). Reads the selected File client-side via
+ * student import . Reads the selected File client-side via
  * FileReader, manually splits it into rows (no external CSV parsing
  * dependency), and POSTs sequential 50-row batches through the shared
  * HttpClient module so the server never has to buffer the whole file.

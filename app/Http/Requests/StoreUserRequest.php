@@ -9,7 +9,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 /**
- * RF04 — validates creation of an Aluno/Gestor. `org_id` is intentionally
+ *  validates creation of an Aluno/Gestor. `org_id` is intentionally
  * absent from these rules: it is always resolved server-side by
  * `UserController::resolveOrgId()`, never trusted from request input.
  */

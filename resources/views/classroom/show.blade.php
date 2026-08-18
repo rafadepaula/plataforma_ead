@@ -11,7 +11,7 @@
       - `$completedLessonIds` array<int> of this student's completed
                                `lesson_progress.lesson_id` for this Course.
       - `$progressPercentage` int, mirrors `course_user.progress_percentage`.
-      - `$certificate`        UC13 — `?Certificate` for this student/course
+      - `$certificate`         `?Certificate` for this student/course
                                pair (`null` until `IssueCertificateAction`
                                issues one).
 --}}

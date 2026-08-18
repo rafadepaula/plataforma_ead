@@ -21,8 +21,8 @@ use Tests\TestCase;
 /**
  * `NavigationService::build()` is the single filter/resolution
  * gate for the sidebar/topbar. These tests assert the per-role visibility
- * matrix (RN38/RN39), RF36 (no dead `#` links), RF37 (active-pattern
- * highlighting), RF38 (badge counts) and RF39 (contextual forum URL)
+ * matrix ,  (no dead `#` links),  (active-pattern
+ * highlighting),  (badge counts) and  (contextual forum URL)
  * directly against the service output, without going through Blade —
  * the {@see RoleMenuVisibilityTest} covers the rendered
  * HTML parity separately.
@@ -83,7 +83,7 @@ class NavigationServiceTest extends TestCase
     {
         $admin = User::factory()->create(['org_id' => null]);
         $admin->assignRole(RolesEnum::ADMIN->value);
-        // BUG-005 — `users` is the one item that additionally requires a
+        //  `users` is the one item that additionally requires a
         // resolvable tenant context, so impersonate an Organization here
         // and cover the context-less Admin in the two tests below.
         session(['active_org_id' => Organization::factory()->create()->id]);
@@ -98,12 +98,12 @@ class NavigationServiceTest extends TestCase
         $this->assertContains('forum-moderation', $keys);
         $this->assertContains('audit-logs', $keys);
         $this->assertContains('settings', $keys);
-        // UX-001 — "Meus Cursos" was removed from the Admin's menu.
+        //  "Meus Cursos" was removed from the Admin's menu.
         $this->assertNotContains('student-courses', $keys);
     }
 
     /**
-     * BUG-005 / RN38 — `users.index` resolves its tenant strictly, so a
+     * `users.index` resolves its tenant strictly, so a
      * system Admin in global context (no own `org_id`, no
      * `active_org_id`) cannot reach it; the item must be filtered out
      * instead of dead-ending in a `back()` + flash error.
@@ -120,10 +120,10 @@ class NavigationServiceTest extends TestCase
         $this->assertContains('settings', $keys);
     }
 
-    // ── UX-001 — Admin menu scope & the "Impersonate" section ────────
+    // ──  Admin menu scope & the "Impersonate" section ────────
 
     /**
-     * UX-001 — in global context the Admin's menu is strictly the system
+     *  in global context the Admin's menu is strictly the system
      * administration surface: the operational, Organization-scoped items
      * (`courses`, `quiz-attempts`, `forum-moderation`) have no tenant to
      * act upon and must not be offered at all.
@@ -134,7 +134,7 @@ class NavigationServiceTest extends TestCase
         $admin->assignRole(RolesEnum::ADMIN->value);
 
         $this->assertSame(['Administração'], $this->sectionTitlesFor($admin));
-        // `users` is absent here by BUG-005 (no resolvable tenant);
+        // `users` is absent here by  (no resolvable tenant);
         // `admin-users`  is always visible to an Admin.
         $this->assertSame(
             ['dashboard', 'organizations', 'admin-users', 'audit-logs', 'settings'],
@@ -156,7 +156,7 @@ class NavigationServiceTest extends TestCase
     }
 
     /**
-     * UX-001 — once an Organization is impersonated, the operational
+     *  once an Organization is impersonated, the operational
      * items reappear, but grouped under their own "Impersonate" heading
      * so the Admin can tell system scope from Organization scope.
      */
@@ -171,7 +171,7 @@ class NavigationServiceTest extends TestCase
             $this->keysInSection($admin, 'Impersonate'),
         );
         // The system block keeps its own items (`users` is back because
-        // the impersonated Organization resolves a tenant — BUG-005;
+        // the impersonated Organization resolves a tenant — ;
         // `admin-users` from  is always visible to an Admin).
         $this->assertSame(
             ['dashboard', 'organizations', 'users', 'admin-users', 'audit-logs', 'settings'],
@@ -189,7 +189,7 @@ class NavigationServiceTest extends TestCase
     }
 
     /**
-     * UX-001 — RF38 badges must keep resolving after the items moved to
+     *   badges must keep resolving after the items moved to
      * the "Impersonate" section (the badge callbacks are unchanged, but
      * the section move must not bypass `resolveBadge()`).
      */
@@ -215,7 +215,7 @@ class NavigationServiceTest extends TestCase
     }
 
     /**
-     * UX-001 non-regression — a Gestor always operates inside their own
+     *  non-regression — a Gestor always operates inside their own
      * Organization, so nothing moves for them: the operational items stay
      * in "Administração" and no "Impersonate" heading is ever emitted.
      */
@@ -233,7 +233,7 @@ class NavigationServiceTest extends TestCase
     }
 
     /**
-     * UX-001 — an impersonated Organization in the session must not leak
+     *  an impersonated Organization in the session must not leak
      * an "Impersonate" heading into a Gestor's menu: only a system Admin
      * (no own `org_id`) can be in an impersonated context.
      */
@@ -249,7 +249,7 @@ class NavigationServiceTest extends TestCase
     }
 
     /**
-     * UX-001 — a dual Admin/Gestor account bound to its own Organization
+     *  a dual Admin/Gestor account bound to its own Organization
      * is not impersonating anything: it operates in its own tenant, so
      * the operational items stay in "Administração".
      */
@@ -264,7 +264,7 @@ class NavigationServiceTest extends TestCase
     }
 
     /**
-     * UX-001 — "Meus Cursos" is gone from the Admin's menu, which leaves
+     *  "Meus Cursos" is gone from the Admin's menu, which leaves
      * the "Aprendizado" section empty and therefore dropped entirely by
      * `build()`, in both contexts.
      */
@@ -283,7 +283,7 @@ class NavigationServiceTest extends TestCase
     }
 
     /**
-     * UX-001 non-regression — only the Admin loses "Meus Cursos"; the
+     *  non-regression — only the Admin loses "Meus Cursos"; the
      * Gestor and the Aluno keep their "Aprendizado" section.
      */
     public function test_gestor_and_aluno_still_see_meus_cursos(): void
@@ -320,7 +320,7 @@ class NavigationServiceTest extends TestCase
 
         $keys = $this->keysFor($gestor);
 
-        // RN39 — `organizations` is admin-exclusive.
+        //  `organizations` is admin-exclusive.
         $this->assertNotContains('organizations', $keys);
         $this->assertContains('dashboard', $keys);
         $this->assertContains('users', $keys);
@@ -336,7 +336,7 @@ class NavigationServiceTest extends TestCase
 
         $sections = $this->service->build($aluno);
 
-        // RN38 — the entire Administração section must not be rendered.
+        //  the entire Administração section must not be rendered.
         foreach ($sections as $section) {
             $this->assertNotSame('Administração', $section->title, 'Aluno must never see the Administração section.');
         }
@@ -467,7 +467,7 @@ class NavigationServiceTest extends TestCase
 
     public function test_pending_forum_report_badge_never_leaks_another_orgs_reports(): void
     {
-        // RN41/security — `ForumReport` has no `OrgScope`; the badge must
+        // /security — `ForumReport` has no `OrgScope`; the badge must
         // still only count reports whose target post the acting Gestor can
         // `view` (same-org), never a foreign org's pending reports.
         $orgA = Organization::factory()->create();
@@ -504,7 +504,7 @@ class NavigationServiceTest extends TestCase
     {
         $org = Organization::factory()->create();
         // A Gestor always resolves a tenant context, so the `users` item
-        // is present for them (BUG-005 hides it only for a context-less
+        // is present for them ( hides it only for a context-less
         // Admin).
         $gestor = User::factory()->create(['org_id' => $org->id]);
         $gestor->assignRole(RolesEnum::GESTOR->value);
@@ -512,7 +512,7 @@ class NavigationServiceTest extends TestCase
         // `routeIs()` reads `request()->route()->named(...)`. In a unit
         // test no route is dispatched, so a real `Illuminate\Routing\Route`
         // is bound to the request via `setRouteResolver()` — exercising
-        // the active wildcard matching (RF37) against the framework's own
+        // the active wildcard matching  against the framework's own
         // `named()` implementation, not a re-implementation of it. The
         // Feature/Dusk suites additionally cover dispatched-route parity.
         $route = (new Route('GET', 'users/create', []))
@@ -527,7 +527,7 @@ class NavigationServiceTest extends TestCase
             ->flatMap(fn ($section) => $section->items)
             ->firstWhere('key', 'users');
 
-        // RF37 — the `users.*` wildcard highlights the parent on a
+        //  the `users.*` wildcard highlights the parent on a
         // sub-route like `users.create`.
         $this->assertTrue($usersItem['active']);
     }

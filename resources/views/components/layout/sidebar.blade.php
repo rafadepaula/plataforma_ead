@@ -6,7 +6,7 @@
     // badge-enriched list per acting user). No role checks or
     // `Route::has()` guards live here anymore: the service layer is the
     // single source of truth, so a link that the user cannot reach is
-    // never present in this array (RN38/RN40).
+    // never present in this array .
     $sidebarSections = $navigationSections ?? [];
 @endphp
 

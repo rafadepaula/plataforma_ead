@@ -9,7 +9,7 @@ use Illuminate\Validation\Rule;
 /**
  * validates a self-service profile update. Unlike
  * `UpdateUserRequest`, there is no `{user}` route parameter by design
- * (RN08/RN12): the target is always `$this->user()`, never a
+ * : the target is always `$this->user()`, never a
  * route-bound model, so an authenticated user can only ever edit
  * their own record via this endpoint.
  */

@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Gate;
 use Throwable;
 
 /**
- * RF06 — Course CRUD, reserved to `role:admin|gestor` (see `routes/web.php`
+ *  Course CRUD, reserved to `role:admin|gestor` (see `routes/web.php`
  * and `CoursePolicy`). `index`/`store`/etc. rely on the `OrgScope` global
  * scope to confine every query/write to the acting user's tenant — no
  * `org_id` filtering is done manually here.

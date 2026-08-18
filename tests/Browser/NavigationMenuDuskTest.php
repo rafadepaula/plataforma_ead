@@ -25,7 +25,7 @@ use Tests\DuskTestCase;
 class NavigationMenuDuskTest extends DuskTestCase
 {
     /**
-     * UX-001 / BUG-005 — cadeia do Admin: em contexto global o sidebar é a
+     * cadeia do Admin: em contexto global o sidebar é a
      * superfície de administração *de sistema* apenas; depois de "Entrar
      * como", o item operacional de usuários volta e realmente funciona.
      * O detalhamento por seção do sidebar vive em
@@ -48,7 +48,7 @@ class NavigationMenuDuskTest extends DuskTestCase
                 ->assertPresent('@sidebar-organizations-link')
                 ->assertPresent('@sidebar-audit-logs-link')
                 ->assertPresent('@sidebar-settings-link')
-                // BUG-005 — `Alunos & Usuários` é single-org e portanto
+                //  `Alunos & Usuários` é single-org e portanto
                 // inalcançável para um Admin em contexto global.
                 ->assertMissing('@sidebar-users-link')
                 ->assertMissing('@sidebar-users-link-mobile');
@@ -70,7 +70,7 @@ class NavigationMenuDuskTest extends DuskTestCase
                 ->assertDontSee('Selecione uma Organização ativa antes de continuar.')
                 ->assertSee('Aluno Da Org');
 
-            // 4. Encerrar o contexto esconde o item de novo (UX-002 §4.4 —
+            // 4. Encerrar o contexto esconde o item de novo (
             //    destino determinístico no dashboard).
             $browser->visit(route('organizations.index'))
                 ->waitFor('@exit-impersonation')
@@ -99,7 +99,7 @@ class NavigationMenuDuskTest extends DuskTestCase
     }
 
     /**
-     * RF39 — o Aluno não tem nenhum link administrativo, e o link do fórum
+     *  o Aluno não tem nenhum link administrativo, e o link do fórum
      * aparece apenas quando existe matrícula: as duas metades são o mesmo
      * ator, então são etapas da mesma cadeia (a matrícula é criada entre
      * elas e a tela é recarregada).
@@ -150,14 +150,14 @@ class NavigationMenuDuskTest extends DuskTestCase
         $gestor->assignRole(RolesEnum::GESTOR->value);
 
         // A Gestor always resolves a tenant context, so the users item is
-        // visible for them (BUG-005 only hides it for a context-less Admin).
+        // visible for them ( only hides it for a context-less Admin).
         $this->browse(function (Browser $browser) use ($gestor): void {
             $browser->loginAs($gestor)
                 ->visit(route('users.create'))
                 ->waitFor('@user-form');
 
             // The parent "Alunos & Usuários" item must carry the
-            // `active` class on its `users.create` sub-route (RF37).
+            // `active` class on its `users.create` sub-route .
             // Dusk's `assertAttribute` does strict equality on the full
             // attribute string, so read the class and assert `active`
             // membership directly.
@@ -166,7 +166,7 @@ class NavigationMenuDuskTest extends DuskTestCase
             $this->assertStringContainsString(
                 'active',
                 $class,
-                "Expected sidebar-users-link to carry the 'active' class on its users.create sub-route (RF37)."
+                "Expected sidebar-users-link to carry the 'active' class on its users.create sub-route ."
             );
         });
     }

@@ -6,7 +6,7 @@ use App\Enums\Permissions\RolesEnum;
 use App\Models\User;
 
 /**
- * RF04 — Aluno/Gestor CRUD authorization. Admin manages any Organization
+ *  Aluno/Gestor CRUD authorization. Admin manages any Organization
  * (scoped by the impersonated `session('active_org_id')`); Gestor manages
  * only their own `org_id`; Aluno has no access at all. Mirrors the same
  * tenant-boundary resolution `OrgScope` uses elsewhere (see

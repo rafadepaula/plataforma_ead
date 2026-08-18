@@ -69,7 +69,7 @@ class UserFactory extends Factory
     }
 
     /**
-     * RF04 — assign the `aluno` Spatie role after creation. Does not force
+     *  assign the `aluno` Spatie role after creation. Does not force
      * `org_id`: an aluno may be `org_id = null` until enrolled via
      * `course_user` (see `App\Models\User`'s docblock).
      */
@@ -81,7 +81,7 @@ class UserFactory extends Factory
     }
 
     /**
-     * RF04 — assign the `gestor` Spatie role after creation. A gestor
+     *  assign the `gestor` Spatie role after creation. A gestor
      * always carries an `org_id`; one is auto-created if not already set.
      */
     public function gestor(): static

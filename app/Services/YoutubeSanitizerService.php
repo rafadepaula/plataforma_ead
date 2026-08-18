@@ -36,7 +36,7 @@ class YoutubeSanitizerService
     }
 
     /**
-     * BUG-002 — non-throwing counterpart of `sanitize()`: returns the 11-char
+     *  non-throwing counterpart of `sanitize()`: returns the 11-char
      * video id for any supported form (`watch?v=`, `embed/`, `youtu.be/`), or
      * `null` when the value is empty/unrecognizable. Used by consumers that
      * must degrade gracefully (the classroom player) and by the data

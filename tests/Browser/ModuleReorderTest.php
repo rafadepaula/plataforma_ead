@@ -11,7 +11,7 @@ use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 
 /**
- * RF06 — E2E coverage of the AJAX module reorder flow. Native HTML5
+ *  E2E coverage of the AJAX module reorder flow. Native HTML5
  * drag-and-drop is notoriously unreliable to emulate through WebDriver, so
  * this drives the same client-side code path `ModuleReorder.js` uses on a
  * real `drop` event (`window.ModuleReorder.persistOrder(list)`) after

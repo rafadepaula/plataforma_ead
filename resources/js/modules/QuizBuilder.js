@@ -9,7 +9,7 @@
  * first form on the page).
  *
  * Three independent responsibilities:
- * - Hide the entire options UI when `type=essay` is selected (RN11 —
+ * - Hide the entire options UI when `type=essay` is selected (
  *   `quiz_options` does not apply to essay questions). The disabled
  *   options inputs are also given `disabled` so a browser never submits
  *   a stray `options[]` payload alongside `type=essay` — the server-side

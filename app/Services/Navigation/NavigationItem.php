@@ -10,7 +10,7 @@ use App\Models\User;
  * {@see NavigationService} before reaching the Blade view.
  *
  * Visibility is controlled by three cooperating gates, ALL of which must
- * pass for the item to render ( RN38/RN40 — parity between the
+ * pass for the item to render (  — parity between the
  * menu and the route's own `role:`/Policy middleware):
  *
  *  1. `roles`          — non-empty allow-list of Spatie role names
@@ -19,14 +19,14 @@ use App\Models\User;
  *  2. `permissions`    — optional explicit `can()` checks (AND-ed).
  *  3. `routeResolver`  — optional closure returning the resolved URL
  *                        string, or `null` to hide the item entirely
- *                        (used by RF39's contextual forum link, which
+ *                        (used by  contextual forum link, which
  *                        only renders when the Aluno has at least one
  *                        active enrollment).
  *  4. `sectionResolver` — optional closure returning the section heading
  *                        this item belongs to *for this user*, or `null`
  *                        to hide the item entirely. `section` is the
  *                        static fallback used when no resolver is set
- *                        (UX-001 — the Admin's Organization-scoped items
+ *                        ( the Admin's Organization-scoped items
  *                        move to "Impersonate" and vanish in global
  *                        context, while a Gestor keeps them in
  *                        "Administração").

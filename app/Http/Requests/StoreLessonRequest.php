@@ -10,13 +10,13 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 /**
- * RF07 — validates creation of a Lesson. `module_id` is intentionally
+ *  validates creation of a Lesson. `module_id` is intentionally
  * absent from these rules: it is always resolved from the route-bound
  * `{module}` segment by `LessonController::store()`, never trusted from
  * request input.
  *
  *  owns quiz question authoring; this form only exposes
- * `type = content` fields (Rich Text / Imagem / PDF / YouTube — RF07's
+ * `type = content` fields (Rich Text / Imagem / PDF / YouTube —
  * four supported content kinds), all optional/nullable so a Gestor can
  * fill in exactly one of them.
  */

@@ -6,7 +6,7 @@ use PDO;
 use Tests\TestCase;
 
 /**
- * Exercises the RN13 dev-DB-preservation guard  end to end
+ * Exercises the  dev-DB-preservation guard  end to end
  * against the real, dedicated `testing` MySQL database — the same database
  * `.env.dusk.local`/`.env.dusk.ci` point Dusk at — via the
  * `harness:verify-dev-db-preserved` wrapper around

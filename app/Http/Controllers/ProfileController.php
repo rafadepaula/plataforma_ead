@@ -11,8 +11,8 @@ use Illuminate\Http\Request;
  * self-service profile management, available to any
  * authenticated user regardless of role. Unlike `UserController`
  * (Admin/Gestor managing OTHER users), this controller only ever acts on
- * `$request->user()` — there is no `{user}` route param by design (RN08),
- * and `org_id`/`status` are never accepted from request input (RN08/RN12).
+ * `$request->user()` — there is no `{user}` route param by design ,
+ * and `org_id`/`status` are never accepted from request input .
  */
 class ProfileController extends Controller
 {

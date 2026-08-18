@@ -11,7 +11,7 @@ use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 
 /**
- * RF06/RF07 — E2E coverage: a Gestor creates/edits/deletes a Course, a
+ * E2E coverage: a Gestor creates/edits/deletes a Course, a
  * Module, and a Lesson through the UI, including the destructive-action
  * confirmations.
  *

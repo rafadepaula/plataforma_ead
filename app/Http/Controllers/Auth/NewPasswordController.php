@@ -42,7 +42,7 @@ class NewPasswordController extends Controller
 
         // `Password::reset` validates the token is unexpired and matches
         // the stored hash, then deletes it from `password_reset_tokens`
-        // (single-use —  RF02) before invoking the callback below.
+        // (single-use —  ) before invoking the callback below.
         $status = Password::reset(
             $request->only('email', 'password', 'password_confirmation', 'token'),
             function (User $user) use ($request): void {

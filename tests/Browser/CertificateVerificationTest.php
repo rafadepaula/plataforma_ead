@@ -93,7 +93,7 @@ class CertificateVerificationTest extends DuskTestCase
     }
 
     /**
-     * UC13 — a sala de aula do Aluno mostra "Certificado indisponível. X%"
+     *  a sala de aula do Aluno mostra "Certificado indisponível. X%"
      * quando ainda não existe `Certificate` para o par aluno/curso,
      * reaproveitando exatamente o `course_user.progress_percentage` que a
      * barra de progresso já exibe — nunca um valor recalculado à parte.

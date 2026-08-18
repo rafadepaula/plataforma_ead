@@ -20,7 +20,7 @@ class LessonYoutubeEmbedRenderingTest extends TestCase
     use RefreshDatabase;
 
     /**
-     * BUG-002 — Scenario A: CourseSeeder must persist youtube_url in sanitized
+     *  Scenario A: CourseSeeder must persist youtube_url in sanitized
      * embed form, never in raw `watch?v=` form.
      */
     public function test_course_seeder_persists_sanitized_youtube_embed_urls(): void
@@ -54,7 +54,7 @@ class LessonYoutubeEmbedRenderingTest extends TestCase
     }
 
     /**
-     * BUG-002 — Scenario B: Student classroom view must render iframe with
+     *  Scenario B: Student classroom view must render iframe with
      * sanitized embed src and correct data-video-id attribute.
      */
     public function test_student_lesson_view_embeds_iframe_with_sanitized_src(): void
@@ -90,7 +90,7 @@ class LessonYoutubeEmbedRenderingTest extends TestCase
     }
 
     /**
-     * BUG-002 — the consumer must not trust the stored format: a legacy
+     *  the consumer must not trust the stored format: a legacy
      * `watch?v=` row (written before the sanitizer existed, or by a direct
      * `UPDATE`) must still render an embeddable `src` and the real 11-char
      * video id, never `data-video-id="watch"`.
@@ -108,7 +108,7 @@ class LessonYoutubeEmbedRenderingTest extends TestCase
     }
 
     /**
-     * BUG-002 — when no video id can be resolved from the stored value, the
+     *  when no video id can be resolved from the stored value, the
      * view must degrade explicitly (visible notice, no player wiring) instead
      * of emitting an iframe YouTube will refuse to frame.
      */
@@ -155,7 +155,7 @@ class LessonYoutubeEmbedRenderingTest extends TestCase
     }
 
     /**
-     * BUG-002 — Regression: When youtube_url is already sanitized (embed form),
+     *  Regression: When youtube_url is already sanitized (embed form),
      * the view must extract the correct video ID via basename(parse_url()).
      */
     public function test_student_lesson_view_renders_correct_video_id_data_attribute(): void

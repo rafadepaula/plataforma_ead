@@ -722,7 +722,7 @@ class AuditLogTest extends TestCase
     }
 
     // ------------------------------------------------------------------
-    // RF33 read/query surface (Bucket B controller + routes — expected
+    //  read/query surface (Bucket B controller + routes — expected
     // RED until AuditLogController/routes/web.php are wired)
     // ------------------------------------------------------------------
 

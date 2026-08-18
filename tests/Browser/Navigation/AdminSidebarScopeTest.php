@@ -9,7 +9,7 @@ use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 
 /**
- * UX-001 — E2E coverage of the Admin sidebar's scope split. In global
+ *  E2E coverage of the Admin sidebar's scope split. In global
  * context the Admin only sees the system-administration surface; the
  * Organization-scoped items appear (and disappear) with the "Impersonate
  * Org" context, grouped under their own "Impersonate" heading.
@@ -25,7 +25,7 @@ use Tests\DuskTestCase;
  */
 class AdminSidebarScopeTest extends DuskTestCase
 {
-    /** @var list<string> The Organization-scoped item keys (UX-001). */
+    /** @var list<string> The Organization-scoped item keys . */
     private const OPERATIONAL_KEYS = ['courses', 'quiz-attempts', 'forum-moderation'];
 
     /**
@@ -75,12 +75,12 @@ class AdminSidebarScopeTest extends DuskTestCase
                     ->assertPresent('@sidebar-'.$key.'-link-mobile');
             }
 
-            // 3. O link agrupado é real e alcançável (RF36).
+            // 3. O link agrupado é real e alcançável .
             $browser->click('@sidebar-courses-link')
                 ->waitForLocation('/courses')
                 ->assertDontSee('Selecione uma Organização ativa antes de continuar.');
 
-            // 4. Encerrar o contexto derruba a seção inteira de novo. UX-002
+            // 4. Encerrar o contexto derruba a seção inteira de novo.
             //    §4.4 tornou o destino determinístico (`admin.dashboard`).
             $browser->visit(route('organizations.index'))
                 ->waitFor('@exit-impersonation')

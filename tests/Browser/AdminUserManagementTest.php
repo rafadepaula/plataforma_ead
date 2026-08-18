@@ -16,7 +16,7 @@ use Tests\DuskTestCase;
  * screen (`admin.users.*`). Unlike `UserManagementTest` (the operational,
  * single-org `users.index`), this screen never needs an active
  * "Impersonate Org" context — logging in as a plain Admin (`org_id = null`,
- * no `session('active_org_id')` seeded) is enough, proving BUG-005 is
+ * no `session('active_org_id')` seeded) is enough, proving  is
  * non-blocking here.
  */
 class AdminUserManagementTest extends DuskTestCase

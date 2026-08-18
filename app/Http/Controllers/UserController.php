@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Hash;
 use Throwable;
 
 /**
- * RF04 — Aluno/Gestor CRUD, scoped to the acting user's tenant context.
+ *  Aluno/Gestor CRUD, scoped to the acting user's tenant context.
  * `org_id` is always resolved server-side via {@see self::resolveOrgId()}
  * (the acting Gestor's own `org_id`, or the impersonating Admin's
  * `session('active_org_id')`) and is never accepted from request input —

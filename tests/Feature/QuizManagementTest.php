@@ -19,7 +19,7 @@ use Tests\TestCase;
  * the HTTP layer wiring Bucket 1's Actions/Policies/
  * Requests: Gestor CRUD of the 1:1 Lesson<->Quiz, nested QuizQuestion
  * CRUD + reorder, and the Gestor's manual essay-grading screen. Student
- * quiz-taking (RF09) is covered at the Action level by
+ * quiz-taking  is covered at the Action level by
  * `SubmitQuizAttemptTest`/`QuizAttemptLimitsTest` and at the browser level
  * by `tests/Browser/StudentQuizAttemptTest.php`.
  */

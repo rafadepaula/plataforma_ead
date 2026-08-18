@@ -46,7 +46,7 @@ class ClassroomController extends Controller
 
         $enrollment = $user->courses()->withoutGlobalScopes()->where('courses.id', $course->id)->first();
 
-        // UC13 — the "Certificado indisponível. X%" classroom banner:
+        //  the "Certificado indisponível. X%" classroom banner:
         // `null` here means the student sees the unavailable-with-progress
         // message; a found row (issued, regardless of `rule_type`s beyond
         // `all_lessons`) means they see the download link instead. Reuses

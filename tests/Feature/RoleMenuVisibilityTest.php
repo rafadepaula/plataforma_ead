@@ -22,7 +22,7 @@ class RoleMenuVisibilityTest extends TestCase
 {
     public function test_admin_menu_renders_all_admin_links_and_no_dead_hash(): void
     {
-        // BUG-005 — `users.index` is an operational, single-org screen, so
+        //  `users.index` is an operational, single-org screen, so
         // the Admin only gets that link while impersonating an
         // Organization; see the dedicated cases below.
         $org = Organization::factory()->create();
@@ -41,7 +41,7 @@ class RoleMenuVisibilityTest extends TestCase
         $response->assertSee(route('forum-moderation.index'), false);
         $response->assertSee(route('admin.audit-logs.index'), false);
         $response->assertSee(route('settings.edit'), false);
-        // RF36 — no dead `href="#"` for any navigation item.
+        //  no dead `href="#"` for any navigation item.
         $this->assertStringNotContainsString('sidebar-item" href="#"', $response->getContent());
     }
 
@@ -54,7 +54,7 @@ class RoleMenuVisibilityTest extends TestCase
         $response = $this->actingAs($gestor)->get(route('admin.dashboard'));
 
         $response->assertOk();
-        // RN39 — `Organizações` is admin-exclusive.
+        //  `Organizações` is admin-exclusive.
         $response->assertDontSee(route('organizations.index'), false);
         $response->assertDontSeeText('Organizações');
         // Gestor still sees the rest of the admin block.
@@ -71,7 +71,7 @@ class RoleMenuVisibilityTest extends TestCase
         $response = $this->actingAs($aluno)->get(route('student.courses.index'));
 
         $response->assertOk();
-        // RN38 — every admin link is absent from the rendered HTML.
+        //  every admin link is absent from the rendered HTML.
         $response->assertDontSee(route('admin.dashboard'), false);
         $response->assertDontSee(route('organizations.index'), false);
         $response->assertDontSee(route('users.index'), false);
@@ -118,9 +118,9 @@ class RoleMenuVisibilityTest extends TestCase
         $admin->assignRole(RolesEnum::ADMIN->value);
 
         // `users.create` is a sub-route matched by the `users.*` active
-        // pattern (RF37) — the parent item must carry the `active` class.
+        // pattern  — the parent item must carry the `active` class.
         // The Admin needs an impersonated Organization for the item to be
-        // visible at all (BUG-005).
+        // visible at all .
         $response = $this->actingAs($admin)
             ->withSession(['active_org_id' => $org->id])
             ->get(route('users.create'));
@@ -130,7 +130,7 @@ class RoleMenuVisibilityTest extends TestCase
     }
 
     /**
-     * BUG-005 / RN38 — `users.index` resolves its tenant strictly
+     * `users.index` resolves its tenant strictly
      * (`ResolvesOrgContext`), so a system Admin with neither an own
      * `org_id` nor an impersonated Organization cannot reach it. The menu
      * must therefore not offer the item — in NEITHER render: the desktop
@@ -149,17 +149,17 @@ class RoleMenuVisibilityTest extends TestCase
         $this->assertStringNotContainsString('dusk="sidebar-users-link-mobile"', $response->getContent());
         $response->assertDontSeeText('Alunos & Usuários');
         // The rest of the system-administration block is untouched.
-        // UX-001 — `courses.index` is NOT part of it anymore: it is an
+        //  `courses.index` is NOT part of it anymore: it is an
         // Organization-scoped item, covered by the cases below.
         $response->assertSee(route('organizations.index'), false);
         $response->assertSee(route('admin.audit-logs.index'), false);
         $response->assertSee(route('settings.edit'), false);
     }
 
-    // ── UX-001 — Admin menu scope & the "Impersonate" section ────────
+    // ──  Admin menu scope & the "Impersonate" section ────────
 
     /**
-     * UX-001 — in global context the Admin's rendered menu must not offer
+     *  in global context the Admin's rendered menu must not offer
      * any Organization-scoped item, in EITHER render (desktop `<aside>`
      * and mobile Offcanvas), and must not emit an empty "Impersonate"
      * heading.
@@ -184,7 +184,7 @@ class RoleMenuVisibilityTest extends TestCase
     }
 
     /**
-     * UX-001 — with an active Impersonate Org the three operational items
+     *  with an active Impersonate Org the three operational items
      * come back, under their own "Impersonate" heading, in both renders.
      */
     public function test_admin_impersonating_an_org_sees_the_impersonate_section_in_both_renders(): void
@@ -204,13 +204,13 @@ class RoleMenuVisibilityTest extends TestCase
             $this->assertStringContainsString('dusk="sidebar-'.$key.'-link"', $html);
             $this->assertStringContainsString('dusk="sidebar-'.$key.'-link-mobile"', $html);
         }
-        // RF36 — the newly grouped links are real, reachable URLs.
+        //  the newly grouped links are real, reachable URLs.
         $response->assertSee(route('courses.index'), false);
         $this->assertStringNotContainsString('sidebar-item" href="#"', $html);
     }
 
     /**
-     * UX-001 — "Meus Cursos" is gone from the Admin's menu, so the
+     *  "Meus Cursos" is gone from the Admin's menu, so the
      * "Aprendizado" heading is never rendered for them either.
      */
     public function test_admin_never_sees_the_aprendizado_section(): void
@@ -233,7 +233,7 @@ class RoleMenuVisibilityTest extends TestCase
     }
 
     /**
-     * UX-001 non-regression — nothing moves for the Gestor: the
+     *  non-regression — nothing moves for the Gestor: the
      * operational items stay in "Administração" and no "Impersonate"
      * heading appears, even with a stale `active_org_id` in session.
      */

@@ -6,7 +6,7 @@ use App\Models\Organization;
 use App\Models\User;
 
 /**
- * UX-002 — the single source of truth for "is this user currently acting
+ *  the single source of truth for "is this user currently acting
  * inside an impersonated Organization, and which one?".
  *
  * The raw signal (`session('active_org_id')`) is read in many places
@@ -14,7 +14,7 @@ use App\Models\User;
  * *impersonation* reading of it is narrower than the *tenant-resolution*
  * reading: a Gestor bound to its own `org_id` resolves a tenant without
  * ever impersonating anything. Only a system Admin (no own `org_id`) can
- * be inside an impersonated context, which is exactly the rule UX-001
+ * be inside an impersonated context, which is exactly the rule
  * already encoded in `NavigationRegistry::resolveOperationalSection()`
  * and that this class now owns for both consumers.
  *

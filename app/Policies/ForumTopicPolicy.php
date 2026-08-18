@@ -10,7 +10,7 @@ use App\Models\User;
 /**
  * `ForumTopic` is directly `OrgScope`d, but course
  * access still must be checked explicitly here: `view`/`create` are
- * gated to an enrolled Aluno (RN10) or a same-org Gestor/Admin;
+ * gated to an enrolled Aluno  or a same-org Gestor/Admin;
  * `update`/`delete` are reserved to the post's author (no time limit,
  * per §2.1) or a same-org Gestor/Admin; `pin` is Gestor/Admin-only
  * (§2/§2.2 — direct moderation, independent of any report).
@@ -65,7 +65,7 @@ class ForumTopicPolicy
 
     /**
      * Admin: unrestricted. Gestor: only within their own Org. Aluno:
-     * only with an active/completed enrollment in the Course (RN10).
+     * only with an active/completed enrollment in the Course .
      */
     protected function hasCourseAccess(User $user, Course $course): bool
     {

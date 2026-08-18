@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Hash;
 
 /**
  * self-service password change. `Auth::logoutOtherDevices()`
- * is called before the password is rotated (RN14): it re-hashes and saves the
+ * is called before the password is rotated : it re-hashes and saves the
  * CURRENT (pre-rotation) password while invalidating every other session's
  * remember-token/session-password pairing, so a hijacked session does not
  * survive the change. `SESSION_DRIVER=database` is required for this to work.

@@ -27,7 +27,7 @@ class ImpersonateOrgTest extends DuskTestCase
                 ->click('@impersonate-'.$organization->id)
                 ->waitForLocation('/organizations')
                 ->assertSee('Organização Alvo')
-                // UX-002 §4.4 — leaving the context now redirects to a
+                //  leaving the context now redirects to a
                 // deterministic destination (`admin.dashboard`) instead
                 // of `back()`.
                 ->waitFor('@exit-impersonation')

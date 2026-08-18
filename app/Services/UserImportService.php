@@ -10,13 +10,13 @@ use Illuminate\Support\Str;
 use Throwable;
 
 /**
- * RF05/RN09 — processes one CSV chunk (up to 50 rows, $O(1)$ RAM per
+ * processes one CSV chunk (up to 50 rows, $O(1)$ RAM per
  * request) of Aluno enrollment data. Never receives the raw uploaded file:
  * `CsvImporter.js` reads/splits it client-side, this service only ever
  * sees an already-decoded array of rows plus the server-resolved
  * `org_id`/`course_id` for the current tenant context.
  *
- * RN09: if the row's e-mail already exists globally (the student is
+ *  if the row's e-mail already exists globally (the student is
  * enrolled at a different Organization), the existing `User` row is
  * reused as-is — its `password` and `org_id` are never touched — and only
  * a new `course_user` enrollment is inserted for the current Org's

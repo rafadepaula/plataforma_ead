@@ -12,7 +12,7 @@ use Illuminate\Validation\ValidationException;
 /**
  * the quiz correction engine. A single call corrects every
  * auto-gradable question (`single_choice`/`multiple_choice`/`true_false`)
- * and records any `essay` answer for later manual grading (RN11).
+ * and records any `essay` answer for later manual grading .
  *
  * The student-facing UI is a single-page form (all questions POSTed at
  * once, see the `quizzes-architecture` skill) — there is no separate

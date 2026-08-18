@@ -8,7 +8,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 /**
- * RF07 — `YoutubeSanitizerService` validates a genuine `youtube.com`/
+ *  `YoutubeSanitizerService` validates a genuine `youtube.com`/
  * `youtu.be` URL, extracts the 11-char video ID, and returns the canonical
  * `https://www.youtube.com/embed/{id}` form. Anything else — malformed
  * URLs, non-YouTube domains, XSS/embed-injection attempts — must be

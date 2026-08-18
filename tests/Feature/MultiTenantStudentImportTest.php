@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 /**
- * RF05/RN09 — chunked (50-row) CSV import of Alunos, multi-org adaptive
+ * chunked (50-row) CSV import of Alunos, multi-org adaptive
  * enrollment: a globally-existing e-mail must only gain a new course
  * enrollment (never a duplicate User row, never an overwritten password);
  * a brand-new e-mail creates the User (bound to the current org) and

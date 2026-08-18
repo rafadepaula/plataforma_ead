@@ -10,7 +10,7 @@ use App\Models\Organization;
 use Tests\TestCase;
 
 /**
- * RF06 — the AJAX/jQuery-wording module reorder endpoint. Persists a dense
+ *  the AJAX/jQuery-wording module reorder endpoint. Persists a dense
  * `0..n-1` `order_index` sequence and rejects module ids that don't belong
  * to the route-bound `{course}` (cross-tenant/cross-course ID guessing).
  */

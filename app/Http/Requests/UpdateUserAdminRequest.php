@@ -66,7 +66,7 @@ class UpdateUserAdminRequest extends FormRequest
             'password' => ['nullable', 'string', 'min:8', 'confirmed'],
             // optional status toggle; when present and
             // different from the current value, `UserAdminController`
-            // records a `user.status_changed` audit event (RF32).
+            // records a `user.status_changed` audit event .
             'status' => ['sometimes', Rule::in(['active', 'inactive'])],
             'reason' => ['nullable', 'string', 'max:500'],
         ];

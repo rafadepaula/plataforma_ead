@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Storage;
 use Throwable;
 
 /**
- * RF07 — Lesson CRUD, nested under a Module (`modules.lessons`, shallow —
+ *  Lesson CRUD, nested under a Module (`modules.lessons`, shallow —
  * `index`/`create`/`store` are reached via `{module}`, `edit`/`update`/
  * `destroy` via `{lesson}` alone). `Lesson` is cascade-inherited two levels
  * deep (`module -> course.org_id`), so every action is guarded by
@@ -116,7 +116,7 @@ class LessonController extends Controller
     }
 
     /**
-     * RF07 — AJAX reorder endpoint, scoped to a Module. Same defense-in
+     *  AJAX reorder endpoint, scoped to a Module. Same defense-in
      * -depth and dense-reassignment approach as
      * `ModuleController::reorder()`.
      */

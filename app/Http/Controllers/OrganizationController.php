@@ -28,7 +28,7 @@ class OrganizationController extends Controller
 
         return view('organizations.index', [
             'organizations' => $organizations,
-            // UX-002 — the point-of-origin banner reads the same resolved
+            //  the point-of-origin banner reads the same resolved
             // Organization as the topbar badge instead of running its own
             // `Organization::find()` inside the Blade.
             'activeOrganization' => $impersonation->activeOrganization(auth()->user()),

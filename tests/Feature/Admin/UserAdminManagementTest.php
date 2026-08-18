@@ -94,7 +94,7 @@ class UserAdminManagementTest extends TestCase
 
     public function test_admin_reaches_the_screen_without_any_active_impersonate_org_context(): void
     {
-        // No `session('active_org_id')` seeded — proves BUG-005 is
+        // No `session('active_org_id')` seeded — proves  is
         // non-blocking here, unlike the operational `users.index`.
         $this->actingAsAdmin();
 

@@ -5,7 +5,7 @@ namespace App\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * RF06 — validates an update to a Module. Mirrors
+ *  validates an update to a Module. Mirrors
  * {@see StoreModuleRequest}; authorization is scoped to the route-bound
  * `module` instance so `ModulePolicy::update()` can verify the parent
  * Course's `org_id` (defense in depth on top of `OrgScope`, since `Module`

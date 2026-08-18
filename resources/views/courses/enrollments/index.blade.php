@@ -12,7 +12,7 @@
         </x-slot:actions>
     </x-layout.page-header>
 
-    <x-ui.card title="Matricular manualmente" kicker="RF21">
+    <x-ui.card title="Matricular manualmente" kicker="Matrículas">
         <form method="POST"
               action="{{ route('courses.enrollments.store', $course) }}"
               dusk="manual-enroll-form"

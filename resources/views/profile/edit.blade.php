@@ -1,7 +1,7 @@
 {{--
-    profile self-service screen. RN08: no
+    profile self-service screen.  no
     `{user}` route param exists, the target is always `Auth::user()`.
-    RN05's global help coverage already comes from `layouts.app`'s
+     global help coverage already comes from `layouts.app`'s
     topbar, which mounts `<x-help-button :key="Route::currentRouteName()" />`
     on every authenticated screen — see `help-conventions` skill: a
     second explicit `<x-help-button>` here would render two buttons keyed

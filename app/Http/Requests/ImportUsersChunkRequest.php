@@ -6,7 +6,7 @@ use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * RF05/RN09 — validates one AJAX CSV-import chunk. The whole file is read
+ * validates one AJAX CSV-import chunk. The whole file is read
  * and split into batches of up to 50 rows client-side by
  * `CsvImporter.js` (see the `auth-orgs-maintenance` skill for why this is
  * client-driven rather than a server-side streamed upload); this request

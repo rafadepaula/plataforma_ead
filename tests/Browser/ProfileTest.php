@@ -81,7 +81,7 @@ class ProfileTest extends DuskTestCase
                 ->assertPathIs('/profile')
                 ->assertSee('already been taken');
 
-            // 2. CPF com checksum inválido (UC02 §6.2 — fluxo de exceção
+            // 2. CPF com checksum inválido ( fluxo de exceção
             //    próprio, não confundir com o duplicado do §6.1).
             $browser->waitFor('@profile-form')
                 ->clear('cpf')

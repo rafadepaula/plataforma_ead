@@ -12,19 +12,19 @@ use Illuminate\Support\Facades\Route;
  * {@see NavigationSection}s for the acting user ( §2 — the
  * service layer that replaces the previously imperative Blade menu).
  *
- * Filtering pipeline per item (all gates must pass — RN38/RN40 parity
+ * Filtering pipeline per item (all gates must pass —  parity
  * with the route's own `role:`/Policy middleware):
  *
  *   1. `roles` allow-list intersects the user's roles (empty = any auth user).
  *   2. `permissions` array must all pass `$user->can(...)`.
  *   3. `routeResolver` (if set) must return a non-null URL — a `null`
- *      result means the item is contextually unavailable (RF39 forum).
+ *      result means the item is contextually unavailable ( forum).
  *      Items without a resolver fall back to `route($item->route)`, but
- *      only if that route name is actually registered (RF36 — never a
+ *      only if that route name is actually registered ( never a
  *      dead `#` link).
  *   4. `sectionResolver` (if set) must return a non-null section
  *      heading — a `null` result means the item has no meaningful place
- *      in this user's menu and is dropped (UX-001 — the Admin's
+ *      in this user's menu and is dropped ( the Admin's
  *      Organization-scoped items in global context).
  *
  * Empty sections (no visible items) are dropped so the sidebar never
@@ -56,7 +56,7 @@ final class NavigationService
                 continue;
             }
 
-            // UX-001 — the heading comes from the resolved item, not the
+            //  the heading comes from the resolved item, not the
             // registry's static `section`: it may have been rewritten
             // per-user by a `sectionResolver`.
             $sectionTitle = $resolved['section'];
@@ -70,7 +70,7 @@ final class NavigationService
 
         // Drop empty sections and preserve the registry's declared
         // display order — an Aluno never sees the "Administração"
-        // heading just because it exists in `sectionOrder()` (RN38).
+        // heading just because it exists in `sectionOrder()` .
         $result = array_filter($sections, fn ($section) => $section->items !== []);
 
         uasort($result, function (NavigationSection $a, NavigationSection $b) use ($order): int {
@@ -121,7 +121,7 @@ final class NavigationService
     }
 
     /**
-     * UX-001 — an item's heading may depend on the acting user's context
+     *  an item's heading may depend on the acting user's context
      * (Admin in global scope vs. impersonating an Organization). Items
      * without a `sectionResolver` keep their statically declared
      * `section`; a resolver returning `null` hides the item entirely.
@@ -167,7 +167,7 @@ final class NavigationService
             return ($item->routeResolver)($user);
         }
 
-        // RF36 — never emit a dead `#` link. If the configured route
+        //  never emit a dead `#` link. If the configured route
         // name isn't registered, the item is hidden rather than
         // rendered as an unreachable anchor.
         if (! Route::has($item->route)) {

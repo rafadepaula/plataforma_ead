@@ -5,7 +5,7 @@ namespace Tests\Feature;
 use Tests\TestCase;
 
 /**
- * Guards RN13/ §2.1: the Dusk suite must run against a dedicated
+ * Guards / §2.1: the Dusk suite must run against a dedicated
  * `.env.dusk.local` file pointing at the isolated `testing` MySQL database,
  * never against the developer's `.env` / `plataforma_ead` database.
  */

@@ -9,7 +9,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 /**
- * RF04 — validates updates to an existing Aluno/Gestor. `org_id` is
+ *  validates updates to an existing Aluno/Gestor. `org_id` is
  * intentionally absent: `UserController::update()` never mass-assigns it
  * from request input, it is immutable via this endpoint by design.
  */
@@ -38,7 +38,7 @@ class UpdateUserRequest extends FormRequest
             'password' => ['nullable', 'string', 'min:8', 'confirmed'],
             // optional status toggle; when present and
             // different from the current value, `UserController::update()`
-            // records a `user.status_changed` audit event (RF32).
+            // records a `user.status_changed` audit event .
             'status' => ['sometimes', Rule::in(['active', 'inactive'])],
             'reason' => ['nullable', 'string', 'max:500'],
         ];

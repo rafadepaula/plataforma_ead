@@ -5,7 +5,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 
 /**
- * BUG-002 — data migration: normalizes every legacy `lessons.youtube_url`
+ *  data migration: normalizes every legacy `lessons.youtube_url`
  * written before `44c7e8a` (when `CourseSeeder` and any direct `UPDATE`/import
  * bypassed `YoutubeSanitizerService`) to the canonical, embeddable
  * `https://www.youtube.com/embed/{id}` form.

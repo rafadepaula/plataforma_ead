@@ -1,5 +1,5 @@
 /**
- * SmartInvitationForm - SOLID JavaScript module for RF03's adaptive
+ * SmartInvitationForm - SOLID JavaScript module for  adaptive
  * `/convite/{token}` public registration form. On blur (debounced) of the
  * e-mail field it POSTs to the `check-email` endpoint via the shared
  * `HttpClient` module and toggles the visibility (and `required`-ness) of

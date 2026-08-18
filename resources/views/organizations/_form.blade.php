@@ -40,7 +40,7 @@
         accept="image/*"
     />
 
-    {{-- UX-004 — o logo já persistido é renderizado como imagem resolvida pelo
+    {{--  o logo já persistido é renderizado como imagem resolvida pelo
          disco `public`; nunca o valor cru da coluna. A visibilidade é decidida
          aqui no servidor: sem logo, nenhum `<img>` (e nenhum `src` vazio).
          `.org-logo` é a exceção histórica de escala de cinza do projeto

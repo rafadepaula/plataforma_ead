@@ -18,7 +18,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        // UX-002 — singleton so the impersonated Organization is resolved
+        //  singleton so the impersonated Organization is resolved
         // (and memoized) once per request, even though the sidebar and the
         // topbar each trigger the `NavigationComposer`.
         $this->app->singleton(ImpersonationContext::class);

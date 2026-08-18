@@ -27,7 +27,7 @@ use Illuminate\Support\Facades\Gate;
  *
  * `{course}`/`{topic}` are always plain `int` route parameters, never a
  * typed `Course`/`ForumTopic` implicit binding: `ForumTopic` carries
- * `OrgScope`, and a multi-org Aluno (RF19, `org_id === null`, no
+ * `OrgScope`, and a multi-org Aluno (, `org_id === null`, no
  * impersonation session) would have every query silently filtered to
  * nothing under that scope (see `OrgScope::bootOrgScope()`) — every
  * lookup here explicitly bypasses it via `withoutGlobalScopes()`, mirrors

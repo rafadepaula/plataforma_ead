@@ -9,9 +9,9 @@ use App\Models\User;
 use Tests\TestCase;
 
 /**
- * RF06 — Course/Module CRUD is reserved to `role:admin|gestor`, scoped to
+ *  Course/Module CRUD is reserved to `role:admin|gestor`, scoped to
  * the acting Gestor's own Organization via `OrgScope`. Also covers the
- * delete guard (RF06 acceptance criteria): a Course with an `active`
+ * delete guard ( acceptance criteria): a Course with an `active`
  * enrollment may never be soft-deleted.
  */
 class MultiTenantCourseManagementTest extends TestCase

@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 /**
- * RF04 — Admin/Gestor CRUD of Alunos and Gestores, always scoped by
+ *  Admin/Gestor CRUD of Alunos and Gestores, always scoped by
  * server-resolved `org_id` (never trusted from request input).
  */
 class UserCrudTest extends TestCase
@@ -126,7 +126,7 @@ class UserCrudTest extends TestCase
     }
 
     /**
-     * BUG-005 — the menu no longer offers `users.index` to an Admin
+     *  the menu no longer offers `users.index` to an Admin
      * without an active Organization context (see
      * `RoleMenuVisibilityTest`), but a hand-typed URL must still fail
      * safely: the strict `ResolvesOrgContext` resolution stays in place

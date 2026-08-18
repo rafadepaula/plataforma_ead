@@ -11,7 +11,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
 
 /**
- * UC13  — Gestor/Admin panel for managing a Course's
+ *  Gestor/Admin panel for managing a Course's
  * `course_completion_rules`, nested under `{course}` (mirrors
  * `EnrollmentController`'s "no dedicated Policy, authorize against the
  * parent Course via `CoursePolicy::update`" convention — see that

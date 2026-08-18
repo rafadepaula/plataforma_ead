@@ -73,7 +73,7 @@ class ImpersonateOrgController extends Controller
             report($e);
         }
 
-        // UX-002 §4.4 — the "Sair do contexto" control now lives in the
+        //  the "Sair do contexto" control now lives in the
         // topbar of every screen, so `back()` could return the Admin to a
         // screen whose content depended on the context just dropped
         // (e.g. `/courses` under impersonation). The destination is

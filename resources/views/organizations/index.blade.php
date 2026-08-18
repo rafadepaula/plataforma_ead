@@ -7,7 +7,7 @@
         </x-slot:actions>
     </x-layout.page-header>
 
-    {{-- UX-002 — este banner permanece: é a confirmação imediata da ação
+    {{--  este banner permanece: é a confirmação imediata da ação
          "Entrar como", no ponto de origem e com espaço para a frase inteira.
          O badge da topbar cobre um problema diferente (a PERSISTÊNCIA do
          sinal nas demais telas). Os dois não brigam: o alerta é
@@ -49,7 +49,7 @@
 
                         <x-ui.button href="{{ route('organizations.edit', $organization) }}" size="sm" dusk="edit-organization-{{ $organization->id }}">Editar</x-ui.button>
 
-                        {{-- UX-003 — o "Remover" agora só ABRE o modal de confirmação
+                        {{--  o "Remover" agora só ABRE o modal de confirmação
                              (gatilho declarativo `data-bs-toggle`/`data-bs-target`).
                              O `DELETE` real vive no `<form>` embutido em
                              `<x-ui.confirm-modal>`. Mesmo par gatilho + modal de

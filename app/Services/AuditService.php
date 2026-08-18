@@ -46,7 +46,7 @@ class AuditService
         // `$payload` is the caller's free-form context (e.g. `old_status`/
         // `new_status`, `total_processed`, `revocation_reason`). It must
         // land in the DB row too — not just the Monolog line — or the
-        // RF33 diff-modal/CSV export has nothing to show for critical
+        //  diff-modal/CSV export has nothing to show for critical
         // actions that don't carry explicit `oldValues`/`newValues`.
         $dbNewValues = empty($payload) ? $newValues : array_merge($newValues ?? [], $payload);
 

@@ -7,13 +7,13 @@ use App\Models\QuizAttempt;
 use App\Models\User;
 
 /**
- * Pending-count badge resolvers for  RF38. Kept as a single
+ * Pending-count badge resolvers for  . Kept as a single
  * invokable collection (rather than inline closures inside the registry)
  * so they can be unit-tested in isolation and stay close to the Eloquent
  * queries they wrap.
  *
  * Both counters honour an active Admin "Impersonate Org" context
- * (`session('active_org_id')`) per RN41: `QuizAttempt` is org-scoped
+ * (`session('active_org_id')`) : `QuizAttempt` is org-scoped
  * transitively through its `Course` relation (its
  * `whereHas('quiz.lesson.module.course')` subquery picks up `Course`'s
  * `OrgScope`), and `ForumReport` — which carries no `OrgScope` of its
@@ -49,7 +49,7 @@ final class NavigationBadges
      * resolve each pending report's target post (`ForumReport::postable()`,
      * `withTrashed()`) and keep only those the acting user can `view` via
      * `ForumTopicPolicy`/`ForumReplyPolicy`'s same-org gate. This keeps
-     * the badge number in lock-step with the page it links to (RN41) and
+     * the badge number in lock-step with the page it links to  and
      * prevents a cross-tenant count leak.
      *
      * @return int<0, max>

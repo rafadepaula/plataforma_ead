@@ -1,6 +1,6 @@
 /**
  * ModuleReorder - SOLID JavaScript module for AJAX drag-and-drop reordering
- * (RF06's "Reordenação de módulos via AJAX/jQuery"). jQuery/jQuery UI
+ * ( "Reordenação de módulos via AJAX/jQuery"). jQuery/jQuery UI
  * Sortable is not an existing dependency of this project (see
  * `package.json` and CLAUDE.md's "don't add dependencies without
  * approval"), so this binds a small native HTML5 drag-and-drop fallback

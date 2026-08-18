@@ -33,7 +33,7 @@ class EnrollmentController extends Controller
     }
 
     /**
-     * RF21 — manually enrolls an existing `User` into `$course`. Uses
+     *  manually enrolls an existing `User` into `$course`. Uses
      * `firstOrCreate` keyed on the `[user_id, course_id]` pair the
      * `course_user` table's `UNIQUE` constraint enforces, so re-enrolling
      * a previously `cancelled` student reactivates the existing pivot row
@@ -69,7 +69,7 @@ class EnrollmentController extends Controller
     }
 
     /**
-     * RF21 — revokes a student's enrollment by setting the `course_user`
+     *  revokes a student's enrollment by setting the `course_user`
      * pivot's `status` to `cancelled`, matching the pivot's soft-status
      * design; never detaches the row (that would lose enrollment history
      * and re-open the `UNIQUE(user_id, course_id)` slot for a duplicate

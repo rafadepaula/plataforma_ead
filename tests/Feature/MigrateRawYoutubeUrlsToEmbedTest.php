@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 /**
- * BUG-002 — covers the `2026_08_13_000001_normalize_lesson_youtube_urls`
+ *  covers the `2026_08_13_000001_normalize_lesson_youtube_urls`
  * data migration against the real legacy formats that could reach the
  * `lessons.youtube_url` column, plus the edge cases where the migration must
  * do nothing at all.

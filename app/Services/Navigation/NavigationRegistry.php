@@ -25,7 +25,7 @@ final class NavigationRegistry
     /**
      * @var list<string> Section labels, declared in display order.
      *
-     * UX-001 — `Impersonate` sits between the two: it groups the
+     *  `Impersonate` sits between the two: it groups the
      * Organization-scoped items a system Admin only reaches while
      * impersonating, keeping them visibly separate from the global
      * system-administration surface above it.
@@ -33,7 +33,7 @@ final class NavigationRegistry
     private const SECTION_ORDER = ['Administração', 'Impersonate', 'Aprendizado'];
 
     /**
-     * UX-002 — the "am I impersonating?" rule is shared with the topbar
+     *  the "am I impersonating?" rule is shared with the topbar
      * badge, so it is owned by {@see ImpersonationContext} rather than
      * duplicated here. The default keeps the registry `new`-able from
      * unit tests that don't go through the container.
@@ -66,7 +66,7 @@ final class NavigationRegistry
                 route: 'organizations.index',
                 activePatterns: ['organizations.*'],
                 icon: $this->buildingsIcon(),
-                // RN39 — `Organizações` is reserved to system Admins; a
+                //  `Organizações` is reserved to system Admins; a
                 // Gestor never sees this entry.
                 roles: ['admin'],
                 section: 'Administração',
@@ -74,14 +74,14 @@ final class NavigationRegistry
             new NavigationItem(
                 key: 'users',
                 label: 'Alunos & Usuários',
-                // BUG-005 — `users.index` is an *operational*, single-org
+                //  `users.index` is an *operational*, single-org
                 // screen: `UserController` resolves its tenant strictly
                 // via `ResolvesOrgContext`, so a system Admin with no
                 // `org_id` and no active "Impersonate Org" cannot reach
                 // it. The resolver below hides the item in that state
                 // rather than offering a link that dead-ends in a
                 // `back()` + "Selecione uma Organização ativa" flash
-                // (RN38/RN40). The cross-org administration screen is
+                // . The cross-org administration screen is
                 // separate, future work .
                 route: 'users.index',
                 activePatterns: ['users.*'],
@@ -93,7 +93,7 @@ final class NavigationRegistry
             // cross-org, all-roles Admin user-management
             // screen. Distinct from `users.index` above (which stays
             // operational, single-org, aluno/gestor only): this item
-            // belongs to the reduced Admin-only set UX-001 keeps in
+            // belongs to the reduced Admin-only set  keeps in
             // "Administração", never the "Impersonate" section, so
             // `roles` is `['admin']` only (no Gestor).
             new NavigationItem(
@@ -106,7 +106,7 @@ final class NavigationRegistry
                 section: 'Administração',
             ),
             // ── Operação da Organização ──────────────────────────────
-            // UX-001 — the three items below act *inside* one
+            //  the three items below act *inside* one
             // Organization. For a Gestor that is always their own tenant,
             // so they stay in "Administração"; for a system Admin they
             // only mean something under an active "Impersonate Org",
@@ -130,7 +130,7 @@ final class NavigationRegistry
                 icon: $this->clipboardIcon(),
                 roles: self::ADMIN_GESTOR,
                 section: 'Administração',
-                // RF38 — badge counts attempts awaiting manual grading.
+                //  badge counts attempts awaiting manual grading.
                 badgeCallback: $badges->pendingEssayCount(...),
                 sectionResolver: fn ($user) => $this->resolveOperationalSection($user),
             ),
@@ -142,7 +142,7 @@ final class NavigationRegistry
                 icon: $this->shieldIcon(),
                 roles: self::ADMIN_GESTOR,
                 section: 'Administração',
-                // RF38 — badge counts pending forum reports.
+                //  badge counts pending forum reports.
                 badgeCallback: $badges->pendingForumReportCount(...),
                 sectionResolver: fn ($user) => $this->resolveOperationalSection($user),
             ),
@@ -150,7 +150,7 @@ final class NavigationRegistry
                 key: 'audit-logs',
                 label: 'Auditoria',
                 // The concrete route name is decided per-user by the
-                // resolver below (RN39): `admin.audit-logs.*` for an
+                // resolver below : `admin.audit-logs.*` for an
                 // Admin, `gestor.audit-logs.*` for a Gestor-only user.
                 route: 'admin.audit-logs.index',
                 activePatterns: ['admin.audit-logs.*', 'gestor.audit-logs.*'],
@@ -176,7 +176,7 @@ final class NavigationRegistry
                 route: 'student.courses.index',
                 activePatterns: ['student.courses.*', 'classroom.*'],
                 icon: $this->homeIcon(),
-                // UX-001 — the Admin is not a learner: "Meus Cursos" was
+                //  the Admin is not a learner: "Meus Cursos" was
                 // dropped from their menu, which leaves "Aprendizado"
                 // empty and therefore discarded by
                 // `NavigationService::build()`.
@@ -192,7 +192,7 @@ final class NavigationRegistry
                 // (the `route` field is inert when a resolver is set).
                 // It returns the most recently accessed enrolled course's
                 // forum, or `null` to hide the item entirely when the
-                // Aluno has no active enrollment (RF39/RN38).
+                // Aluno has no active enrollment .
                 route: 'forum.index',
                 activePatterns: ['forum.*', 'forum-replies.*'],
                 icon: $this->messageIcon(),
@@ -212,7 +212,7 @@ final class NavigationRegistry
     }
 
     /**
-     * RN39 — Admin (or a dual Admin/Gestor account) routes to the global
+     *  Admin (or a dual Admin/Gestor account) routes to the global
      * `admin.audit-logs.index`; a Gestor-only account routes to the
      * scoped `gestor.audit-logs.index`. Returns `null` if neither route
      * name is registered (hides the item rather than emitting a dead
@@ -235,7 +235,7 @@ final class NavigationRegistry
     }
 
     /**
-     * BUG-005 — mirrors `ResolvesOrgContext::resolveOrgId()`: the item is
+     *  mirrors `ResolvesOrgContext::resolveOrgId()`: the item is
      * only reachable when a tenant context can be resolved server-side
      * (the Gestor's own `org_id`, or the Admin's impersonated
      * `session('active_org_id')`). Returns `null` — hiding the item in
@@ -254,7 +254,7 @@ final class NavigationRegistry
     }
 
     /**
-     * UX-001 — decides where the Organization-scoped operational items
+     *  decides where the Organization-scoped operational items
      * ("Cursos e Módulos", "Redações Pendentes", "Moderação do Fórum")
      * belong for the acting user:
      *
@@ -267,7 +267,7 @@ final class NavigationRegistry
      *  - a system Admin in global context has no tenant to act upon →
      *    `null` hides the items entirely, the same way
      *    {@see self::resolveUsersRoute()} hides "Alunos & Usuários"
-     *    (BUG-005) rather than offering a dead-ending link.
+     *     rather than offering a dead-ending link.
      */
     private function resolveOperationalSection(User $user): ?string
     {
@@ -275,12 +275,12 @@ final class NavigationRegistry
             return 'Administração';
         }
 
-        // UX-002 — same predicate that decides the topbar badge.
+        //  same predicate that decides the topbar badge.
         return $this->impersonation->isImpersonating($user) ? 'Impersonate' : null;
     }
 
     /**
-     * RF39 — the forum requires a `{course}` context. The link resolves
+     *  the forum requires a `{course}` context. The link resolves
      * to the most recently accessed enrolled course's forum if one
      * exists, otherwise to `student.courses.index` as a course selector.
      * Returns `null` (hiding the item) only for an Aluno with zero

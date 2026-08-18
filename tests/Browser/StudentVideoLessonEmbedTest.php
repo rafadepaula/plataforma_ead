@@ -13,7 +13,7 @@ use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 
 /**
- * BUG-002 — E2E coverage of the student's video player against the stored
+ *  E2E coverage of the student's video player against the stored
  * `lessons.youtube_url` value. The `<iframe>` may only ever carry an
  * embeddable `youtube.com/embed/{id}` src (YouTube answers anything else with
  * `X-Frame-Options: SAMEORIGIN` — the "refused to connect" sad face), and an

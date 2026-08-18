@@ -6,7 +6,7 @@ use App\Models\Course;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * RF06 — validates creation of a Course. `org_id` is intentionally absent
+ *  validates creation of a Course. `org_id` is intentionally absent
  * from these rules: it is always resolved server-side by the `OrgScope`
  * trait's `creating` hook, never trusted from request input.
  */

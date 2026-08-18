@@ -77,7 +77,7 @@ class CertificateController extends Controller
      * scope of its own, so a cross-org Gestor must see the REAL owning
      * Course to be correctly denied, not `null`.
      *
-     * UC13 — also grants the Aluno who OWNS the certificate (`user_id`
+     *  also grants the Aluno who OWNS the certificate (`user_id`
      * match), since `certificates.download` sits behind plain `auth` (see
      * `routes/web.php`) to let the classroom's "baixar certificado" link
      * work for the student themselves, without opening the door to any

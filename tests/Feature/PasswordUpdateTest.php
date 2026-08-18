@@ -46,7 +46,7 @@ class PasswordUpdateTest extends TestCase
     }
 
     /**
-     * RF34/RN14 — changing the password on one device must log out every
+     * changing the password on one device must log out every
      * OTHER active session for the same user. This exercises the real
      * `auth.session` (`AuthenticateSession`) middleware registered on the
      * `web` group in `bootstrap/app.php`, rather than `actingAs()`, since

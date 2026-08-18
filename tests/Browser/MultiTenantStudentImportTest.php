@@ -10,7 +10,7 @@ use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 
 /**
- * RF05/RN09 E2E — upload a CSV, observe the chunked AJAX progress bar, and
+ *  E2E — upload a CSV, observe the chunked AJAX progress bar, and
  * verify the final course roster reflects every imported row.
  *
  * Agrupado por cadeia de ciclo de vida (ver `testing-conventions`): a
@@ -34,7 +34,7 @@ class MultiTenantStudentImportTest extends DuskTestCase
 
     public function test_csv_import_success_and_duplicate_handling_lifecycle(): void
     {
-        // Usuário já existente em OUTRA Organização: RN09 manda reaproveitar
+        // Usuário já existente em OUTRA Organização:  manda reaproveitar
         // a linha de `users` e nunca sobrescrever seu `org_id`.
         $otherOrg = Organization::factory()->create();
         $existingUser = User::factory()->create([
@@ -70,7 +70,7 @@ class MultiTenantStudentImportTest extends DuskTestCase
             $this->assertDatabaseHas('users', ['email' => 'joao.aluno@example.com', 'org_id' => $course->org_id]);
 
             // 2. Segunda importação na mesma sessão: um e-mail já cadastrado em
-            //    outra Organização é reaproveitado (RN09), o outro é criado.
+            //    outra Organização é reaproveitado , o outro é criado.
             $browser->visit(route('users.import.create'))
                 ->waitFor('[dusk="csv-import-form"]')
                 ->select('@csv-course-select', (string) $course->id)

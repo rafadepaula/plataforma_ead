@@ -55,7 +55,7 @@ class AuditLogUiTest extends DuskTestCase
 
         $this->browse(function (Browser $browser) use ($admin, $org, $log): void {
             // 1. Estado inicial: a tabela carrega e NENHUM modal nasce aberto
-            //    (BUG-003/UX-003).
+            //    .
             $browser->loginAs($admin)
                 ->visit(route('admin.audit-logs.index'))
                 ->waitFor('@audit-logs-index')

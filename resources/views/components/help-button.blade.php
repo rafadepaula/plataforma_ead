@@ -4,7 +4,7 @@
     `/convite/*`, `/validar-certificado/*`). The `HelpButton` component
     class already resolved `$article` (org-specific > global > null) —
     this view only renders. When `$article` is null (no content authored
-    yet for this screen's `key`), RN05's "100% coverage may outpace
+    yet for this screen's `key`),  "100% coverage may outpace
     content authoring" edge case still applies, but a disabled/inert
     button gives the user zero feedback when clicked — it just looks
     broken. Instead this branch renders an ACTIVE button that opens a

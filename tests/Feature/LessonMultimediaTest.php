@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 /**
- * RF07 — Lesson multimedia CRUD: the four supported content kinds (Rich
+ *  Lesson multimedia CRUD: the four supported content kinds (Rich
  * Text, Imagem, PDF, Vídeo do YouTube), `FileUploadService`'s isolated
  * per-tenant/per-course storage path, and `YoutubeSanitizerService`'s
  * embed sanitization (including XSS/embed-injection rejection).

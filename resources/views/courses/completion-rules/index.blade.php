@@ -32,7 +32,7 @@
         </x-slot:actions>
     </x-layout.page-header>
 
-    <x-ui.card title="Nova regra" kicker="UC13">
+    <x-ui.card title="Nova regra" kicker="Regras de Conclusão">
         <form method="POST" action="{{ route('courses.completion-rules.store', $course) }}" dusk="completion-rule-form" class="row g-3 align-items-end">
             @csrf
 

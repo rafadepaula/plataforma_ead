@@ -9,7 +9,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 /**
- * RF07 — validates an update to a Lesson. Mirrors
+ *  validates an update to a Lesson. Mirrors
  * {@see StoreLessonRequest}; authorization is scoped to the route-bound
  * `lesson` instance so `LessonPolicy::update()` can verify the parent
  * `Module -> Course` chain's `org_id`.

@@ -106,7 +106,7 @@ class MultiOrgEnrollmentTest extends DuskTestCase
                 ->assertAuthenticated();
         });
 
-        // RN09 — uma única linha de `users`, `org_id` preso à Org original, e
+        //  uma única linha de `users`, `org_id` preso à Org original, e
         // matrícula ativa nas duas Organizações.
         $this->assertSame(1, User::where('email', 'multiorg@example.com')->count());
 

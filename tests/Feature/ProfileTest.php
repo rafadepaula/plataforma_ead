@@ -10,7 +10,7 @@ use Tests\TestCase;
 /**
  * any authenticated user managing their own profile
  * (`name`/`email`/`cpf`). `org_id` and `status` are never mutable via this
- * endpoint (RN08/RN12), unlike the Admin/Gestor-only `UserController`.
+ * endpoint , unlike the Admin/Gestor-only `UserController`.
  */
 class ProfileTest extends TestCase
 {

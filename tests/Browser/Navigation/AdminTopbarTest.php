@@ -9,7 +9,7 @@ use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 
 /**
- * UX-002 — E2E coverage of the topbar after the dead search field was
+ *  E2E coverage of the topbar after the dead search field was
  * removed and the "Impersonate Org" badge took its place.
  *
  * The badge is rendered by `components/layout/topbar.blade.php` from the
@@ -80,7 +80,7 @@ class AdminTopbarTest extends DuskTestCase
                 ->assertVisible('@mobile-menu-button')
                 ->resize(1920, 1080);
 
-            // 5. UX-002 §4.4 — sair do contexto pelo topbar sempre cai no
+            // 5.  sair do contexto pelo topbar sempre cai no
             //    dashboard, nunca num `back()` para uma tela cujo conteúdo
             //    dependia do contexto recém-abandonado.
             $browser->visit(route('admin.dashboard'))

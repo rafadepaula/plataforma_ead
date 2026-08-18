@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 /**
- * RF06/RF07 — `FileUploadService` stores Lesson media under a per-tenant,
+ * `FileUploadService` stores Lesson media under a per-tenant,
  * per-course isolated path: `orgs/{org_id}/courses/{course_id}/...`,
  * derived from the given `Course`'s own `org_id` (not solely from the
  * currently logged-in user/session), so uploads never land in the wrong

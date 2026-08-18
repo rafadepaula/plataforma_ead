@@ -12,7 +12,7 @@ use App\Models\User;
  * `ForumReply` is cascade-inherited two levels deeper
  * than `ForumTopic` (`reply -> topic -> course.org_id`), mirroring
  * `QuizPolicy::parentCourse()`'s cascade pattern one level further down.
- * `view`/`create` are gated to an enrolled Aluno (RN10) or a same-org
+ * `view`/`create` are gated to an enrolled Aluno  or a same-org
  * Gestor/Admin; `update`/`delete` are reserved to the reply's author (no
  * time limit, per §2.1) or a same-org Gestor/Admin. There is no `pin`
  * ability — replies have no `is_pinned` column.
@@ -64,7 +64,7 @@ class ForumReplyPolicy
 
     /**
      * Admin: unrestricted. Gestor: only within their own Org. Aluno:
-     * only with an active/completed enrollment in the Course (RN10).
+     * only with an active/completed enrollment in the Course .
      */
     protected function hasCourseAccess(User $user, Course $course): bool
     {

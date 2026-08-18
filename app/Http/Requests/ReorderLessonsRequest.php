@@ -5,7 +5,7 @@ namespace App\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * RF07 — payload for the AJAX Lesson reorder endpoint, scoped to a
+ *  payload for the AJAX Lesson reorder endpoint, scoped to a
  * Module. Same shape as {@see ReorderModulesRequest}; `LessonController::
  * reorder()` is responsible for confirming every id in `ordered_ids`
  * actually belongs to the route-bound `{module}`.

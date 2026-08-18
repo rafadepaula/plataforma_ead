@@ -13,7 +13,7 @@ use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 
 /**
- * UC08 / RF07 — E2E coverage for multimedia Lesson authoring (YouTube, PDF,
+ * E2E coverage for multimedia Lesson authoring (YouTube, PDF,
  * edit).
  *
  * Agrupado por cadeia de ciclo de vida (ver `testing-conventions`): a

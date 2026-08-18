@@ -14,7 +14,7 @@ use Tests\DuskTestCase;
  *
  * Agrupado por cadeia de ciclo de vida (ver `testing-conventions`): criar →
  * editar → abrir modal de remoção e cancelar → confirmar soft delete é uma
- * jornada única. A checagem do preview de logo (UX-004) é outra jornada, e
+ * jornada única. A checagem do preview de logo  é outra jornada, e
  * a negativa de autorização do Gestor segue isolada.
  */
 class OrganizationCrudTest extends DuskTestCase
@@ -63,7 +63,7 @@ class OrganizationCrudTest extends DuskTestCase
                 'name' => 'Instituto Dusk Editado',
             ]);
 
-            // 3. UX-003 — modal de remoção nasce fechado; cancelar preserva.
+            // 3.  modal de remoção nasce fechado; cancelar preserva.
             $browser->visit(route('organizations.index'))
                 ->waitFor('@delete-organization-'.$organization->id)
                 ->assertMissing('.modal.show')
@@ -97,7 +97,7 @@ class OrganizationCrudTest extends DuskTestCase
     }
 
     /**
-     * UX-004 — o logo já salvo aparece como imagem carregada (não como
+     *  o logo já salvo aparece como imagem carregada (não como
      * caminho de arquivo) na tela de edição; sem logo salvo, nenhum `<img>`
      * é renderizado (nem na tela de criação).
      */

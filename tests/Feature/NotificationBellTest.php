@@ -11,7 +11,7 @@ use Tests\TestCase;
  * the AJAX endpoints backing the topbar notification
  * bell (unread count, mark-all-read, mark-single-read). Every query is
  * implicitly scoped to `$request->user()->notifications()` (the
- * `Notifiable` trait's `MorphMany`), which already guarantees RN12 (no
+ * `Notifiable` trait's `MorphMany`), which already guarantees  (no
  * cross-user leak) — no dedicated Policy exists for `DatabaseNotification`.
  */
 class NotificationBellTest extends TestCase
@@ -115,7 +115,7 @@ class NotificationBellTest extends TestCase
     }
 
     /**
-     * RN12 — cross-user isolation: user A cannot mark/read user B's
+     *  cross-user isolation: user A cannot mark/read user B's
      * notification even by guessing (or copy/pasting from a browser tab)
      * the target UUID.
      */

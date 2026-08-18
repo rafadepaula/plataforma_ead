@@ -6,7 +6,7 @@ use App\Exceptions\UnresolvedOrgContextException;
 use Illuminate\Http\Request;
 
 /**
- * RF04/RF05 — Shared tenant-context resolution for controllers that must
+ * Shared tenant-context resolution for controllers that must
  * act on behalf of the current user's organization: a Gestor's own
  * `org_id`, or an impersonating Admin's `session('active_org_id')`. Never
  * reads `org_id` from the request itself.

@@ -17,9 +17,9 @@ use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
 /**
- * `SubmitQuizAttemptAction`'s correction engine: RN02/RN03
+ * `SubmitQuizAttemptAction`'s correction engine:
  * exact-set correctness for `single_choice`/`multiple_choice`/
- * `true_false`, RN11's `essay` -> `awaiting_manual_grading` branch, and
+ * `true_false`,  `essay` -> `awaiting_manual_grading` branch, and
  * the lesson-completion handoff to `MarkLessonCompleteAction` on a
  * passing grade.
  */
@@ -80,7 +80,7 @@ class SubmitQuizAttemptTest extends TestCase
         QuizOption::factory()->for($question, 'question')->incorrect()->create();
 
         // Only 1 of the 2 correct options selected — partial match must
-        // count as fully incorrect (RN03), never partial credit.
+        // count as fully incorrect , never partial credit.
         $attempt = app(SubmitQuizAttemptAction::class)->execute($lesson, $aluno, [
             ['question_id' => $question->id, 'selected_option_ids' => [$correctOne->id]],
         ]);

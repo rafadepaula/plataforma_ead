@@ -56,7 +56,7 @@ class StudentQuizController extends Controller
             ->latest('id')
             ->first();
 
-        // RN04 — the answer key is only ever surfaced once the student has
+        //  the answer key is only ever surfaced once the student has
         // a graded attempt to show it against, and only when the Gestor
         // opted into `show_correct_answers` for this Quiz (see
         // `quizzes-architecture`).

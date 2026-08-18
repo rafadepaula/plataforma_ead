@@ -61,10 +61,10 @@ class InvitationLinkController extends Controller
     }
 
     /**
-     * Link-level revocation (RF03) — sets `revoked_at` rather than
+     * Link-level revocation  — sets `revoked_at` rather than
      * deleting the row, so already-consumed enrollments and audit history
      * remain intact; distinct from `EnrollmentController::destroy()`'s
-     * per-enrollment `course_user.status = 'cancelled'` (RF21).
+     * per-enrollment `course_user.status = 'cancelled'` .
      */
     public function destroy(InvitationLink $invitationLink): RedirectResponse
     {

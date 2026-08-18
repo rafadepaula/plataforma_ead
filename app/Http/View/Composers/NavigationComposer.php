@@ -37,7 +37,7 @@ final class NavigationComposer
             'brandUrl' => $this->brandUrl(),
             'loginUrl' => Route::has('login') ? route('login') : '#',
             'logoutUrl' => Route::has('logout') ? route('logout') : '#',
-            // UX-002 — the topbar badge must never run its own query
+            //  the topbar badge must never run its own query
             // inside the Blade: it is rendered on every authenticated
             // request, so the resolution lives here (memoized by
             // `ImpersonationContext`) and the view only reads a model.

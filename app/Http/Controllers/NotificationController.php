@@ -11,7 +11,7 @@ use Illuminate\Http\Request;
  * 's guardrails), so every query here is manually scoped to
  * `$request->user()->notifications()` (the `Notifiable` trait's
  * `MorphMany`) rather than a route-model-bound `{notification}` — this is
- * what guarantees RN12 (no cross-user leak) without a dedicated Policy.
+ * what guarantees  (no cross-user leak) without a dedicated Policy.
  */
 class NotificationController extends Controller
 {

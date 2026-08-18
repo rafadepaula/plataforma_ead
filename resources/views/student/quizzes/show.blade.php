@@ -98,7 +98,7 @@
                 </x-ui.alert>
             @endif
 
-            {{-- RN04 — gabarito só é exibido quando `show_correct_answers`
+            {{--  gabarito só é exibido quando `show_correct_answers`
                  está marcado no Quiz E o aluno já possui uma tentativa
                  corrigida (`status = graded`) para exibir. --}}
             @if($showAnswerKey)

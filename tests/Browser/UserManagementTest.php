@@ -10,7 +10,7 @@ use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 
 /**
- * UC04 / RF04 — E2E coverage for user management screens.
+ * E2E coverage for user management screens.
  *
  * Agrupado por cadeia de ciclo de vida (ver `testing-conventions`): a
  * jornada do Gestor sobre um usuário (criar → editar → inativar →

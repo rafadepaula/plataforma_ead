@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Blade;
 use Tests\TestCase;
 
 /**
- * BUG-003 — the shared `<x-ui.modal>` must render closed.
+ *  the shared `<x-ui.modal>` must render closed.
  *
  * The modal is driven by Bootstrap 5.3's `bootstrap.Modal`, which creates the
  * backdrop element at open time and adds `.show` to the dialog; the rendered

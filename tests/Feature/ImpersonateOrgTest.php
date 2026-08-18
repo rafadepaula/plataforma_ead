@@ -25,7 +25,7 @@ class ImpersonateOrgTest extends TestCase
     }
 
     /**
-     * UX-002 — the impersonation signal must persist across the whole
+     *  the impersonation signal must persist across the whole
      * navigation, not only on `/organizations`: the topbar is rendered
      * by `layouts.app` on every authenticated screen.
      */
@@ -55,7 +55,7 @@ class ImpersonateOrgTest extends TestCase
     }
 
     /**
-     * UX-002 §4.5 — a Gestor is permanently bound to its own `org_id`
+     *  a Gestor is permanently bound to its own `org_id`
      * and never impersonates, so the badge must never leak to it.
      */
     public function test_topbar_hides_the_impersonation_badge_for_a_gestor(): void
@@ -69,7 +69,7 @@ class ImpersonateOrgTest extends TestCase
     }
 
     /**
-     * UX-002 — failure path: the session still points at an Organization
+     *  failure path: the session still points at an Organization
      * that no longer exists (deleted while impersonated). The topbar must
      * degrade to "no badge" instead of blowing up on a null name.
      */
@@ -85,7 +85,7 @@ class ImpersonateOrgTest extends TestCase
     }
 
     /**
-     * UX-002 §4.1 — the decorative search field had no `<form>`, no
+     *  the decorative search field had no `<form>`, no
      * `name`, no `action` and no JS handler; it must be gone everywhere.
      */
     public function test_no_authenticated_screen_renders_the_dead_search_field(): void
@@ -98,7 +98,7 @@ class ImpersonateOrgTest extends TestCase
     }
 
     /**
-     * UX-002 §4.4 — with a global control, `back()` could return the
+     *  with a global control, `back()` could return the
      * Admin to a screen whose content depended on the context just
      * dropped. The destination is now deterministic.
      */

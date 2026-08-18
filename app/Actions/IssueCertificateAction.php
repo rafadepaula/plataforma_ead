@@ -24,7 +24,7 @@ use Throwable;
  * (an unattainable certificate is preferable to a wrongly-issued one).
  *
  * `validation_hash = sha256(user_id.course_id.formatted_issued_at.APP_KEY)`
- * per RN01/RN07. `formatted_issued_at` uses the fixed
+ * per . `formatted_issued_at` uses the fixed
  * `Y-m-d H:i:s` Carbon format — this exact format must never be
  * re-derived differently elsewhere (see the `certificates-conventions`
  * skill).

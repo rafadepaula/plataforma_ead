@@ -36,7 +36,7 @@
         </a>
     </div>
 
-    {{-- UX-002 — o campo de busca que ocupava este espaço foi removido:
+    {{--  o campo de busca que ocupava este espaço foi removido:
          não pertencia a `<form>` algum, não tinha `name`/`action` e nenhum
          módulo de `resources/js/modules/` o escutava. O
          `justify-content-between` do `<header>` redistribui marca e cluster
@@ -47,10 +47,10 @@
 
         <x-notifications-bell />
 
-        {{-- UX-002 — sinal persistente de "Impersonate Org". `$activeOrganization`
+        {{--  sinal persistente de "Impersonate Org". `$activeOrganization`
              vem do `NavigationComposer` (via `ImpersonationContext`), a mesma
              fonte de verdade que move os itens operacionais do menu para a
-             seção "Impersonate" (UX-001) — nada é resolvido aqui.
+             seção "Impersonate"  — nada é resolvido aqui.
              Atenção: `.badge` tem `text-transform: uppercase`
              (`resources/scss/components/_index.scss:57`), então o nome da
              Organização é RENDERIZADO em caixa alta. --}}
