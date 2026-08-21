@@ -137,12 +137,14 @@ class DashboardMetricsServiceTest extends TestCase
         $this->assertSame(0, $stats['completion_rate']);
     }
 
-    public function test_courses_count_relies_on_the_gestors_own_org_scope(): void
+    public function test_course_counts_separate_published_and_drafts_with_the_same_gestor_org_scope(): void
     {
         $org = Organization::factory()->create();
         $otherOrg = Organization::factory()->create();
-        Course::factory()->for($org)->count(3)->create();
-        Course::factory()->for($otherOrg)->count(5)->create();
+        Course::factory()->for($org)->published()->count(3)->create();
+        Course::factory()->for($org)->count(2)->create();
+        Course::factory()->for($otherOrg)->published()->count(5)->create();
+        Course::factory()->for($otherOrg)->count(4)->create();
 
         $gestor = User::factory()->create(['org_id' => $org->id]);
         $gestor->assignRole(RolesEnum::GESTOR->value);
@@ -152,14 +154,17 @@ class DashboardMetricsServiceTest extends TestCase
         $stats = $this->service->getStats($org->id);
 
         $this->assertSame(3, $stats['courses_count']);
+        $this->assertSame(2, $stats['draft_courses_count']);
     }
 
     public function test_an_admin_with_no_active_org_sees_globally_unfiltered_stats(): void
     {
         $orgA = Organization::factory()->create();
         $orgB = Organization::factory()->create();
-        $courseA = Course::factory()->for($orgA)->create();
-        $courseB = Course::factory()->for($orgB)->create();
+        $courseA = Course::factory()->for($orgA)->published()->create();
+        $courseB = Course::factory()->for($orgB)->published()->create();
+        Course::factory()->for($orgA)->create();
+        Course::factory()->for($orgB)->create();
 
         $this->enrollActiveStudent($courseA);
         $this->enrollActiveStudent($courseB);
@@ -175,6 +180,7 @@ class DashboardMetricsServiceTest extends TestCase
         $this->assertSame(2, $stats['active_students']);
         $this->assertSame(2, $stats['certificates_issued']);
         $this->assertSame(2, $stats['courses_count']);
+        $this->assertSame(2, $stats['draft_courses_count']);
     }
 
     public function test_recent_enrollments_returns_the_latest_rows_scoped_to_the_given_org_with_the_expected_shape(): void
@@ -184,7 +190,7 @@ class DashboardMetricsServiceTest extends TestCase
         $course = Course::factory()->for($org)->create(['title' => 'NR12 — Segurança em Máquinas']);
         $otherCourse = Course::factory()->for($otherOrg)->create(['title' => 'Outro Curso']);
 
-        $student = User::factory()->create(['org_id' => $org->id, 'name' => 'João Pereira']);
+        $student = User::factory()->create(['org_id' => $org->id, 'name' => 'João da Silva Pereira']);
         $student->courses()->attach($course->id, [
             'status' => 'completed',
             'enrolled_at' => now()->subDays(2),
@@ -204,10 +210,11 @@ class DashboardMetricsServiceTest extends TestCase
 
         $this->assertCount(1, $recentEnrollments);
         $enrollment = $recentEnrollments->first();
-        $this->assertSame('João Pereira', $enrollment->student_name);
+        $this->assertSame('João da Silva Pereira', $enrollment->student_name);
+        $this->assertSame('JP', $enrollment->student_initials);
         $this->assertSame('NR12 — Segurança em Máquinas', $enrollment->course_name);
-        $this->assertSame('Concluído', $enrollment->status_label);
-        $this->assertSame('neutral', $enrollment->status_badge_variant);
+        $this->assertSame('Concluída', $enrollment->status_label);
+        $this->assertSame('success', $enrollment->status_badge_variant);
     }
 
     public function test_recent_enrollments_respects_the_given_limit_and_latest_first_order(): void
@@ -249,6 +256,8 @@ class DashboardMetricsServiceTest extends TestCase
 
         $this->assertSame('joao@example.com', $enrollment->student_email);
         $this->assertSame(55, $enrollment->progress_percentage);
+        $this->assertSame('Em andamento', $enrollment->status_label);
+        $this->assertSame('info', $enrollment->status_badge_variant);
     }
 
     public function test_recent_enrollments_labels_a_cancelled_enrollment(): void
@@ -266,7 +275,7 @@ class DashboardMetricsServiceTest extends TestCase
 
         $enrollment = $this->service->recentEnrollments($org->id)->first();
 
-        $this->assertSame('Cancelado', $enrollment->status_label);
+        $this->assertSame('Cancelada', $enrollment->status_label);
         $this->assertSame('accent-2', $enrollment->status_badge_variant);
     }
 
@@ -504,5 +513,25 @@ class DashboardMetricsServiceTest extends TestCase
         $ranking = $this->service->mostCompletedCourses($org->id, 2);
 
         $this->assertCount(2, $ranking);
+    }
+
+    public function test_most_completed_courses_defaults_to_three_rows(): void
+    {
+        $org = Organization::factory()->create();
+
+        foreach (range(1, 4) as $i) {
+            $course = Course::factory()->for($org)->create(['title' => "Curso {$i}"]);
+
+            foreach (range(1, $i) as $studentNumber) {
+                $student = User::factory()->create(['org_id' => $org->id]);
+                $student->courses()->attach($course->id, ['status' => 'completed', 'enrolled_at' => now()]);
+            }
+        }
+
+        $ranking = $this->service->mostCompletedCourses($org->id);
+
+        $this->assertCount(3, $ranking);
+        $this->assertSame(['Curso 4', 'Curso 3', 'Curso 2'], $ranking->pluck('course_name')->all());
+        $this->assertSame([100, 75, 50], $ranking->pluck('percentage')->all());
     }
 }

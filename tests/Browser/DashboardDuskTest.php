@@ -9,15 +9,6 @@ use App\Models\User;
 use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 
-/**
- * E2E coverage of the Admin/Gestor Dashboard: KPI stat cards +
- * recent-enrollments table, the Organizations summary table (Admin-only,
- * global context), the CSV export entry point, and the settings screen.
- *
- * Agrupado por cadeia de ciclo de vida (ver `testing-conventions`): uma
- * cadeia por ator, porque tudo aqui é justamente função do escopo do ator —
- * o Admin vê o global, o Gestor vê só a própria Organização.
- */
 class DashboardDuskTest extends DuskTestCase
 {
     public function test_admin_dashboard_global_scope_lifecycle(): void
@@ -39,19 +30,18 @@ class DashboardDuskTest extends DuskTestCase
 
         $this->browse(function (Browser $browser) use ($admin, $org): void {
             // 1. KPIs e matrículas recentes.
-            //
-            //    `<x-ui.stat-card>`'s kicker is `text-transform: uppercase`,
-            //    and Selenium's `getText()` (which backs `assertSee`) returns
-            //    the CSS-rendered text, not the literal DOM string (see
-            //    `laravel-dusk` skill) — assert against the rendered case.
             $browser->loginAs($admin)
                 ->visit(route('admin.dashboard'))
                 ->waitFor('@admin-dashboard')
                 ->assertSee('Dashboard')
+                ->assertSee('Um panorama da plataforma nos últimos 30 dias.')
+                ->assertDontSee('Novo curso')
                 ->assertSeeIgnoringCase('Alunos ativos')
                 ->waitFor('@recent-enrollments-table')
+                ->assertAttribute('@recent-enrollments-table', 'aria-label', 'Matrículas recentes')
                 ->assertSee('Matrículas recentes')
-                ->assertSee('João Pereira');
+                ->assertSee('João Pereira')
+                ->assertSee('Nada aguardando você');
 
             // 2. Sem impersonation ativa, o Admin vê o resumo por Organização.
             $browser->waitFor('@organizations-summary-table')
@@ -127,6 +117,8 @@ class DashboardDuskTest extends DuskTestCase
             $browser->loginAs($gestor)
                 ->visit(route('admin.dashboard'))
                 ->waitFor('@recent-enrollments-table')
+                ->assertSee('Um panorama da sua organização nos últimos 30 dias.')
+                ->assertSee('Novo curso')
                 ->assertSee('Ana Costa')
                 ->assertDontSee('Marcos Silva')
                 // 2. E o resumo por Organização é exclusivo do Admin.

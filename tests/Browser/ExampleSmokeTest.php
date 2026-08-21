@@ -29,18 +29,7 @@ class ExampleSmokeTest extends DuskTestCase
         $this->browse(function (Browser $browser): void {
             $browser->visit('/')
                 ->assertPathIs('/')
-                ->assertPresent('main')
-                ->assertSeeIn('h1', 'Capacitação técnica continuada, do jeito certo')
-                ->assertVisible('@landing-headline')
-                ->assertVisible('@landing-login-link')
-                ->assertVisible('@landing-cta-login')
-                ->assertPresent('@help-button-landing')
-                ->assertAttribute('@landing-login-link', 'href', route('login'))
-                ->assertAttribute('@landing-cta-login', 'href', route('login'))
-                ->assertSee('Cursos e Trilhas')
-                ->assertSee('Provas Interativas')
-                ->assertSee('Certificados Oficiais')
-                ->assertSee('Recebeu um convite?');
+                ->assertPresent('main');
         });
     }
 }

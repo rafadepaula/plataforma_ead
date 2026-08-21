@@ -63,12 +63,6 @@
     }
 }
 
-// `x-ui.table`/`x-ui.data-table`: divisores em `--divider` (em vez do
-// `--bs-border-color` genérico), via a custom property que `.table` já expõe.
-.ds-table {
-    --bs-table-border-color: var(--divider);
-}
-
 // `x-ui.avatar`: recorte de `<img>` dentro do círculo `.ds-avatar` (definida
 // em `_avatar.scss`, Fase 1 — não duplicada aqui, só complementada para o
 // caso de foto que aquele arquivo, focado em iniciais, não previa).

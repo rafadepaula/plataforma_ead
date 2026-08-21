@@ -8,12 +8,28 @@
 // cor/raio/sombra.
 // =============================================================================
 
+.stat-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--pad-card);
+    background: var(--surface);
+    border: 0;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--elev-1);
+}
+
 // Valor em destaque de `x-ui.stat-card`.
 .stat-card-value {
     font-size: var(--font-size-metric);
     font-weight: var(--font-weight-extrabold);
     line-height: var(--line-height-tight);
+    letter-spacing: var(--tracking-tight);
     color: var(--text-primary);
+}
+
+.stat-card-value-disabled {
+    color: var(--text-disabled);
 }
 
 // Container pastel do ícone opcional (`icon` prop) de `x-ui.stat-card`.
@@ -22,9 +38,37 @@
     flex: 0 0 auto;
     align-items: center;
     justify-content: center;
-    width: 52px;
-    height: 52px;
+    width: var(--field-height);
+    height: var(--field-height);
+    margin-bottom: var(--space-2);
     border-radius: var(--radius-md);
+}
+
+.stat-card-icon-primary {
     background: var(--primary-container);
     color: var(--on-primary-container);
 }
+
+.stat-card-icon-secondary {
+    color: var(--on-secondary-container);
+    background: var(--secondary-container);
+}
+
+.stat-card-icon-tertiary {
+    color: var(--on-tertiary-container);
+    background: var(--tertiary-container);
+}
+
+.stat-card-icon-neutral {
+    color: var(--grey-700);
+    background: var(--surface-alt);
+}
+
+.stat-card-foot {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin-top: var(--space-1);
+}
+
+@import "dashboard";

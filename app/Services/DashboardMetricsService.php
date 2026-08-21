@@ -12,6 +12,7 @@ use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 /**
  * Computes the Admin/Gestor dashboard's stat cards and
@@ -33,7 +34,7 @@ class DashboardMetricsService
 {
     private const DEFAULT_RECENT_ENROLLMENTS_LIMIT = 10;
 
-    private const DEFAULT_MOST_COMPLETED_COURSES_LIMIT = 5;
+    private const DEFAULT_MOST_COMPLETED_COURSES_LIMIT = 3;
 
     /**
      * Certificates issued within this many days of "now" still count as
@@ -50,7 +51,7 @@ class DashboardMetricsService
      * the length of the comparison window — `getStats()` itself still
      * returns the all-time current values, exactly as before.
      *
-     * @return array{active_students: int, certificates_issued: int, completion_rate: int, courses_count: int, active_students_delta: ?string, certificates_issued_delta: ?string}
+     * @return array{active_students: int, certificates_issued: int, completion_rate: int, courses_count: int, draft_courses_count: int, active_students_delta: ?string, certificates_issued_delta: ?string}
      */
     public function getStats(?int $orgId, string $period = '30d'): array
     {
@@ -58,6 +59,7 @@ class DashboardMetricsService
 
         $activeStudents = $this->activeStudentsCount($orgId);
         $certificatesIssued = $this->certificatesIssuedCount($orgId);
+        $courseCounts = $this->courseCounts();
 
         $previousActiveStudents = $this->activeStudentsCount($orgId, $periodStart);
         $previousCertificatesIssued = $this->certificatesIssuedCount($orgId, $periodStart);
@@ -66,7 +68,8 @@ class DashboardMetricsService
             'active_students' => $activeStudents,
             'certificates_issued' => $certificatesIssued,
             'completion_rate' => $this->completionRate($orgId),
-            'courses_count' => Course::query()->count(),
+            'courses_count' => $courseCounts['published'],
+            'draft_courses_count' => $courseCounts['draft'],
             'active_students_delta' => $this->percentDelta($activeStudents, $previousActiveStudents),
             'certificates_issued_delta' => $this->percentDelta($certificatesIssued, $previousCertificatesIssued),
         ];
@@ -128,7 +131,7 @@ class DashboardMetricsService
     }
 
     /**
-     * @return Collection<int, object{student_name: string, student_email: string, course_name: string, progress_percentage: int, status_label: string, status_badge_variant: string}>
+     * @return Collection<int, object{student_name: string, student_initials: string, student_email: string, course_name: string, progress_percentage: int, status_label: string, status_badge_variant: string}>
      */
     public function recentEnrollments(?int $orgId, int $limit = self::DEFAULT_RECENT_ENROLLMENTS_LIMIT): Collection
     {
@@ -147,6 +150,7 @@ class DashboardMetricsService
             ])
             ->map(fn ($row) => (object) [
                 'student_name' => $row->student_name,
+                'student_initials' => $this->initials($row->student_name),
                 'student_email' => $row->student_email,
                 'course_name' => $row->course_name,
                 'progress_percentage' => (int) $row->progress_percentage,
@@ -299,6 +303,23 @@ class DashboardMetricsService
     }
 
     /**
+     * @return array{published: int, draft: int}
+     */
+    private function courseCounts(): array
+    {
+        $counts = Course::query()
+            ->toBase()
+            ->selectRaw('count(case when is_published = ? then 1 end) as published_count', [true])
+            ->selectRaw('count(case when is_published = ? then 1 end) as draft_count', [false])
+            ->first();
+
+        return [
+            'published' => (int) $counts->published_count,
+            'draft' => (int) $counts->draft_count,
+        ];
+    }
+
+    /**
      * per-Organization
      * counts for ALL Organizations (Admin-only, non-impersonated view), in a
      * single N+1-free query via correlated subqueries. Zero-filled when an
@@ -360,8 +381,8 @@ class DashboardMetricsService
     private function statusLabel(string $status): string
     {
         return match ($status) {
-            'completed' => 'Concluído',
-            'cancelled' => 'Cancelado',
+            'completed' => 'Concluída',
+            'cancelled' => 'Cancelada',
             default => 'Em andamento',
         };
     }
@@ -369,9 +390,26 @@ class DashboardMetricsService
     private function statusBadgeVariant(string $status): string
     {
         return match ($status) {
-            'completed' => 'neutral',
+            'completed' => 'success',
             'cancelled' => 'accent-2',
-            default => 'accent',
+            default => 'info',
         };
+    }
+
+    private function initials(string $name): string
+    {
+        $nameParts = Str::of($name)
+            ->squish()
+            ->explode(' ')
+            ->filter()
+            ->values();
+
+        $initials = collect([$nameParts->first(), $nameParts->last()])
+            ->unique()
+            ->filter()
+            ->map(fn (string $part) => Str::of($part)->substr(0, 1))
+            ->implode('');
+
+        return Str::upper($initials);
     }
 }

@@ -2,8 +2,8 @@
 // Componente: Card — complementos ao `.card` do Bootstrap
 // -----------------------------------------------------------------------------
 // O Bootstrap entrega superfície, raio e sombra. O que falta é a estrutura
-// interna da diretriz da biblioteca de componentes: corpo, linha de meta ancorada embaixo acima de um divisor,
-// e o cabeçalho de tabela em overline.
+// interna da diretriz da biblioteca de componentes: corpo e linha de meta
+// ancorada embaixo acima de um divisor.
 // Regra: só consumir var(--*), nunca literal.
 // =============================================================================
 
@@ -22,20 +22,6 @@
     gap: var(--gap-inline);
     color: var(--text-secondary);
     border-top: var(--border-width) solid var(--divider);
-}
-
-// Cabeçalho de tabela em overline (diretriz da biblioteca de componentes: célula 18x20, cabeçalho em
-// overline, divisores --divider).
-.table-header {
-    th {
-        font-size: var(--font-size-overline);
-        font-weight: var(--font-weight-bold);
-        text-transform: uppercase;
-        letter-spacing: var(--tracking-overline);
-        color: var(--text-secondary);
-        background: var(--surface-sunken);
-        border-bottom: var(--border-width) solid var(--divider);
-    }
 }
 
 // Card que é, na prática, um link/gatilho de navegação inteiro (linha de
