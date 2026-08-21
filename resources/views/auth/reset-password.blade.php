@@ -22,6 +22,7 @@
             type="password"
             name="password"
             label="Nova senha"
+            hint="Mínimo de 8 caracteres."
             required
             dusk="reset-password-password"
         />

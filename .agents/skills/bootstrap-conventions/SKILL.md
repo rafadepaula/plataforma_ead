@@ -17,6 +17,9 @@ metadata:
   specs:
     - spec/front_migration/06-skills-and-agents.md
     - spec/specs/00-architecture-database-and-guardrails.md
+    - spec/front_redesign/01-direcao-visual-e-tokens.md
+    - spec/front_redesign/02-camada-de-tema-e-build.md
+    - spec/front_redesign/14-contrato-dusk-e-testes.md
 ---
 
 # Bootstrap Conventions
@@ -26,9 +29,14 @@ metadata:
 Todo componente de UI é **componente anônimo** (só `.blade.php`, sem classe PHP) em `resources/views/components/`. Padrão canônico = 4 partes: `@props`, bloco `@php` que resolve classes, `$attributes->merge()`, slots.
 
 ```blade
-{{-- resources/views/components/ui/button.blade.php --}}
+{{-- resources/views/components/ui/button.blade.php — atualizado na Fase 2 do
+     front_redesign: `tonal`/`success` são valores novos (par
+     container/on-container e menta), `ghost` ganha borda real via
+     `btn-ghost` (a versão antiga sem borda, `btn-link`, violava a regra de
+     que nenhum botão fica sem contorno detectável), `danger` supre um ícone
+     default (`trash`) quando o call-site não escolheu um --}}
 @props([
-    'variant' => 'primary',   // primary | secondary | ghost | danger
+    'variant' => 'primary',   // primary | secondary | ghost | tonal | success | danger
     'size' => 'md',           // sm | md | lg
     'block' => false,
     'icon' => null,
@@ -39,29 +47,33 @@ Todo componente de UI é **componente anônimo** (só `.blade.php`, sem classe P
 
 @php
     $variantClass = match ($variant) {
+        'tonal' => 'btn-tonal ds-tone-primary ds-state-layer',
         'secondary' => 'btn-outline-secondary',
-        'ghost' => 'btn-link text-body text-decoration-none',
+        'ghost' => 'btn-ghost ds-state-layer',
+        'success' => 'btn-success',
         'danger' => 'btn-danger',
         default => 'btn-primary',
     };
+
+    $iconName = $icon ?? ($variant === 'danger' ? 'trash' : null);
 
     $classes = collect([
         'btn',
         $variantClass,
         $size === 'sm' ? 'btn-sm' : ($size === 'lg' ? 'btn-lg' : null),
         $block ? 'w-100' : null,
-        'd-inline-flex align-items-center justify-content-start gap-2 text-start',
+        $iconName ? 'd-inline-flex align-items-center justify-content-start gap-2 text-start' : null,
     ])->filter()->implode(' ');
 @endphp
 
 @if ($href)
     <a href="{{ $href }}" {{ $attributes->merge(['class' => $classes]) }}>
-        @if ($icon) <x-ui.icon :name="$icon" /> @endif
+        @if ($iconName) <x-ui.icon :name="$iconName" size="18" /> @endif
         {{ $slot }}
     </a>
 @else
     <button type="{{ $type }}" @disabled($disabled) {{ $attributes->merge(['class' => $classes]) }}>
-        @if ($icon) <x-ui.icon :name="$icon" /> @endif
+        @if ($iconName) <x-ui.icon :name="$iconName" size="18" /> @endif
         {{ $slot }}
     </button>
 @endif
@@ -160,11 +172,28 @@ Uso na tela — gatilho declarativo, zero JS:
 | `<x-ui.*>` | `resources/views/components/ui/` | Widget reutilizável. Não conhece rota, role nem sessão. Recebe tudo por prop. | Renderiza em teste isolado só com props = `ui`. |
 | `<x-layout.*>` | `resources/views/components/layout/` | Peça do chrome da aplicação, singular por página, ciente de `auth()`, `route()`, roles Spatie, `session('active_org_id')`. | Chama `auth()->user()`, `request()->routeIs()` ou `@role` = `layout`. |
 
-- `ui`: `button`, `card`, `modal`, `badge`, `input`, `select`, `textarea`,
-  `checkbox`, `table`, `stat-card`, `icon`, `alert`, `toast`, `pagination`,
-  `empty-state`, `tabs`, `dropdown`, `progress`, `avatar`, `breadcrumb`.
+- `ui` (26 componentes em `resources/views/components/ui/`, biblioteca fechada
+  desde a Fase 2 do `front_redesign`): `alert`, `avatar`, `badge`, `button`,
+  `card`, `checkbox`, `chip`, `confirm-modal`, `data-table`, `delete-button`,
+  `empty-state`, `fab`, `field-stack`, `filter-bar`, `form-actions`, `icon`,
+  `input`, `modal`, `pagination`, `progress`, `select`, `stat-card`, `switch`,
+  `table`, `tabs`, `textarea`. `avatar`, `chip`, `fab`, `switch` e `tabs` são
+  as 5 adições da Fase 2 — `avatar` **envolve** `.ds-avatar`/`.ds-avatar-lg`/
+  `.ds-avatar-xl` (já existentes em `_avatar.scss` desde antes, usadas pela
+  topbar e pelo drawer mobile), nunca duplica essas classes. Não existe
+  `<x-ui.toast>`, `<x-ui.dropdown>` nem `<x-ui.breadcrumb>` — telas que
+  precisam de toast/dropdown usam `bootstrap.Toast`/`bootstrap.Dropdown`
+  diretamente com os `data-bs-*`; se um wrapper vier a ser necessário, criar
+  seguindo o padrão desta seção.
 - `layout`: `topbar`, `sidebar`, `footer`, `alerts` (container de flash),
-  `page-header`.
+  `page-header`, `guest-panel` (painel institucional 46%/`col-lg-5` do
+  `layouts/guest.blade.php` — Fase 1 do `front_redesign`; lê
+  `session('tenant_name')`/`config('app.name')`, então é `layout`, não `ui`),
+  `public` (**Fase 7** — shell `<!doctype html>` standalone compartilhado por
+  `landing/show.blade.php` e `public/certificates/show.blade.php`, as duas
+  telas que não usam `layouts.app` nem `layouts.guest`; props `title`
+  obrigatória e `container` (default `true`, a landing passa `:container="false"`
+  para seções full-bleed) e slots opcionais `head`/`footer`).
 - Componente de domínio que não é chrome nem widget genérico (`<x-help-button>`) fica na **raiz** de `components/`, como hoje.
 - Arquivo em `kebab-case`. Sem subpasta dentro de `ui/`.
 
@@ -179,12 +208,13 @@ Cada item = motivo de **rejeição** em review. Não é questão de gosto.
 2. **JS artesanal de modal, toast ou dropdown.** Nada de `ModalManager`, `NotificationService` artesanal, `document.addEventListener('click', …)` para abrir menu. Use `bootstrap.Modal`, `bootstrap.Toast`, `bootstrap.Dropdown` ou os `data-bs-*`.
 3. **Classe Tailwind.** `flex`, `grid`, `gap-4`, `text-sm`, `bg-white`, `rounded-lg`, `px-4`, `hidden`, `space-y-*`, `w-full`. Tailwind está morto no projeto e será removido. Cuidado com colisão: `gap-4` e `border` existem nos dois mundos com semântica diferente; `d-none` (Bootstrap) ≠ `hidden`; `w-100` ≠ `w-full`.
 4. **Classe CSS inventada onde existe utility.** Nada de `.mt-large`, `.flex-center`, `.text-muted-custom`. Use `mt-4`, `d-flex align-items-center justify-content-center`, `text-body-secondary`.
-5. **Classe fantasma do sistema antigo.** `.btn-ghost`, `.btn-block`, `.btn-icon`, `.dialog`, `.dialog-backdrop`, `.dialog-title`, `.tag-accent`, `.tag-outline`, `.tag-neutral`, `.tag-accent-2`, `.field`, `.input`, `.elev-sm|md|lg`. Nenhuma existe em CSS algum — resíduo. Mapeamento em §4.
-6. **`var(--color-*)` em código novo.** Custom properties viraram output de `_variables.scss`. CSS novo usa `$variáveis` SCSS ou `--bs-*`.
-7. **Hex hardcoded** em view ou SCSS de componente. Só `_variables.scss` tem literal de cor.
-8. **`border-radius` diferente de zero**, `rounded`, `rounded-*`, `rounded-pill`, `rounded-circle`. Mandato Modernist = canto reto sistêmico. Exceção única: `.rounded-circle` em avatar, **só** com aprovação explícita. Padrão: avatar quadrado.
+5. **Classe fantasma do sistema antigo.** `.btn-block`, `.btn-icon`, `.dialog`, `.dialog-backdrop`, `.dialog-title`, `.tag-accent`, `.tag-outline`, `.tag-neutral`, `.tag-accent-2`, `.field`, `.input`, `.elev-sm|md|lg`, `.grayscale` (removida em definitivo na Fase 2 do `front_redesign` — a última sobrevivente estava na faixa de mídia de `components/ui/card.blade.php`, substituída por `.ds-pastel-wash`). Nenhuma existe em CSS algum — resíduo. Mapeamento em §4.
+   **Exceção histórica que virou classe real:** `.btn-ghost` **existe** desde a Fase 2 (`resources/scss/components/_state-layer.scss`) e é a classe correta para `<x-ui.button variant="ghost">` — não é mais fantasma, não confundir com o `.btn-link` que ela substituiu.
+6. **[Fase 0 `front_redesign`] `var(--color-*)` inventado à mão em código novo.** As custom properties de marca vêm de `_ds/plataforma-ead-design-system/tokens/*.css` (fonte de design) e `_bridge.scss` (fonte de implementação Sass) — não crie um terceiro set paralelo. CSS de componente novo consome `var(--*)` dos tokens publicados ou `$variáveis`/`--bs-*` já alimentados pela ponte.
+7. **[Fase 0 `front_redesign`] Hex hardcoded** em view ou SCSS de componente. Só `_bridge.scss` (e os arquivos de `_ds/.../tokens/`) têm literal de cor/raio/sombra — ver `spec/front_redesign/15-plano-de-fases.md` "Critério de saída".
+8. **[Fase 0 `front_redesign`] `border-radius: 0` forçado onde o token pede canto suave.** O mandato mudou: Modernist (canto reto sistêmico, `$enable-rounded: false`) foi **substituído** pelo novo sistema pastel de cantos suaves (`$border-radius: 14px`, botões pílula `999px`). Em tela já migrada para o redesign, zerar radius é a violação — use o valor que vem da ponte. Em tela ainda não migrada, o `border-radius: 0` antigo continua o comportamento visual até a fase de migração daquela tela.
 9. **Bootstrap Icons / CDN externo.** Ícone continua Lucide inline via `<x-ui.icon name="..."/>`.
-10. **`!important`** fora de `.org-logo` (exceção histórica documentada).
+10. **`!important`** em qualquer classe do projeto. `.org-logo` **não é mais exceção**: desde a Fase 4 do `front_redesign` (`resources/scss/components/_organizations.scss`) é uma classe real, sem `!important`, consumindo só `var(--*)`. Se algum `!important` aparecer em código novo, é violação — não há mais exceção histórica para justificá-lo.
 11. **`<table>` sem `.table-responsive`** no wrapper.
 12. **Markup Bootstrap cru em tela** quando existe (ou deveria existir) um `<x-ui.*>` — ver mandato de componentização em `bootstrap-architecture`.
 
@@ -196,16 +226,16 @@ Cada item = motivo de **rejeição** em review. Não é questão de gosto.
 | :--- | :--- |
 | `.btn.btn-primary` + inline padding | `btn btn-primary` |
 | `.btn.btn-secondary` | `btn btn-outline-secondary` |
-| `.btn.btn-ghost` | `btn btn-link text-body text-decoration-none` |
+| `.btn.btn-ghost` (antigo, sem borda) | `btn btn-ghost ds-state-layer` (**Fase 2**: `.btn-ghost` agora existe de verdade em `_state-layer.scss`, com borda obrigatória) |
 | `.btn-block` | `w-100` |
 | `.btn-icon` | `btn` + `d-inline-flex align-items-center gap-2` |
 | `.card` + inline border/shadow | `card` (+ `shadow-sm`) |
 | `.elev-sm` / `.elev-md` / `.elev-lg` | `shadow-sm` / `shadow` / `shadow-lg` |
 | `.dialog` / `.dialog-backdrop` | `modal` / gerado pelo `bootstrap.Modal` |
-| `.tag-accent` | `badge text-bg-primary` |
-| `.tag-outline` | `badge border border-secondary text-body` |
-| `.tag-neutral` | `badge text-bg-secondary` |
-| `.tag-accent-2` | `badge text-bg-danger` |
+| `.tag-accent` | `badge ds-tone-primary` (**Fase 2**: era `badge text-bg-primary`, ver `<x-ui.badge>`) |
+| `.tag-outline` | `badge border ds-muted` |
+| `.tag-neutral` | `badge ds-tone-neutral` |
+| `.tag-accent-2` | `badge ds-tone-critical` (**Fase 2**: era `badge text-bg-danger` — vermelho proibido, agora passa pelo par `--critical-container`/`--on-critical-container`) |
 | `.field` (wrapper de label+input) | `mb-3` |
 | `.input` | `form-control` |
 | select com chevron SVG + `appearance:none` | `form-select` |
@@ -215,9 +245,44 @@ Cada item = motivo de **rejeição** em review. Não é questão de gosto.
 | `style="color: var(--color-accent)"` | `text-primary` |
 | `style="background: var(--color-surface)"` | `bg-body-secondary` |
 | `style="text-align:left"` | `text-start` |
-| `style="filter: grayscale(1)"` | `grayscale` (classe do projeto, camada 3) |
+| `style="filter: grayscale(1)"` / `class="grayscale w-100 overflow-hidden"` | `.ds-pastel-wash` (**Fase 2**: `.grayscale` foi removida do projeto inteiro — última sobrevivente era a faixa de mídia de `components/ui/card.blade.php`) |
 
-Escala de espaçamento (com `$spacer: 1rem`): `1`=4px, `2`=8px, `3`=12px, `4`=16px, `5`=24px. Configurável em `_variables.scss` para casar com `--space-*` do Modernist (4/8/12/16/24/32). Ver §7.
+Escala de espaçamento: as utilities `p-N`/`m-N`/`gap-N` do Bootstrap continuam valendo, mas a escala do design system (`--space-1`…`--space-11`) não coincide com a dele. Para os passos do design system use as utilities `*-Nx` geradas a partir de `$ds-space-steps` em `resources/scss/components/_utilities.scss` (`mt-4x`, `p-4x`, `gap-3x` — cada uma resolve para `var(--space-N)`). Ver §7.
+
+---
+
+## 4.1 Listagem responsiva: markup único que reflui (padrão desde a Fase 8)
+
+Mandato de `spec/front_redesign/11-mobile-e-responsivo.md`: toda tabela de listagem com 4+ colunas vira lista de cards com rótulo + valor por linha abaixo de `md`, **nunca** duas variantes visíveis ao mesmo tempo, e o `dusk=` do contrato (`tests/fixtures/dusk-selectors-snapshot.json`) vive em **um** único elemento. A armadilha documentada no doc 11: renderizar as duas variantes e esconder uma via CSS deixa o mesmo `dusk=` duplicado no DOM, e o Dusk casa com a errada.
+
+**Padrão atual (Fase 8 em diante, é o que usar em tabela nova):** markup único que reflui — `<x-ui.table>`/`<x-ui.data-table>` já emitem a classe `.ds-table`; `resources/scss/components/_table-cards.scss` transforma essa mesma marcação em lista de cards abaixo de `md` via CSS puro (`display: block` em `thead`/`tr`/`td`, rótulo do `content: attr(data-label)`). Nenhuma segunda cópia de linha, nenhum `d-md-none` par. A única obrigação da tela: todo `<td>` carrega `data-label="Coluna"` batendo com o `<th>` correspondente — inclusive `<td>` só com botão/badge, senão a versão card mostra linha em branco.
+
+```blade
+<x-ui.table :headers="['Nome', 'Status', 'Criado em', 'Ações']">
+    <tr dusk="user-row-{{ $user->id }}">
+        <td data-label="Nome">{{ $user->name }}</td>
+        <td data-label="Status"><x-ui.badge>...</x-ui.badge></td>
+        <td data-label="Criado em">{{ $user->created_at->format('d/m/Y') }}</td>
+        <td data-label="Ações">...</td>
+    </tr>
+</x-ui.table>
+```
+
+**Padrão antigo, congelado (não replicar em tela nova):** `courses/index.blade.php`, `organizations/index.blade.php`, `users/index.blade.php`, `admin/users/index.blade.php` (2 tabelas) e `audit-logs/index.blade.php` ainda usam o par `d-none d-md-block` (desktop, com o `dusk=`) + `d-md-none` (cards mobile, zero `dusk=`) consolidado na Fase 3. Essas 5 telas **não** foram migradas para `.ds-table`/`data-label` na Fase 8 — mexer nelas exigiria remover markup existente com `dusk=`, fora do escopo mínimo da fase. Como a variante desktop delas já é `display: none` abaixo de `md` pelo próprio wrapper `d-none d-md-block`, a regra de reflow de `_table-cards.scss` nunca chega a se aplicar ali — convivem sem conflito, mas **não misture os dois padrões na mesma tabela**.
+
+```blade
+<div class="d-none d-md-block">
+    {{-- <table>, todo dusk="..." do contrato vive aqui, um único registro por dado --}}
+</div>
+
+<div class="d-md-none">
+    {{-- mesmas linhas via <x-ui.card>, mesmas ações/modais, zero dusk="" --}}
+</div>
+```
+
+- Regra dura, para os dois padrões: nunca duplicar um seletor `dusk` na variante/marcação mobile — o snapshot é a lista fechada de seletores existentes, e um duplicado quebra `DuskSelectorContractTest`.
+- Um `<x-ui.confirm-modal>`/modal compartilhado (ex.: `#audit-diff-modal`) é declarado **uma vez**, fora de qualquer par de variantes.
+- Empty state, paginação e filtros não se duplicam em nenhum dos dois padrões — ficam fora, acima da tabela.
 
 ---
 
@@ -306,14 +371,19 @@ Regras:
 
 ## 7. O bloco exato de override SCSS
 
-> **ATENÇÃO — bloco abaixo é o ESBOÇO original, não o código em produção.**
-> Implementação real vive em **`resources/scss/app.scss`** (`_variables.scss` nunca foi criado) e diverge em três pontos que mudam o que você escreve na Blade:
+> **[SUBSTITUÍDO — Fase 0 do `spec/front_redesign/`]** O bloco Modernist
+> abaixo é **histórico**: descreve a ponte anterior (accent vermelho, canto
+> reto, Archivo). A ponte real hoje é **`resources/scss/_bridge.scss`**,
+> alimentada pelos tokens de `_ds/plataforma-ead-design-system/tokens/*.css`
+> (ver `spec/front_redesign/01-direcao-visual-e-tokens.md` e
+> `bootstrap-architecture`). Pontos que mudam o que você escreve na Blade:
 >
-> 1. **`$spacers` é o mapa PADRÃO do Bootstrap** (`0..5`, `$spacer: 1rem`) mesclado com as chaves `1x 2x 3x 4x 6x 8x` (4/8/12/16/24/32px). Escala numérica: `1`=4px, `2`=8px, `3`=**16px**, `4`=**24px**, `5`=48px. **`p-6`/`g-6` não existem.** Valor exato do Modernist usa chave `x`: 12px = `gap-3x`, 16px = `mb-4x`, 24px = `mt-6x`, 32px = `p-8x`. `mb-4` vale 24px, não 16px.
-> 2. **Superfície é `--bs-tertiary-bg`**: o projeto define `$body-tertiary-bg: $modernist-surface`. Para `--color-surface` use **`bg-body-tertiary`**, não `bg-body-secondary`.
-> 3. **`$success: $modernist-accent`** (vermelho) por mandato Modernist, e `$danger: $modernist-accent-2`. `alert-success` e `alert-danger` são dois vermelhos próximos — não use verde/vermelho para diferenciar estado.
+> 1. **`$spacers` continua o mapa PADRÃO do Bootstrap** (`0..5`, `$spacer: 1rem`) — `_bridge.scss` não o sobrescreve. `mb-4` vale 1.5rem (24px) como no Bootstrap stock; não existe escala `Nx` custom.
+> 2. **Cantos são suaves, não retos**: `$border-radius: 14px` (não 0), com `$border-radius-sm/-lg/-xl/-pill` próprios por componente (`$card-border-radius: 20px`, `$modal-content-border-radius: 28px`, `$btn-border-radius*: 999px` — botões são pílula). Não zere radius em componente novo.
+> 3. **`$success`/`$danger`/`$warning` são pastel, nunca vermelho/amarelo**: `$success: --mint-600 (#2e9e6b)`, `$danger: --critical (#3b4a78, azul-slate)`, `$warning: --attention (#5b6880, cinza-azulado)`. `$red`/`$orange`/`$yellow` de base também são remapeados na ponte — nenhum literal vermelho/laranja/amarelo deve aparecer em CSS novo.
+> 4. **Fonte é Nunito Sans**, não Archivo — `$font-family-base` na ponte; `public/fonts/archivo/` foi removido.
 >
-> Confira `resources/scss/app.scss` antes de usar degrau de espaçamento ou token de cor. Bloco abaixo fica como registro da intenção de design:
+> Confira `resources/scss/_bridge.scss` antes de usar token de cor, raio ou sombra. Bloco abaixo fica como registro histórico da intenção de design **Modernist**, superada pelo redesign — não copiar valores dele em código novo:
 
 ```scss
 // =====================================================================

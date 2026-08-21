@@ -38,6 +38,17 @@ class ProcessInvitationRequest extends FormRequest
             'password' => $emailExists
                 ? ['required', 'string']
                 : ['required', 'string', 'min:8', 'confirmed'],
+            'consent' => ['accepted'],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'consent.accepted' => 'É necessário concordar em compartilhar seus dados com a organização responsável por este curso.',
         ];
     }
 

@@ -94,9 +94,10 @@ vendor/bin/sail dusk --filter=EssayGradingScreenTest
 
 - Check `window.QuizBuilder` actually initialized (`app.js`
   `DOMContentLoaded` listener calls `window.QuizBuilder.init()`). If
-  `public/build` stale relative to `resources/js/quiz-builder.js`/
+  `public/build` stale relative to `resources/js/modules/QuizBuilder.js`/
   `app.js`, run `vendor/bin/sail npm run build` (or ask user to run
-  `npm run dev`/`composer run dev`).
+  never `npm run dev`/`composer run dev`, which leave `public/hot` behind
+  and break every Dusk run (see `laravel-dusk`).
 - Confirm `<select data-question-type-select="{formSuffix}">` and options
   container it toggles (`[data-options-container="{formSuffix}"]`) share
   **same** `formSuffix`. `quizzes/edit.blade.php` renders one
@@ -144,7 +145,7 @@ change to `QuizController`/`QuizQuestionController`/
 `QuizPolicy`/`QuizAttemptPolicy`, the
 `quizzes*`/`quiz-questions*`/`quiz-attempts*`/`student.quizzes.*` routes,
 Blade views under `resources/views/quizzes/`+
-`resources/views/student/quizzes/`, or `quiz-builder.js`/`quiz-timer.js`
+`resources/views/student/quizzes/`, or `QuizBuilder.js`/`QuizTimer.js`
 **must** update all three quizzes skills (`quizzes-architecture`,
 `quizzes-conventions`, `quizzes-maintenance`) in same change, before task
 counts done. Also re-check:

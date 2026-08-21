@@ -4,7 +4,7 @@ description: >
   Debug, test, edge-case guide for Landing Page & Contextual Help Center
   (SPEC-11): mandatory PHPUnit/Dusk test files, common
   `target_page_key`/fallback/`withoutEvents()` failure modes, no-Alpine.js
-  `.dialog-backdrop` Dusk-wait gotcha, 100%-coverage-vs-content-authoring
+  declarative `bootstrap.Modal` Dusk gotcha, 100%-coverage-vs-content-authoring
   gap. Use when `LandingPageTest`, `HelpCenterTest`, or
   `ContextualHelpFallbackTest` fail; help button not render on new screen;
   wrong article (org-specific vs global) resolve; or `HelpCenterDuskTest`
@@ -84,15 +84,14 @@ HTTP process); `DatabaseMigrations` retired (per-method `migrate:fresh`)
   Forget this = most common cause of `HelpCenterTest` Admin-screen
   assertion resolving wrong (or no) article.
 - **`HelpCenterDuskTest` intermittently click through to wrong element /
-  modal never open.** `.dialog-backdrop` element ship with static inline
-  `display: flex`, hidden only once `ModalManager.hideBackdropsOnLoad()`
-  run on `DOMContentLoaded` — this project have **no Alpine.js** (see
-  `ModalManager.js` own docblock). `HelpCenterDuskTest` call
-  `->waitUntilMissing('.dialog-backdrop')` before clicking trigger button
-  specifically to wait out that plain-JS hide, not any Alpine hydration.
-  If future comment or fix attribute this wait to Alpine, that is
-  documentation regression — correct back to referencing
-  `ModalManager.hideBackdropsOnLoad()`.
+  modal never open.** Since the Bootstrap 5.3 migration the modal is
+  driven by `bootstrap.Modal` through `data-bs-toggle`/`data-bs-target`,
+  so there is no hand-rolled backdrop to wait out — this project have
+  **no Alpine.js** and no `ModalManager` any more. A modal that never
+  opens is almost always the JS bundle missing (stale `public/build`,
+  `vendor/bin/sail npm run build` not run) rather than a timing problem.
+  Wait on the modal itself (`waitFor('@help-modal-{key}')`), never on a
+  removed `.dialog-backdrop`.
 - **Inert (disabled) button asserted as error in new test.** RN05
   explicitly allow coverage to outpace content authoring — disabled
   `<x-help-button>` with no `HelpArticle` yet is **correct** state, not

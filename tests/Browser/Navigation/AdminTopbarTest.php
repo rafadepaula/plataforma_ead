@@ -23,16 +23,13 @@ use Tests\DuskTestCase;
 class AdminTopbarTest extends DuskTestCase
 {
     /**
-     * `.badge` carries `text-transform: uppercase`
-     * (`resources/scss/components/_index.scss:57`) and Dusk asserts
-     * against the browser's *rendered* text — so the Organization name
-     * reads in caps in the DOM even though the model stores
-     * "Organização Alvo". Same convention as
-     * {@see AdminSidebarScopeTest::IMPERSONATE_HEADING}.
+     * A caixa do badge é decisão de tema, não comportamento: as asserções
+     * de texto aqui ignoram a caixa renderizada
+     * ({@see DuskTestCase::registerCaseInsensitiveTextMacros()}).
      */
     private const ORG_NAME = 'Organização Alvo';
 
-    private const ORG_NAME_RENDERED = 'ORGANIZAÇÃO ALVO';
+    private const ORG_NAME_RENDERED = self::ORG_NAME;
 
     public function test_admin_topbar_impersonation_badge_lifecycle(): void
     {
@@ -57,17 +54,17 @@ class AdminTopbarTest extends DuskTestCase
                 ->click('@impersonate-'.$organization->id)
                 ->waitForLocation('/organizations')
                 ->waitFor('@topbar-impersonation')
-                ->assertSeeIn('@topbar-active-org-badge', self::ORG_NAME_RENDERED);
+                ->assertSeeInIgnoringCase('@topbar-active-org-badge', self::ORG_NAME_RENDERED);
 
             // 3. O badge acompanha o Admin em telas sem relação com
             //    Organizações e em telas operacionais da Organização.
             $browser->visit(route('admin.dashboard'))
                 ->waitFor('@topbar-impersonation')
-                ->assertSeeIn('@topbar-active-org-badge', self::ORG_NAME_RENDERED);
+                ->assertSeeInIgnoringCase('@topbar-active-org-badge', self::ORG_NAME_RENDERED);
 
             $browser->visit(route('courses.index'))
                 ->waitFor('@topbar-impersonation')
-                ->assertSeeIn('@topbar-active-org-badge', self::ORG_NAME_RENDERED);
+                ->assertSeeInIgnoringCase('@topbar-active-org-badge', self::ORG_NAME_RENDERED);
 
             // 4. Viewport estreito: badge e controles do cluster à direita
             //    sobrevivem.
@@ -89,7 +86,10 @@ class AdminTopbarTest extends DuskTestCase
                 ->waitForLocation('/admin/dashboard')
                 ->waitUntilMissing('@topbar-impersonation')
                 ->assertMissing('@topbar-exit-impersonation')
-                ->assertDontSee(self::ORG_NAME_RENDERED);
+                // O nome da Organização segue legítimo no corpo da tela (a
+                // tabela "Resumo das Organizações" do Admin global lista
+                // todas), então o que precisa sumir é o badge, não o texto.
+                ->assertMissing('@topbar-active-org-badge');
         });
     }
 

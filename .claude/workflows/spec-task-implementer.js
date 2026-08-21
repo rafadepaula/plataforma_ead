@@ -91,11 +91,15 @@ const REVIEW_SCHEMA = {
 
 let SPEC_FILE = null
 let TASK_REF = null
+let SPEC_DIR = 'spec/specs'
 
 if (args && typeof args === 'object') {
   SPEC_FILE = args.specFile ?? null
   TASK_REF = args.taskRef ?? null
+  if (args.specDir) SPEC_DIR = String(args.specDir).replace(/\/+$/, '')
 } else if (typeof args === 'string') {
+  const dirMatch = args.match(/(spec\/[\w-]+)\//)
+  if (dirMatch) SPEC_DIR = dirMatch[1]
   const fileMatch = args.match(/(?:spec\/specs\/)?([\w-]+\.md)/)
   if (fileMatch) SPEC_FILE = fileMatch[1]
   const taskMatch = args.match(/\bRF\d+\b/i)
@@ -121,7 +125,7 @@ phase('Understand')
 
 const understanding = await agent(
   [
-    `Read spec/specs/${SPEC_FILE} in full, plus spec/specs/00-architecture-database-and-guardrails.md and spec/specs/README.md for shared conventions.`,
+    `Read ${SPEC_DIR}/${SPEC_FILE} in full, plus spec/specs/00-architecture-database-and-guardrails.md and spec/specs/README.md for shared conventions.`,
     `Focus on the requirement/task: "${TASK_REF}".`,
     `Do NOT write or edit any code. This is a research-only pass.`,
     `Extract: the requirement text verbatim, every business rule (RN) tied to it, the DB tables/columns it touches (per spec 00 section 2.1), the acceptance criteria / checklist items from the spec, and cross-references to other spec files this task depends on.`
@@ -136,7 +140,7 @@ phase('Tech-Refine')
 
 const techPlan = await agent(
   [
-    `You are refining an implementation plan for task "${TASK_REF}" from spec/specs/${SPEC_FILE}.`,
+    `You are refining an implementation plan for task "${TASK_REF}" from ${SPEC_DIR}/${SPEC_FILE}.`,
     `Prior research on the requirement:`,
     JSON.stringify(understanding),
     `Study the CURRENT codebase state: existing migrations (database/migrations), models (app/Models), controllers/actions, routes, and any existing tests related to this task. Check what already exists vs. what is missing.`,
@@ -161,7 +165,7 @@ const codeResults = await parallel(
   buckets.map((bucket, i) => () =>
     agent(
       [
-        `Implement this bucket only from the technical plan for "${TASK_REF}" (spec/specs/${SPEC_FILE}):`,
+        `Implement this bucket only from the technical plan for "${TASK_REF}" (${SPEC_DIR}/${SPEC_FILE}):`,
         JSON.stringify(bucket),
         `Full plan context (for cross-bucket consistency, do not implement other buckets):`,
         JSON.stringify(techPlan),
@@ -185,7 +189,7 @@ phase('Test')
 
 const testResults = await agent(
   [
-    `Task "${TASK_REF}" from spec/specs/${SPEC_FILE} was just implemented TDD-first across ${codeOutputs.length} bucket(s), each with its own PHPUnit tests written RED-before-GREEN per the laravel-tdd skill, and Dusk browser tests per laravel-dusk for UI-facing buckets. Summaries of what each bucket did:`,
+    `Task "${TASK_REF}" from ${SPEC_DIR}/${SPEC_FILE} was just implemented TDD-first across ${codeOutputs.length} bucket(s), each with its own PHPUnit tests written RED-before-GREEN per the laravel-tdd skill, and Dusk browser tests per laravel-dusk for UI-facing buckets. Summaries of what each bucket did:`,
     JSON.stringify(codeOutputs),
     `Run the laravel-tdd Verification Checklist: confirm migration tests pass, model relationships are tested, controller & API integration tests pass, validation and authorization are tested, database state is verified with RefreshDatabase for Feature/Unit tests, and factories were used.`,
     `Run the laravel-dusk checklist for any browser-facing bucket: Dusk tests use DatabaseMigrations/DatabaseTruncation (not RefreshDatabase), ChromeDriver is current (\`vendor/bin/sail artisan dusk:chrome-driver --detect\` if a version mismatch is reported), and failing tests leave a screenshot in tests/Browser/screenshots for debugging.`,
@@ -210,10 +214,10 @@ while (iterations < MAX_REVIEW_ITERATIONS && budget.remaining() > 0) {
 
   lastReview = await agent(
     [
-      `Review the uncommitted diff implementing task "${TASK_REF}" from spec/specs/${SPEC_FILE}.`,
+      `Review the uncommitted diff implementing task "${TASK_REF}" from ${SPEC_DIR}/${SPEC_FILE}.`,
       `Trigger the laravel-best-practices, laravel-specialist, and laravel-verification skills as your normal process dictates (static analysis, lint, test verification, architectural audit).`,
       `Trigger the validate-test-quality skill to audit all new/modified PHPUnit and Dusk tests against the 6 Pillars of Real Test Validation: SUT Integrity (0% SUT self-mocking), Assertion Meaningfulness (no tautological/weak factory checks), Mutation Resiliency, State Verification (database & response checks), Mandatory Fail-Path Testing (403, 422, exceptions, cross-tenant leaks), and Refactor Resilience. Any test quality defect, fake assertion, or missing failure path MUST be reported as a CONFIRMED finding.`,
-      `Invoke the spec-usecase-test-checker agent to audit all Use Cases (UCs) defined for spec/specs/${SPEC_FILE} (in spec/docs/usecases/ and spec/specs/${SPEC_FILE}). Revalidate in code (tests/Browser/) that EVERY Use Case has AT LEAST ONE E2E Laravel Dusk test capturing all scenarios (success and failure/exception). Any missing Use Case Dusk test or missing scenario coverage MUST be reported as a CONFIRMED finding.`,
+      `Invoke the spec-usecase-test-checker agent to audit all Use Cases (UCs) defined for ${SPEC_DIR}/${SPEC_FILE} (in spec/docs/usecases/ and ${SPEC_DIR}/${SPEC_FILE}). Revalidate in code (tests/Browser/) that EVERY Use Case has AT LEAST ONE E2E Laravel Dusk test capturing all scenarios (success and failure/exception). Any missing Use Case Dusk test or missing scenario coverage MUST be reported as a CONFIRMED finding.`,
       `Test run summary from the previous phase:`,
       JSON.stringify(testResults),
       `Report findings ranked most-severe first, each with a clear verdict (CONFIRMED or PLAUSIBLE). Empty findings array if the diff is clean.`
@@ -235,7 +239,7 @@ while (iterations < MAX_REVIEW_ITERATIONS && budget.remaining() > 0) {
 
   await agent(
     [
-      `The code-reviewer agent found these CONFIRMED issues in the implementation of "${TASK_REF}" (spec/specs/${SPEC_FILE}):`,
+      `The code-reviewer agent found these CONFIRMED issues in the implementation of "${TASK_REF}" (${SPEC_DIR}/${SPEC_FILE}):`,
       JSON.stringify(confirmed),
       `Fix every listed issue directly in the code. Re-run the relevant tests afterward to confirm nothing broke. Do not introduce new scope beyond fixing these findings.`
     ].join('\n'),
@@ -256,7 +260,7 @@ phase('Meta-Skill-Check')
 
 const skillCheck = await agent(
   [
-    `Task "${TASK_REF}" from spec/specs/${SPEC_FILE} is implemented, tested, and reviewed clean. Final bucket summaries:`,
+    `Task "${TASK_REF}" from ${SPEC_DIR}/${SPEC_FILE} is implemented, tested, and reviewed clean. Final bucket summaries:`,
     JSON.stringify(codeOutputs),
     `Per spec/specs/03-agentic-harness-and-self-updating-skills.md and spec/specs/00-architecture-database-and-guardrails.md §6: every feature/module must maintain a triad of skills in .agents/skills/ — \`{module}-architecture\`, \`{module}-conventions\`, \`{module}-maintenance\` — and ANY code or schema change impacting a module must trigger a review/rewrite of its corresponding skills BEFORE the task is finalized.`,
     `1. Identify which module this task belongs to (derive from ${SPEC_FILE}'s filename, e.g. "quizzes", "certificates", "forum") and look for its 3 skills under .agents/skills/. If the triad doesn't exist yet, create it now, seeded from what was just built.`,

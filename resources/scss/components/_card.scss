@@ -1,0 +1,79 @@
+// =============================================================================
+// Componente: Card — complementos ao `.card` do Bootstrap
+// -----------------------------------------------------------------------------
+// O Bootstrap entrega superfície, raio e sombra. O que falta é a estrutura
+// interna da diretriz da biblioteca de componentes: corpo, linha de meta ancorada embaixo acima de um divisor,
+// e o cabeçalho de tabela em overline.
+// Regra: só consumir var(--*), nunca literal.
+// =============================================================================
+
+.card-content {
+    color: var(--text-primary);
+}
+
+.ds-surface {
+    background: var(--surface);
+}
+
+// Linha de meta do card: ancorada no rodapé do corpo, acima de um divisor.
+.card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--gap-inline);
+    color: var(--text-secondary);
+    border-top: var(--border-width) solid var(--divider);
+}
+
+// Cabeçalho de tabela em overline (diretriz da biblioteca de componentes: célula 18x20, cabeçalho em
+// overline, divisores --divider).
+.table-header {
+    th {
+        font-size: var(--font-size-overline);
+        font-weight: var(--font-weight-bold);
+        text-transform: uppercase;
+        letter-spacing: var(--tracking-overline);
+        color: var(--text-secondary);
+        background: var(--surface-sunken);
+        border-bottom: var(--border-width) solid var(--divider);
+    }
+}
+
+// Card que é, na prática, um link/gatilho de navegação inteiro (linha de
+// lista clicável) — ganha um leve estado de hover para sinalizar
+// interatividade, sem introduzir sombra nova (diretriz da biblioteca de componentes: hover discreto).
+.card-interactive {
+    transition: border-color var(--duration-fast) var(--ease-standard), background-color var(--duration-fast) var(--ease-standard);
+
+    &:hover {
+        border-color: var(--border-strong);
+        background-color: var(--surface-sunken);
+    }
+}
+
+// Trunca um bloco de texto em 2 linhas com reticências — usado no trecho
+// de conteúdo de um card de listagem (ex.: tópico de fórum) quando
+// `Str::limit` por caractere não é suficiente para lidar com larguras
+// responsivas variadas.
+.line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+// Shell de flash de sessão. Sem superfície própria — a aparência vive em
+// `x-ui.alert` (diretriz da biblioteca de componentes).
+.layout-alerts-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+// Uma resposta do Fórum na thread (`forum/partials/_reply.blade.php`),
+// server-renderizada ou injetada por `ForumPolling.js::appendReply()` (o
+// nome da classe é gerado literalmente lá — não renomear aqui sem também
+// atualizar o módulo JS). Divisor sutil no lugar de sombra própria, para a
+// lista de respostas ler como uma sequência, não como cards empilhados.
+.forum-reply {
+    border-color: var(--divider);
+}

@@ -1,11 +1,23 @@
 ---
 name: frontend-maintenance
-description: Manutenção do frontend: build de assets, testes Dusk E2E, troubleshooting.
+description: >
+  Build de assets e cobertura E2E genéricos (ainda válidos), mas
+  redireciona para `bootstrap-maintenance` para troubleshooting de UI —
+  as seções antigas (`LayoutRenderingTest`, `BladeComponentsTest`,
+  `ModalManager`, zero-radius) descreviam testes e módulos que não
+  existem mais no código.
 ---
 
 # Frontend Maintenance (`frontend-maintenance`)
 
-Procedimento de manutenção, debug e verificação automatizada da camada de frontend.
+> **Troubleshooting de UI atual (build stale, modal, dropdown, radius,
+> classe fantasma) mora em `bootstrap-maintenance`.** As seções antigas
+> deste arquivo citavam `LayoutRenderingTest` e `BladeComponentsTest` —
+> nenhum dos dois arquivo existe em `tests/` — e um bug de `ModalManager`
+> que foi removido do projeto na migração para Bootstrap 5.3 nativo. Não
+> seguir essas seções; foram removidas daqui. As duas seções abaixo (build
+> e cobertura E2E por cadeia) continuam corretas e não são específicas de
+> Bootstrap.
 
 ---
 
@@ -16,44 +28,30 @@ Procedimento de manutenção, debug e verificação automatizada da camada de fr
 vendor/bin/sail npm run build
 
 # Desenvolvimento (Hot Module Replacement)
+# ATENCAO: cria public/hot. Pare o dev server antes de rodar Dusk —
+# com public/hot no lugar, todo asset e servido de localhost:5173, que
+# dentro do container do Selenium resolve para ele mesmo, e a suite
+# inteira roda sem CSS nem JS. Ver `laravel-dusk`.
 vendor/bin/sail npm run dev
 ```
+
+Ver `bootstrap-maintenance` §1 para o gotcha de `public/build/` desatualizado
+quebrando Dusk silenciosamente.
 
 ---
 
 ## Testes Dusk E2E
 
-Suíte de interface garante layout e componentes Blade.
-
 ```bash
 # Todos os testes de navegador
 vendor/bin/sail artisan dusk
 
-# Renderização de layout
-vendor/bin/sail artisan dusk --filter=LayoutRenderingTest
-
-# Componentes Blade UI
-vendor/bin/sail artisan dusk --filter=BladeComponentsTest
+# Filtro mais estreito possível para a tela/feature em questão
+vendor/bin/sail artisan dusk --filter=<TesteDaTela>
 ```
 
----
-
-## Troubleshooting
-
-### 1. Dusk falha por `border-radius`
-- **Sintoma**: `LayoutRenderingTest` acusa `Expected border-radius to enforce 0px`.
-- **Causa**: regra CSS com radius > 0, ou Reboot do Bootstrap importado.
-- **Solução**: `app.css` com `--radius-sm: 0px`, `--radius-md: 0px`, `--radius-lg: 0px`. Import do Bootstrap restrito a `grid` e `utilities`.
-
-### 2. AJAX retorna 419 (CSRF token mismatch)
-- **Sintoma**: chamada via `HttpClient` dá HTTP 419.
-- **Causa**: falta `<meta name="csrf-token" content="{{ csrf_token() }}">` no `<head>` de `app.blade.php`.
-- **Solução**: adicionar a meta tag no layout master.
-
-### 3. Modal não fecha com `Escape` nem clique no backdrop
-- **Sintoma**: clique fora não esconde modal.
-- **Causa**: falta `.dialog-backdrop` envolvendo `.dialog`, ou listener não vinculado no `ModalManager`.
-- **Solução**: conferir init de `ModalManager` em `app.js` e estrutura HTML do backdrop.
+Troubleshooting de UI (modal, dropdown, backdrop, `border-radius`, classe
+fantasma, `public/build/` stale): `bootstrap-maintenance`.
 
 ---
 

@@ -28,10 +28,34 @@
       - `forum-replies.fetch`     GET    .../topics/{topic}/replies/fetch?since_id=
       - `forum-reports.store`     POST   .../report  ({postable_type, postable_id, reason})
 --}}
+@php
+    $initialsFor = function (string $name): string {
+        $parts = array_values(array_filter(preg_split('/\s+/', trim($name)) ?: []));
+
+        return mb_strtoupper(collect($parts)->take(2)->map(fn ($part) => mb_substr($part, 0, 1))->implode(''));
+    };
+
+    $roleLabelFor = function (?string $role): string {
+        return match ($role) {
+            \App\Enums\Permissions\RolesEnum::ADMIN->value => 'Admin',
+            \App\Enums\Permissions\RolesEnum::GESTOR->value => 'Gestor',
+            \App\Enums\Permissions\RolesEnum::ALUNO->value => 'Aluno',
+            default => 'Membro',
+        };
+    };
+
+    $topicAuthorRole = $roleLabelFor($topic->user->getRoleNames()->first());
+@endphp
+
 @extends('layouts.app')
 
 @section('content')
-    <x-layout.page-header kicker="Fórum" :title="$topic->title">
+    <x-layout.page-header
+        :breadcrumb="[['label' => 'Meus Cursos', 'url' => route('student.courses.index')], ['label' => $course->title, 'url' => route('classroom.show', $course)], ['label' => 'Fórum', 'url' => route('forum.index', $course)], ['label' => $topic->title]]"
+        kicker="Fórum"
+        :title="$topic->title"
+        subtitle="Acompanhe a conversa deste tópico e responda à turma."
+    >
         <x-slot:actions>
             <x-ui.button variant="secondary" href="{{ route('forum.index', $course) }}" dusk="back-to-forum">Voltar ao Fórum</x-ui.button>
         </x-slot:actions>
@@ -40,30 +64,37 @@
     {{-- Markup `.card` cru (e não `<x-ui.card>`) pelo mesmo motivo de
          `forum/partials/_reply.blade.php`, já migrado: o post do tópico e a
          resposta são o mesmo padrão visual, e `<x-ui.card>` embrulha o slot
-         num `.card-content.small` que rebaixaria o corpo do post. --}}
-    <div class="card bg-body-tertiary mb-4" dusk="topic-post" data-topic-id="{{ $topic->id }}">
+         num `.card-content.small` que rebaixaria o corpo do post. `shadow-sm`
+         (Bootstrap utility) dá a elevação pedida pela diretriz das telas de fórum sem passar pelo
+         componente. --}}
+    <div class="card bg-body-tertiary shadow-sm mb-4" dusk="topic-post" data-topic-id="{{ $topic->id }}">
         <div class="card-body">
-            <div class="d-flex align-items-center justify-content-between mb-2">
-                <div class="small text-body-secondary">
-                    @if($topic->is_pinned)
-                        <x-ui.badge variant="accent" dusk="pinned-badge-{{ $topic->id }}">Fixado</x-ui.badge>
-                    @endif
-                    <strong class="text-body">{{ $topic->user->name }}</strong>
-                    — {{ $topic->created_at->format('d/m/Y H:i') }}
+            <div class="d-flex align-items-start justify-content-between gap-3 mb-2">
+                <div class="d-flex align-items-center gap-3">
+                    <x-ui.avatar size="lg" :initials="$initialsFor($topic->user->name)" />
 
-                    @include('forum.partials._edit-history-modal', [
-                        'modalId' => 'edit-history-topic-'.$topic->id,
-                        'label' => 'Tópico',
-                        'editedAt' => $topic->edited_at,
-                        'history' => $topicEditHistory,
-                    ])
+                    <div class="small text-body-secondary">
+                        @if($topic->is_pinned)
+                            <x-ui.badge variant="accent" dusk="pinned-badge-{{ $topic->id }}">Fixado</x-ui.badge>
+                        @endif
+                        <strong class="text-body">{{ $topic->user->name }}</strong>
+                        <x-ui.badge variant="outline">{{ $topicAuthorRole }}</x-ui.badge>
+                        —
+                        <span title="{{ $topic->created_at->format('d/m/Y H:i') }}">{{ $topic->created_at->diffForHumans() }}</span>
+
+                        @include('forum.partials._edit-history-modal', [
+                            'modalId' => 'edit-history-topic-'.$topic->id,
+                            'label' => 'Tópico',
+                            'editedAt' => $topic->edited_at,
+                            'history' => $topicEditHistory,
+                        ])
+                    </div>
                 </div>
 
                 <div class="d-flex gap-2">
                     <x-ui.button
                         type="button"
                         variant="ghost"
-                        size="sm"
                         data-forum-report-button
                         data-postable-type="forum_topic"
                         data-postable-id="{{ $topic->id }}"
@@ -75,7 +106,6 @@
                     @if($canEditTopic)
                         <x-ui.button
                             variant="ghost"
-                            size="sm"
                             :href="route('forum.edit', [$course, $topic])"
                             dusk="edit-topic-{{ $topic->id }}"
                         >Editar</x-ui.button>
@@ -84,18 +114,36 @@
                     @if($canPin)
                         <form method="POST" action="{{ route('forum.pin', [$course, $topic]) }}" dusk="pin-form-{{ $topic->id }}">
                             @csrf
-                            <x-ui.button type="submit" variant="ghost" size="sm" dusk="pin-topic-{{ $topic->id }}">
+                            <x-ui.button type="submit" variant="ghost" dusk="pin-topic-{{ $topic->id }}">
                                 {{ $topic->is_pinned ? 'Desafixar' : 'Fixar' }}
                             </x-ui.button>
                         </form>
                     @endif
 
                     @if($canDeleteTopic)
-                        <form method="POST" action="{{ route('forum.destroy', [$course, $topic]) }}" dusk="delete-topic-form">
-                            @csrf
-                            @method('DELETE')
-                            <x-ui.button type="submit" variant="ghost" size="sm" dusk="delete-topic">Apagar</x-ui.button>
-                        </form>
+                        {{--
+                            Regra dura: toda remoção passa por confirm-modal.
+                            `x-ui.confirm-modal` já é o dono do `<form>` real
+                            (não pode ser tocado aqui), então o seletor dusk
+                            de remoção-do-form original fica no contêiner que
+                            agrupa o gatilho + o modal — o gatilho continua
+                            com o seletor dusk de remoção-de-tópico intacto.
+                        --}}
+                        <div dusk="delete-topic-form">
+                            <x-ui.button type="button"
+                                         variant="ghost"
+                                         data-bs-toggle="modal"
+                                         data-bs-target="#delete-topic-modal-{{ $topic->id }}"
+                                         dusk="delete-topic">Apagar</x-ui.button>
+
+                            <x-ui.confirm-modal :id="'delete-topic-modal-'.$topic->id"
+                                                 title="Apagar tópico"
+                                                 :action="route('forum.destroy', [$course, $topic])"
+                                                 method="DELETE"
+                                                 variant="danger"
+                                                 confirm-label="Apagar"
+                                                 message="Este tópico e todas as respostas serão apagados. Esta ação não poderá ser desfeita." />
+                        </div>
                     @endif
                 </div>
             </div>

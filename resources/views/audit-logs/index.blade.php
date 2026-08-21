@@ -42,7 +42,10 @@
     <x-slot:title>Logs de Auditoria — Plataforma EAD</x-slot:title>
 
     <div dusk="audit-logs-index">
-        <x-layout.page-header title="Logs de Auditoria">
+        <x-layout.page-header kicker="Administração"
+                              title="Logs de Auditoria"
+                              subtitle="Acompanhe as ações realizadas na plataforma e consulte o antes/depois de cada alteração registrada."
+                              :breadcrumb="[['label' => 'Administração'], ['label' => 'Logs de Auditoria']]">
             <x-slot:actions>
                 <x-ui.button variant="secondary"
                              :href="route($auditLogsExportRouteName, request()->query())"
@@ -109,45 +112,91 @@
             </div>
         </x-ui.filter-bar>
 
-        <x-ui.data-table striped
-                         :headers="['Data/Hora', 'Usuário', 'Evento', 'Recurso Afetado', 'IP', 'Ações']"
-                         dusk="audit-logs-table">
+        {{-- Tabela — visível a partir de `md`; abaixo disso a lista de cards assume. --}}
+        <div class="d-none d-md-block">
+            <x-ui.data-table striped
+                             :headers="['Data/Hora', 'Usuário', 'Evento', 'Recurso Afetado', 'IP', 'Ações']"
+                             dusk="audit-logs-table">
+                @forelse($auditLogs as $log)
+                    <tr dusk="audit-log-row-{{ $log->id }}">
+                        <td>{{ $log->created_at?->format('d/m/Y H:i:s') }}</td>
+                        <td>{{ optional($log->user)->name ?? 'Convidado/Sistema' }}</td>
+                        <td>
+                            <x-ui.badge variant="neutral">{{ $log->event }}</x-ui.badge>
+                        </td>
+                        <td>
+                            @if($log->auditable_type)
+                                {{ class_basename($log->auditable_type) }} #{{ $log->auditable_id }}
+                            @else
+                                —
+                            @endif
+                        </td>
+                        <td class="font-monospace small">{{ $log->ip_address ?? '—' }}</td>
+                        <td>
+                            @if($log->old_values || $log->new_values)
+                                <x-ui.button variant="ghost"
+                                             size="sm"
+                                             data-modal-target="audit-diff-modal"
+                                             data-audit-diff-trigger
+                                             data-event="{{ $log->event }}"
+                                             data-old-values="{{ json_encode($log->old_values ?? new \stdClass, JSON_PRETTY_PRINT) }}"
+                                             data-new-values="{{ json_encode($log->new_values ?? new \stdClass, JSON_PRETTY_PRINT) }}"
+                                             dusk="view-diff-{{ $log->id }}">
+                                    Ver diff
+                                </x-ui.button>
+                            @else
+                                —
+                            @endif
+                        </td>
+                    </tr>
+                @empty
+                    <x-ui.empty-state colspan="6"
+                                       icon="shield"
+                                       title="Nenhum registro de auditoria encontrado."
+                                       description="Ajuste os filtros acima ou aguarde novas ações serem registradas na plataforma." />
+                @endforelse
+            </x-ui.data-table>
+        </div>
+
+        {{-- Lista de cards — abaixo de `md`, substitui a tabela (mesmo conteúdo, sem `dusk` duplicado). --}}
+        <div class="d-md-none d-flex flex-column gap-3">
             @forelse($auditLogs as $log)
-                <tr dusk="audit-log-row-{{ $log->id }}">
-                    <td>{{ $log->created_at?->format('d/m/Y H:i:s') }}</td>
-                    <td>{{ optional($log->user)->name ?? 'Convidado/Sistema' }}</td>
-                    <td>
+                <x-ui.card>
+                    <x-slot:kickerSlot>
                         <x-ui.badge variant="neutral">{{ $log->event }}</x-ui.badge>
-                    </td>
-                    <td>
+                    </x-slot:kickerSlot>
+
+                    <x-slot:titleSlot>{{ optional($log->user)->name ?? 'Convidado/Sistema' }}</x-slot:titleSlot>
+
+                    <p class="mb-1">{{ $log->created_at?->format('d/m/Y H:i:s') }}</p>
+                    <p class="mb-1">
                         @if($log->auditable_type)
                             {{ class_basename($log->auditable_type) }} #{{ $log->auditable_id }}
                         @else
                             —
                         @endif
-                    </td>
-                    <td>{{ $log->ip_address ?? '—' }}</td>
-                    <td>
-                        @if($log->old_values || $log->new_values)
+                    </p>
+                    <p class="mb-0 font-monospace small">{{ $log->ip_address ?? '—' }}</p>
+
+                    @if($log->old_values || $log->new_values)
+                        <x-slot:metaSlot>
                             <x-ui.button variant="ghost"
-                                         size="sm"
                                          data-modal-target="audit-diff-modal"
                                          data-audit-diff-trigger
                                          data-event="{{ $log->event }}"
                                          data-old-values="{{ json_encode($log->old_values ?? new \stdClass, JSON_PRETTY_PRINT) }}"
-                                         data-new-values="{{ json_encode($log->new_values ?? new \stdClass, JSON_PRETTY_PRINT) }}"
-                                         dusk="view-diff-{{ $log->id }}">
+                                         data-new-values="{{ json_encode($log->new_values ?? new \stdClass, JSON_PRETTY_PRINT) }}">
                                 Ver diff
                             </x-ui.button>
-                        @else
-                            —
-                        @endif
-                    </td>
-                </tr>
+                        </x-slot:metaSlot>
+                    @endif
+                </x-ui.card>
             @empty
-                <x-ui.empty-state colspan="6" message="Nenhum registro de auditoria encontrado." />
+                <x-ui.empty-state icon="shield"
+                                   title="Nenhum registro de auditoria encontrado."
+                                   description="Ajuste os filtros acima ou aguarde novas ações serem registradas na plataforma." />
             @endforelse
-        </x-ui.data-table>
+        </div>
 
         <x-ui.pagination :paginator="$auditLogs" />
     </div>

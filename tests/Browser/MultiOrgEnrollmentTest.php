@@ -81,6 +81,7 @@ class MultiOrgEnrollmentTest extends DuskTestCase
                 // hidden `password_confirmation`, silently blocking the submit.
                 ->pause(700)
                 ->type('@invitation-password', 'senha-errada')
+                ->check('input[name=consent]')
                 ->press('Matricular-me')
                 // `waitForText`, not `assertSee`: the submit triggers a full
                 // page reload back to `/convite/{token}` with the error
@@ -101,6 +102,7 @@ class MultiOrgEnrollmentTest extends DuskTestCase
                 ->waitUntilMissing('@invitation-name')
                 ->pause(700)
                 ->type('@invitation-password', 'senha-correta')
+                ->check('input[name=consent]')
                 ->press('Matricular-me')
                 ->waitForLocation('/meus-cursos')
                 ->assertAuthenticated();
@@ -143,6 +145,7 @@ class MultiOrgEnrollmentTest extends DuskTestCase
                 ->type('@invitation-cpf', '123.456.789-09')
                 ->type('@invitation-password', 'senha-segura-123')
                 ->type('@invitation-password-confirmation', 'senha-segura-123')
+                ->check('input[name=consent]')
                 ->press('Matricular-me')
                 ->waitForLocation('/meus-cursos')
                 ->assertAuthenticated();

@@ -74,7 +74,7 @@
 
             <div data-options-list="{{ $formSuffix }}" class="d-flex flex-column gap-2">
                 @forelse($existingOptions as $i => $option)
-                    <div class="quiz-option-row d-flex align-items-center gap-2" data-option-row data-option-id="{{ $option->id }}">
+                    <div class="d-flex align-items-center gap-2" data-option-row data-option-id="{{ $option->id }}">
                         <input type="hidden" name="options[{{ $i }}][id]" value="{{ $option->id }}" />
                         <input type="checkbox" name="options[{{ $i }}][is_correct]" value="1"
                                @checked($option->is_correct) data-correct-checkbox
@@ -84,12 +84,12 @@
                                placeholder="Texto da opção"
                                class="form-control form-control-sm flex-fill"
                                dusk="option-text-{{ $formSuffix }}-{{ $i }}" />
-                        <x-ui.button type="button" variant="ghost" size="sm" data-remove-option-btn dusk="remove-option-{{ $formSuffix }}-{{ $i }}">✕</x-ui.button>
+                        <x-ui.button type="button" variant="ghost" data-remove-option-btn dusk="remove-option-{{ $formSuffix }}-{{ $i }}">✕</x-ui.button>
                     </div>
                 @empty
                     {{-- Blank forms start with the minimum 2 rows every single_choice/true_false/multiple_choice question needs. --}}
                     @for($i = 0; $i < 2; $i++)
-                        <div class="quiz-option-row d-flex align-items-center gap-2" data-option-row>
+                        <div class="d-flex align-items-center gap-2" data-option-row>
                             <input type="checkbox" name="options[{{ $i }}][is_correct]" value="1" data-correct-checkbox
                                    class="form-check-input flex-shrink-0 m-0" dusk="option-correct-{{ $formSuffix }}-{{ $i }}" />
                             <input type="text" name="options[{{ $i }}][option_text]"
@@ -98,26 +98,26 @@
                                    placeholder="Texto da opção"
                                    class="form-control form-control-sm flex-fill"
                                    dusk="option-text-{{ $formSuffix }}-{{ $i }}" />
-                            <x-ui.button type="button" variant="ghost" size="sm" data-remove-option-btn dusk="remove-option-{{ $formSuffix }}-{{ $i }}">✕</x-ui.button>
+                            <x-ui.button type="button" variant="ghost" data-remove-option-btn dusk="remove-option-{{ $formSuffix }}-{{ $i }}">✕</x-ui.button>
                         </div>
                     @endfor
                 @endforelse
             </div>
 
             <div class="mt-2">
-                <x-ui.button type="button" variant="secondary" size="sm" data-add-option-btn="{{ $formSuffix }}" dusk="add-option-{{ $formSuffix }}">
+                <x-ui.button type="button" variant="secondary" data-add-option-btn="{{ $formSuffix }}" dusk="add-option-{{ $formSuffix }}">
                     + Adicionar Opção
                 </x-ui.button>
             </div>
 
             {{-- Cloned by `QuizBuilder.addOption()` — kept as an inert `<template>` so it is never itself submitted. --}}
             <template data-option-template="{{ $formSuffix }}">
-                <div class="quiz-option-row d-flex align-items-center gap-2" data-option-row>
+                <div class="d-flex align-items-center gap-2" data-option-row>
                     <input type="checkbox" name="options[__INDEX__][is_correct]" value="1" data-correct-checkbox
                            class="form-check-input flex-shrink-0 m-0" />
                     <input type="text" name="options[__INDEX__][option_text]" placeholder="Texto da opção"
                            class="form-control form-control-sm flex-fill" />
-                    <x-ui.button type="button" variant="ghost" size="sm" data-remove-option-btn>✕</x-ui.button>
+                    <x-ui.button type="button" variant="ghost" data-remove-option-btn>✕</x-ui.button>
                 </div>
             </template>
         </div>

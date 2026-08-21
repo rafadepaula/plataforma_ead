@@ -12,24 +12,27 @@
 @extends('layouts.app')
 
 @section('content')
-    <x-layout.page-header kicker="{{ $course->title }} / Fórum" title="Novo Tópico" />
+    <x-layout.page-header
+        :breadcrumb="[['label' => $course->title, 'url' => route('forum.index', $course)], ['label' => 'Novo Tópico']]"
+        kicker="{{ $course->title }} / Fórum"
+        title="Novo Tópico"
+        subtitle="Compartilhe sua dúvida ou observação com a turma." />
 
-    <div class="row">
-        <div class="col-12 col-lg-8">
-            <x-ui.card>
-                <form method="POST" action="{{ route('forum.store', $course) }}" dusk="new-topic-form">
-                    @csrf
+    <div class="max-w-640">
+        <x-ui.card>
+            <form method="POST" action="{{ route('forum.store', $course) }}" dusk="new-topic-form">
+                @csrf
 
-                    <x-ui.input name="title" label="Título" required value="{{ old('title') }}" dusk="new-topic-title" />
+                <x-ui.input name="title" label="Título" required value="{{ old('title') }}" dusk="new-topic-title" />
 
-                    <x-ui.input type="textarea" name="content" label="Conteúdo" required value="{{ old('content') }}" rows="8" dusk="new-topic-content" />
+                <x-ui.textarea name="content" label="Conteúdo" required value="{{ old('content') }}" rows="12" dusk="new-topic-content" />
+                <small class="ds-caption d-block mb-3">O conteúdo é sanitizado no servidor antes de ser publicado.</small>
 
-                    <div class="d-flex flex-wrap gap-3 mt-4">
-                        <x-ui.button type="submit" dusk="new-topic-submit">Publicar Tópico</x-ui.button>
-                        <x-ui.button variant="secondary" href="{{ route('forum.index', $course) }}">Cancelar</x-ui.button>
-                    </div>
-                </form>
-            </x-ui.card>
-        </div>
+                <x-ui.form-actions align="end">
+                    <x-ui.button variant="ghost" href="{{ route('forum.index', $course) }}">Cancelar</x-ui.button>
+                    <x-ui.button type="submit" dusk="new-topic-submit">Publicar Tópico</x-ui.button>
+                </x-ui.form-actions>
+            </form>
+        </x-ui.card>
     </div>
 @endsection

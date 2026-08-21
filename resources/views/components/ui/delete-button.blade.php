@@ -32,12 +32,13 @@
     $modalTitle = $title ?? 'Confirmar exclusão';
 @endphp
 
-{{-- `.text-body` vem da variante ghost; `.link-danger` garante o vermelho no cascade. --}}
-<x-ui.button variant="ghost"
+{{-- Variante `danger` já resolve para o par `--critical`/`--critical-container` com ícone. --}}
+<x-ui.button variant="danger"
+             icon="trash"
              :size="$size"
              data-bs-toggle="modal"
              data-bs-target="#{{ $modalId }}"
-             {{ $attributes->merge(['class' => 'text-danger link-danger']) }}>{{ $label }}</x-ui.button>
+             {{ $attributes->merge() }}>{{ $label }}</x-ui.button>
 
 <x-ui.confirm-modal :id="$modalId"
                     :title="$modalTitle"

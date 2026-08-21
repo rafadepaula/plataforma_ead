@@ -113,29 +113,32 @@ threshold without depending on YouTube's real IFrame API inside headless
 Dusk. Do not rename it, do not make it private. Dusk regression here means
 test file needs updating in lockstep, not JS.
 
-## Badge/Button Visibility: Don't Rely on Bare `hidden` Toggling Against `<x-ui.badge>`
+## Badge/Button Visibility: Toggle Bootstrap's `.d-none`, Never `hidden`/`style.display`
 
-`<x-ui.badge>` bakes `display: inline-flex` into own inline `style`, so
-toggling native `hidden` attribute cannot win against it. Reveal completion
-badge with explicit inline-style override instead, appended after
-component's own `style` via `ComponentAttributeBag::merge()`:
+Since the Bootstrap migration (Fase 1-5), `<x-ui.badge>`/`<x-ui.button>`
+carry no inline `style` — visibility on both
+`[data-mark-complete-url]`/`[data-completion-badge]` is expressed purely
+with Bootstrap's `.d-none` utility class, set server-side via Blade's
+`@class()` directive and toggled client-side with
+`classList.add('d-none')`/`classList.remove('d-none')`:
 
 ```blade
-<x-ui.badge data-completion-badge style="display:none;">Concluída</x-ui.badge>
+<x-ui.badge variant="accent" data-completion-badge dusk="lesson-completed-badge"
+    @class(['d-none' => ! ($isCompleted ?? false)])>
+    Concluída
+</x-ui.badge>
 ```
 
 ```js
-badge.style.display = 'inline-flex'; // not badge.classList.remove('hidden')
+// LessonPlayer.js reflectCompletion()
+button.classList.add('d-none');
+badge.classList.remove('d-none');
 ```
 
-Also: bare `@if(...) hidden @endif` (or bare `{{ $expr }}`) inside
-`<x-component ...>` tag's own attribute list breaks Blade's component-tag
-attribute compiler. Use dynamic-attribute binding form instead:
-
-```blade
-{{-- wrong: desyncs component-tag compilation --}}
-<x-ui.button @if($isCompleted) hidden @endif>...</x-ui.button>
-
-{{-- correct --}}
-<x-ui.button :hidden="$isCompleted">...</x-ui.button>
-```
+Neither the native `hidden` attribute nor `style.display` works here:
+Bootstrap's Reboot emits `[hidden] { display: none !important }`, and an
+author rule without `!important` cannot beat that — so do not reintroduce
+either approach. Never rename/replace `.d-none` with another hide utility
+on these two selectors without updating `LessonPlayer.js` in lockstep —
+`classroom/lesson.blade.php` and every `classroom/partials/_*` template
+(`_video`, `_text-image`, `_pdf`) depend on this exact class name.

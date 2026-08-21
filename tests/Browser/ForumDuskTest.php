@@ -4,6 +4,8 @@ namespace Tests\Browser;
 
 use App\Enums\Permissions\RolesEnum;
 use App\Models\Course;
+use App\Models\ForumReply;
+use App\Models\ForumReport;
 use App\Models\ForumTopic;
 use App\Models\Organization;
 use App\Models\User;
@@ -152,10 +154,109 @@ class ForumDuskTest extends DuskTestCase
                 ->waitFor('@pin-topic-'.$topic->id)
                 ->click('@pin-topic-'.$topic->id)
                 ->waitFor('@pinned-badge-'.$topic->id)
-                ->assertSee('FIXADO');
+                ->assertSeeIgnoringCase('Fixado');
         });
 
         $this->assertDatabaseHas('forum_topics', ['id' => $topic->id, 'is_pinned' => true]);
+    }
+
+    /**
+     * The moderation queue's "Manter" and "Remover Publicação" actions,
+     * plus the author's own "Apagar" on a topic and a reply, were all
+     * rewired from plain form-submits into trigger-button +
+     * `x-ui.confirm-modal` pairs by this phase. Cover every one of them
+     * end-to-end so a mismatched `data-bs-target`/modal `id` or a wrong
+     * route/method breaks a browser test, not just the (structure-blind)
+     * dusk-selector-contract test.
+     */
+    public function test_gestor_can_dismiss_or_remove_reported_posts_and_author_can_delete_own_posts(): void
+    {
+        $org = Organization::factory()->create();
+        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $student = $this->enrolledStudent($course);
+        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor->assignRole(RolesEnum::GESTOR->value);
+
+        // Um tópico cuja denúncia será dispensada ("Manter").
+        $keptTopic = ForumTopic::factory()->for($course)->for($student)->create([
+            'org_id' => $course->org_id,
+            'title' => 'Tópico que será mantido',
+            'content' => 'Conteúdo do tópico mantido.',
+        ]);
+        $keptReport = ForumReport::factory()->for($student, 'reporter')->create([
+            'postable_type' => ForumTopic::class,
+            'postable_id' => $keptTopic->id,
+            'reason' => 'Denúncia que será dispensada.',
+        ]);
+
+        // Um tópico cuja denúncia levará à remoção direta da publicação.
+        $removedTopic = ForumTopic::factory()->for($course)->for($student)->create([
+            'org_id' => $course->org_id,
+            'title' => 'Tópico que será removido',
+            'content' => 'Conteúdo do tópico removido.',
+        ]);
+        $removedReport = ForumReport::factory()->for($student, 'reporter')->create([
+            'postable_type' => ForumTopic::class,
+            'postable_id' => $removedTopic->id,
+            'reason' => 'Denúncia que levará à remoção.',
+        ]);
+
+        $this->browse(function (Browser $browser) use ($gestor, $keptReport, $removedReport): void {
+            // 1. O Gestor dispensa a primeira denúncia ("Manter").
+            $browser->loginAs($gestor)
+                ->visit(route('forum-moderation.index'))
+                ->waitFor('@dismiss-report-'.$keptReport->id)
+                ->click('@dismiss-report-'.$keptReport->id)
+                ->waitUntilMissing('@report-row-'.$keptReport->id);
+
+            // 2. ...e remove a publicação da segunda via confirm-modal.
+            $browser->waitFor('@remove-post-'.$removedReport->id)
+                ->click('@remove-post-'.$removedReport->id)
+                ->waitFor('@confirm-modal-remove-post-modal-'.$removedReport->id.'-confirm')
+                ->click('@confirm-modal-remove-post-modal-'.$removedReport->id.'-confirm')
+                ->waitUntilMissing('@report-row-'.$removedReport->id);
+        });
+
+        $this->assertDatabaseHas('forum_reports', [
+            'id' => $keptReport->id,
+            'status' => 'reviewed_dismissed',
+        ]);
+        $this->assertDatabaseHas('forum_reports', [
+            'id' => $removedReport->id,
+            'status' => 'reviewed_removed',
+        ]);
+        $this->assertSoftDeleted('forum_topics', ['id' => $removedTopic->id]);
+        $this->assertNotSoftDeleted('forum_topics', ['id' => $keptTopic->id]);
+
+        // 3. O próprio autor apaga uma resposta e depois o tópico, ambos
+        //    via confirm-modal.
+        $topic = ForumTopic::factory()->for($course)->for($student)->create([
+            'org_id' => $course->org_id,
+            'title' => 'Tópico com resposta a ser apagada',
+            'content' => 'Conteúdo do tópico.',
+        ]);
+        $reply = ForumReply::factory()->for($topic, 'topic')->for($student)->create([
+            'content' => 'Resposta que será apagada.',
+        ]);
+
+        $this->browse(function (Browser $browser) use ($student, $course, $topic, $reply): void {
+            $browser->loginAs($student)
+                ->visit(route('forum.show', [$course, $topic]))
+                ->waitFor('@delete-reply-'.$reply->id)
+                ->click('@delete-reply-'.$reply->id)
+                ->waitFor('@confirm-modal-delete-reply-modal-'.$reply->id.'-confirm')
+                ->click('@confirm-modal-delete-reply-modal-'.$reply->id.'-confirm')
+                ->waitUntilMissing('@reply-'.$reply->id);
+
+            $browser->waitFor('@delete-topic')
+                ->click('@delete-topic')
+                ->waitFor('@confirm-modal-delete-topic-modal-'.$topic->id.'-confirm')
+                ->click('@confirm-modal-delete-topic-modal-'.$topic->id.'-confirm')
+                ->waitForLocation(route('forum.index', $course));
+        });
+
+        $this->assertSoftDeleted('forum_replies', ['id' => $reply->id]);
+        $this->assertSoftDeleted('forum_topics', ['id' => $topic->id]);
     }
 
     /**

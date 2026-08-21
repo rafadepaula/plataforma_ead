@@ -5,8 +5,11 @@ namespace App\Services;
 use App\Enums\Permissions\RolesEnum;
 use App\Models\Certificate;
 use App\Models\Course;
+use App\Models\ForumReply;
+use App\Models\ForumTopic;
 use App\Models\Organization;
 use App\Models\User;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -30,21 +33,102 @@ class DashboardMetricsService
 {
     private const DEFAULT_RECENT_ENROLLMENTS_LIMIT = 10;
 
+    private const DEFAULT_MOST_COMPLETED_COURSES_LIMIT = 5;
+
     /**
-     * @return array{active_students: int, certificates_issued: int, completion_rate: int, courses_count: int}
+     * Certificates issued within this many days of "now" still count as
+     * "prontos" in `attentionCounts()` — a short, informational recency
+     * window (not a pendency, unlike the other two counts), matching the
+     * dashboard's "pendência é trabalho a fazer, nunca urgência" tone.
      */
-    public function getStats(?int $orgId): array
+    private const CERTIFICATES_READY_WINDOW_DAYS = 7;
+
+    /**
+     * Computes the stat cards' current values plus a real, period-over-
+     * period delta for `active_students`/`certificates_issued` (the two
+     * cards the view renders with a delta chip). `$period` only controls
+     * the length of the comparison window — `getStats()` itself still
+     * returns the all-time current values, exactly as before.
+     *
+     * @return array{active_students: int, certificates_issued: int, completion_rate: int, courses_count: int, active_students_delta: ?string, certificates_issued_delta: ?string}
+     */
+    public function getStats(?int $orgId, string $period = '30d'): array
     {
+        $periodStart = $this->periodStart($period);
+
+        $activeStudents = $this->activeStudentsCount($orgId);
+        $certificatesIssued = $this->certificatesIssuedCount($orgId);
+
+        $previousActiveStudents = $this->activeStudentsCount($orgId, $periodStart);
+        $previousCertificatesIssued = $this->certificatesIssuedCount($orgId, $periodStart);
+
         return [
-            'active_students' => $this->activeStudentsCount($orgId),
-            'certificates_issued' => $this->certificatesIssuedCount($orgId),
+            'active_students' => $activeStudents,
+            'certificates_issued' => $certificatesIssued,
             'completion_rate' => $this->completionRate($orgId),
             'courses_count' => Course::query()->count(),
+            'active_students_delta' => $this->percentDelta($activeStudents, $previousActiveStudents),
+            'certificates_issued_delta' => $this->percentDelta($certificatesIssued, $previousCertificatesIssued),
         ];
     }
 
     /**
-     * @return Collection<int, object{student_name: string, course_name: string, status_label: string, status_badge_variant: string}>
+     * "Precisa da sua atenção": counts of open work items for the acting
+     * scope, never a blocking state — see the dashboard view's tone note.
+     *
+     * - `pending_essays`: `QuizAttempt`s awaiting manual grading, joined
+     *   through `quiz.lesson.module.course.org_id` (none of those tables
+     *   carry `OrgScope` — cascade-inherited tenancy, see
+     *   `tenancy-architecture`).
+     * - `forum_reports`: pending `ForumReport`s. `postable_type`/
+     *   `postable_id` are a pseudo-polymorphic pair with no DB FK (see
+     *   `ForumReport::postable()`), so this unions the two concrete
+     *   postable tables by hand rather than resolving each row in PHP.
+     * - `certificates_ready`: certificates issued in the last
+     *   {@see self::CERTIFICATES_READY_WINDOW_DAYS} days — informational,
+     *   not a pendency.
+     *
+     * @return array{pending_essays: int, forum_reports: int, certificates_ready: int}
+     */
+    public function attentionCounts(?int $orgId): array
+    {
+        return [
+            'pending_essays' => $this->pendingEssaysCount($orgId),
+            'forum_reports' => $this->pendingForumReportsCount($orgId),
+            'certificates_ready' => $this->certificatesIssuedSince($orgId, $this->daysAgo(self::CERTIFICATES_READY_WINDOW_DAYS)),
+        ];
+    }
+
+    /**
+     * "Cursos mais concluídos": top Courses by completed enrollments,
+     * with a 0–100 `percentage` (relative to the top row) ready for the
+     * mint bar chart — no CSS/JS computes that ratio, it is data.
+     *
+     * @return Collection<int, object{course_name: string, completions: int, percentage: int}>
+     */
+    public function mostCompletedCourses(?int $orgId, int $limit = self::DEFAULT_MOST_COMPLETED_COURSES_LIMIT): Collection
+    {
+        $rows = DB::table('course_user')
+            ->join('courses', 'courses.id', '=', 'course_user.course_id')
+            ->where('course_user.status', 'completed')
+            ->when($orgId !== null, fn ($query) => $query->where('courses.org_id', $orgId))
+            ->groupBy('courses.id', 'courses.title')
+            ->orderByDesc(DB::raw('count(*)'))
+            ->orderBy('courses.title')
+            ->limit($limit)
+            ->get(['courses.title as course_name', DB::raw('count(*) as completions')]);
+
+        $max = (int) ($rows->max('completions') ?? 0);
+
+        return $rows->map(fn ($row) => (object) [
+            'course_name' => $row->course_name,
+            'completions' => (int) $row->completions,
+            'percentage' => $max > 0 ? (int) round(((int) $row->completions / $max) * 100) : 0,
+        ]);
+    }
+
+    /**
+     * @return Collection<int, object{student_name: string, student_email: string, course_name: string, progress_percentage: int, status_label: string, status_badge_variant: string}>
      */
     public function recentEnrollments(?int $orgId, int $limit = self::DEFAULT_RECENT_ENROLLMENTS_LIMIT): Collection
     {
@@ -56,18 +140,28 @@ class DashboardMetricsService
             ->limit($limit)
             ->get([
                 'users.name as student_name',
+                'users.email as student_email',
                 'courses.title as course_name',
                 'course_user.status as status',
+                'course_user.progress_percentage as progress_percentage',
             ])
             ->map(fn ($row) => (object) [
                 'student_name' => $row->student_name,
+                'student_email' => $row->student_email,
                 'course_name' => $row->course_name,
+                'progress_percentage' => (int) $row->progress_percentage,
                 'status_label' => $this->statusLabel($row->status),
                 'status_badge_variant' => $this->statusBadgeVariant($row->status),
             ]);
     }
 
-    private function activeStudentsCount(?int $orgId): int
+    /**
+     * `$before` restricts to enrollments created on or before that instant
+     * — a cumulative-as-of-a-date count, used by `getStats()` to build the
+     * "previous period" baseline for `active_students_delta`. `null`
+     * (the default) is the plain, unfiltered current count.
+     */
+    private function activeStudentsCount(?int $orgId, ?CarbonImmutable $before = null): int
     {
         return User::query()
             ->role(RolesEnum::ALUNO->value)
@@ -75,17 +169,123 @@ class DashboardMetricsService
             ->join('courses', 'courses.id', '=', 'course_user.course_id')
             ->where('course_user.status', 'active')
             ->when($orgId !== null, fn ($query) => $query->where('courses.org_id', $orgId))
+            ->when($before !== null, fn ($query) => $query->where('course_user.created_at', '<=', $before))
             ->distinct()
             ->count('users.id');
     }
 
-    private function certificatesIssuedCount(?int $orgId): int
+    /**
+     * `$before` restricts to certificates issued on or before that instant
+     * — see `activeStudentsCount()`'s docblock for why. `null` (the
+     * default) is the plain, unfiltered current count.
+     */
+    private function certificatesIssuedCount(?int $orgId, ?CarbonImmutable $before = null): int
     {
         return Certificate::query()
             ->join('courses', 'courses.id', '=', 'certificates.course_id')
             ->whereNull('certificates.revoked_at')
             ->when($orgId !== null, fn ($query) => $query->where('courses.org_id', $orgId))
+            ->when($before !== null, fn ($query) => $query->where('certificates.issued_at', '<=', $before))
             ->count();
+    }
+
+    /**
+     * Certificates issued strictly since `$since` — the "certificados
+     * prontos" recency window in `attentionCounts()`. Opposite direction
+     * from `certificatesIssuedCount()`'s `$before`, so it is its own
+     * method rather than a shared "cutoff" parameter that would silently
+     * flip meaning depending on the caller.
+     */
+    private function certificatesIssuedSince(?int $orgId, CarbonImmutable $since): int
+    {
+        return Certificate::query()
+            ->join('courses', 'courses.id', '=', 'certificates.course_id')
+            ->whereNull('certificates.revoked_at')
+            ->when($orgId !== null, fn ($query) => $query->where('courses.org_id', $orgId))
+            ->where('certificates.issued_at', '>=', $since)
+            ->count();
+    }
+
+    /**
+     * Pending `QuizAttempt`s awaiting a Gestor's manual essay grade,
+     * joined by hand through `quiz.lesson.module.course.org_id` — none of
+     * those tables carry `OrgScope` (cascade-inherited tenancy).
+     */
+    private function pendingEssaysCount(?int $orgId): int
+    {
+        return DB::table('quiz_attempts')
+            ->join('quizzes', 'quizzes.id', '=', 'quiz_attempts.quiz_id')
+            ->join('lessons', 'lessons.id', '=', 'quizzes.lesson_id')
+            ->join('modules', 'modules.id', '=', 'lessons.module_id')
+            ->join('courses', 'courses.id', '=', 'modules.course_id')
+            ->where('quiz_attempts.status', 'awaiting_manual_grading')
+            ->when($orgId !== null, fn ($query) => $query->where('courses.org_id', $orgId))
+            ->count();
+    }
+
+    /**
+     * Pending `ForumReport`s. `postable_type`/`postable_id` are a
+     * pseudo-polymorphic pair with no DB FK (see `ForumReport::postable()`),
+     * so this unions the two concrete postable tables — `forum_topics`
+     * (directly `org_id`-scoped) and `forum_replies` (scoped via its
+     * parent `forum_topics.org_id`) — rather than resolving each row's
+     * `postable()` in PHP.
+     */
+    private function pendingForumReportsCount(?int $orgId): int
+    {
+        $topicReports = DB::table('forum_reports')
+            ->join('forum_topics', 'forum_topics.id', '=', 'forum_reports.postable_id')
+            ->where('forum_reports.postable_type', ForumTopic::class)
+            ->where('forum_reports.status', 'pending')
+            ->when($orgId !== null, fn ($query) => $query->where('forum_topics.org_id', $orgId));
+
+        $replyReports = DB::table('forum_reports')
+            ->join('forum_replies', 'forum_replies.id', '=', 'forum_reports.postable_id')
+            ->join('forum_topics', 'forum_topics.id', '=', 'forum_replies.topic_id')
+            ->where('forum_reports.postable_type', ForumReply::class)
+            ->where('forum_reports.status', 'pending')
+            ->when($orgId !== null, fn ($query) => $query->where('forum_topics.org_id', $orgId));
+
+        return $topicReports->count() + $replyReports->count();
+    }
+
+    /**
+     * The start of the "current period" for a `x-ui.chip` value ('7d',
+     * '30d', or 'year'); anything else falls back to '30d'. Only the
+     * length of the window matters here — `getStats()` still returns
+     * all-time current values, this merely locates the previous-period
+     * baseline cutoff.
+     */
+    private function periodStart(string $period): CarbonImmutable
+    {
+        return match ($period) {
+            '7d' => $this->daysAgo(7),
+            'year' => CarbonImmutable::now()->startOfYear(),
+            default => $this->daysAgo(30),
+        };
+    }
+
+    private function daysAgo(int $days): CarbonImmutable
+    {
+        return CarbonImmutable::now()->subDays($days);
+    }
+
+    /**
+     * Percentage change of `$current` over `$previous`, formatted pt-BR
+     * with an explicit sign (e.g. "+4,2%", "-3,0%") — never a bare "0%",
+     * since a `null` previous baseline (no activity before the period)
+     * means "no comparison is possible", not "no change".
+     */
+    private function percentDelta(int $current, int $previous): ?string
+    {
+        if ($previous === 0) {
+            return null;
+        }
+
+        $percent = round((($current - $previous) / $previous) * 100, 1);
+        $sign = $percent >= 0 ? '+' : '-';
+
+        return $sign.number_format(abs($percent), 1, ',', '.').'%';
     }
 
     private function completionRate(?int $orgId): int

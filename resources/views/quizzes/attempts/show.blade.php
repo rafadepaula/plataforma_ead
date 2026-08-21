@@ -25,8 +25,10 @@
 
 @section('content')
     <x-layout.page-header
+        :breadcrumb="[['label' => 'Avaliações', 'url' => route('quiz-attempts.pending')], ['label' => 'Correções Pendentes', 'url' => route('quiz-attempts.pending')], ['label' => $attempt->user->name]]"
         :kicker="$attempt->quiz->lesson->module->course->title"
-        title="Corrigir Tentativa · {{ $attempt->user->name }}" />
+        title="Corrigir Tentativa · {{ $attempt->user->name }}"
+        subtitle="Avalie cada questão dissertativa como correta ou incorreta antes de salvar a correção." />
 
     <div class="mb-4x">
         <x-ui.button variant="secondary" href="{{ route('quiz-attempts.pending') }}" dusk="back-to-pending">Voltar às Correções Pendentes</x-ui.button>

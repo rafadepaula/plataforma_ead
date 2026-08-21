@@ -9,6 +9,7 @@ use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Support\Collection;
 use Laravel\Dusk\Browser;
 use Laravel\Dusk\TestCase as BaseTestCase;
+use PHPUnit\Framework\Assert as PHPUnit;
 use PHPUnit\Framework\Attributes\BeforeClass;
 
 /**
@@ -74,6 +75,7 @@ abstract class DuskTestCase extends BaseTestCase
         parent::setUp();
 
         static::registerBootstrapModalMacros();
+        static::registerCaseInsensitiveTextMacros();
     }
 
     /**
@@ -112,6 +114,94 @@ abstract class DuskTestCase extends BaseTestCase
     }
 
     /**
+     * Asserções de texto insensíveis à caixa.
+     *
+     * O Selenium lê texto RENDERIZADO: `text-transform: uppercase` no CSS faz
+     * `getText()` devolver "INATIVO" para um DOM que contém "Inativo". Prender
+     * a asserção à caixa renderizada acopla o teste a uma decisão puramente
+     * apresentacional — foi o que quebrou 10 testes quando o tema Modernist
+     * (caixa-alta em badge) saiu de cena, sem que nenhum comportamento tivesse
+     * mudado.
+     *
+     * Estas macros afirmam o CONTEÚDO e ignoram a caixa. Onde a caixa é o
+     * comportamento sob teste (o `overline`, único uso deliberado de
+     * caixa-alta), continue usando `assertSee`/`assertSeeIn` normais.
+     */
+    protected static function registerCaseInsensitiveTextMacros(): void
+    {
+        if (! Browser::hasMacro('assertSeeIgnoringCase')) {
+            Browser::macro('assertSeeIgnoringCase', function (string $text) {
+                /** @var Browser $this */
+                return $this->assertSeeInIgnoringCase('', $text);
+            });
+        }
+
+        if (! Browser::hasMacro('assertDontSeeIgnoringCase')) {
+            Browser::macro('assertDontSeeIgnoringCase', function (string $text) {
+                /** @var Browser $this */
+                $rendered = $this->resolver->findOrFail('')->getText();
+
+                PHPUnit::assertFalse(
+                    mb_stripos($rendered, $text) !== false,
+                    'Saw unexpected text ['.$text.'] within element [body].'
+                );
+
+                return $this;
+            });
+        }
+
+        if (! Browser::hasMacro('assertSeeInIgnoringCase')) {
+            Browser::macro('assertSeeInIgnoringCase', function (string $selector, string $text) {
+                /** @var Browser $this */
+                $rendered = $this->resolver->findOrFail($selector)->getText();
+
+                PHPUnit::assertTrue(
+                    mb_stripos($rendered, $text) !== false,
+                    'Did not see expected text ['.$text.'] within element ['
+                        .$this->resolver->format($selector).']. Rendered: ['.$rendered.'].'
+                );
+
+                return $this;
+            });
+        }
+
+        if (! Browser::hasMacro('assertTextEqualsIgnoringCase')) {
+            Browser::macro('assertTextEqualsIgnoringCase', function (string $selector, string $text) {
+                /** @var Browser $this */
+                $rendered = trim($this->resolver->findOrFail($selector)->getText());
+
+                PHPUnit::assertSame(
+                    mb_strtolower($text),
+                    mb_strtolower($rendered),
+                    'Text within element ['.$this->resolver->format($selector).'] was ['.$rendered.'], expected ['.$text.'].'
+                );
+
+                return $this;
+            });
+        }
+
+        if (! Browser::hasMacro('waitForTextInIgnoringCase')) {
+            Browser::macro('waitForTextInIgnoringCase', function (string $selector, string $text, ?int $seconds = null) {
+                /** @var Browser $this */
+                $message = 'Waited %s seconds for text ['.$text.'] within element ['
+                    .$this->resolver->format($selector).'].';
+
+                return $this->waitUsing($seconds, 100, function () use ($selector, $text) {
+                    /** @var Browser $this */
+                    return mb_stripos($this->resolver->findOrFail($selector)->getText(), $text) !== false;
+                }, $message);
+            });
+        }
+
+        if (! Browser::hasMacro('waitForTextIgnoringCase')) {
+            Browser::macro('waitForTextIgnoringCase', function (string $text, ?int $seconds = null) {
+                /** @var Browser $this */
+                return $this->waitForTextInIgnoringCase('', $text, $seconds);
+            });
+        }
+    }
+
+    /**
      * Create the RemoteWebDriver instance.
      */
     protected function driver(): RemoteWebDriver
@@ -122,6 +212,14 @@ abstract class DuskTestCase extends BaseTestCase
             '--disable-smooth-scrolling',
             '--no-sandbox',
             '--disable-dev-shm-usage',
+            // A suite submete dezenas de formularios com campo de senha no
+            // MESMO perfil de navegador. Sem isto o Chrome acumula sugestoes
+            // de autofill e abre a bolha "Salvar senha?", que fica por cima
+            // da tela e engole as teclas dos testes seguintes -- os cliques
+            // continuam funcionando, entao a falha aparece adiante como um
+            // formulario vazio, longe da causa.
+            '--disable-autofill-keyboard-accessory-view',
+            '--disable-features=AutofillServerCommunication,PasswordManagerOnboarding,PasswordManagerEnableAccountStore',
         ])->unless($this->hasHeadlessDisabled(), function (Collection $items) {
             return $items->merge([
                 '--disable-gpu',
@@ -132,7 +230,13 @@ abstract class DuskTestCase extends BaseTestCase
         return RemoteWebDriver::create(
             $_ENV['DUSK_DRIVER_URL'] ?? env('DUSK_DRIVER_URL') ?? 'http://localhost:9515',
             DesiredCapabilities::chrome()->setCapability(
-                ChromeOptions::CAPABILITY, $options
+                ChromeOptions::CAPABILITY, $options->setExperimentalOption('prefs', [
+                    'credentials_enable_service' => false,
+                    'profile.password_manager_enabled' => false,
+                    'profile.password_manager_leak_detection' => false,
+                    'autofill.profile_enabled' => false,
+                    'autofill.credit_card_enabled' => false,
+                ])
             )
         );
     }

@@ -112,9 +112,9 @@ class ForumTopicController extends Controller
         Gate::authorize('view', $topicModel);
 
         $topicModel->setRelation('course', $courseModel);
-        $topicModel->load('user');
+        $topicModel->load('user.roles');
 
-        $replies = $topicModel->replies()->with('user')->orderBy('id')->get();
+        $replies = $topicModel->replies()->with('user.roles')->orderBy('id')->get();
 
         $topicEditHistory = ForumPostEdit::query()
             ->where('postable_type', ForumTopic::class)

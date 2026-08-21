@@ -19,13 +19,13 @@
 @if($article)
     <button
         type="button"
-        class="btn btn-link text-body text-decoration-none d-inline-flex align-items-center gap-2"
+        class="btn btn-link text-body text-decoration-none appbar-icon-btn rounded-circle"
         aria-label="Ajuda"
         data-bs-toggle="modal"
         data-bs-target="#{{ $modalId }}"
         dusk="help-button-{{ $key }}"
     >
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="10"></circle>
             <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 2-3 4"></path>
             <line x1="12" y1="17" x2="12.01" y2="17"></line>
@@ -44,13 +44,13 @@
 @else
     <button
         type="button"
-        class="btn btn-link text-body text-decoration-none d-inline-flex align-items-center gap-2"
+        class="btn btn-link text-body text-decoration-none appbar-icon-btn rounded-circle"
         aria-label="Ajuda"
         data-bs-toggle="modal"
         data-bs-target="#{{ $modalId }}"
         dusk="help-button-{{ $key }}"
     >
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="10"></circle>
             <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 2-3 4"></path>
             <line x1="12" y1="17" x2="12.01" y2="17"></line>

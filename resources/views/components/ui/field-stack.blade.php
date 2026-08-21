@@ -1,11 +1,15 @@
 {{--
     Agrupador vertical dos campos de um formulário CRUD.
 
-    Espaçamento: `<x-ui.input>`/`<x-ui.select>` já trazem `mb-3` no wrapper de
-    cada campo. Por isso este componente NÃO aplica `gap-*` no modo coluna
-    única — `gap` somaria ao `mb-3` e dobraria o respiro entre os campos.
-    No modo duas colunas o `g-3` do grid é o gutter horizontal do Bootstrap
-    (o vertical continua vindo do `mb-3` de cada campo).
+    Espaçamento: `--gap-stack` (20px) mora aqui. `<x-ui.input>`/`<x-ui.select>`/
+    `<x-ui.textarea>` trazem seu próprio `mb-3` (classe `ds-field`) para
+    continuar funcionando fora de um field-stack; `.ds-field-stack .ds-field`
+    (`_floating-label.scss`) zera esse `mb-3` para não somar ao gap deste
+    componente. Modo coluna única usa `.ds-stack`
+    (`display:flex;flex-direction:column;gap:var(--gap-stack)`, de
+    `_ds/.../tokens/primitives.css`). No modo duas colunas o `g-3` do grid
+    Bootstrap dá o gutter horizontal **e** vertical (o `.row` com `g-*` já
+    aplica `margin-top` a cada `.col` que quebra linha).
 
     Uso (1 coluna):
     <x-ui.field-stack dusk="user-fields">
@@ -25,8 +29,8 @@
 
 @php
     $classes = match ((int) $columns) {
-        2 => 'row g-3',
-        default => '',
+        2 => 'ds-field-stack row g-3',
+        default => 'ds-field-stack ds-stack',
     };
 @endphp
 

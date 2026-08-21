@@ -11,20 +11,28 @@
 --}}
 <x-ui.modal id="audit-diff-modal" title="Diff do Registro de Auditoria" size="lg">
     <div class="mb-3">
-        <span class="small fw-bold text-uppercase text-body-secondary">Evento:</span>
+        <span class="ds-overline">Evento:</span>
         <span dusk="audit-diff-event"></span>
     </div>
 
+    {{--
+        "Anteriores" e "Novos" precisam ser distinguíveis sem depender só de
+        cor: o painel "Anteriores" fica no container neutro padrão
+        (`bg-body-tertiary`), enquanto "Novos" ganha um container destacado
+        por token (`bg-primary-subtle`/`border-primary-subtle`) e peso de
+        fonte maior (`fw-semibold`) — dois sinais visuais (container + peso)
+        além da posição/rótulo textual.
+    --}}
     <div class="row g-4">
         <div class="col-md-6">
-            <h4 class="small fw-bolder text-uppercase mb-2">Valores Anteriores</h4>
+            <h4 class="ds-overline mb-2">Valores Anteriores</h4>
             <pre dusk="audit-diff-old"
-                 class="bg-white border p-3 mb-0 small font-monospace text-prewrap text-break overflow-auto"></pre>
+                 class="bg-body-tertiary border p-3 mb-0 small font-monospace text-prewrap text-break overflow-auto"></pre>
         </div>
         <div class="col-md-6">
-            <h4 class="small fw-bolder text-uppercase mb-2">Novos Valores</h4>
+            <h4 class="ds-overline mb-2">Novos Valores</h4>
             <pre dusk="audit-diff-new"
-                 class="bg-white border p-3 mb-0 small font-monospace text-prewrap text-break overflow-auto"></pre>
+                 class="bg-primary-subtle border border-primary-subtle fw-semibold p-3 mb-0 small font-monospace text-prewrap text-break overflow-auto"></pre>
         </div>
     </div>
 

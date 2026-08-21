@@ -23,7 +23,7 @@
     @endphp
 
     <nav aria-label="{{ $label }}"
-         {{ $attributes->merge(['class' => 'd-flex justify-content-center mt-4']) }}>
+         {{ $attributes->merge(['class' => 'ds-pagination d-flex justify-content-center mt-4']) }}>
         {{ $paginatorLinks }}
     </nav>
 @endif

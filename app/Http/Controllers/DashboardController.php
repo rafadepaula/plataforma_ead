@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\Permissions\RolesEnum;
+use App\Models\Organization;
 use App\Services\DashboardMetricsService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
@@ -22,22 +23,54 @@ use Illuminate\Http\Request;
  */
 class DashboardController extends Controller
 {
+    /**
+     * The only values the `x-ui.chip` period filter is allowed to send —
+     * anything else (missing, tampered, stale bookmark) silently falls
+     * back to `DEFAULT_PERIOD` rather than erroring.
+     *
+     * @var list<string>
+     */
+    private const ALLOWED_PERIODS = ['7d', '30d', 'year'];
+
+    private const DEFAULT_PERIOD = '30d';
+
     public function __construct(protected DashboardMetricsService $dashboardMetricsService) {}
 
     public function index(Request $request): View
     {
         $user = $request->user();
         $orgId = $this->resolveViewingOrgId($request);
+        $period = $this->resolvePeriod($request);
 
         $isGlobalAdminView = $user->hasRole(RolesEnum::ADMIN->value) && $orgId === null;
 
         return view('dashboard.index', [
-            'stats' => $this->dashboardMetricsService->getStats($orgId),
+            'user' => $user,
+            'stats' => $this->dashboardMetricsService->getStats($orgId, $period),
             'recentEnrollments' => $this->dashboardMetricsService->recentEnrollments($orgId),
+            'attentionCounts' => $this->dashboardMetricsService->attentionCounts($orgId),
+            'mostCompletedCourses' => $this->dashboardMetricsService->mostCompletedCourses($orgId),
             'organizationsSummary' => $isGlobalAdminView
                 ? $this->dashboardMetricsService->organizationsSummary()
                 : null,
+            'period' => $period,
+            'isGlobalAdminView' => $isGlobalAdminView,
+            'activeOrganizationName' => $orgId ? Organization::query()->find($orgId)?->name : null,
         ]);
+    }
+
+    /**
+     * A request-supplied `period` is only ever used to pick which
+     * comparison window `DashboardMetricsService::getStats()` uses for its
+     * deltas — never to filter which rows belong to which Organization, so
+     * unlike `resolveViewingOrgId()` it is safe to trust as-is once
+     * validated against the allow-list.
+     */
+    private function resolvePeriod(Request $request): string
+    {
+        $period = $request->query('period');
+
+        return in_array($period, self::ALLOWED_PERIODS, true) ? $period : self::DEFAULT_PERIOD;
     }
 
     /**

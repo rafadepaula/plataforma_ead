@@ -1,0 +1,142 @@
+// =============================================================================
+// Utilities do projeto — camada 4 da arquitetura de tema (diretriz da camada de tema)
+// -----------------------------------------------------------------------------
+// Utilities que o Bootstrap NÃO entrega, mas que o markup já usa. Todas estavam
+// aplicadas em view sem existir em folha de estilo alguma — 37 classes
+// fantasma varridas em 2026-08-20, herdadas da migração para Bootstrap.
+//
+// A família `-{n}x` é a escala de espaço de 4px do design system
+// (`--space-*`), que não coincide com a do Bootstrap (4/8/16/24/48): os passos
+// de 12, 20, 32, 40, 64 e 80px não têm utility equivalente upstream. Por isso
+// ela é definida aqui em vez de reescrita para `mb-3` & cia., o que mudaria os
+// valores desenhados.
+//
+// Regra: só consumir var(--*), nunca literal.
+// =============================================================================
+
+$ds-space-steps: (
+    1: var(--space-1),
+    2: var(--space-2),
+    3: var(--space-3),
+    4: var(--space-4),
+    5: var(--space-5),
+    6: var(--space-6),
+    7: var(--space-7),
+    8: var(--space-8),
+    9: var(--space-9),
+    10: var(--space-10),
+    11: var(--space-11),
+);
+
+@each $step, $value in $ds-space-steps {
+    .m-#{$step}x  { margin: $value !important; }
+    .mt-#{$step}x { margin-top: $value !important; }
+    .mb-#{$step}x { margin-bottom: $value !important; }
+    .ms-#{$step}x { margin-left: $value !important; }
+    .me-#{$step}x { margin-right: $value !important; }
+    .mx-#{$step}x { margin-inline: $value !important; }
+    .my-#{$step}x { margin-block: $value !important; }
+
+    .p-#{$step}x  { padding: $value !important; }
+    .pt-#{$step}x { padding-top: $value !important; }
+    .pb-#{$step}x { padding-bottom: $value !important; }
+    .ps-#{$step}x { padding-left: $value !important; }
+    .pe-#{$step}x { padding-right: $value !important; }
+    .px-#{$step}x { padding-inline: $value !important; }
+    .py-#{$step}x { padding-block: $value !important; }
+
+    .gap-#{$step}x { gap: $value !important; }
+    .g-#{$step}x   { gap: $value !important; }
+}
+
+// Larguras máximas de leitura/formulário usadas direto na tela.
+@each $w in (400, 420, 480, 560, 640) {
+    .max-w-#{$w} { max-width: #{$w}px !important; }
+}
+
+.h-60 { height: 60px; }
+
+// Preserva quebras de linha do conteúdo salvo pelo usuário (post de fórum,
+// resposta dissertativa, artigo de ajuda, diff de auditoria). Substitui o
+// `style="white-space: pre-wrap"` que a regra de zero-inline proíbe.
+.text-prewrap {
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+}
+
+.cursor-pointer { cursor: pointer; }
+
+.antialiased { -webkit-font-smoothing: antialiased; }
+
+// Shell: o `flex: 1` e o `min-width: 0` que impedem o `main` de estourar a
+// largura do grid quando uma tabela larga entra nele.
+.flex-1 { flex: 1 1 auto; }
+.min-w-0 { min-width: 0; }
+
+.app-wrapper { min-height: 100vh; }
+
+.app-body { flex: 1 1 auto; }
+
+// -----------------------------------------------------------------------------
+// Campo de senha com botão eye/eye-off (diretriz das telas públicas — `auth/login.blade.php`).
+// `.password-field` é o wrapper opt-in em torno de um único `<x-ui.input
+// type="password">`; o botão (`PasswordToggle.js`) é posicionado por CSS, sem
+// `style=` inline. Reserva de espaço à direita evita que o texto digitado
+// passe por baixo do ícone.
+// -----------------------------------------------------------------------------
+.password-field {
+    position: relative;
+}
+
+.password-field .form-control {
+    padding-right: var(--space-9);
+}
+
+.password-toggle-btn {
+    position: absolute;
+    top: 50%;
+    right: var(--space-2);
+    transform: translateY(-50%);
+    z-index: 5;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    // diretriz de mobile e responsivo: ícone de 18px + `p-2` (8px) fica em ~34px,
+    // abaixo do alvo de toque mínimo de `var(--touch-min)` (48px) — não é
+    // botão de linha de tabela, então a exceção de `btn-sm` (gap 7) não se
+    // aplica aqui.
+    min-width: var(--touch-min);
+    min-height: var(--touch-min);
+    padding: var(--space-2);
+    color: var(--text-secondary);
+    line-height: 0;
+    text-decoration: none;
+}
+
+// diretriz de mobile e responsivo: gatilho do drawer mobile
+// (`components/layout/topbar.blade.php`, `dusk="mobile-menu-button"`) é
+// ícone-só sem a classe `.appbar-icon-btn` (que já cobre sino/ajuda) — mesma
+// lacuna de alvo de toque, selecionado pelo `dusk=` existente em vez de nova
+// classe, já que nenhum `dusk=` pode ser criado/renomeado fora do bucket de
+// Blade.
+[dusk="mobile-menu-button"] {
+    min-width: var(--touch-min);
+    min-height: var(--touch-min);
+}
+
+// diretriz de mobile e responsivo: `.btn-close` (fechar diálogo/alerta/drawer) é
+// ícone-só e, no tamanho padrão do Bootstrap (~24px de área clicável), fica
+// abaixo do alvo de toque mínimo. O ícone em si (imagem de fundo) mantém o
+// tamanho visual; só a área clicável cresce.
+.btn-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: var(--touch-min);
+    min-height: var(--touch-min);
+}
+
+.password-toggle-btn:hover,
+.password-toggle-btn:focus {
+    color: var(--text-primary);
+}

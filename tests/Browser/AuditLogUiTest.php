@@ -66,7 +66,7 @@ class AuditLogUiTest extends DuskTestCase
                 // `text-transform: uppercase` — assert against the
                 // CSS-rendered text per `laravel-dusk`'s
                 // assertSeeIn/text-transform gotcha.
-                ->assertSeeIn('@audit-log-row-'.$log->id, 'COURSE.UPDATED');
+                ->assertSeeInIgnoringCase('@audit-log-row-'.$log->id, 'course.updated');
 
             // 2. Abrir o diff da linha mostra os valores antigo e novo.
             $browser->waitFor('@view-diff-'.$log->id)
@@ -90,7 +90,7 @@ class AuditLogUiTest extends DuskTestCase
                 ->waitFor('@audit-logs-table')
                 ->assertPresent('.pagination, [aria-label="Pagination Navigation"], nav')
                 // O filtro é de autenticação: eventos de curso saem da lista.
-                ->assertDontSee('COURSE.UPDATED');
+                ->assertDontSeeIgnoringCase('course.updated');
 
             // 4. O ponto de entrada do export aponta para a rota de streaming.
             $browser->visit(route('admin.audit-logs.index'))

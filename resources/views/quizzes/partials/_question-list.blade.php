@@ -27,7 +27,7 @@
             draggable="true"
             class="list-group-item sortable-item d-flex align-items-center justify-content-between gap-3">
             <span class="d-flex align-items-center gap-2 min-w-0">
-                <span aria-hidden="true" class="drag-handle">⠿</span>
+                <x-ui.icon name="grip-vertical" size="20" aria-hidden="true" class="drag-handle" />
                 <span class="text-truncate max-w-420">{{ $question->question_text }}</span>
                 <x-ui.badge variant="outline">{{ $typeLabels[$question->type] ?? $question->type }}</x-ui.badge>
             </span>
@@ -35,7 +35,6 @@
             <span class="d-flex gap-2 flex-shrink-0">
                 <x-ui.button
                     variant="secondary"
-                    size="sm"
                     data-bs-toggle="modal" data-bs-target="#question-edit-modal-{{ $question->id }}"
                     dusk="edit-question-{{ $question->id }}"
                 >Editar</x-ui.button>
@@ -43,7 +42,7 @@
                 <form method="POST" action="{{ route('quiz-questions.destroy', $question) }}" dusk="delete-question-form-{{ $question->id }}">
                     @csrf
                     @method('DELETE')
-                    <x-ui.button type="submit" variant="ghost" size="sm" dusk="delete-question-{{ $question->id }}">Remover</x-ui.button>
+                    <x-ui.button type="submit" variant="ghost" dusk="delete-question-{{ $question->id }}">Remover</x-ui.button>
                 </form>
             </span>
         </li>

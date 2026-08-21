@@ -1,0 +1,40 @@
+// =============================================================================
+// Componente: Tabs (abas de navegação)
+// -----------------------------------------------------------------------------
+// Ajustes de tema sobre `.nav-tabs`/`.nav-pills` do Bootstrap para o padrão
+// visual do design system. Complementa, não substitui, o componente nativo.
+// Conteúdo visual completo: diretriz da biblioteca de componentes.
+// Regra: qualquer declaração aqui só pode consumir var(--*), nunca literal de
+// cor/raio/sombra.
+// =============================================================================
+
+// `x-ui.tabs` — trilho pílula sobre `.nav-pills`, item ativo em
+// `--primary-container`/`--on-primary-container` (nunca cor sólida crua).
+.ds-tabs {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+    padding: var(--space-1);
+    background: var(--surface-alt);
+    border-radius: var(--radius-pill);
+
+    .nav-link {
+        border-radius: var(--radius-pill);
+        padding-block: var(--space-2);
+        padding-inline: var(--space-5);
+        font-weight: var(--font-weight-semibold);
+        color: var(--text-secondary);
+        transition: var(--transition-base);
+
+        &:hover,
+        &:focus-visible {
+            color: var(--text-primary);
+            background: var(--state-hover);
+        }
+
+        &.active {
+            color: var(--on-primary-container);
+            background: var(--primary-container);
+        }
+    }
+}

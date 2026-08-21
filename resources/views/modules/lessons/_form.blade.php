@@ -3,7 +3,7 @@
     $type = old('type', $lesson->type ?? 'content');
 @endphp
 
-<div class="max-w-640">
+<x-ui.field-stack class="max-w-640">
     <x-ui.input
         name="title"
         label="Título"
@@ -11,19 +11,21 @@
         value="{{ $lesson->title }}"
     />
 
-    <x-ui.select
-        name="type"
-        label="Tipo de Conteúdo"
-        required
-        :options="['content' => 'Conteúdo', 'quiz' => 'Quiz (em breve)']"
-        :selected="$type"
-        dusk="lesson-type-select"
-    />
-    <p class="form-text mb-3">
-        Quiz será habilitado em uma etapa futura. Selecione "Conteúdo" para cadastrar Rich Text, Imagem, PDF ou vídeo do YouTube.
-    </p>
+    <div>
+        <x-ui.select
+            name="type"
+            label="Tipo de Conteúdo"
+            required
+            :options="['content' => 'Conteúdo', 'quiz' => 'Quiz (em breve)']"
+            :selected="$type"
+            dusk="lesson-type-select"
+        />
+        <p class="form-text mt-n2 mb-0">
+            Quiz será habilitado em uma etapa futura. Selecione "Conteúdo" para cadastrar Rich Text, Imagem, PDF ou vídeo do YouTube.
+        </p>
+    </div>
 
-    <div id="lesson-content-fields" data-lesson-content-fields>
+    <div id="lesson-content-fields" data-lesson-content-fields class="ds-stack">
         <x-ui.input
             type="textarea"
             name="content_text"
@@ -31,27 +33,33 @@
             value="{{ $lesson->content_text }}"
         />
 
-        <div class="mb-3">
-            <label for="image" class="form-label">Imagem</label>
+        <div class="ds-empty-state text-center p-4x">
+            <span class="ds-empty-state-icon mb-2">
+                <x-ui.icon name="upload" size="28" />
+            </span>
+            <label for="image" class="form-label fw-semibold d-block">Imagem</label>
             <input type="file" id="image" name="image" accept="image/*" dusk="lesson-image-input"
                    class="form-control @error('image') is-invalid @enderror" />
             @if($lesson->image_path)
                 <div class="form-text">Imagem atual: {{ $lesson->image_path }}</div>
             @endif
             @error('image')
-                <div class="invalid-feedback">{{ $message }}</div>
+                <div class="invalid-feedback d-block">{{ $message }}</div>
             @enderror
         </div>
 
-        <div class="mb-3">
-            <label for="pdf" class="form-label">PDF</label>
+        <div class="ds-empty-state text-center p-4x">
+            <span class="ds-empty-state-icon mb-2">
+                <x-ui.icon name="upload" size="28" />
+            </span>
+            <label for="pdf" class="form-label fw-semibold d-block">PDF</label>
             <input type="file" id="pdf" name="pdf" accept="application/pdf" dusk="lesson-pdf-input"
                    class="form-control @error('pdf') is-invalid @enderror" />
             @if($lesson->pdf_path)
                 <div class="form-text">PDF atual: {{ $lesson->pdf_path }}</div>
             @endif
             @error('pdf')
-                <div class="invalid-feedback">{{ $message }}</div>
+                <div class="invalid-feedback d-block">{{ $message }}</div>
             @enderror
         </div>
 
@@ -60,6 +68,7 @@
             label="URL do YouTube"
             value="{{ $lesson->youtube_url }}"
             placeholder="https://www.youtube.com/watch?v=..."
+            hint="O servidor revalida o link no envio: apenas vídeos do YouTube são aceitos."
             dusk="lesson-youtube-input"
         />
 
@@ -73,13 +82,12 @@
         </div>
     </div>
 
-    <div class="form-check mb-3">
-        <input type="checkbox" id="is_published" name="is_published" value="1"
-               @checked(old('is_published', $lesson->is_published))
-               class="form-check-input" />
-        <label for="is_published" class="form-check-label fw-semibold">Publicado</label>
-    </div>
-</div>
+    <x-ui.switch
+        name="is_published"
+        label="Publicado"
+        :checked="$lesson->is_published"
+    />
+</x-ui.field-stack>
 
 @push('scripts')
     <script>

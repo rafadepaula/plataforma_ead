@@ -1,0 +1,16 @@
+:root{
+  --font-sans:"Nunito Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-body:var(--font-sans);--font-heading:var(--font-sans);
+  --font-weight-regular:400;--font-weight-medium:500;--font-weight-semibold:600;
+  --font-weight-bold:700;--font-weight-extrabold:800;--font-heading-weight:700;
+
+  --font-size-base:1rem;--font-size-display:2.75rem;--font-size-h1:2.25rem;
+  --font-size-h2:1.875rem;--font-size-h3:1.5rem;--font-size-h4:1.25rem;
+  --font-size-h5:1.125rem;--font-size-h6:1rem;--font-size-lead:1.1875rem;
+  --font-size-body-lg:1.0625rem;--font-size-body:1rem;--font-size-body-sm:.9375rem;
+  --font-size-label:.875rem;--font-size-caption:.8125rem;--font-size-overline:.8125rem;
+  --font-size-metric:2.5rem;
+
+  --line-height-tight:1.15;--line-height-heading:1.25;--line-height-base:1.6;--line-height-relaxed:1.75;
+  --tracking-tight:-.02em;--tracking-normal:0;--tracking-overline:.08em;--tracking-button:.01em;
+}

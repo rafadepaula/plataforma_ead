@@ -1,0 +1,24 @@
+// =============================================================================
+// Componente: diálogo (modal) — variante mobile
+// -----------------------------------------------------------------------------
+// diretriz de mobile e responsivo: abaixo de `sm` o diálogo passa
+// a ocupar largura e altura totais da tela, sem margem lateral, com raio
+// aplicado só no topo (a base encosta na borda da viewport). Reusa
+// `--radius-xl`, nunca um literal de raio.
+// Regra: qualquer declaração aqui só pode consumir var(--*), nunca literal de
+// cor/raio/sombra.
+// =============================================================================
+
+@include media-breakpoint-down(sm) {
+    .modal-dialog {
+        width: 100%;
+        max-width: 100%;
+        height: 100%;
+        margin: 0;
+    }
+
+    .modal-content {
+        height: 100%;
+        border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    }
+}

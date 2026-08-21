@@ -1,0 +1,134 @@
+// =============================================================================
+// Componente: Chip (etiqueta compacta)
+// -----------------------------------------------------------------------------
+// Etiqueta de status/categoria em formato pílula (par container/on-container),
+// usada em listas e tabelas. Bootstrap não entrega esse padrão pronto.
+// Conteúdo visual completo: diretriz da biblioteca de componentes.
+// Regra: qualquer declaração aqui só pode consumir var(--*), nunca literal de
+// cor/raio/sombra.
+// =============================================================================
+
+// -----------------------------------------------------------------------------
+// Pares tom/on-tom (container + on-container) — diretriz de direção visual e tokens,
+// "Pares container / on-container carregam chips, alerts e ícones". Não há
+// partial dedicado para badge/alert nesta fase (só os 9 stubs de componente
+// listados no plano de fases), então as classes compartilhadas moram
+// aqui, junto do componente que definiu o padrão. `x-ui.badge`, `x-ui.alert`
+// e o botão `tonal` (ver _state-layer.scss) reutilizam estas classes — não
+// duplicar a dupla bg/color em nenhum outro arquivo.
+// -----------------------------------------------------------------------------
+.ds-tone-primary {
+    color: var(--on-primary-container);
+    background-color: var(--primary-container);
+}
+
+// `.ds-tone-neutral` é neutro/muted de verdade (cinza puro dos tokens de
+// superfície/texto) — não reaproveita `.ds-tone-attention`, que é o par
+// semântico de aviso (`warning`, ver `x-ui.alert`/`x-ui.progress`) mesmo
+// resolvendo para tons de cinza pela regra "proibido vermelho/laranja/
+// amarelo". Usado por `x-ui.badge` `variant="neutral"` (ex.: status
+// "Inativo"/"Revogado"/"Expirado").
+.ds-tone-neutral {
+    color: var(--text-secondary);
+    background-color: var(--surface-alt);
+}
+
+.ds-tone-critical {
+    color: var(--on-critical-container);
+    background-color: var(--critical-container);
+}
+
+.ds-tone-attention {
+    color: var(--on-attention-container);
+    background-color: var(--attention-container);
+}
+
+.ds-tone-success {
+    color: var(--on-success-container);
+    background-color: var(--success-container);
+}
+
+.ds-tone-info {
+    color: var(--on-info-container);
+    background-color: var(--info-container);
+}
+
+// Badge segue o componente publicado pelo design system: 32px de altura,
+// padding lateral de 14px e ponto de status opcional. A variante grande usa
+// 38px e 18px, sem herdar o padding compacto do Bootstrap.
+.ds-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 32px;
+    padding: 0 14px;
+    font-size: var(--font-size-caption);
+    font-weight: var(--font-weight-bold);
+    letter-spacing: 0;
+    white-space: nowrap;
+    border-radius: var(--radius-pill);
+}
+
+.ds-badge::before {
+    width: 8px;
+    height: 8px;
+    flex: none;
+    content: "";
+    background: currentColor;
+    border-radius: var(--radius-pill);
+    opacity: .55;
+}
+
+.ds-badge-lg {
+    height: 38px;
+    padding-inline: 18px;
+    font-size: var(--font-size-label);
+}
+
+.ds-badge-plain::before {
+    display: none;
+}
+
+// -----------------------------------------------------------------------------
+// `.ds-chip` — filtro rápido de `x-ui.chip`. Estado ativo é comunicado por
+// `[aria-pressed="true"]`, nunca só pela cor. `.ds-state-layer` (ver
+// _state-layer.scss) cobre o feedback de hover/press em cima da própria
+// pílula, preenchida ou não.
+// -----------------------------------------------------------------------------
+.ds-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    height: 36px;
+    padding-inline: var(--space-4);
+    font-family: var(--font-body);
+    font-size: var(--font-size-body-sm);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-secondary);
+    background-color: var(--surface);
+    border: var(--border-width) solid var(--border-color);
+    border-radius: var(--radius-pill);
+    cursor: pointer;
+    transition: var(--transition-base);
+}
+
+.ds-chip-icon {
+    flex: 0 0 auto;
+}
+
+.ds-chip[aria-pressed="true"] {
+    color: var(--on-primary-container);
+    background-color: var(--primary-container);
+    border-color: transparent;
+}
+
+.ds-chip:focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring);
+    outline-offset: 2px;
+}
+
+.ds-chip:disabled,
+.ds-chip[aria-disabled="true"] {
+    opacity: .45;
+    pointer-events: none;
+}

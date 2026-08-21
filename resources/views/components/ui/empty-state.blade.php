@@ -17,7 +17,9 @@
         <td colspan="{{ $colspan }}" class="py-4">
             @if ($icon)
                 <div class="mb-2">
-                    <x-ui.icon :name="$icon" size="32" class="opacity-50" />
+                    <span class="ds-empty-state-icon">
+                        <x-ui.icon :name="$icon" size="32" />
+                    </span>
                 </div>
             @endif
 
@@ -37,10 +39,12 @@
         </td>
     </tr>
 @else
-    <div {{ $attributes->merge(['class' => 'border border-dashed text-center text-body-secondary p-5']) }}>
+    <div {{ $attributes->merge(['class' => 'ds-empty-state text-center text-body-secondary p-5']) }}>
         @if ($icon)
             <div class="mb-2">
-                <x-ui.icon :name="$icon" size="32" class="opacity-50" />
+                <span class="ds-empty-state-icon">
+                    <x-ui.icon :name="$icon" size="32" />
+                </span>
             </div>
         @endif
 

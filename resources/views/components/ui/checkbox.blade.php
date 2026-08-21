@@ -43,8 +43,9 @@
                {{ $attributes->merge(['class' => 'form-check-input'.($hasError ? ' is-invalid' : '')]) }}>
 
         @if($hasError)
-            <div id="{{ $id }}-error" class="invalid-feedback" dusk="error-{{ $name }}">
-                {{ $error ?? $errors->first($name) }}
+            <div id="{{ $id }}-error" class="invalid-feedback d-flex align-items-center gap-1" dusk="error-{{ $name }}">
+                <x-ui.icon name="info" size="14" class="flex-shrink-0" aria-hidden="true" />
+                <span>{{ $error ?? $errors->first($name) }}</span>
             </div>
         @endif
 

@@ -15,8 +15,16 @@
 --}}
 
 @section('content')
-    <x-layout.page-header :kicker="$lesson->module->course->title.' / '.$lesson->module->title"
-                          :title="$lesson->title">
+    <x-layout.page-header
+        :breadcrumb="[
+            ['label' => 'Meus Cursos', 'url' => route('student.courses.index')],
+            ['label' => $lesson->module->course->title, 'url' => route('classroom.show', $lesson->module->course)],
+            ['label' => $lesson->title],
+        ]"
+        :kicker="$lesson->module->course->title.' / '.$lesson->module->title"
+        :title="$lesson->title"
+        subtitle="Continue seus estudos e marque a lição como concluída ao terminar."
+    >
         <x-slot:actions>
             <x-ui.button variant="secondary" href="{{ route('classroom.show', $lesson->module->course) }}" dusk="back-to-classroom">Voltar à Sala de Aula</x-ui.button>
         </x-slot:actions>

@@ -12,6 +12,7 @@ import LessonPlayer        from './LessonPlayer';
 import ModuleReorder       from './ModuleReorder';
 import NotificationBell    from './NotificationBell';
 import NotificationService from './NotificationService';
+import PasswordToggle      from './PasswordToggle';
 import QuizBuilder         from './QuizBuilder';
 import QuizTimer           from './QuizTimer';
 import SmartInvitationForm from './SmartInvitationForm';
@@ -32,6 +33,7 @@ export default {
     LessonPlayer:        new LessonPlayer(httpClient, notifications),
     ModuleReorder:       new ModuleReorder(httpClient, notifications),
     NotificationBell:    new NotificationBell(httpClient),
+    PasswordToggle:      new PasswordToggle(),
     QuizBuilder:         new QuizBuilder(notifications),
     QuizTimer:           new QuizTimer(),
     SmartInvitationForm: new SmartInvitationForm(httpClient, notifications),

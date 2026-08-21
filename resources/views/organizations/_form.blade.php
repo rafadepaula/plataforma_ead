@@ -2,7 +2,7 @@
     /** @var \App\Models\Organization $organization */
 @endphp
 
-<div class="max-w-560">
+<x-ui.field-stack class="max-w-560">
     <x-ui.input
         name="name"
         label="Nome"
@@ -43,15 +43,18 @@
     {{--  o logo já persistido é renderizado como imagem resolvida pelo
          disco `public`; nunca o valor cru da coluna. A visibilidade é decidida
          aqui no servidor: sem logo, nenhum `<img>` (e nenhum `src` vazio).
-         `.org-logo` é a exceção histórica de escala de cinza do projeto
-         (`resources/scss/app.scss`), a mesma convenção já usada no PDF do
-         certificado. --}}
+         `.org-logo` é uma classe real, definida em
+         `resources/scss/components/_organizations.scss` (preview circular
+         pastel da diretriz das telas de admin) — não confundir com a regra homônima e
+         isolada de `certificates/pdf.blade.php`, que vive num `<style>`
+         inline porque o PDF é renderizado pelo dompdf, fora do pipeline de
+         build do app.scss. --}}
     @if($organization->logo_path)
         <div class="mb-3">
             <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($organization->logo_path) }}"
                  alt="Logo da Organização {{ $organization->name }}"
-                 class="org-logo d-block h-60 mw-100 object-fit-contain border p-2"
+                 class="org-logo"
                  dusk="organization-logo-preview">
         </div>
     @endif
-</div>
+</x-ui.field-stack>

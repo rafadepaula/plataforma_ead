@@ -89,7 +89,7 @@ impersonated). Same workaround documented for
 
 ```blade
 @if($article)
-    <button ... data-modal-target="{{ $modalId }}" dusk="help-button-{{ $key }}">...</button>
+    <button ... data-bs-toggle="modal" data-bs-target="#{{ $modalId }}" dusk="help-button-{{ $key }}">...</button>
     <x-ui.modal id="{{ $modalId }}" title="{{ $article->title }}" size="md">
         <div dusk="help-article-content-{{ $key }}">{{ $article->content }}</div>
     </x-ui.modal>
@@ -109,15 +109,14 @@ loading state) without updating both `HelpCenterTest`
 `student.courses.index` slugify predictably. Do not hand-roll different
 modal id scheme for new screen. Reuse component own derivation.
 
-## Modal Open/Close Reuses `window.ModalManager`, No Alpine.js
+## Modal Open/Close Is Declarative `bootstrap.Modal`, No Alpine.js, No `ModalManager`
 
-Help modal open via same `data-modal-target="{{ $modalId }}"` /
-`data-modal-dismiss="true"` attribute pair `window.ModalManager`
-(registered once in `app.js`, see `ModalManager.js` own docblock)
-already bind globally. This project have **no Alpine.js**. `x-ui.modal`
-backdrop ship with static inline `display: flex` and get hidden on load
-by `ModalManager.hideBackdropsOnLoad()` (plain `DOMContentLoaded`
-listener), not by any `x-show`/`x-cloak` directive. Never write second
+Help modal open through `data-bs-toggle="modal"` +
+`data-bs-target="#{{ $modalId }}"` on the trigger and close through
+`data-bs-dismiss="modal"` — pure `bootstrap.Modal`, no project JS at all.
+The hand-rolled `ModalManager` was deleted in the Bootstrap 5.3
+migration; do not reintroduce it or any `data-modal-target` pair. This
+project also have **no Alpine.js**. Never write second
 modal-open/close implementation for new help button. Never attribute
 backdrop-visibility behavior to Alpine in new comment or test — see
 `help-maintenance` for Dusk implication.

@@ -83,6 +83,12 @@
                     dusk="invitation-password-confirmation"
                 />
             </div>
+
+            <x-ui.switch
+                name="consent"
+                label="Concordo em compartilhar meus dados com a organização responsável por este curso."
+                required
+            />
         </x-ui.field-stack>
 
         <x-ui.button type="submit" block dusk="invitation-submit">Matricular-me</x-ui.button>

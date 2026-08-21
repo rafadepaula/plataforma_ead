@@ -1,0 +1,47 @@
+// =============================================================================
+// Componente: Reorder list (lista reordenável por arraste)
+// -----------------------------------------------------------------------------
+// Estilo de item arrastável usado por `ModuleReorder`/`QuizBuilder`
+// (`[data-reorder-url]`) para reordenar módulos e questões. Bootstrap não
+// entrega esse padrão pronto.
+// Conteúdo visual completo: diretriz da biblioteca de componentes.
+// Regra: qualquer declaração aqui só pode consumir var(--*), nunca literal de
+// cor/raio/sombra.
+// =============================================================================
+
+// Classe já consumida por `modules/lessons/index.blade.php`,
+// `courses/modules/_list.blade.php` e `quizzes/partials/_question-list.blade.php`
+// (confirmado via grep — `.sortable-item` dentro de `<li class="list-group-item
+// sortable-item ...">`). `ModuleReorder.js` só reordena o DOM via HTML5 drag
+// and drop nativo; não alterna nenhuma classe de estado durante o arraste.
+.sortable-item {
+    cursor: grab;
+    min-height: 64px;
+    border-radius: var(--radius-md);
+    border-color: var(--divider);
+    background: var(--surface-sunken);
+    box-shadow: var(--elev-1);
+    transition: var(--transition-base);
+
+    &:hover {
+        background: var(--state-hover);
+    }
+
+    &:active {
+        cursor: grabbing;
+    }
+}
+
+// Alça de arraste (`⠿`) dentro do item.
+.drag-handle {
+    color: var(--text-secondary);
+    cursor: grab;
+    line-height: 1;
+}
+
+// Linha vazia (`@empty`) das mesmas 3 listas — substitui a classe fantasma
+// `border-dashed` (nunca definida em folha de estilo) do tema anterior.
+.border-dashed {
+    border-style: dashed;
+    border-color: var(--divider);
+}

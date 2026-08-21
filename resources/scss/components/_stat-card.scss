@@ -1,0 +1,30 @@
+// =============================================================================
+// Componente: Stat card (card de métrica/KPI)
+// -----------------------------------------------------------------------------
+// Card compacto de métrica usado em dashboards (Admin/Gestor) — número em
+// destaque, rótulo, ícone. Bootstrap não entrega esse padrão pronto.
+// Conteúdo visual completo: diretriz da biblioteca de componentes.
+// Regra: qualquer declaração aqui só pode consumir var(--*), nunca literal de
+// cor/raio/sombra.
+// =============================================================================
+
+// Valor em destaque de `x-ui.stat-card`.
+.stat-card-value {
+    font-size: var(--font-size-metric);
+    font-weight: var(--font-weight-extrabold);
+    line-height: var(--line-height-tight);
+    color: var(--text-primary);
+}
+
+// Container pastel do ícone opcional (`icon` prop) de `x-ui.stat-card`.
+.stat-card-icon {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    border-radius: var(--radius-md);
+    background: var(--primary-container);
+    color: var(--on-primary-container);
+}

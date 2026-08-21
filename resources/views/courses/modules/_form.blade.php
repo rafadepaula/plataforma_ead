@@ -2,7 +2,7 @@
     /** @var \App\Models\Module $module */
 @endphp
 
-<div class="max-w-560">
+<x-ui.field-stack class="max-w-560">
     <x-ui.input
         name="title"
         label="Título"
@@ -16,4 +16,4 @@
         label="Descrição"
         value="{{ $module->description }}"
     />
-</div>
+</x-ui.field-stack>

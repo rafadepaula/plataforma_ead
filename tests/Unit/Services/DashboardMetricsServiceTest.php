@@ -5,9 +5,17 @@ namespace Tests\Unit\Services;
 use App\Enums\Permissions\RolesEnum;
 use App\Models\Certificate;
 use App\Models\Course;
+use App\Models\ForumReply;
+use App\Models\ForumReport;
+use App\Models\ForumTopic;
+use App\Models\Lesson;
+use App\Models\Module;
 use App\Models\Organization;
+use App\Models\Quiz;
+use App\Models\QuizAttempt;
 use App\Models\User;
 use App\Services\DashboardMetricsService;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 /**
@@ -223,6 +231,26 @@ class DashboardMetricsServiceTest extends TestCase
         $this->assertSame('Student 3', $recentEnrollments->first()->student_name);
     }
 
+    public function test_recent_enrollments_includes_the_students_email_and_progress_percentage(): void
+    {
+        $org = Organization::factory()->create();
+        $course = Course::factory()->for($org)->create();
+
+        $student = User::factory()->create(['org_id' => $org->id, 'email' => 'joao@example.com']);
+        $student->courses()->attach($course->id, [
+            'status' => 'active',
+            'enrolled_at' => now(),
+            'progress_percentage' => 55,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $enrollment = $this->service->recentEnrollments($org->id)->first();
+
+        $this->assertSame('joao@example.com', $enrollment->student_email);
+        $this->assertSame(55, $enrollment->progress_percentage);
+    }
+
     public function test_recent_enrollments_labels_a_cancelled_enrollment(): void
     {
         $org = Organization::factory()->create();
@@ -316,5 +344,165 @@ class DashboardMetricsServiceTest extends TestCase
         $summary = $this->service->organizationsSummary();
 
         $this->assertNull($summary->firstWhere('id', $org->id));
+    }
+
+    public function test_get_stats_returns_null_deltas_when_there_is_no_activity_before_the_period(): void
+    {
+        $org = Organization::factory()->create();
+        $course = Course::factory()->for($org)->create();
+        $this->enrollActiveStudent($course);
+        Certificate::factory()->for($course)->for(User::factory())->create(['issued_at' => now()]);
+
+        $stats = $this->service->getStats($org->id, '30d');
+
+        $this->assertNull($stats['active_students_delta']);
+        $this->assertNull($stats['certificates_issued_delta']);
+    }
+
+    public function test_get_stats_computes_the_active_students_delta_between_the_current_and_previous_period(): void
+    {
+        $org = Organization::factory()->create();
+        $course = Course::factory()->for($org)->create();
+
+        $baseline = $this->enrollActiveStudent($course);
+        DB::table('course_user')->where('user_id', $baseline->id)->update(['created_at' => now()->subDays(40)]);
+
+        $this->enrollActiveStudent($course);
+
+        $stats = $this->service->getStats($org->id, '30d');
+
+        $this->assertSame('+100,0%', $stats['active_students_delta']);
+    }
+
+    public function test_get_stats_computes_the_certificates_issued_delta_between_the_current_and_previous_period(): void
+    {
+        $org = Organization::factory()->create();
+        $course = Course::factory()->for($org)->create();
+
+        Certificate::factory()->for($course)->for(User::factory())->create(['issued_at' => now()->subDays(40)]);
+        Certificate::factory()->for($course)->for(User::factory())->create(['issued_at' => now()->subDays(2)]);
+        Certificate::factory()->for($course)->for(User::factory())->create(['issued_at' => now()->subDays(2)]);
+
+        $stats = $this->service->getStats($org->id, '30d');
+
+        $this->assertSame('+200,0%', $stats['certificates_issued_delta']);
+    }
+
+    public function test_attention_counts_counts_pending_essays_forum_reports_and_recent_certificates_scoped_to_org(): void
+    {
+        $org = Organization::factory()->create();
+        $otherOrg = Organization::factory()->create();
+
+        $course = Course::factory()->for($org)->create();
+        $module = Module::factory()->for($course)->create();
+        $lesson = Lesson::factory()->for($module)->create();
+        $quiz = Quiz::factory()->for($lesson)->create();
+
+        QuizAttempt::factory()->for($quiz)->for(User::factory())->awaitingManualGrading()->create();
+        QuizAttempt::factory()->for($quiz)->for(User::factory())->graded()->create();
+
+        $topic = ForumTopic::factory()->for($course)->for(User::factory())->create(['org_id' => $org->id]);
+        ForumReport::factory()->for(User::factory(), 'reporter')->create([
+            'postable_type' => ForumTopic::class,
+            'postable_id' => $topic->id,
+        ]);
+        ForumReport::factory()->for(User::factory(), 'reporter')->dismissed()->create([
+            'postable_type' => ForumTopic::class,
+            'postable_id' => $topic->id,
+        ]);
+
+        Certificate::factory()->for($course)->for(User::factory())->create(['issued_at' => now()->subDays(2)]);
+        Certificate::factory()->for($course)->for(User::factory())->create(['issued_at' => now()->subDays(20)]);
+
+        $otherCourse = Course::factory()->for($otherOrg)->create();
+        $otherModule = Module::factory()->for($otherCourse)->create();
+        $otherLesson = Lesson::factory()->for($otherModule)->create();
+        $otherQuiz = Quiz::factory()->for($otherLesson)->create();
+        QuizAttempt::factory()->for($otherQuiz)->for(User::factory())->awaitingManualGrading()->create();
+
+        $counts = $this->service->attentionCounts($org->id);
+
+        $this->assertSame(1, $counts['pending_essays']);
+        $this->assertSame(1, $counts['forum_reports']);
+        $this->assertSame(1, $counts['certificates_ready']);
+    }
+
+    public function test_attention_counts_includes_pending_reports_on_forum_replies(): void
+    {
+        $org = Organization::factory()->create();
+        $course = Course::factory()->for($org)->create();
+        $topic = ForumTopic::factory()->for($course)->for(User::factory())->create(['org_id' => $org->id]);
+        $reply = ForumReply::factory()->for($topic, 'topic')->for(User::factory())->create();
+
+        ForumReport::factory()->for(User::factory(), 'reporter')->create([
+            'postable_type' => ForumReply::class,
+            'postable_id' => $reply->id,
+        ]);
+
+        $counts = $this->service->attentionCounts($org->id);
+
+        $this->assertSame(1, $counts['forum_reports']);
+    }
+
+    public function test_attention_counts_for_a_global_admin_view_sees_all_organizations(): void
+    {
+        $orgA = Organization::factory()->create();
+        $orgB = Organization::factory()->create();
+
+        foreach ([$orgA, $orgB] as $org) {
+            $course = Course::factory()->for($org)->create();
+            $module = Module::factory()->for($course)->create();
+            $lesson = Lesson::factory()->for($module)->create();
+            $quiz = Quiz::factory()->for($lesson)->create();
+            QuizAttempt::factory()->for($quiz)->for(User::factory())->awaitingManualGrading()->create();
+        }
+
+        $counts = $this->service->attentionCounts(null);
+
+        $this->assertSame(2, $counts['pending_essays']);
+    }
+
+    public function test_most_completed_courses_ranks_by_completed_enrollments_desc_scoped_to_org(): void
+    {
+        $org = Organization::factory()->create();
+        $courseA = Course::factory()->for($org)->create(['title' => 'Curso A']);
+        $courseB = Course::factory()->for($org)->create(['title' => 'Curso B']);
+        $otherOrg = Organization::factory()->create();
+        $courseC = Course::factory()->for($otherOrg)->create(['title' => 'Curso C']);
+
+        foreach (range(1, 3) as $i) {
+            $student = User::factory()->create(['org_id' => $org->id]);
+            $student->courses()->attach($courseA->id, ['status' => 'completed', 'enrolled_at' => now()]);
+        }
+
+        $studentB = User::factory()->create(['org_id' => $org->id]);
+        $studentB->courses()->attach($courseB->id, ['status' => 'completed', 'enrolled_at' => now()]);
+
+        $otherStudent = User::factory()->create(['org_id' => $otherOrg->id]);
+        $otherStudent->courses()->attach($courseC->id, ['status' => 'completed', 'enrolled_at' => now()]);
+
+        $ranking = $this->service->mostCompletedCourses($org->id);
+
+        $this->assertCount(2, $ranking);
+        $this->assertSame('Curso A', $ranking->first()->course_name);
+        $this->assertSame(3, $ranking->first()->completions);
+        $this->assertSame(100, $ranking->first()->percentage);
+        $this->assertSame(1, $ranking->last()->completions);
+        $this->assertSame(33, $ranking->last()->percentage);
+    }
+
+    public function test_most_completed_courses_respects_the_limit(): void
+    {
+        $org = Organization::factory()->create();
+
+        foreach (range(1, 3) as $i) {
+            $course = Course::factory()->for($org)->create();
+            $student = User::factory()->create(['org_id' => $org->id]);
+            $student->courses()->attach($course->id, ['status' => 'completed', 'enrolled_at' => now()]);
+        }
+
+        $ranking = $this->service->mostCompletedCourses($org->id, 2);
+
+        $this->assertCount(2, $ranking);
     }
 }

@@ -1,7 +1,12 @@
 @extends('layouts.app')
 
 @section('content')
-    <x-layout.page-header kicker="Cursos" title="Editar Curso" />
+    <x-layout.page-header
+        :breadcrumb="[['label' => 'Cursos', 'url' => route('courses.index')], ['label' => $course->title, 'url' => route('courses.modules.index', $course)], ['label' => 'Editar']]"
+        kicker="Cursos"
+        title="Editar Curso"
+        subtitle="As alterações valem para todos os alunos já matriculados."
+    />
 
     <x-ui.card>
         <form method="POST" action="{{ route('courses.update', $course) }}" dusk="course-form">
@@ -10,10 +15,10 @@
 
             @include('courses._form')
 
-            <div class="d-flex flex-wrap gap-3 mt-4">
+            <x-ui.form-actions>
                 <x-ui.button type="submit" dusk="course-submit">Salvar Alterações</x-ui.button>
                 <x-ui.button variant="secondary" href="{{ route('courses.index') }}">Cancelar</x-ui.button>
-            </div>
+            </x-ui.form-actions>
         </form>
     </x-ui.card>
 @endsection

@@ -65,7 +65,7 @@ class UserAdminController extends Controller
     {
         Gate::authorize('viewGlobal', $user);
 
-        $user->load(['organization', 'roles']);
+        $user->load(['organization', 'roles', 'courses', 'certificates.course']);
 
         return view('admin.users.show', compact('user'));
     }

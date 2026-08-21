@@ -12,19 +12,24 @@
 @extends('layouts.app')
 
 @section('content')
-    <x-layout.page-header kicker="Avaliações" title="Correções Pendentes" />
+    <x-layout.page-header
+        :breadcrumb="[['label' => 'Avaliações'], ['label' => 'Correções Pendentes']]"
+        kicker="Avaliações"
+        title="Correções Pendentes"
+        subtitle="Tentativas com questões dissertativas aguardando correção manual, da mais antiga para a mais recente."
+    />
 
     <x-ui.table :headers="['Aluno', 'Curso / Quiz', 'Enviado em', 'Ações']">
         @forelse($attempts as $attempt)
             <tr dusk="pending-attempt-row-{{ $attempt->id }}">
-                <td>{{ $attempt->user->name }}</td>
-                <td>
+                <td data-label="Aluno">{{ $attempt->user->name }}</td>
+                <td data-label="Curso / Quiz">
                     {{ $attempt->quiz->lesson->module->course->title }}
                     <br>
                     <span class="small text-body-secondary">{{ $attempt->quiz->title }}</span>
                 </td>
-                <td>{{ optional($attempt->completed_at)->format('d/m/Y H:i') }}</td>
-                <td>
+                <td data-label="Enviado em">{{ optional($attempt->completed_at)->format('d/m/Y H:i') }}</td>
+                <td data-label="Ações">
                     <x-ui.button variant="secondary" size="sm" href="{{ route('quiz-attempts.show', $attempt) }}" dusk="grade-attempt-{{ $attempt->id }}">
                         Corrigir
                     </x-ui.button>

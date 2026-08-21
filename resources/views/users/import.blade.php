@@ -1,7 +1,14 @@
 @extends('layouts.app')
 
 @section('content')
-    <x-ui.card title="Importar Alunos via CSV" kicker="Alunos & Gestores">
+    <x-layout.page-header
+        :breadcrumb="[['label' => 'Organização', 'url' => route('users.index')], ['label' => 'Alunos & Gestores', 'url' => route('users.index')], ['label' => 'Importar Alunos via CSV']]"
+        kicker="Organização"
+        title="Importar Alunos via CSV"
+        subtitle="Cadastre e matricule vários Alunos de uma vez a partir de um arquivo CSV."
+    />
+
+    <x-ui.card>
         <p class="small text-body-secondary mb-4">
             O arquivo é processado em lotes de 50 linhas diretamente no navegador — cada lote é
             enviado separadamente, sem limite de tamanho de arquivo no servidor. Cabeçalhos
@@ -18,11 +25,13 @@
                     dusk="csv-course-select"
                 />
 
-                <div class="mb-3">
-                    <label for="csv-file" class="form-label">Arquivo CSV</label>
-                    <input type="file" id="csv-file" name="csv_file" accept=".csv,text/csv"
-                           class="form-control" dusk="csv-file-input">
-                </div>
+                <x-ui.input
+                    type="file"
+                    name="csv_file"
+                    label="Arquivo CSV"
+                    accept=".csv,text/csv"
+                    dusk="csv-file-input"
+                />
             </x-ui.field-stack>
 
             {{--

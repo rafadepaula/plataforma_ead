@@ -106,15 +106,40 @@ class LoginTest extends DuskTestCase
                 ->type('@login-email', 'aluno@example.com')
                 ->type('@login-password', 'totally-wrong-password')
                 ->press('@login-submit')
-                ->waitForText('These credentials do not match our records.')
+                ->waitForText('Essas credenciais não foram encontradas em nossos registros.')
                 ->assertGuest();
 
             // 2. Usuário inativo, senha correta, mesma tela.
             $browser->type('@login-email', 'inativo@example.com')
                 ->type('@login-password', 'correct-password')
                 ->press('@login-submit')
-                ->waitForText('These credentials do not match our records.')
+                ->waitForText('Essas credenciais não foram encontradas em nossos registros.')
                 ->assertGuest();
+        });
+    }
+
+    /**
+     * O botão eye/eye-off (`resources/js/modules/PasswordToggle.js`) alterna
+     * `type`/`aria-label` do campo de senha e os ícones show/hide — nenhum
+     * `dusk=` cobre esse contrato (a lista de 388 seletores é imutável), por
+     * isso a asserção usa os seletores CSS reais que o módulo consulta.
+     */
+    public function test_password_toggle_reveals_and_hides_the_password_field(): void
+    {
+        $this->browse(function (Browser $browser): void {
+            $browser->visit('/login')
+                ->assertAttribute('input[name=password]', 'type', 'password')
+                ->assertAttribute('[data-password-toggle-btn]', 'aria-label', 'Mostrar senha')
+                ->assertVisible('[data-password-toggle-icon="show"]')
+                ->assertMissing('[data-password-toggle-icon="hide"]:not(.d-none)')
+                ->click('[data-password-toggle-btn]')
+                ->assertAttribute('input[name=password]', 'type', 'text')
+                ->assertAttribute('[data-password-toggle-btn]', 'aria-label', 'Ocultar senha')
+                ->assertVisible('[data-password-toggle-icon="hide"]')
+                ->assertMissing('[data-password-toggle-icon="show"]:not(.d-none)')
+                ->click('[data-password-toggle-btn]')
+                ->assertAttribute('input[name=password]', 'type', 'password')
+                ->assertAttribute('[data-password-toggle-btn]', 'aria-label', 'Mostrar senha');
         });
     }
 
@@ -132,7 +157,7 @@ class LoginTest extends DuskTestCase
                 ->assertPresent('@forgot-password-form')
                 ->type('@forgot-password-email', 'reset@example.com')
                 ->press('@forgot-password-submit')
-                ->waitForText('We have emailed your password reset link.');
+                ->waitForText('Enviamos o link de redefinição de senha para o seu e-mail.');
 
             $this->assertDatabaseHas('password_reset_tokens', [
                 'email' => 'reset@example.com',
@@ -145,7 +170,7 @@ class LoginTest extends DuskTestCase
                 ->type('@reset-password-password', 'new-password-123')
                 ->type('@reset-password-password-confirmation', 'new-password-123')
                 ->press('@reset-password-submit')
-                ->waitForText('This password reset token is invalid.');
+                ->waitForText('Este token de redefinição de senha é inválido.');
 
             $this->assertTrue(Hash::check('old-password', $user->fresh()->password));
 
@@ -159,7 +184,7 @@ class LoginTest extends DuskTestCase
                 ->type('@reset-password-password-confirmation', 'new-password-123')
                 ->press('@reset-password-submit')
                 ->waitForLocation('/login')
-                ->waitForText('Your password has been reset.')
+                ->waitForText('Sua senha foi redefinida com sucesso.')
                 ->type('@login-email', 'reset@example.com')
                 ->type('@login-password', 'new-password-123')
                 ->press('@login-submit')

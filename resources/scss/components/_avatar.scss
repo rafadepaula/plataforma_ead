@@ -1,0 +1,40 @@
+// =============================================================================
+// Componente: Avatar (imagem/iniciais de usuário)
+// -----------------------------------------------------------------------------
+// Círculo de foto ou iniciais do usuário, usado na app bar, listas de usuários
+// e cards de perfil. Bootstrap não entrega esse padrão pronto.
+// Conteúdo visual completo: diretriz da biblioteca de componentes.
+// Regra: qualquer declaração aqui só pode consumir var(--*), nunca literal de
+// cor/raio/sombra.
+// =============================================================================
+
+// Iniciais do usuário. Substitui o bloco `.grayscale.w-32.h-32.bg-secondary`
+// (topbar) e `.text-bg-dark` (drawer mobile) do tema anterior — nenhuma
+// daquelas classes de tamanho existia em folha de estilo alguma.
+// `x-ui.avatar` (diretriz da biblioteca de componentes, Fase 2) passa a envolver exatamente esta classe.
+.ds-avatar {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    font-size: var(--font-size-caption);
+    font-weight: var(--font-weight-bold);
+    line-height: 1;
+    color: var(--on-primary-container);
+    background: var(--primary-container);
+    border-radius: var(--radius-pill);
+}
+
+.ds-avatar-lg {
+    width: 44px;
+    height: 44px;
+    font-size: var(--font-size-body-sm);
+}
+
+.ds-avatar-xl {
+    width: 64px;
+    height: 64px;
+    font-size: var(--font-size-h5);
+}

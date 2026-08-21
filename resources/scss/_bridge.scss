@@ -1,0 +1,94 @@
+// =============================================================================
+// Ponte token -> Bootstrap
+// =============================================================================
+// Alimenta as variáveis Sass do Bootstrap 5.3 com os valores LITERAIS dos
+// tokens do design system (_ds/plataforma-ead-design-system/tokens/*.css).
+//
+// Regra de ouro: variável Sass do Bootstrap é a fonte de verdade de
+// implementação; o token CSS é a fonte de verdade de design. Esta é a única
+// ponte entre os dois — não existe set paralelo `--color-*` criado à mão.
+//
+// $warning -> --attention (nunca amarelo). $danger -> --critical (nunca vermelho).
+// Sass não resolve var(--x) em tempo de compilação: os valores abaixo são
+// cópias literais dos tokens publicados em _ds/.../tokens/*.css. Divergência
+// entre este arquivo e os tokens é bug de build.
+
+// Cores
+$primary: #4c6fe7; // --blue-600
+$secondary: #2e9e6b; // --mint-600
+$success: #2e9e6b; // --mint-600
+$info: #2c7bd1; // --sky-600
+$warning: #5b6880; // --attention (nunca amarelo)
+$danger: #3b4a78; // --critical (nunca vermelho)
+$light: #f6f8fc; // --grey-50
+$dark: #1b2437; // --grey-900
+
+// Cores-base ($red/$orange/$yellow) alimentam `--bs-red`/`--bs-orange`/
+// `--bs-yellow`, os mapas `$reds`/`$yellows` (usados por `$mark-bg`,
+// `$form-invalid-color-dark`, etc.) e outros pontos do Bootstrap que não
+// passam por `$danger`/`$warning`. Sem esta ponte, tons vermelho/amarelo
+// "vazam" de volta ao CSS compilado mesmo com `$danger`/`$warning`
+// corretos — remapeados para os mesmos tokens pastel, nunca a paleta padrão.
+$red: $danger; // --critical
+$orange: $warning; // --attention
+$yellow: $warning; // --attention
+
+$body-bg: #f6f8fc; // --surface-body
+$body-color: #1b2437; // --text-primary
+$border-color: #dce3ee; // --border-color
+
+// Tipografia
+$font-family-base: "Nunito Sans", system-ui, -apple-system, "Segoe UI", sans-serif; // --font-sans
+$font-size-base: 1rem; // --font-size-base
+$line-height-base: 1.6; // --line-height-base
+$headings-font-weight: 700; // --font-heading-weight
+
+// Raios
+$border-radius-sm: 10px; // --radius-sm
+$border-radius: 14px; // --radius-md
+$border-radius-lg: 20px; // --radius-lg
+$border-radius-xl: 28px; // --radius-xl
+$border-radius-pill: 999px; // --radius-pill
+
+// Elevação
+$box-shadow-sm: 0 1px 2px rgba(27, 36, 55, .06), 0 1px 3px rgba(27, 36, 55, .08); // --elev-1
+$box-shadow: 0 2px 6px rgba(27, 36, 55, .07), 0 6px 14px rgba(27, 36, 55, .06); // --elev-2
+$box-shadow-lg: 0 8px 18px rgba(27, 36, 55, .10), 0 20px 40px rgba(27, 36, 55, .10); // --elev-4
+
+$enable-shadows: true;
+$enable-negative-margins: true;
+// $min-contrast-ratio fica no padrão do Bootstrap — não afrouxar para caber cor.
+
+// Botões — pílulas, label 14px/700
+$btn-border-radius: 999px;
+$btn-border-radius-sm: 999px;
+$btn-border-radius-lg: 999px;
+$btn-font-weight: 700;
+$btn-padding-y: 12px; // --pad-btn-y
+$btn-padding-x: 24px; // --pad-btn-x
+
+// Campos
+$input-height: 52px; // --field-height
+$input-border-radius: 14px; // --radius-md
+$input-focus-box-shadow: 0 0 0 4px rgba(76, 111, 231, .28); // --focus-ring-alpha
+
+// Cards
+$card-border-radius: 20px; // --radius-lg
+$card-spacer-y: 28px; // --pad-card
+$card-spacer-x: 28px; // --pad-card
+
+// Modais
+$modal-content-border-radius: 28px; // --radius-xl
+$modal-backdrop-opacity: .42; // --overlay-scrim
+
+// Tabelas
+$table-cell-padding-y: 18px; // --pad-cell-y
+$table-cell-padding-x: 20px; // --pad-cell-x
+$table-hover-bg: rgba(76, 111, 231, .06); // --state-hover
+
+// Dropdowns
+$dropdown-border-radius: 20px; // --radius-lg
+$dropdown-box-shadow: 0 8px 18px rgba(27, 36, 55, .10), 0 20px 40px rgba(27, 36, 55, .10); // --elev-4
+
+// Movimento
+$transition-base: all 200ms cubic-bezier(.4, 0, .2, 1); // --duration-base + --ease-standard

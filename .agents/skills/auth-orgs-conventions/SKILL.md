@@ -254,6 +254,10 @@ Keep two Form Requests per model when the "same-looking" edit screen has a genui
 
 Only do this for non-sensitive scalars (a status enum value here) — never put name/e-mail/CPF or anything PII in a query string that ends up in server logs.
 
+## `admin/users/show.blade.php`: Read-Only Enrollment/Certificate Cards Need Explicit Eager Load
+
+The global admin user-detail screen adds two read-only `<x-ui.card>`s beside the original `<dl>` (which keeps its `dusk=` attributes untouched): "Matrículas" from `$user->courses` (title, enrolled date, pivot status badge) and "Certificados" from `$user->certificates` (course title, issued date, revoked/emitido badge — `accent-2`/`accent` variants, never `danger`). Both relations must be added to `UserAdminController::show()`'s `$user->load([...])` call (`courses`, `certificates.course`) — the base `['organization', 'roles']` load predates this and does not cover them; add any further relation the show view starts rendering the same way rather than letting the view lazy-load per row.
+
 ## `UserHomeResolver`
 
 ```php

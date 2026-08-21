@@ -3,7 +3,15 @@
 @section('content')
     <x-slot:title>Configurações — Plataforma EAD</x-slot:title>
 
-    <x-layout.page-header kicker="Sistema" title="Configurações" />
+    <x-layout.page-header
+        kicker="Sistema"
+        title="Configurações"
+        subtitle="Ajuste o SMTP, a identidade visual e a assinatura de certificados usados por padrão na plataforma."
+        :breadcrumb="[
+            ['label' => 'Administração'],
+            ['label' => 'Configurações'],
+        ]"
+    />
 
     {{-- `col-lg-6` substitui o antigo `max-width: 560px` do bloco de campos. --}}
     <div class="row">

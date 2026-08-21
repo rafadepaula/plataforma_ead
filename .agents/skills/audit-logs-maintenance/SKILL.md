@@ -49,7 +49,7 @@ Dusk classes declare no DB trait — `DatabaseTruncation` inherited from `Tests\
 ## Dusk Gotchas: Diff Modal
 
 - Modal is **single shared** `#audit-diff-modal`, not one per row (`audit-logs-conventions`). Test clicks a row's `[dusk="view-diff-{id}"]`, then asserts against shared `[dusk="audit-diff-old"]`/`[dusk="audit-diff-new"]`. No per-row modal id exists.
-- `ModalManager`'s backdrop-hide-on-load fix (no Alpine.js installed, see `ForumEditHistory.js` comment) keeps modal at `display: none` until `AuditLogDiffModal.js` opens it. `waitFor('@audit-diff-old')` before the click is not enough — assert visibility only after the trigger click, and use `waitFor` (never `pause()`) for content, per `laravel-dusk`.
+- The diff modal is a `bootstrap.Modal` (no Alpine.js, no `ModalManager` — both retired in the Bootstrap 5.3 migration): it stays hidden until the trigger opens it and `AuditLogDiffModal.js` fills the two panes. `waitFor('@audit-diff-old')` before the click is not enough — assert visibility only after the trigger click, and use `waitFor` (never `pause()`) for content, per `laravel-dusk`.
 - JSON written via `.textContent`, so `assertSee()` on `[dusk="audit-diff-old"]` matches pretty-printed JSON verbatim including key names. Assert one distinguishing field value from the fixture, not the whole blob — resilient to whitespace/format changes.
 
 ## Open Questions

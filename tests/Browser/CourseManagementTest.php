@@ -88,10 +88,13 @@ class CourseManagementTest extends DuskTestCase
                 ->waitForLocation('/modules/'.$module->id.'/lessons')
                 ->assertDontSee('Lição Dusk');
 
-            // 6. Remoção do Curso (soft delete) e desaparecimento da listagem
+            // 6. Remoção do Curso (soft delete, atrás de `x-ui.confirm-modal`)
+            // e desaparecimento da listagem
             $browser->visit(route('courses.index'))
                 ->waitFor('@delete-course-'.$course->id)
                 ->click('@delete-course-'.$course->id)
+                ->waitFor('@confirm-modal-delete-course-'.$course->id.'-confirm')
+                ->click('@confirm-modal-delete-course-'.$course->id.'-confirm')
                 ->waitForLocation('/courses')
                 ->assertDontSee('Curso Dusk Editado');
 
@@ -115,6 +118,8 @@ class CourseManagementTest extends DuskTestCase
                 ->visit(route('courses.index'))
                 ->waitFor('@delete-course-'.$course->id)
                 ->click('@delete-course-'.$course->id)
+                ->waitFor('@confirm-modal-delete-course-'.$course->id.'-confirm')
+                ->click('@confirm-modal-delete-course-'.$course->id.'-confirm')
                 ->waitForLocation('/courses')
                 ->assertSee('Não é possível excluir um Curso com matrículas ativas.');
         });

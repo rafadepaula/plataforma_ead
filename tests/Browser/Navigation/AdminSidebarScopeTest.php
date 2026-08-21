@@ -35,7 +35,7 @@ class AdminSidebarScopeTest extends DuskTestCase
      * "IMPERSONATE" in the DOM even though the registry declares
      * "Impersonate".
      */
-    private const IMPERSONATE_HEADING = 'IMPERSONATE';
+    private const IMPERSONATE_HEADING = 'Impersonate';
 
     public function test_admin_sidebar_scope_lifecycle(): void
     {
@@ -50,7 +50,7 @@ class AdminSidebarScopeTest extends DuskTestCase
                 ->visit(route('admin.dashboard'))
                 ->waitFor('@admin-dashboard')
                 ->assertSee('Organizações')
-                ->assertDontSee(self::IMPERSONATE_HEADING);
+                ->assertDontSeeIgnoringCase(self::IMPERSONATE_HEADING);
 
             foreach (self::OPERATIONAL_KEYS as $key) {
                 $browser->assertMissing('@sidebar-'.$key.'-link')
@@ -68,7 +68,7 @@ class AdminSidebarScopeTest extends DuskTestCase
                 ->click('@impersonate-'.$org->id)
                 ->waitForLocation('/organizations')
                 ->waitFor('@sidebar-courses-link')
-                ->assertSee(self::IMPERSONATE_HEADING);
+                ->assertSeeIgnoringCase(self::IMPERSONATE_HEADING);
 
             foreach (self::OPERATIONAL_KEYS as $key) {
                 $browser->assertPresent('@sidebar-'.$key.'-link')
@@ -87,7 +87,7 @@ class AdminSidebarScopeTest extends DuskTestCase
                 ->click('@exit-impersonation')
                 ->waitForLocation('/admin/dashboard')
                 ->waitUntilMissing('@sidebar-courses-link')
-                ->assertDontSee(self::IMPERSONATE_HEADING);
+                ->assertDontSeeIgnoringCase(self::IMPERSONATE_HEADING);
 
             foreach (self::OPERATIONAL_KEYS as $key) {
                 $browser->assertMissing('@sidebar-'.$key.'-link')

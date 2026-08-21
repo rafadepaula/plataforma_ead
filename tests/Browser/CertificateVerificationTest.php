@@ -61,8 +61,10 @@ class CertificateVerificationTest extends DuskTestCase
             'revoke_reason' => 'Fraude identificada na prova final do curso.',
         ]);
 
-        $this->browse(function (Browser $browser) use ($validCertificate, $revokedCertificate): void {
-            // 1. Certificado válido, sem qualquer autenticação.
+        $this->browse(function (Browser $browser) use ($validCertificate, $revokedCertificate, $student): void {
+            // 1. Certificado válido, sem qualquer autenticação — o botão
+            //    "Baixar PDF" (gated por @auth na view) não pode vazar para
+            //    visitante anônimo, mesmo a rota exigindo staff-ou-dono.
             $browser->visit('/validar-certificado/'.$validCertificate->validation_hash)
                 ->waitFor('@certificate-valid-banner')
                 ->assertGuest()
@@ -70,7 +72,8 @@ class CertificateVerificationTest extends DuskTestCase
                 ->assertSeeIn('@certificate-student-name', 'Aluno Válido Dusk')
                 ->assertSeeIn('@certificate-course-title', 'Curso Válido Dusk')
                 ->assertSeeIn('@certificate-org-name', 'Instituto Dusk')
-                ->assertSeeIn('@certificate-workload', '40h');
+                ->assertSeeIn('@certificate-workload', '40h')
+                ->assertDontSee('Baixar PDF');
 
             // 2. Certificado revogado: NUNCA 404 — banner + motivo, sem
             //    esconder os dados originais.
@@ -84,6 +87,17 @@ class CertificateVerificationTest extends DuskTestCase
             // 3. Hash inexistente: 404, e não a página de certificado.
             $browser->visit('/validar-certificado/'.str_repeat('0', 64))
                 ->assertSee('404');
+
+            // 4. Mesma página, agora autenticado como o dono do certificado:
+            //    o botão "Baixar PDF" aparece e aponta para a rota
+            //    `certificates.download` (que continua staff-ou-dono no
+            //    controller, inalterada por esta tela).
+            $browser->loginAs($student)
+                ->visit('/validar-certificado/'.$validCertificate->validation_hash)
+                ->waitFor('@certificate-valid-banner')
+                ->assertSee('Baixar PDF')
+                ->assertSourceHas(route('certificates.download', $validCertificate))
+                ->logout();
         });
 
         $this->assertDatabaseHas('certificates', [

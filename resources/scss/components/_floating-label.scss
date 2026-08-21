@@ -1,0 +1,68 @@
+// =============================================================================
+// Componente: Floating label (rótulo flutuante de formulário)
+// -----------------------------------------------------------------------------
+// Ajustes de tema sobre `.form-floating` do Bootstrap para o padrão visual do
+// design system. Complementa, não substitui, o componente nativo.
+// Conteúdo visual completo: diretriz da biblioteca de componentes.
+// Regra: qualquer declaração aqui só pode consumir var(--*), nunca literal de
+// cor/raio/sombra.
+// =============================================================================
+
+// Rótulo flutuante: repousa em --text-secondary; some para --primary quando
+// o controle está em foco (altura/raio/anel de foco já vêm da ponte —
+// $input-height, $input-border-radius, $input-focus-box-shadow — nada disso
+// é redeclarado aqui).
+.form-floating > label {
+    color: var(--text-secondary);
+}
+
+.form-floating > .form-control:focus ~ label,
+.form-floating > .form-control:not(:placeholder-shown) ~ label,
+.form-floating > .form-select ~ label {
+    color: var(--text-secondary);
+    opacity: 1;
+}
+
+.form-floating > .form-control:focus ~ label,
+.form-floating > .form-select:focus ~ label {
+    color: var(--primary);
+}
+
+// `x-ui.input`/`x-ui.select`/`x-ui.textarea` colocam o `.invalid-feedback`
+// dentro do `.form-floating` (irmão do label) para herdar o seletor padrão
+// `.is-invalid ~ .invalid-feedback` do Bootstrap — aqui só garantimos que o
+// ícone e o texto fiquem alinhados na mesma linha.
+.form-floating > .invalid-feedback {
+    color: var(--critical);
+}
+
+// -----------------------------------------------------------------------------
+// Espaçamento entre campos (`ds-field`) dentro de um `<x-ui.field-stack>`
+// -----------------------------------------------------------------------------
+// `<x-ui.input>`/`<x-ui.select>`/`<x-ui.textarea>` trazem `mb-3` no próprio
+// wrapper (classe `ds-field`) para funcionar fora de um field-stack. Dentro
+// de um `<x-ui.field-stack>` (classe `ds-field-stack`, ambos os modos —
+// `.ds-stack` de 1 coluna e `.row.g-3` de 2 colunas), esse `mb-3` some para
+// não somar ao `--gap-stack`/gutter do pai.
+.ds-field-stack .ds-field {
+    margin-bottom: 0;
+}
+
+// -----------------------------------------------------------------------------
+// Checkbox / switch — alvo de toque
+// -----------------------------------------------------------------------------
+// Não existe partial dedicado a `.form-check` nesta fase; hospedado aqui por
+// ser o único stub de tema de campo disponível nesta camada. Caixa de 22px
+// dentro de um alvo de toque de var(--touch-min) (48px) — `.form-switch` fica
+// de fora porque sua trilha usa proporção própria do Bootstrap ($form-switch-width).
+.form-check:not(.form-switch) {
+    display: flex;
+    align-items: center;
+    min-height: var(--touch-min);
+}
+
+.form-check:not(.form-switch) > .form-check-input {
+    width: 22px;
+    height: 22px;
+    margin-top: 0;
+}

@@ -1,0 +1,329 @@
+// =============================================================================
+// Componente: telas públicas (landing, verificação pública de certificado)
+// -----------------------------------------------------------------------------
+// Blocos de layout específicos das telas públicas (diretriz das telas públicas) que não
+// têm equivalente pronto no Bootstrap nem em outro partial de componente.
+// Regra: qualquer declaração aqui só pode consumir var(--*), nunca literal de
+// cor/raio/sombra.
+// =============================================================================
+
+// Painel de destaque do hero da landing — fundo pastel, raio grande, respiro
+// generoso. Em telas estreitas o padding de 80px é reduzido para caber sem
+// espremer o conteúdo.
+.hero-panel {
+    background: var(--blue-50);
+    border-radius: var(--radius-2xl);
+    padding: var(--space-11);
+}
+
+@media (max-width: 575.98px) {
+    .hero-panel {
+        padding: var(--space-7);
+    }
+}
+
+// Coluna de leitura estreita usada nas telas públicas de texto corrido
+// (verificação de certificado).
+.max-w-reading {
+    max-width: var(--reading-max);
+    margin-inline: auto;
+}
+
+// diretriz de mobile e responsivo: abaixo de `md` a coluna de leitura de 760px
+// (`--reading-max`) não cabe sem sobra lateral inútil — passa a 100% da
+// largura com padding lateral de 20px (`--space-5`) em vez de margem
+// automática.
+@media (max-width: 767.98px) {
+    .max-w-reading {
+        max-width: 100%;
+        padding-inline: var(--space-5);
+    }
+}
+
+// Selo circular de ícone do veredito de certificado — distinto do ícone
+// pequeno de `x-ui.alert`.
+.icon-circle {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    border-radius: var(--radius-pill);
+}
+
+.icon-circle-success {
+    background: var(--success-container);
+    color: var(--on-success-container);
+}
+
+.icon-circle-critical {
+    background: var(--critical-container);
+    color: var(--on-critical-container);
+}
+
+// Círculo pastel neutro (tom `primary`), usado nos ícones numerados da seção
+// "Como funciona" da landing — mesma forma de `.icon-circle`, cor diferente.
+.icon-circle-primary {
+    background: var(--primary-container);
+    color: var(--on-primary-container);
+}
+
+// Landing pública reproduzida do documento de design. As faixas compartilham
+// o contêiner de conteúdo, mas continuam full-bleed para alternar superfícies.
+.landing-page {
+    background: var(--surface);
+}
+
+.landing-header {
+    height: var(--appbar-height);
+    background: var(--surface);
+    border-color: var(--divider);
+}
+
+.landing-header-inner {
+    width: 100%;
+    max-width: 1440px;
+    height: 100%;
+    padding-inline: var(--space-8);
+    margin-inline: auto;
+}
+
+.landing-brand-name {
+    font-size: var(--font-size-h4);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: var(--tracking-tight);
+}
+
+.landing-band {
+    padding: var(--space-10) max(var(--space-8), calc((100% - var(--content-max)) / 2));
+}
+
+.landing-container,
+.landing-reading-width,
+.landing-footer-inner {
+    width: 100%;
+    margin-inline: auto;
+}
+
+.landing-container,
+.landing-footer-inner {
+    max-width: var(--content-max);
+}
+
+.landing-footer-inner {
+    justify-content: space-between;
+}
+
+.landing-reading-width,
+.landing-lead {
+    max-width: var(--reading-max);
+}
+
+.landing-hero-band {
+    padding-bottom: 0;
+}
+
+.landing-hero {
+    padding: var(--space-10) var(--space-9);
+    background: var(--blue-50);
+    border-radius: var(--radius-2xl);
+}
+
+.landing-headline {
+    max-width: 900px;
+    margin: var(--space-5) auto 0;
+    color: var(--grey-900);
+    font-size: var(--font-size-display);
+    font-weight: var(--font-weight-extrabold);
+    line-height: var(--line-height-tight);
+    letter-spacing: var(--tracking-tight);
+    text-wrap: pretty;
+}
+
+.landing-lead {
+    margin: var(--space-5) auto 0;
+    color: var(--text-secondary);
+    font-size: var(--font-size-lead);
+    line-height: var(--line-height-base);
+    text-wrap: pretty;
+}
+
+.landing-grid {
+    display: grid;
+    gap: var(--space-6);
+    align-items: stretch;
+}
+
+.landing-grid-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.landing-grid-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.landing-card {
+    background: var(--surface);
+    box-shadow: var(--elev-1);
+}
+
+.landing-card > .card-body {
+    gap: var(--space-3);
+    padding: var(--pad-card);
+}
+
+.landing-card .card-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.landing-card-title,
+.landing-step-title,
+.landing-card-copy,
+.landing-contact-band h2,
+.landing-section-heading h2 {
+    margin: 0;
+}
+
+.landing-card-title {
+    font-size: var(--font-size-h4);
+    font-weight: var(--font-weight-bold);
+    letter-spacing: var(--tracking-tight);
+}
+
+.landing-step-title {
+    font-size: var(--font-size-h5);
+    font-weight: var(--font-weight-bold);
+}
+
+.landing-card-copy,
+.landing-body-small {
+    font-size: var(--font-size-body-sm);
+    line-height: var(--line-height-base);
+}
+
+.landing-card-copy {
+    color: var(--text-secondary);
+}
+
+.landing-process-band {
+    padding-top: 0;
+}
+
+.landing-section-heading {
+    margin-bottom: var(--space-8);
+}
+
+.landing-section-heading h2 {
+    margin-top: var(--space-2);
+    font-size: var(--font-size-h2);
+    font-weight: var(--font-weight-bold);
+    letter-spacing: var(--tracking-tight);
+}
+
+.landing-step {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    color: var(--on-primary-container);
+    font-weight: var(--font-weight-extrabold);
+    background: var(--primary-container);
+    border-radius: var(--radius-pill);
+}
+
+.landing-showcase-band {
+    background: var(--surface-alt);
+}
+
+.landing-showcase-card .card-content {
+    flex: 1 1 auto;
+}
+
+.landing-course-status {
+    position: absolute;
+    top: var(--space-4);
+    left: var(--space-4);
+}
+
+.landing-certificate-icon {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    color: var(--on-secondary-container);
+    background: var(--secondary-container);
+    border-radius: var(--radius-md);
+}
+
+.landing-contact-band h2 {
+    font-size: var(--font-size-h3);
+    font-weight: var(--font-weight-bold);
+    letter-spacing: var(--tracking-tight);
+}
+
+.landing-page > footer {
+    padding: var(--space-7) var(--space-8);
+    background: var(--surface);
+    border-color: var(--divider);
+}
+
+@media (max-width: 1239.98px) {
+    .landing-band {
+        padding-inline: var(--space-8);
+    }
+
+    .landing-grid-4 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 904.98px) {
+    .landing-header {
+        height: 64px;
+    }
+
+    .landing-header-inner,
+    .landing-page > footer {
+        padding-inline: var(--space-6);
+    }
+
+    .landing-brand-name {
+        display: none;
+    }
+
+    .landing-band {
+        padding: var(--space-8) var(--space-6);
+    }
+
+    .landing-hero-band {
+        padding-bottom: 0;
+    }
+
+    .landing-hero {
+        padding: var(--space-8) var(--space-6);
+    }
+
+    .landing-headline {
+        font-size: var(--font-size-h1);
+    }
+
+    .landing-grid-3,
+    .landing-grid-4 {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .landing-process-band {
+        padding-top: 0;
+    }
+
+    .landing-footer-inner {
+        justify-content: center;
+        text-align: center;
+    }
+}

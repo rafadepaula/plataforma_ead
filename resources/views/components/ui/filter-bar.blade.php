@@ -16,6 +16,10 @@
 
     Os atributos extras (inclusive `dusk=`) são mesclados no `<form>`, que é a
     raiz funcional do componente — o card é apenas o invólucro visual.
+
+    Visual: `.card` do Bootstrap já é outlined por padrão (borda `--border-color`,
+    sem sombra) com raio 20px vindo da ponte (`$card-border-radius`) — não
+    precisa de classe extra nem de um segundo contorno dentro do card-body.
 --}}
 @props([
     'action',
@@ -35,12 +39,12 @@
 @endphp
 
 <div class="card mb-3">
-    <div class="card-body p-0">
+    <div class="card-body">
         <form method="{{ $htmlMethod }}"
               action="{{ $action }}"
               role="search"
               aria-label="{{ $label }}"
-              {{ $attributes->merge(['class' => 'row g-2 align-items-end p-3 bg-body-tertiary border']) }}>
+              {{ $attributes->merge(['class' => 'row g-2 align-items-end']) }}>
             @if ($htmlMethod === 'POST')
                 @csrf
             @endif
@@ -54,9 +58,7 @@
             @isset($actions)
                 {{ $actions }}
             @else
-                {{-- `mb-3` casa com o wrapper fixo de `<x-ui.input>`/`<x-ui.select>`:
-                     sem ele, `align-items-end` alinha os botões ~16px abaixo dos campos. --}}
-                <div class="col-12 col-md-auto d-flex gap-2 mb-3">
+                <div class="col-12 col-md-auto d-flex gap-2">
                     <x-ui.button type="submit" dusk="{{ $submitDusk }}">{{ $submitLabel }}</x-ui.button>
 
                     @if ($resetUrl)

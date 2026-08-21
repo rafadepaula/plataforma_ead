@@ -94,14 +94,20 @@ carry component:
 | --- | --- | --- |
 | Staff (authenticated) | `components/layout/topbar.blade.php`, once, keyed by `Route::currentRouteName()` | every `layouts.app`-based Admin/Gestor/Aluno screen |
 | Guest (unauthenticated, session-aware layout) | `layouts/guest.blade.php`, once, keyed by `Route::currentRouteName()` | `auth/login`, `auth/forgot-password`, `auth/reset-password` |
-| Standalone public documents | inline per view, explicit `key` | `landing/show.blade.php` (`key="landing"`), `convite/show.blade.php` (`key="invitation.show"`), `public/certificates/show.blade.php` (`key="certificates.verify"`) |
+| Standalone public documents | inline per view, explicit `key` | `landing/show.blade.php` (`key="landing"`), `public/certificates/show.blade.php` (`key="certificates.verify"`) |
+
+`convite/show.blade.php` (`key="invitation.show"`) is **not** in the
+standalone bucket — it `@extends('layouts.guest')`, so its help button is
+part of the Guest row above.
 
 Staff and guest buckets wired **once** at layout level and key off
 current route name automatically — new screen added to either layout get
-help coverage free. Standalone-document bucket have no shared layout to
-hook into (each is bespoke `<!DOCTYPE html>` document, see
-`certificates-architecture` equivalent note), so every new fully-public
-screen must remember to add `<x-help-button key="...">` explicitly. No
+help coverage free. Standalone-document bucket has no route-keyed shared
+layout to hook into — since the `front_redesign` Fase 7 pass both share
+`<x-layout.public>` (see `bootstrap-conventions` §2) for `<!doctype html>`
+boilerplate, but that component does not itself key or place any
+`<x-help-button>` — so every new fully-public screen must still remember
+to add `<x-help-button key="...">` explicitly inside its own slot. No
 automatic enforcement for this bucket beyond code review and feature own
 test suite.
 

@@ -8,7 +8,15 @@
     + `<x-ui.card>` já usada nas telas de edição do módulo (ver
     `users/edit.blade.php`), sem markup Bootstrap cru nem `style=`.
 
-    Expected variable: `$user` (com `organization` e `roles` pré-carregados).
+    Layout de duas colunas: a coluna esquerda mantém a `<dl>` somente
+    leitura original (os 11 seletores `dusk` congelados no snapshot,
+    inalterados); a coluna direita soma cards de contexto — matrículas
+    (`User::courses()`) e certificados (`User::certificates()`) — que não
+    carregam nenhum `dusk` novo (puramente informativo, fora do contrato
+    de teste).
+
+    Expected variable: `$user` (com `organization`, `roles`, `courses` e
+    `certificates.course` pré-carregados — ver `UserAdminController::show()`).
 --}}
 @extends('layouts.app')
 
@@ -16,15 +24,21 @@
     <x-slot:title>{{ $user->name }} — Usuários (Administração Global) — Plataforma EAD</x-slot:title>
 
     <div dusk="admin-user-show">
-        <x-layout.page-header kicker="Administração" :title="$user->name">
+        <x-layout.page-header kicker="Administração"
+                              :title="$user->name"
+                              :breadcrumb="[
+                                  ['label' => 'Administração'],
+                                  ['label' => 'Usuários', 'url' => route('admin.users.index')],
+                                  ['label' => $user->name],
+                              ]">
             <x-slot:actions>
                 <x-ui.button variant="secondary" href="{{ route('admin.users.index') }}" dusk="back-to-admin-users">Voltar</x-ui.button>
                 <x-ui.button href="{{ route('admin.users.edit', $user) }}" dusk="edit-admin-user">Editar</x-ui.button>
             </x-slot:actions>
         </x-layout.page-header>
 
-        <div class="row">
-            <div class="col-12 col-lg-8">
+        <div class="row g-4">
+            <div class="col-12 col-lg-6">
                 <x-ui.card>
                     <dl class="row mb-0">
                         <dt class="col-sm-4">Nome</dt>
@@ -61,6 +75,51 @@
                         <dt class="col-sm-4">Atualizado em</dt>
                         <dd class="col-sm-8" dusk="admin-user-show-updated-at">{{ $user->updated_at?->format('d/m/Y H:i:s') }}</dd>
                     </dl>
+                </x-ui.card>
+            </div>
+
+            <div class="col-12 col-lg-6 d-flex flex-column gap-4">
+                <x-ui.card title="Matrículas">
+                    @forelse ($user->courses as $course)
+                        <div class="d-flex align-items-center justify-content-between gap-3 py-2 border-bottom border-secondary">
+                            <div class="min-w-0">
+                                <div class="fw-semibold text-truncate">{{ $course->title }}</div>
+                                <div class="small text-body-secondary">
+                                    Matriculado em {{ $course->pivot->enrolled_at ? \Illuminate\Support\Carbon::parse($course->pivot->enrolled_at)->format('d/m/Y') : '—' }}
+                                </div>
+                            </div>
+
+                            <x-ui.badge :variant="$course->pivot->status === 'active' ? 'accent' : 'neutral'">
+                                {{ match ($course->pivot->status) {
+                                    'active' => 'Ativo',
+                                    'completed' => 'Concluído',
+                                    'cancelled' => 'Cancelado',
+                                    default => $course->pivot->status,
+                                } }}
+                            </x-ui.badge>
+                        </div>
+                    @empty
+                        <p class="small text-body-secondary mb-0">Nenhuma matrícula encontrada.</p>
+                    @endforelse
+                </x-ui.card>
+
+                <x-ui.card title="Certificados">
+                    @forelse ($user->certificates as $certificate)
+                        <div class="d-flex align-items-center justify-content-between gap-3 py-2 border-bottom border-secondary">
+                            <div class="min-w-0">
+                                <div class="fw-semibold text-truncate">{{ $certificate->course->title ?? '—' }}</div>
+                                <div class="small text-body-secondary">
+                                    Emitido em {{ optional($certificate->issued_at)->format('d/m/Y') ?? '—' }}
+                                </div>
+                            </div>
+
+                            <x-ui.badge :variant="$certificate->isRevoked() ? 'accent-2' : 'accent'">
+                                {{ $certificate->isRevoked() ? 'Revogado' : 'Emitido' }}
+                            </x-ui.badge>
+                        </div>
+                    @empty
+                        <p class="small text-body-secondary mb-0">Nenhum certificado emitido.</p>
+                    @endforelse
                 </x-ui.card>
             </div>
         </div>

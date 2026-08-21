@@ -18,18 +18,33 @@
 @extends('layouts.app')
 
 @section('content')
-    <x-layout.page-header kicker="Fórum" :title="$course->title">
+    <x-layout.page-header
+        :breadcrumb="[['label' => 'Meus Cursos', 'url' => route('student.courses.index')], ['label' => $course->title, 'url' => route('classroom.show', $course)], ['label' => 'Fórum']]"
+        kicker="Fórum"
+        :title="$course->title"
+        subtitle="Tire dúvidas e converse com a turma sobre este curso."
+    >
         @if($canCreateTopic)
             <x-slot:actions>
-                <x-ui.button data-bs-toggle="modal" data-bs-target="#new-topic-modal" dusk="new-topic-button">Novo Tópico</x-ui.button>
+                <x-ui.button class="d-none d-lg-inline-flex" data-bs-toggle="modal" data-bs-target="#new-topic-modal" dusk="new-topic-button">Novo Tópico</x-ui.button>
             </x-slot:actions>
         @endif
     </x-layout.page-header>
 
+    @if($canCreateTopic)
+        <x-ui.fab label="Novo tópico" icon="plus" class="d-lg-none" data-bs-toggle="modal" data-bs-target="#new-topic-modal" />
+    @endif
+
     @forelse($topics as $topic)
         @include('forum.partials._topic', ['course' => $course, 'topic' => $topic, 'canPin' => $canPin])
     @empty
-        <x-ui.empty-state message="Nenhum tópico criado neste fórum ainda." dusk="no-topics" />
+        <x-ui.empty-state icon="message-square" title="Nenhum tópico por aqui" description="Abra o primeiro tópico e comece a conversa com a turma." dusk="no-topics">
+            @if($canCreateTopic)
+                <x-slot:action>
+                    <x-ui.button variant="tonal" data-bs-toggle="modal" data-bs-target="#new-topic-modal">Novo Tópico</x-ui.button>
+                </x-slot:action>
+            @endif
+        </x-ui.empty-state>
     @endforelse
 
     <x-ui.pagination :paginator="$topics" label="Paginação dos tópicos" />

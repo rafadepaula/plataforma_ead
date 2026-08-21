@@ -1,0 +1,29 @@
+// =============================================================================
+// Componente: Page header (cabeçalho de página)
+// -----------------------------------------------------------------------------
+// Bloco de título + descrição + ações de topo de tela, reutilizado em todas as
+// telas internas. Bootstrap não entrega esse padrão pronto.
+// Conteúdo visual completo: diretriz da biblioteca de componentes.
+// Regra: qualquer declaração aqui só pode consumir var(--*), nunca literal de
+// cor/raio/sombra.
+// =============================================================================
+
+// Rótulo curto acima do `<h1>` (ex.: "Painel", "Gestão"). Usado tanto por
+// `<x-layout.page-header>` quanto diretamente em telas (`settings/edit`,
+// `<x-ui.card kicker="...">`) — mesma aparência de `.ds-overline`
+// (`_ds/.../primitives.css`), preservada aqui como classe própria porque é o
+// nome consumido pelo markup existente em ~20 telas.
+.kicker {
+    font-size: var(--font-size-overline);
+    font-weight: var(--font-weight-bold);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-overline);
+    color: var(--text-secondary);
+}
+
+// Breadcrumb, título e subtítulo de `<x-layout.page-header>` são
+// renderizados com utilitários Bootstrap + classes `ds-*` globais
+// (`ds-caption`, `ds-muted`, `h3`, `ds-lead` —
+// `components/layout/page-header.blade.php`), não com classes próprias deste
+// partial. Não reintroduzir `.page-header-breadcrumb`/`.page-header-title`/
+// `.page-header-lead` aqui sem também trocar o markup do componente.

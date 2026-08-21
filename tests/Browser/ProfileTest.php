@@ -79,7 +79,7 @@ class ProfileTest extends DuskTestCase
                 ->type('email', 'ocupado@example.com')
                 ->waitForReload(fn (Browser $b) => $b->click('@profile-submit'))
                 ->assertPathIs('/profile')
-                ->assertSee('already been taken');
+                ->assertSee('já está em uso');
 
             // 2. CPF com checksum inválido ( fluxo de exceção
             //    próprio, não confundir com o duplicado do §6.1).
@@ -97,7 +97,7 @@ class ProfileTest extends DuskTestCase
                 ->type('password_confirmation', 'OutraSenhaForte123!')
                 ->waitForReload(fn (Browser $b) => $b->click('@password-submit'))
                 ->assertPathIs('/profile')
-                ->assertSee('password is incorrect');
+                ->assertSee('A senha atual está incorreta.');
         });
 
         $user->refresh();

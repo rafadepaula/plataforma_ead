@@ -359,16 +359,37 @@ $browser->assertAuthenticated()
 
 Selenium's `getText()` (which backs `assertSee*`/`waitForText*`) returns the
 text as **rendered**, after CSS is applied — not the literal string in the
-HTML/DOM. A component styled with `text-transform: uppercase` (e.g. this
-project's `<x-ui.badge>`) will make `assertSeeIn('@status', 'Revogado')`
-fail/timeout even though the DOM literally contains `Revogado`, because the
-browser renders (and `getText()` returns) `"REVOGADO"`. Project example:
-`tests/Browser/CertificateRevocationTest.php` asserts against `'REVOGADO'`
-for exactly this reason. When a Dusk assertion on text content
-mysteriously times out but the page looks right in a screenshot, check the
-element's computed `text-transform`/`font-variant` CSS before assuming a
-timing/flakiness issue — assert against the transformed text, or assert on
-an underlying `data-*` attribute/value instead if the literal string matters.
+HTML/DOM. A component styled with `text-transform: uppercase` will make
+`assertSeeIn('@status', 'Revogado')` fail/timeout even though the DOM
+literally contains `Revogado`, because the browser renders (and `getText()`
+returns) `"REVOGADO"`. When a Dusk assertion on text content mysteriously
+times out but the page looks right in a screenshot, check the element's
+computed `text-transform`/`font-variant` CSS before assuming a
+timing/flakiness issue.
+
+**Project note (updated — front_redesign Fase 2):** `<x-ui.badge>` **no
+longer** applies `text-transform: uppercase` — sentence case is the only
+accepted casing project-wide, and the sole deliberate uppercase exception
+left in the system is the `.ds-overline` utility (kicker labels in
+`_page-header.scss`/`_drawer.scss`). Do **not** write a new assertion that
+hardcodes an all-caps literal (e.g. the old `assertSeeIn('@status',
+'REVOGADO')` pattern) expecting a badge to render it — that stopped being
+true. Instead use the case-insensitive macros registered in
+`tests/DuskTestCase.php` — `assertSeeIgnoringCase`,
+`assertDontSeeIgnoringCase`, `assertSeeInIgnoringCase`,
+`assertTextEqualsIgnoringCase`, `waitForTextInIgnoringCase` — for any
+assertion on text that a component might transform, so the test doesn't
+depend on which casing convention is in effect for that component:
+
+```php
+$browser->waitForTextInIgnoringCase('@certificate-status-'.$certificate->id, 'Revogado')
+    ->assertTextEqualsIgnoringCase('@certificate-status-'.$certificate->id, 'Revogado');
+```
+
+(current pattern, `tests/Browser/CertificateRevocationTest.php`). If the
+literal casing genuinely matters (e.g. asserting `.ds-overline` is actually
+uppercase), assert on an underlying `data-*` attribute/value instead of the
+rendered text, or assert the CSS `text-transform` directly.
 
 ### Waiting Strategies
 
@@ -569,6 +590,59 @@ php artisan dusk:chrome-driver --detect
   Dusk test against the same click silently no-ops (e.g. a modal never
   opens). Rebuild assets before re-running a failing Dusk test that
   exercises new/changed JS.
+
+**Two `artisan dusk` runs at once corrupt each other (project-specific, hit
+in `spec/front_redesign` Fase 3 parallel bucket agents):**
+
+- All `tests/Browser/*` share one MySQL `testing` schema via the single
+  `DatabaseTruncation` trait on `DuskTestCase` (see §8) — there is no
+  per-run/per-worker schema isolation. Two `vendor/bin/sail artisan dusk`
+  invocations running at the same time (e.g. sibling agents each verifying
+  their own bucket of a multi-agent task against the same container)
+  truncate/seed against each other mid-run, surfacing as flaky, contextless
+  errors: alternating "table already exists" / "table doesn't exist" /
+  "unknown column" on tables neither test touches. This is not a defect in
+  either bucket's markup or migrations. Never run the Dusk suite from more
+  than one agent/process against the same container concurrently; serialize
+  Dusk runs (last bucket runs it, or the orchestrator runs it once after
+  all buckets land) instead of each bucket verifying its own slice live.
+  If the schema is left corrupted from an interrupted concurrent run,
+  `DROP DATABASE testing; CREATE DATABASE testing;` before the next attempt.
+
+## Never Leave a Vite Dev Server Running While Dusk Runs (Project-Specific)
+
+`npm run dev`/`composer run dev` write `public/hot`. While that file
+exists Laravel serves every asset from `http://localhost:5173`, and the
+Selenium container resolves `localhost` as **itself** — so every CSS and
+JS request dies with `ERR_CONNECTION_REFUSED` and the whole suite runs
+against unstyled, script-less pages. There is no obvious error: tests
+just fail on missing elements or dead `data-bs-*` behaviour.
+
+- Before any Dusk run: `ls public/hot` must fail, and no `vite` process
+  may be alive.
+- Build assets with `vendor/bin/sail npm run build` only. Never suggest
+  `npm run dev` as a fix for a stale bundle when Dusk is the verifier.
+
+## Chrome's Password Manager Bubble Eats Keystrokes (Project-Specific)
+
+Dozens of password-form submissions in one Chrome profile make the "Salvar
+senha?" bubble overlay the page and swallow input in *later* tests, which
+then fail far from the real cause. `tests/DuskTestCase.php` already
+disables it through Chrome `prefs`
+(`credentials_enable_service`, `profile.password_manager_enabled`,
+`profile.password_manager_leak_detection` all `false`). Keep those
+`prefs` when editing driver options — dropping them reintroduces
+flakiness that looks like a selector problem.
+
+## Responsive Coverage Lives in `tests/Browser/Theme/`
+
+Mobile and accessibility guardrails are browser tests, not Feature tests:
+`ResponsiveNoHorizontalScrollTest` (compares `document.body.scrollWidth`
+with `window.innerWidth` at 320/375/768/1024/1440),
+`StudentMobileScreensTest` (`resize(375, 812)` over the four Aluno
+screens), `KeyboardNavigationTest`, `AuditDiffModalHighlightTest`.
+Use `$browser->resize(w, h)` before `visit()`, and assert layout facts
+through `script()` rather than screenshots.
 
 ## Notes
 

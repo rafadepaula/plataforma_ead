@@ -107,8 +107,9 @@ If `window.LessonPlayer` is `undefined` in browser (video polling/manual
 completion silently do nothing, Dusk tests time out waiting on player
 state), `public/build` stale relative to
 `resources/js/modules/LessonPlayer.js`/`resources/js/app.js` — run
-`vendor/bin/sail npm run build` (or ask user to run `npm run dev`/
-`composer run dev`) before re-running Dusk.
+`vendor/bin/sail npm run build` — never `npm run dev`/`composer run dev`,
+which leave `public/hot` behind and break every Dusk run (see
+`laravel-dusk`) — before re-running Dusk.
 
 ## Auto-Update Protocol (SPEC-03)
 

@@ -106,16 +106,29 @@ Request alone.
   per-question-modal pattern. Revoked rows show no revoke trigger.
 - `public/certificates/show.blade.php` — **not** `layouts.app` (no
   session) and **not** `layouts.guest` either (that layout's left panel is
-  themed around login copy, wrong fit for audit page). Standalone
-  `<!DOCTYPE html>` document that still pulls in
-  `@vite(['resources/css/app.css', 'resources/js/app.js'])` for shared
-  design tokens/CSS variables. Always renders both "Válido"/"Revogado"
-  banner **and** full student/course/org/workload/issued_at block. Revoked
-  state never hides original data (SPEC-09 §2).
-- `certificates/pdf.blade.php` — rendered by dompdf, which supports only
-  restricted CSS subset: no CSS custom properties (`var(--color-*)`), no
-  modern flexbox/grid. Use plain hex colors and `<table>`-based layout,
-  never `@vite`/app's compiled stylesheet.
+  themed around login copy, wrong fit for audit page). Uses
+  `<x-layout.public :title="...">` (shared standalone shell added in the
+  `front_redesign` Fase 7 public-pages pass, also used by `landing/show.blade.php`
+  — see `bootstrap-conventions` §2), wrapped further in `.max-w-reading`
+  (760px column). The verdict is one `<x-ui.card>` holding an
+  `.icon-circle-success`/`.icon-circle-critical` (from
+  `resources/scss/components/_public-pages.scss`) instead of two separate
+  `<x-ui.alert>` blocks — the three `dusk="certificate-valid-banner"` /
+  `certificate-revoked-banner"` / `"certificate-revoke-reason"` attributes
+  and their visible copy stayed put on the new markup. Always renders both
+  "Válido"/"Revogado" state **and** full student/course/org/workload/issued_at
+  block. Revoked state never hides original data (SPEC-09 §2). "Baixar PDF"
+  only renders `@auth` — `certificates.download` stays `auth`-middleware +
+  staff-or-owner gated server-side regardless (view-level `@auth` is UX only,
+  never the authorization boundary).
+- `certificates/pdf.blade.php` — `@extends('layouts.print')`, with its own
+  literal-value `<style>` block in `@section('styles')`. Rendered by dompdf,
+  which supports only a restricted CSS subset: no CSS custom properties
+  (`var(--*)`), no modern flexbox/grid. Use plain hex colors and
+  `<table>`-based layout, never `@vite`/app's compiled stylesheet. This is
+  the project's single documented exception to the zero-`style=` rule (7
+  inline `style=` attributes) — the inline-style regression test excludes it
+  on purpose, so never "fix" it.
 
 ## Revoke Modal Wiring: Inline `@push('scripts')`, Not a New Vite Entry
 
@@ -138,11 +151,11 @@ document.querySelectorAll('[data-revoke-form]').forEach((form) => {
 ```
 
 UX-only — `RevokeCertificateRequest`'s `min:10` server-side rule is actual
-authority. Modal open/close itself reuses existing
-`data-modal-target="revoke-modal-{{ $certificate->id }}"` /
-`data-modal-dismiss="true"` attributes that `window.ModalManager`
-(registered once in `app.js`) already binds globally. Do not write second
-modal-open/close implementation.
+authority. Modal open/close itself is fully declarative since the
+Bootstrap 5.3 migration: `data-bs-toggle="modal"` +
+`data-bs-target="#revoke-modal-{{ $certificate->id }}"` on the trigger,
+`data-bs-dismiss="modal"` to close. `ModalManager` no longer exists — do
+not write second modal-open/close implementation.
 
 ## The QR Code Is a Pending Dependency Decision
 

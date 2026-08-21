@@ -4,7 +4,11 @@
     `barryvdh/laravel-dompdf`. dompdf only understands a restricted CSS
     subset (no CSS custom properties, no modern flexbox/grid), so this
     view is intentionally table/inline-style based rather than reusing
-    the app's `resources/css/app.css` design tokens.
+    the app's `resources/css/app.css` design tokens. It extends
+    `layouts.print`, a dompdf-safe layout that does NOT pull in
+    Bootstrap or the design tokens — see that file's docblock and doc
+    10.6 for why this screen is a deliberate, documented exception to
+    the rest of the front-end migration.
 
     Expected variables (documented in `certificates-conventions`):
       - `$certificate`  the bound Certificate, with `user`, `course`, and
@@ -17,11 +21,11 @@
         this degrades to a printed link + hash when null rather than
         omitting the verification path entirely.
 --}}
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="utf-8">
-    <title>Certificado — {{ $certificate->course->title }}</title>
+@extends('layouts.print')
+
+@section('title')Certificado — {{ $certificate->course->title }}@endsection
+
+@section('styles')
     <style>
         @page { margin: 0; }
         body {
@@ -51,8 +55,9 @@
         .hash { font-size: 8px; color: #777777; word-break: break-all; }
         .verify-url { font-size: 10px; color: #333333; }
     </style>
-</head>
-<body>
+@endsection
+
+@section('content')
     <table class="header">
         <tr>
             <td style="width: 60%;">
@@ -112,5 +117,4 @@
             </td>
         </tr>
     </table>
-</body>
-</html>
+@endsection

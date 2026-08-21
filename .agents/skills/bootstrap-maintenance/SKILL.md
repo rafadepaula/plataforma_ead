@@ -18,6 +18,9 @@ metadata:
   specs:
     - spec/front_migration/06-skills-and-agents.md
     - spec/specs/00-architecture-database-and-guardrails.md
+    - spec/front_redesign/01-direcao-visual-e-tokens.md
+    - spec/front_redesign/02-camada-de-tema-e-build.md
+    - spec/front_redesign/14-contrato-dusk-e-testes.md
 ---
 
 # Bootstrap Maintenance
@@ -53,9 +56,13 @@ vendor/bin/sail npm run build && vendor/bin/sail artisan dusk --filter=NomeDoTes
 ```
 
 Sempre encadeado com `&&`, sempre nessa ordem, em **todo** ciclo de
-verificação. `npm run dev` (HMR) rodando em outro terminal **não**
-substitui build: Dusk não usa dev server a menos que `APP_URL` aponte
-para ele e hot file exista. Na dúvida, rode build.
+verificação. `npm run dev` (HMR) rodando em outro terminal não só **não**
+substitui o build como **quebra a suíte inteira**: o dev server escreve
+`public/hot`, e basta esse arquivo existir para o `@vite` servir todo
+asset de `http://localhost:5173` — que, dentro do container do Selenium,
+resolve para o próprio container. Resultado: todo CSS e JS morre com
+`ERR_CONNECTION_REFUSED` e os testes falham por elemento ausente, sem
+erro óbvio. Antes de rodar Dusk, `ls public/hot` tem que falhar.
 
 Diagnóstico rápido de manifest podre:
 
@@ -78,7 +85,7 @@ Loop obrigatório por tela, nessa ordem:
 grep -n 'style="' resources/views/<caminho>/<tela>.blade.php
 
 # 2. Zero classe fantasma / Tailwind sobrou
-grep -nE 'btn-ghost|btn-block|btn-icon|\bdialog\b|tag-(accent|outline|neutral)|elev-(sm|md|lg)|\bfield\b|rounded|flex |grid |text-sm|bg-white|px-[0-9]|space-y-' resources/views/<caminho>/<tela>.blade.php
+grep -nE 'btn-block|btn-icon|\bdialog\b|tag-(accent|outline|neutral)|elev-(sm|md|lg)|\bfield\b|rounded|flex |grid |text-sm|bg-white|px-[0-9]|space-y-' resources/views/<caminho>/<tela>.blade.php
 
 # 3. Seletores dusk preservados byte-a-byte
 git show HEAD:resources/views/<caminho>/<tela>.blade.php | grep -o 'dusk="[^"]*"' | sort > /tmp/dusk-before.txt
@@ -157,10 +164,15 @@ Fim de fase (não a cada tela): `vendor/bin/sail artisan dusk` completo.
   2. Resíduo do `ModalManager` antigo ainda registrado em `app.js`,
      adiciona backdrop próprio. Remova módulo, não "desligue".
   3. Modal renderizado **dentro** de container com `transform`, `filter` ou
-     `overflow: hidden` (`.grayscale` faz `filter`!) — cria containing
-     block, quebra `position: fixed`. **Modais devem ser irmãos do
-     conteúdo, idealmente no fim do `<body>` do layout**, nunca dentro de
-     card com filtro.
+     `overflow: hidden` — cria containing block, quebra `position: fixed`.
+     (A antiga `.grayscale` fazia `filter` e era o exemplo clássico; foi
+     removida do projeto na Fase 2 do `front_redesign`, substituída por
+     `.ds-pastel-wash` — que usa `background: linear-gradient(...)`, não
+     `filter`, então não sofre mais deste bug. O guardrail continua valendo
+     para qualquer outra classe de camada 3 que aplique `transform`/`filter`
+     a um ancestral de modal.) **Modais devem ser irmãos do conteúdo,
+     idealmente no fim do `<body>` do layout**, nunca dentro de card com
+     filtro.
   4. Modal aberto de dentro de outro modal sem fechar primeiro. Bootstrap
      suporta empilhar, mas Dusk acerta backdrop errado: prefira fechar
      primeiro em `hidden.bs.modal` e abrir segundo.
@@ -235,37 +247,69 @@ Fim de fase (não a cada tela): `vendor/bin/sail artisan dusk` completo.
 - **Verificação:** `vendor/bin/sail artisan test --filter=CertificateEligibilityTest`
   e Dusk `CertificateVerificationTest`; inspeção visual, gerar PDF e abrir.
 
-### 3.7 Radius voltando "sozinho"
+### 3.7 [SUBSTITUÍDO — Fase 0 `front_redesign`] Radius indo para 0 "sozinho"
 
-- **Sintoma:** `LayoutRenderingTest` falha com `Expected border-radius to enforce 0px`.
-- **Causas:** `$enable-rounded` não está `false`; alguém usou `rounded`,
-  `rounded-pill` ou `rounded-circle`; componente novo do Bootstrap
-  (`.form-control`, `.dropdown-menu`, `.toast`, `.progress`) entrou depois
-  do build de tokens e trouxe radius default.
-- **Solução:** `$enable-rounded: false` + as cinco variáveis
-  `$border-radius*: 0` em `_variables.scss`. Nunca corrigir com CSS de
-  override por componente.
+- Esta seção descrevia o mandato Modernist antigo (canto reto, `$enable-rounded: false`).
+  **Invertido**: o sistema atual (`spec/front_redesign/01-direcao-visual-e-tokens.md`)
+  quer canto **suave** (`$border-radius: 14px`, botões pílula `999px`), vindo
+  de `_bridge.scss`.
+- **Sintoma agora:** elemento renderiza com canto reto (`0px`) numa tela já
+  migrada para o redesign.
+- **Causas:** `_bridge.scss` não importado antes de `bootstrap/scss/bootstrap`
+  em `app.scss`; componente novo em `resources/scss/components/*.scss`
+  força `border-radius: 0` por hábito do sistema antigo; utility `rounded-0`
+  usada por engano na Blade.
+- **Solução:** conferir ordem dos 4 imports de `app.scss` (tokens → `bridge`
+  → `bootstrap` → `components/index`, ver `bootstrap-architecture`); nunca
+  hardcodar radius em componente — deixar a variável Sass da ponte resolver.
+- Em tela **ainda não migrada** (Fases 1–8 pendentes), o canto reto antigo é
+  esperado até a migração daquela tela — não é regressão.
 
-### 3.8 Fonte errada (Instrument Sans em vez de Archivo)
+### 3.8 Fonte errada (não é Nunito Sans)
 
-- **Sintoma:** texto renderiza em sans genérica/diferente.
-- **Causas:** `$font-family-base` não sobrescrito; `@font-face` do Archivo
-  ficou em `app.css` (removido) e não migrou para
-  `resources/scss/_fonts.scss`; plugin `bunny('Instrument Sans')` do
-  `vite.config.js` ainda injeta fonte errada no layout.
-- **Solução:** `_fonts.scss` com os três `@font-face` (400/600/800)
-  apontando para `/fonts/archivo/*.woff2`, e remover bloco `fonts:` do
-  `vite.config.js`.
+- **Sintoma:** texto renderiza em sans genérica/diferente de Nunito Sans.
+- **Causas:** `$font-family-base` não chega da ponte (`_bridge.scss` não
+  importado, ou importado depois de `bootstrap/scss/bootstrap`); Google
+  Fonts `<link>` de Nunito Sans ausente do layout.
+- **Nota histórica:** a fonte antiga era Archivo self-hosted
+  (`public/fonts/archivo/*.woff2`); esse diretório e todo `@font-face`
+  específico foram **removidos** na Fase 0 do redesign — não recriar.
+- **Solução:** conferir `$font-family-base` em `_bridge.scss` e a tag de
+  import da fonte no `<head>`.
 
-### 3.9 Cor errada / accent virou azul Bootstrap
+### 3.9 Cor errada / accent virou azul Bootstrap padrão (`#0d6efd`) ou vermelho/amarelo
 
-- **Sintoma:** botão primário azul `#0d6efd`.
-- **Causa:** `_variables.scss` importado **depois** de
-  `bootstrap/scss/bootstrap` (variáveis `!default` já resolveram), ou
-  import de `functions` faltando antes dos tokens (falha ao usar
-  `tint-color()`/`shade-color()`).
-- **Solução:** respeitar ordem: `functions`, `variables` (nosso),
-  `bootstrap`. Ver `bootstrap-architecture`.
+- **Sintoma:** botão primário no azul stock do Bootstrap, ou alerta/badge
+  vermelho/amarelo puro (nunca deveria — vermelho, laranja e amarelo são
+  **proibidos** no sistema, ver doc 01).
+- **Causa:** `_bridge.scss` importado **depois** de `bootstrap/scss/bootstrap`
+  em `app.scss` (variáveis `!default` já resolveram); ou só `$danger`/`$warning`
+  foram remapeados e `$red`/`$orange`/`$yellow` de base ficaram no padrão do
+  Bootstrap, vazando pelos mapas `$reds`/`$yellows` internos.
+- **Solução:** respeitar a ordem dos 4 imports de `app.scss`: tokens `_ds/`,
+  `bridge`, `bootstrap`, `components/index`. Ver `bootstrap-architecture`.
+  Confirmar que `_bridge.scss` remapeia `$red`/`$orange`/`$yellow` também,
+  não só `$danger`/`$warning`.
+
+### 3.10b [Fase 1 `front_redesign`] Classe com cara de utility mas sem CSS nenhum por trás
+
+- **Sintoma:** elemento renderiza sem estilo algum (não é "canto reto",
+  simplesmente **nenhuma** regra bate) mesmo depois de build fresco; a
+  classe não é uma das "fantasmas" listadas em `bootstrap-conventions` §3.5
+  nem Tailwind.
+- **Causa:** código pré-redesign inventou classes com aparência de utility
+  do projeto (`min-w-16`, `h-16`, `fs-10`, `w-340`, `max-w-90vw`,
+  `max-h-420`, `max-h-360`, `guest-form-max-w`, `guest-help-pos`) que
+  **nunca existiram** em nenhum `.scss` — igual às classes fantasma do
+  Modernist, só que sem estar na lista fechada porque foram inventadas
+  depois. Achadas ao migrar `notifications-bell.blade.php` e
+  `guest.blade.php` na Fase 1.
+- **Solução:** não reusar uma classe só porque ela já aparece em outra
+  Blade — confirmar que existe em `resources/scss/components/*.scss`,
+  `_bridge.scss`, ou é utility real do Bootstrap
+  (`grep -rn '\.<classe>' resources/scss/`). Sem match, é utility real do
+  Bootstrap (ex. `.badge.rounded-pill`, `top-0 start-100 translate-middle`)
+  ou classe nova na camada 3 — nunca herdar a classe morta.
 
 ### 3.10 Dusk clicando no elemento errado depois da migração
 
@@ -278,6 +322,37 @@ Fim de fase (não a cada tela): `vendor/bin/sail artisan dusk` completo.
 - **Solução:** rodar diff de `dusk=` do §2 passo 3; garantir cada valor de
   `dusk` único por página.
 
+### 3.11 [Fase 8 `front_redesign`] Cluster direito da app bar estoura em 320–375px
+
+- **Sintoma:** `document.body.scrollWidth > window.innerWidth` em qualquer
+  tela autenticada abaixo de ~450px, mesmo em telas que não têm tabela nem
+  conteúdo largo — porque o culpado é o **shell**, não a tela.
+- **Causa:** `<x-layout.topbar>` (o cluster de ajuda/sino/avatar/"Meu
+  Perfil"/"Sair" à direita) tinha largura natural fixa e nunca colapsava; em
+  telas < ~450px ele sozinho estourava o viewport por 80–115px.
+- **Solução aplicada:** abaixo de `sm`, rótulo em texto vira ícone +
+  `.visually-hidden` (nunca ícone mudo) em "Meu Perfil"/"Sair", o círculo de
+  iniciais (`.ds-avatar`) some (redundante com o ícone do link ao lado), e o
+  nome da organização/tenant na marca cede lugar ao `.brand-mark` (quadrado
+  de iniciais). Ver `topbar.blade.php` e `bootstrap-architecture` para o
+  detalhe. **Qualquer novo item adicionado ao cluster direito da topbar
+  precisa do mesmo tratamento** (ícone-only + `.visually-hidden` abaixo de
+  `sm`) ou o estouro volta.
+- **Como checar:** `tests/Browser/Theme/ResponsiveNoHorizontalScrollTest.php`
+  e `StudentMobileScreensTest.php` comparam `scrollWidth`/`innerWidth` em
+  320/375/768/1024/1440 nas telas autenticadas — rode-os depois de qualquer
+  mudança na topbar ou no drawer.
+
+### 3.12 [Fase 8 `front_redesign`] `prefers-reduced-motion` — escopo fechado
+
+- **Só** `.modal.fade .modal-dialog` e `.offcanvas.fade` (o drawer mobile)
+  perdem transição/transform sob `@media (prefers-reduced-motion: reduce)`
+  (`_reduced-motion.scss`). **Não** generalize para outros componentes
+  animados (dropdown, toast, `.ds-state-layer`, `collapse`) — o doc 13 pede
+  redução só nesses dois, não "desligar toda animação do site". Se um review
+  pedir para ampliar o escopo, é sinal de leitura errada do doc, não de
+  lacuna real.
+
 ---
 
 ## 4. Checklist de regressão por tela migrada
@@ -285,23 +360,36 @@ Fim de fase (não a cada tela): `vendor/bin/sail artisan dusk` completo.
 Marque tudo antes de considerar tela concluída:
 
 - [ ] `grep 'style="'` no arquivo retorna vazio.
-- [ ] Nenhuma classe fantasma (`btn-ghost`, `dialog`, `tag-*`, `elev-*`, `field`,
+- [ ] Nenhuma classe fantasma (`dialog`, `tag-*`, `elev-*`, `field`,
       `input` solto) e nenhuma classe Tailwind.
 - [ ] `diff` dos `dusk="..."` antes/depois vazio (ou divergência justificada por
       escrito no receipt).
 - [ ] Nenhum markup Bootstrap cru que deveria ser `<x-ui.*>`.
-- [ ] `border-radius: 0` visualmente em botões, cards, inputs, modais, badges.
-- [ ] Fonte Archivo; headings peso 800.
-- [ ] Accent `#ec3013` nos elementos primários; fundo `#f3f2f2`; sidebar
-      `#2d2b2b`.
-- [ ] Imagens de pessoas/curso dentro de `.grayscale`; logo da organização com
-      `.org-logo` (isenta).
+- [ ] **[Fase 0+ `front_redesign`]** Canto suave visualmente em botões
+      (pílula), cards (`20px`), inputs (`14px`), modais (`28px`), badges —
+      **não** `border-radius: 0` (mandato antigo, substituído).
+- [ ] Fonte Nunito Sans; sem resíduo de Archivo.
+- [ ] Primário `--blue-600 #4c6fe7`; nenhum vermelho/laranja/amarelo puro em
+      elemento novo (proibidos no sistema — ver doc 01 do redesign).
+- [ ] Faixas de mídia (curso/pessoa) usam `.ds-pastel-wash` — **não**
+      `.grayscale`, que foi removida do projeto inteiro na Fase 2 do
+      `front_redesign`; logo da organização com `.org-logo`, real desde a
+      Fase 4 (`resources/scss/components/_organizations.scss`), não mais
+      isenta da varredura de classe fantasma.
 - [ ] Formulários: cada campo com `<label for>`; erros via `.is-invalid` +
       `.invalid-feedback`; `dusk="error-{campo}"` presente.
 - [ ] Modais: `aria-labelledby`, `.btn-close` com `aria-label="Fechar"`, foco
   volta ao gatilho ao fechar.
-- [ ] Tabelas dentro de `.table-responsive`.
-- [ ] Sem scroll horizontal em 375px de largura.
+- [ ] Tabelas dentro de `.table-responsive`; 4+ colunas usam `.ds-table` +
+      `data-label` por `<td>` (ver `bootstrap-conventions` §4.1) — nunca
+      duas marcações da mesma linha no DOM.
+- [ ] **[Fase 8]** Sem scroll horizontal em 320/375/768/1024/1440px de
+      largura (`document.body.scrollWidth === window.innerWidth`).
+- [ ] **[Fase 8]** Todo controle interativo ≥ 48px de alvo de toque
+      (`--touch-min`); exceção única: `<x-ui.button size="sm">` (40px)
+      **dentro** de `<tr>` de tabela.
+- [ ] **[Fase 8]** Cor nunca é o único sinal: status tem rótulo em texto além
+      do chip; ação destrutiva tem ícone **e** palavra.
 - [ ] `vendor/bin/sail npm run build && vendor/bin/sail artisan dusk --filter=<Teste>` verde.
 - [ ] `vendor/bin/sail bin pint --dirty --format agent` limpo (se tocou PHP).
 - [ ] `<x-help-button>` da tela continua presente e funcional (RF12/RN05).
@@ -312,8 +400,8 @@ Marque tudo antes de considerar tela concluída:
 # style= inline restantes (alvo: 0, exceto certificates/pdf.blade.php)
 grep -rn 'style="' resources/views --include='*.blade.php' | grep -vc 'certificates/pdf'
 
-# classes fantasma restantes
-grep -rnE 'btn-ghost|btn-block|btn-icon|dialog-backdrop|tag-(accent|outline|neutral)|elev-(sm|md|lg)' resources/views
+# classes fantasma restantes (btn-ghost NÃO entra aqui — é classe real desde a Fase 2, ver _state-layer.scss)
+grep -rnE 'btn-block|btn-icon|dialog-backdrop|tag-(accent|outline|neutral)|elev-(sm|md|lg)|\bgrayscale\b' resources/views
 
 # resíduo Tailwind
 grep -rnE 'class="[^"]*(\bflex\b|\bgrid\b|space-y-|text-(xs|sm|base|lg|xl)\b|bg-white|rounded-)' resources/views
@@ -321,12 +409,34 @@ grep -rnE 'class="[^"]*(\bflex\b|\bgrid\b|space-y-|text-(xs|sm|base|lg|xl)\b|bg-
 # módulos JS artesanais que deveriam ter sumido
 grep -rn 'ModalManager' resources/js resources/views
 
-# contagem de dusk= (deve permanecer >= 316)
+# contagem de dusk= (deve permanecer == 388, congelado em spec/front_redesign/14)
 grep -ro 'dusk="' resources/views | wc -l
 
 # suíte completa
 vendor/bin/sail npm run build && vendor/bin/sail artisan dusk
 vendor/bin/sail artisan test --compact
+```
+
+### 5.1 [Fase 0 `front_redesign`] Testes de regressão automática do tema
+
+`tests/Feature/Theme/` (criados na Fase 0) automatizam parte da auditoria
+acima — rode-os antes do gate manual:
+
+- `CompiledCssTokenRegressionTest` — lê `public/build/assets/*.css`
+  compilado (via `manifest.json`, não invoca Sass) e falha se aparecer
+  matiz vermelho/laranja/amarelo saturado, ou `border-radius: 0`
+  injustificado fora dos resets conhecidos do próprio Bootstrap. **Exige
+  build fresco** — mesma pegadinha da seção 1.
+- `InlineStyleRegressionTest` — varre todo `*.blade.php` e falha em
+  qualquer `style="..."` fora de `certificates/pdf.blade.php`.
+- `DuskSelectorContractTest` — compara a contagem e o conjunto
+  `arquivo::seletor` de `dusk="..."` atual contra
+  `tests/fixtures/dusk-selectors-snapshot.json` (congelado com 388
+  entradas). Atualizar o snapshot **só** com justificativa explícita —
+  nunca para "fazer o teste passar".
+
+```bash
+vendor/bin/sail npm run build && vendor/bin/sail artisan test tests/Feature/Theme
 ```
 
 ---

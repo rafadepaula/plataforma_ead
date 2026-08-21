@@ -12,15 +12,21 @@
  * only flips to a "Tempo esgotado" visual state, so a slow network or a
  * background tab never silently discards the student's answers.
  *
- * The expired state is painted with the Bootstrap `text-bg-danger` utility
- * (never an inline `style`). The timer element is a `<x-ui.badge
- * variant="outline">` precisely so it carries no `text-bg-*` class of its
- * own and this toggle cannot collide — see the contract comment at the top
- * of `resources/views/student/quizzes/show.blade.php`.
+ * The expired state is painted with the design-system `ds-tone-attention`
+ * class (never an inline `style`), which resolves to the
+ * `--attention-container`/`--on-attention-container` token pair (see
+ * `resources/scss/components/_chip.scss`) — never red/orange/yellow, per
+ * the design system's ban on those hues. The timer element is a plain
+ * `<span>` styled with the same border utilities as an `<x-ui.badge
+ * variant="outline">`, but it is NOT that component: `.badge` forces
+ * `text-transform: uppercase`, and Selenium asserts on the rendered text
+ * ("Tempo esgotado"), so the element carries no `text-bg-*`/badge class of
+ * its own and this toggle cannot collide — see the contract comment at the
+ * top of `resources/views/student/quizzes/show.blade.php`.
  */
 export class QuizTimer {
-    /** Bootstrap utility class applied while the countdown is expired. */
-    static EXPIRED_CLASS = 'text-bg-danger';
+    /** Design-system tone class applied while the countdown is expired. */
+    static EXPIRED_CLASS = 'ds-tone-attention';
 
     constructor() {
         this.intervalId = null;

@@ -4,15 +4,27 @@
 ])
 
 @php
+    // `danger`/`accent-2` deixam de resolver para `alert-danger` (vermelho do
+    // Bootstrap padrão) e passam pelo par --critical-container/--on-critical-container,
+    // igual a badge e chip — nenhuma matiz vermelha/laranja/amarela no sistema.
+    // `secondary`/`light`/`dark` seguem o Bootstrap padrão: não fazem parte da
+    // paleta proibida e não estão no conjunto de variantes alvo (01-direcao-
+    // visual-e-tokens.md), então ficam como fallback preservado, sem remoção.
     $variantClass = match ($variant) {
-        'danger', 'accent-2' => 'alert-danger',
-        'warning' => 'alert-warning',
-        'success' => 'alert-success',
-        'info' => 'alert-info',
+        'danger', 'accent-2' => 'ds-tone-critical',
+        'warning' => 'ds-tone-attention',
+        'success' => 'ds-tone-success',
+        'info' => 'ds-tone-info',
         'secondary' => 'alert-secondary',
         'light' => 'alert-light',
         'dark' => 'alert-dark',
-        default => 'alert-primary',
+        default => 'ds-tone-primary',
+    };
+
+    $iconName = match ($variant) {
+        'danger', 'accent-2' => 'shield',
+        'success' => 'check',
+        default => 'info',
     };
 
     // `alert-dismissible` é deliberadamente omitido: ele posiciona o
@@ -29,11 +41,7 @@
 <div {{ $attributes->merge(['class' => $classes]) }}
      role="alert">
     <div class="flex-shrink-0 mt-1">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="12" y1="8" x2="12" y2="12"></line>
-            <line x1="12" y1="16" x2="12.01" y2="16"></line>
-        </svg>
+        <x-ui.icon :name="$iconName" size="20" />
     </div>
 
     <div class="flex-grow-1">

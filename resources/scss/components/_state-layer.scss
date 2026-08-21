@@ -1,0 +1,147 @@
+// =============================================================================
+// Componente: State layer (camada de estado hover/focus/active)
+// -----------------------------------------------------------------------------
+// Camada de sobreposição de estado interativo (hover/pressed) compartilhada
+// por itens de lista, drawer e cards. Bootstrap não entrega esse padrão pronto.
+// Conteúdo visual completo: diretriz da biblioteca de componentes.
+// Regra: qualquer declaração aqui só pode consumir var(--*), nunca literal de
+// cor/raio/sombra.
+// =============================================================================
+
+// -----------------------------------------------------------------------------
+// `.ds-state-layer` — camada de estado padrão Material citada em
+// diretriz de acessibilidade e estados: "currentColor a 6% no hover e 12% no
+// press". Implementada como pseudo-elemento (`::after`) para funcionar sobre
+// qualquer cor de fundo — pastel (chip, botão tonal) ou sólida — sem
+// recalcular a cor de overlay por variante. Qualquer componente pode
+// consumir só adicionando a classe:
+//   - `x-ui.button` (ghost, tonal — ver abaixo)
+//   - `x-ui.chip` (ver _chip.scss)
+//   - item de drawer / linha de tabela (buckets seguintes desta fase)
+// Requer que o elemento tenha `position: relative` OU já seja posicionado —
+// esta classe fornece isso. `border-radius: inherit` acompanha pílulas,
+// cards e qualquer canto arredondado do elemento hospedeiro automaticamente.
+// -----------------------------------------------------------------------------
+.ds-state-layer {
+    position: relative;
+    isolation: isolate;
+}
+
+.ds-state-layer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background-color: currentColor;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--duration-fast) var(--ease-standard);
+}
+
+.ds-state-layer:hover::after,
+.ds-state-layer:focus-visible::after {
+    opacity: .06;
+}
+
+.ds-state-layer:active::after,
+.ds-state-layer.is-pressed::after {
+    opacity: .12;
+}
+
+// -----------------------------------------------------------------------------
+// `x-ui.button` variantes sem cor de tema do Bootstrap (`ghost`, `tonal`).
+// Não existe partial de botões nesta fase (só os 9 stubs de
+// plano de fases) — ficam aqui por serem, junto de `.ds-tone-primary`
+// (`_chip.scss`) e `.ds-state-layer` (acima), a mesma "camada de estado"
+// documentada em diretriz de acessibilidade e estados. `tonal` reaproveita
+// `.ds-tone-primary`; `ghost` só define o esqueleto (fundo transparente,
+// borda obrigatória) — a cor de texto e de borda já vêm dos tokens.
+// -----------------------------------------------------------------------------
+.btn {
+    --bs-btn-padding-y: var(--pad-btn-y);
+    --bs-btn-padding-x: var(--pad-btn-x);
+    --bs-btn-font-size: var(--font-size-label);
+    --bs-btn-font-weight: var(--font-weight-bold);
+    --bs-btn-line-height: 1.2;
+
+    display: inline-flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: center;
+    min-height: var(--control-height);
+    letter-spacing: var(--tracking-button);
+    white-space: nowrap;
+}
+
+.btn-sm {
+    --bs-btn-padding-y: var(--pad-btn-sm-y);
+    --bs-btn-padding-x: var(--pad-btn-sm-x);
+    --bs-btn-font-size: var(--font-size-caption);
+
+    min-height: 40px;
+}
+
+.btn-lg {
+    --bs-btn-padding-y: var(--pad-btn-lg-y);
+    --bs-btn-padding-x: var(--pad-btn-lg-x);
+    --bs-btn-font-size: var(--font-size-body-lg);
+
+    min-height: 60px;
+}
+
+.btn-primary {
+    --bs-btn-color: var(--on-primary);
+    --bs-btn-bg: var(--primary);
+    --bs-btn-border-color: var(--primary);
+    --bs-btn-hover-color: var(--on-primary);
+    --bs-btn-hover-bg: var(--primary-hover);
+    --bs-btn-hover-border-color: var(--primary-hover);
+    --bs-btn-active-color: var(--on-primary);
+    --bs-btn-active-bg: var(--primary-pressed);
+    --bs-btn-active-border-color: var(--primary-pressed);
+    --bs-btn-disabled-color: var(--on-primary);
+    --bs-btn-disabled-bg: var(--primary);
+    --bs-btn-disabled-border-color: var(--primary);
+
+    box-shadow: var(--elev-primary);
+}
+
+.btn-ghost {
+    color: var(--text-primary);
+    background-color: transparent;
+    border-color: var(--border-color);
+    box-shadow: none;
+}
+
+.btn-ghost:hover,
+.btn-ghost:focus-visible {
+    color: var(--text-primary);
+}
+
+.btn-tonal {
+    border-color: transparent;
+    box-shadow: none;
+}
+
+// Botão preenchido sobe 1px no hover e volta no press
+// (diretriz de acessibilidade e estados, "Camada de estado"). `ghost`/`tonal` não
+// entram aqui: sem preenchimento sólido, o levantamento fica com o
+// `.ds-state-layer` acima.
+.btn-primary,
+.btn-success,
+.btn-danger {
+    transition: var(--transition-base), transform var(--duration-base) var(--ease-standard);
+}
+
+.btn-primary:hover,
+.btn-success:hover,
+.btn-danger:hover {
+    transform: translateY(-1px);
+}
+
+.btn-primary:active,
+.btn-success:active,
+.btn-danger:active {
+    transform: translateY(0);
+}

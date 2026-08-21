@@ -86,8 +86,8 @@ class CertificateRevocationTest extends DuskTestCase
                 // `x-ui.badge` renders with `text-transform: uppercase` CSS —
                 // Selenium's `getText()` returns the rendered text, i.e.
                 // "REVOGADO", not the DOM's literal "Revogado".
-                ->waitForTextIn('@certificate-status-'.$certificate->id, 'REVOGADO')
-                ->assertSeeIn('@certificate-status-'.$certificate->id, 'REVOGADO');
+                ->waitForTextInIgnoringCase('@certificate-status-'.$certificate->id, 'Revogado')
+                ->assertTextEqualsIgnoringCase('@certificate-status-'.$certificate->id, 'Revogado');
 
             $this->assertSame(
                 'Matrícula cancelada retroativamente por fraude.',

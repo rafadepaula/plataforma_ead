@@ -101,6 +101,7 @@ class SmartInvitationTest extends TestCase
             'cpf' => '12345678909',
             'password' => 'password123',
             'password_confirmation' => 'password123',
+            'consent' => true,
         ]);
 
         $response->assertRedirect();
@@ -127,6 +128,7 @@ class SmartInvitationTest extends TestCase
         $response = $this->post('/convite/'.$invitationLink->token, [
             'email' => 'existente@example.com',
             'password' => 'senha-correta',
+            'consent' => true,
         ]);
 
         $response->assertRedirect();
@@ -151,6 +153,7 @@ class SmartInvitationTest extends TestCase
             ->post('/convite/'.$invitationLink->token, [
                 'email' => 'existente@example.com',
                 'password' => 'senha-errada',
+                'consent' => true,
             ])
             ->assertSessionHasErrors('password');
 
@@ -166,9 +169,43 @@ class SmartInvitationTest extends TestCase
         $this->post('/convite/'.$invitationLink->token, [
             'email' => 'novo@example.com',
             'password' => 'password123',
+            'consent' => true,
         ])->assertSessionHasErrors(['name', 'password']);
 
         $this->assertGuest();
+    }
+
+    public function test_store_requires_consent_for_a_new_email(): void
+    {
+        $invitationLink = $this->makeInvitationLink();
+
+        $this->post('/convite/'.$invitationLink->token, [
+            'name' => 'Aluno Sem Consentimento',
+            'email' => 'sem-consentimento@example.com',
+            'cpf' => '12345678909',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+        ])->assertSessionHasErrors('consent');
+
+        $this->assertGuest();
+        $this->assertDatabaseMissing('users', ['email' => 'sem-consentimento@example.com']);
+    }
+
+    public function test_store_rejects_a_false_consent_value_for_a_new_email(): void
+    {
+        $invitationLink = $this->makeInvitationLink();
+
+        $this->post('/convite/'.$invitationLink->token, [
+            'name' => 'Aluno Consentimento Falso',
+            'email' => 'consentimento-falso@example.com',
+            'cpf' => '12345678909',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+            'consent' => false,
+        ])->assertSessionHasErrors('consent');
+
+        $this->assertGuest();
+        $this->assertDatabaseMissing('users', ['email' => 'consentimento-falso@example.com']);
     }
 
     public function test_store_fails_once_max_uses_has_been_reached(): void
@@ -181,6 +218,7 @@ class SmartInvitationTest extends TestCase
             'cpf' => '12345678909',
             'password' => 'password123',
             'password_confirmation' => 'password123',
+            'consent' => true,
         ])->assertRedirect();
 
         $this->assertSame(1, $invitationLink->fresh()->current_uses);
@@ -201,6 +239,7 @@ class SmartInvitationTest extends TestCase
             'cpf' => '98765432100',
             'password' => 'password123',
             'password_confirmation' => 'password123',
+            'consent' => true,
         ])->assertNotFound();
 
         $this->assertDatabaseMissing('users', ['email' => 'segundo@example.com']);
@@ -217,6 +256,7 @@ class SmartInvitationTest extends TestCase
             'cpf' => '12345678909',
             'password' => 'password123',
             'password_confirmation' => 'password123',
+            'consent' => true,
         ])->assertNotFound();
     }
 
@@ -259,6 +299,7 @@ class SmartInvitationTest extends TestCase
             'cpf' => '12345678909',
             'password' => 'password123',
             'password_confirmation' => 'password123',
+            'consent' => true,
         ])->assertNotFound();
 
         $this->assertDatabaseMissing('users', ['email' => 'aluno-curso-nao-publicado@example.com']);
@@ -277,6 +318,7 @@ class SmartInvitationTest extends TestCase
             ->post('/convite/'.$invitationLink->token, [
                 'email' => 'gestor@example.com',
                 'password' => 'senha-correta',
+                'consent' => true,
             ])
             ->assertSessionHasErrors('email');
 

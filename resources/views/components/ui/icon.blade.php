@@ -169,6 +169,10 @@
             <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
             @break
 
+        @case('shield')
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" />
+            @break
+
         @case('menu')
             <line x1="4" x2="20" y1="12" y2="12" />
             <line x1="4" x2="20" y1="6" y2="6" />

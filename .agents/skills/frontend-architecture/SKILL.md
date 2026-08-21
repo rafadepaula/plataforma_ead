@@ -1,53 +1,38 @@
 ---
 name: frontend-architecture
-description: Visão geral, schemas, componentes Blade e módulos JavaScript SOLID do frontend da Plataforma EAD.
+description: >
+  Redireciona para `bootstrap-architecture` — descreve o sistema
+  "Modernist Design System" pré-migração (zero-radius, `ModalManager.js`,
+  `NotificationService.js`, badge `.tag-*`), que **não existe mais no
+  código**. Use apenas para entender o histórico; para arquitetura de
+  frontend atual (camadas, tokens, componentes `<x-ui.*>`), use
+  `bootstrap-architecture`.
 ---
 
 # Frontend Architecture (`frontend-architecture`)
 
-## Visão Geral
+> **Este skill está obsoleto.** Descrevia o frontend anterior à migração
+> `spec/front_migration/` e ao redesign `spec/front_redesign/`. Nenhum dos
+> padrões abaixo existe mais no código: `ModalManager.js` e
+> `NotificationService.js` foram removidos na migração para Bootstrap 5.3
+> nativo; `.tag-*`, `.dialog`/`.dialog-backdrop`, `.field`/`.input`, `.elev-*`
+> e `.grayscale` eram classes fantasma ou foram descontinuadas (a última,
+> `.grayscale`, saiu de vez na Fase 2 do redesign). O sistema de zero-radius
+> foi substituído pelo Material Bootstrap de cantos suaves.
+>
+> **Arquitetura atual**: `bootstrap-architecture` (modelo de 5 camadas,
+> camada de tokens `_ds/plataforma-ead-design-system/`, ponte `_bridge.scss`,
+> mandato de componentização). Convenções de código atuais:
+> `bootstrap-conventions`. Debug/build/Dusk: `bootstrap-maintenance`.
+>
+> Este arquivo fica só como referência histórica do que existia antes —
+> não seguir nenhuma regra abaixo em código novo.
 
-Frontend = camadas com micro-componentes Blade + **Bootstrap 5.3 (só grid/utilities)** + **Modernist Design System** (Claude Design). Comportamento dinâmico e chamada remota ficam desacoplados em **módulos JavaScript SOLID** em `resources/js/modules/`.
+## Histórico (Modernist Design System, pré-migração — não usar)
 
----
-
-## Componentes
-
-### 1. Master layouts (`resources/views/layouts/`)
-- `app.blade.php`: área autenticada (Aluno, Admin, Gestor).
-- `guest.blade.php`: split-screen 42%/58% para páginas públicas, auth e aceite de convite.
-
-### 2. Submódulos estruturais (`resources/views/components/layout/`)
-- `<x-layout.topbar>`: perfil, troca de tenant/impersonate, busca, notificações.
-- `<x-layout.sidebar>`: menu lateral escuro (`--color-neutral-900`), filtrado por Spatie Roles (`role:admin`, `role:gestor`, `role:aluno`).
-- `<x-layout.footer>`: rodapé institucional.
-- `<x-layout.alerts>`: flash messages do Laravel + toasts.
-
-### 3. Micro-componentes UI (`resources/views/components/ui/`)
-- `<x-ui.button>`: label alinhado à esquerda, ícone SVG inline (`.btn-primary`, `.btn-secondary`, `.btn-ghost`).
-- `<x-ui.card>`: `.card` com slot de imagem grayscale, kicker, título, meta, elevação (`.elev-sm`, `.elev-md`, `.elev-lg`).
-- `<x-ui.modal>`: `.dialog` + `.dialog-backdrop`, `aria-modal="true"`, fecha por backdrop/Esc.
-- `<x-ui.badge>`: status semântico (`.tag-accent`, `.tag-outline`, `.tag-neutral`, `.tag-accent-2`). Substitui badge do Bootstrap.
-- `<x-ui.input>`: `.field > label + .input`.
-- `<x-ui.select>`: select nativo, chevron SVG absoluto, `appearance: none`.
-- `<x-ui.table>`: `.table` responsiva, header uppercase, hover tint.
-- `<x-ui.stat-card>`: métrica do dashboard admin com delta percentual.
-- `<x-ui.icon>`: ícone Lucide SVG inline via `@include`.
-
-### 4. Módulos JavaScript SOLID (`resources/js/modules/`)
-- `HttpClient.js`: singleton sobre `fetch`. Injeta `X-CSRF-TOKEN`, headers JSON (`Accept`/`Content-Type`), parsing padronizado de erro HTTP.
-- `ModalManager.js`: modais orientado a objeto. Backdrop, `Escape`, foco automático, binding por `data-modal-target` / `data-modal-dismiss`.
-- `NotificationService.js`: toasts. Injeta `#notification-container`, timer de autodescarte, animação.
-
----
-
-## Build de Assets
-
-```
-resources/css/app.css  -\
-                        +--> Vite (npm run build) --> public/build/
-resources/js/app.js   -/
-```
-
-- **Bootstrap 5.3**: importado no topo do CSS. **Só** `@import 'bootstrap/scss/grid'` e `@import 'bootstrap/scss/utilities'`.
-- **Tokens Modernist**: custom properties em `:root`. Sobrescrevem qualquer base.
+Frontend usava camadas com micro-componentes Blade + Bootstrap 5.3 (só
+grid/utilities) + Modernist Design System (zero-radius, accent vermelho),
+com comportamento dinâmico em módulos JS artesanais
+(`resources/js/modules/ModalManager.js`, `NotificationService.js`,
+`HttpClient.js`). Ver `bootstrap-architecture` § "Decision Record" para o
+mapeamento completo de cada peça antiga para o equivalente atual.

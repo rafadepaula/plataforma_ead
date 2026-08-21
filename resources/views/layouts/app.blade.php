@@ -17,7 +17,7 @@
         <div class="app-body d-flex flex-1 position-relative">
             <x-layout.sidebar />
 
-            <main class="app-main flex-1 p-4 min-w-0 bg-body">
+            <main class="app-main flex-1 min-w-0">
                 <x-layout.alerts />
                 {{ $slot ?? '' }}
                 @yield('content')

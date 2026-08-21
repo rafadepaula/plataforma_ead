@@ -21,18 +21,18 @@
                 draggable="true"
                 class="list-group-item sortable-item d-flex align-items-center justify-content-between gap-3">
                 <span class="d-flex align-items-center gap-2">
-                    <span aria-hidden="true" class="drag-handle">⠿</span>
+                    <x-ui.icon name="grip-vertical" size="20" aria-hidden="true" class="drag-handle" />
                     {{ $lesson->title }}
                     <x-ui.badge variant="outline">{{ $lesson->type === 'quiz' ? 'Quiz' : 'Conteúdo' }}</x-ui.badge>
                 </span>
 
                 <span class="d-flex gap-2">
-                    <x-ui.button variant="secondary" size="sm" href="{{ route('lessons.edit', $lesson) }}" dusk="edit-lesson-{{ $lesson->id }}">Editar</x-ui.button>
+                    <x-ui.button variant="secondary" href="{{ route('lessons.edit', $lesson) }}" dusk="edit-lesson-{{ $lesson->id }}">Editar</x-ui.button>
 
                     <form method="POST" action="{{ route('lessons.destroy', $lesson) }}" dusk="delete-lesson-form-{{ $lesson->id }}">
                         @csrf
                         @method('DELETE')
-                        <x-ui.button type="submit" variant="ghost" size="sm" dusk="delete-lesson-{{ $lesson->id }}">Remover</x-ui.button>
+                        <x-ui.button type="submit" variant="danger" dusk="delete-lesson-{{ $lesson->id }}">Remover</x-ui.button>
                     </form>
                 </span>
             </li>

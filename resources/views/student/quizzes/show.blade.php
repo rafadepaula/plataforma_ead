@@ -51,7 +51,7 @@
     `waitForText('Tempo esgotado')` e passaria a receber `TEMPO ESGOTADO`.
     Por isso é um `<span>` com as mesmas utilities de borda do badge outline e
     sem nenhuma classe `text-bg-*`, para que o estado "Tempo esgotado" possa
-    ser pintado por `classList.add('text-bg-danger')` sem colidir.
+    ser pintado por `classList.add('ds-tone-attention')` sem colidir.
 --}}
 @extends('layouts.app')
 
@@ -71,7 +71,11 @@
 @section('content')
     <div class="d-flex justify-content-center p-6x">
         <div class="w-100 max-w-640">
-            <x-layout.page-header :kicker="$lesson->module->course->title" :title="$quiz->title">
+            <x-layout.page-header
+                :breadcrumb="[['label' => 'Meus Cursos', 'url' => route('student.courses.index')], ['label' => $lesson->module->course->title, 'url' => route('classroom.show', $lesson->module->course)], ['label' => $lesson->title, 'url' => route('classroom.lesson', $lesson)], ['label' => $quiz->title]]"
+                :kicker="$lesson->module->course->title"
+                :title="$quiz->title"
+                subtitle="Responda todas as questões e envie o quiz em uma única submissão.">
                 @if($canAttempt && $quiz->time_limit_minutes)
                     <x-slot:actions>
                         <span

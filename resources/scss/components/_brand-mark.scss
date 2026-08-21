@@ -1,0 +1,39 @@
+// =============================================================================
+// Componente: Brand mark (marca/logotipo)
+// -----------------------------------------------------------------------------
+// Wordmark/símbolo da plataforma exibido na app bar e telas públicas (login,
+// verificação de certificado). Bootstrap não entrega esse padrão pronto.
+// Conteúdo visual completo: diretriz da biblioteca de componentes.
+// Regra: qualquer declaração aqui só pode consumir var(--*), nunca literal de
+// cor/raio/sombra.
+// =============================================================================
+
+// Selo quadrado com as 2-3 primeiras letras do nome da organização/produto,
+// reutilizado pela app bar (`x-layout.topbar`) e pelo painel institucional do
+// shell público (`x-layout.guest-panel`).
+.brand-mark {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-md);
+    background: var(--primary);
+    color: var(--on-primary);
+    font-size: var(--font-size-body);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: var(--tracking-tight);
+    line-height: 1;
+    text-decoration: none;
+    user-select: none;
+}
+
+// Variante para uso sobre uma superfície escura/de alto contraste (ex.: um
+// futuro `.guest-panel` com fundo sólido de marca). Não está em uso hoje:
+// `x-layout.guest-panel` renderiza sobre `.bg-primary-subtle` (tinta clara),
+// então `.brand-mark` (não a variante `--inverse`) é o que se aplica lá.
+.brand-mark--inverse {
+    background: var(--text-on-brand);
+    color: var(--primary);
+}

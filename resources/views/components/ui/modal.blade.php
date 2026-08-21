@@ -1,3 +1,10 @@
+{{--
+    Wrapper de `bootstrap.Modal` — raio 28px, `--elev-5`/scrim 42% e a
+    transição de entrada (sobe + escala) vêm de `_bridge.scss`
+    (`$modal-content-border-radius`, `$modal-backdrop-opacity`,
+    `$transition-base`) e do próprio `.modal.fade` do Bootstrap; nenhum JS
+    artesanal aqui, só `data-bs-*` declarativo.
+--}}
 @props([
     'id' => null,
     'name' => null,

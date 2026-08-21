@@ -1,0 +1,20 @@
+// =============================================================================
+// Componente: prefers-reduced-motion (diálogo e drawer)
+// -----------------------------------------------------------------------------
+// diretriz de acessibilidade e estados: usuário com
+// `prefers-reduced-motion: reduce` deixa de ver a transição de entrada/saída
+// do diálogo (`.modal.fade .modal-dialog`) e do drawer (`.offcanvas.fade`) —
+// SOMENTE esses dois. Nenhum outro `.fade`, hover ou state-layer é afetado
+// aqui; a varredura de regressão cobra escopo estreito, não um
+// `* { transition: none }` genérico.
+// Regra: qualquer declaração aqui só pode consumir var(--*), nunca literal de
+// cor/raio/sombra — não há cor/raio/sombra aqui, só remoção de transição.
+// =============================================================================
+
+@media (prefers-reduced-motion: reduce) {
+    .modal.fade .modal-dialog,
+    .offcanvas.fade {
+        transition: none;
+        transform: none;
+    }
+}

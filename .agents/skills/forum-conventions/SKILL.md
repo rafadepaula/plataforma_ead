@@ -7,7 +7,7 @@ description: >
   postable_type FQCN convention shared by
   EditForumPostAction/DeleteForumPostAction/ReportForumPostAction,
   ForumContentSanitizerService strip_tags() defense,
-  ForumPolling.js/ForumEditHistory.js/ForumReportModal.js JS module
+  ForumPolling.js/ForumReportModal.js JS module
   contracts. Use when writing controller, Policy, Form Request, Blade
   view, or JS module managing ForumTopic/ForumReply/ForumPostEdit/
   ForumReport records.
@@ -140,22 +140,63 @@ rate limit.
 Spec text say "jQuery polling", but jQuery not installed dependency
 (`package.json`). `ForumPolling.js` use shared `HttpClient` module
 instead, same rationale as `ModuleReorder.js` native drag-and-drop.
-Likewise `ForumEditHistory.js` do not use Alpine `x-show` (not
-installed) — it manually hide every `[id^="edit-history-"]` modal
-backdrop on init and delegate opening to shared `window.ModalManager`.
+The edit-history modal has **no JS module at all** since the Bootstrap
+5.3 migration: `forum/partials/_edit-history-modal.blade.php` is fully
+declarative (`data-bs-toggle="modal"` + `data-bs-target`), driven by
+`bootstrap.Modal`. The old `ForumEditHistory.js` was deleted — do not
+recreate it.
 `ForumReportModal.js` prefill shared `#report-modal` hidden
 `postable_type`/`postable_id` fields from clicked "Denunciar" button
-`data-postable-type`/`data-postable-id` before `ModalManager` open it,
-then intercept modal form submit to POST via `HttpClient` to
-`forum-reports.store`. All three modules registered once in
+`data-postable-type`/`data-postable-id`, then intercept modal form submit
+to POST via `HttpClient` to `forum-reports.store`; closing goes through
+`bootstrap.Modal.getOrCreateInstance`, never the retired `ModalManager`.
+Both modules registered once in
 `resources/js/app.js`, following same `DOMContentLoaded`-or-immediate
 `init()` guard every other SOLID module in this project use.
+
+## Blade Views: `x-layout.page-header`, `x-ui.confirm-modal`, No Inline `style=`
+
+Every top-level forum screen (`forum/index`, `forum/show`, `forum/create`,
+`forum/edit`, `forum/moderation/index`) render `<x-layout.page-header>`
+with `:breadcrumb` (array of `['label' => ..., 'url' => ...]`), `kicker`,
+`title`, and `subtitle` — no exception, even for screens with a simple
+one-line title. Partials (`_topic`, `_reply`, `_edit-history-modal`) never
+carry their own page-header.
+
+`forum/moderation/index.blade.php` "Remover Publicação" goes through
+`<x-ui.confirm-modal>` (hard rule: every removal does), never a bare
+form-submit button. Because `x-ui.confirm-modal` owns the real `<form>`
+internally, the frozen `dusk="remove-form-{id}"` selector (from
+`tests/fixtures/dusk-selectors-snapshot.json`) moved onto the wrapping
+`<div>` around trigger button + modal, while `dusk="remove-post-{id}"`
+stays on the trigger `<x-ui.button>` that opens the modal via
+`data-bs-toggle="modal"`/`data-bs-target`. Follow this same
+container-owns-the-form-selector pattern for any other frozen `dusk=` on
+a button that gets wrapped in `x-ui.confirm-modal`.
+
+`forum/create.blade.php`/`forum/edit.blade.php` use `<x-ui.textarea>`
+(not `x-ui.input type="textarea"`) for topic `content`, wrapped in
+`max-w-640` (project's utility closest to a ~760px reading column — do
+not invent a new `max-w-*` value), and use `<x-ui.form-actions
+align="end">` for the Cancel/Submit row (max one primary button, Cancel
+as `variant="ghost"`).
+
+`.forum-reply` (on `forum/partials/_reply.blade.php`'s root `<div>`) is a
+real class defined in `resources/scss/components/_card.scss` — it used to
+be a phantom (no CSS backing it). Keep the literal string `forum-reply`
+unchanged in both the Blade view and `ForumPolling.js::appendReply()`
+(`el.className = 'forum-reply card mb-2'`) — they must always match,
+since polling-injected replies never pass through Blade.
 
 ## Related Specs
 
 - `spec/specs/10-course-discussion-forum.md` — RF22, RF26, RF27.
+- `spec/front_redesign/08-telas-forum.md` — Fase 6 front redesign scope
+  (breadcrumb/kicker/title/subtitle contract, component usage, phantom
+  class cleanup) for all 8 forum views.
 - `quizzes-conventions` — `parentCourse()` cascade-authorize pattern this
   module Policies mirror.
 - `courses-conventions` — `[data-reorder-url]`-style contract this
   module polling/report JS conventions follow (shared `HttpClient`/
-  `ModalManager`/`NotificationService` singletons wired in `app.js`).
+  `NotificationService` singletons wired in `resources/js/modules/index.js`;
+  dialogs go through `bootstrap.Modal`, there is no `ModalManager`).

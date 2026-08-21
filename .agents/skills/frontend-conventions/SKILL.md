@@ -1,71 +1,38 @@
 ---
 name: frontend-conventions
-description: Padrões de código, regras do Modernist Design System, convenções Blade e JavaScript SOLID.
+description: >
+  Redireciona para `bootstrap-conventions` — descreve regras do "Modernist
+  Design System" pré-migração (zero-radius, `.grayscale`, badge `.tag-*`,
+  `ModalManager`) que **não existem mais no código**. Use apenas para
+  entender o histórico; para convenções de código atuais (componentes
+  `<x-ui.*>`, lista de classes proibidas, tabela de tradução), use
+  `bootstrap-conventions`.
 ---
 
 # Frontend Conventions (`frontend-conventions`)
 
-Todo frontend segue **Modernist Design System** (Claude Design) + arquitetura de micro-componentes Blade.
+> **Este skill está obsoleto**, pelo mesmo motivo de `frontend-architecture`.
+> Nenhuma regra abaixo se aplica a código novo. Use `bootstrap-conventions`
+> para: padrão de componente Blade anônimo (`@props` + `$attributes->merge()`),
+> lista fechada de classes proibidas, tabela de tradução sistema-antigo→
+> Bootstrap, variantes atuais de `<x-ui.button>`/`<x-ui.badge>`/`<x-ui.alert>`
+> (que já não usam vermelho/laranja/amarelo — ver `--critical`/`--attention`
+> nos tokens do redesign).
+>
+> Pontos que mudaram e onde este arquivo historicamente errava, para quem
+> vier procurar por engano:
+> - `border-radius: 0px` mandatório → **substituído** por cantos suaves
+>   (`$border-radius: 14px`, botões pílula).
+> - `.grayscale` em toda foto → classe **removida do projeto inteiro** na
+>   Fase 2 do redesign; faixas de mídia usam `.ds-pastel-wash`.
+> - `<x-ui.badge variant="accent-2">` → não resolve mais para vermelho
+>   (`text-bg-danger`); passa por `.ds-tone-critical` (par
+>   `--critical-container`/`--on-critical-container`).
+> - `<x-ui.modal>` sobre `.dialog`/`.dialog-backdrop` + `ModalManager` →
+>   `.modal`/`.modal-backdrop` nativos do `bootstrap.Modal`.
+> - `window.ModalManager`/`window.NotificationService` artesanais →
+>   `bootstrap.Modal`/`bootstrap.Toast` (a fachada
+>   `NotificationService.success()/error()` sobrevive só como wrapper fino
+>   sobre `bootstrap.Toast`, não reimplementa o widget).
 
----
-
-## Regras do Modernist Design System
-
-1. **Zero-radius (`--radius-sm: 0px`)**
-   - MANDATÓRIO: botão, card, modal, input, badge, container = `border-radius: 0px`.
-   - NUNCA `rounded`, `rounded-md`, nem qualquer arredondamento.
-
-2. **Proibido hex hardcoded na view**
-   - Nenhuma Blade ou CSS com cor hexadecimal crua.
-   - Usar token: `var(--color-bg)`, `var(--color-surface)`, `var(--color-text)`, `var(--color-accent)`, `var(--color-accent-2)`, `var(--color-neutral-100...900)`.
-
-3. **Flush-left**
-   - Label de botão largo (`.btn-block`), título de hero e cabeçalho sempre `text-align: left`.
-
-4. **Foto preto-e-branco (`.grayscale`)**
-   - Avatar de aluno, thumbnail de curso, foto de instrutor sempre dentro de wrapper `.grayscale` (`filter: grayscale(1) contrast(1.08)`).
-   - Exceção: logo de Organização (`organizations.logo_path`) mantém cor da marca.
-
-5. **Ícone Lucide inline**
-   - Sem Bootstrap Icons (`bi-*`), sem CDN externo. Usar `<x-ui.icon name="search|bell|user|check..." />`.
-
----
-
-## Componentes `<x-ui.*>`
-
-### Botão
-```blade
-<x-ui.button variant="primary" block icon="plus">
-    Salvar Aluno
-</x-ui.button>
-```
-
-### Badge
-Status semântico, sem cor nova:
-- `variant="accent"`: Ativo / Concluído / Publicado (positivo)
-- `variant="outline"`: Em andamento / Obrigatório / Em revisão
-- `variant="neutral"`: Pendente / Rascunho / Aluno
-- `variant="accent-2"`: Em risco / Vencido / Inativo (negativo)
-
-```blade
-<x-ui.badge variant="accent">Concluído</x-ui.badge>
-```
-
-### Modal
-```blade
-<x-ui.modal id="confirm-delete-modal" title="Confirmar Exclusão">
-    <p>Tem certeza de que deseja remover este aluno?</p>
-    <x-slot:actions>
-        <x-ui.button variant="ghost" data-modal-dismiss="true">Cancelar</x-ui.button>
-        <x-ui.button variant="primary" id="btn-confirm-delete">Excluir</x-ui.button>
-    </x-slot:actions>
-</x-ui.modal>
-```
-
----
-
-## Módulos JavaScript
-
-- **Registro global**: importar em `resources/js/app.js` e expor em `window` (`window.HttpClient`, `window.ModalManager`, `window.NotificationService`).
-- **CSRF**: `HttpClient` lê meta tag `csrf-token`. Toda requisição AJAX mutativa manda `X-CSRF-TOKEN`.
-- **Acessibilidade de modal**: modal aberto por `ModalManager.open()` recebe `aria-modal="true"` e foco no primeiro elemento interativo.
+Regras completas e atuais: `bootstrap-conventions`.

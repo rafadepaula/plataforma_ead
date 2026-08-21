@@ -245,6 +245,55 @@ class UserAdminManagementTest extends TestCase
             ->assertSee('Perfil Completo');
     }
 
+    public function test_admin_can_view_a_users_full_profile_with_enrollments_and_certificates(): void
+    {
+        $org = Organization::factory()->create();
+
+        $user = User::factory()->create(['org_id' => $org->id, 'name' => 'Perfil Com Historico']);
+        $user->assignRole(RolesEnum::ALUNO->value);
+
+        $completedCourse = Course::factory()->for($org)->create(['title' => 'Curso Concluido']);
+        $user->courses()->attach($completedCourse->id, [
+            'status' => 'completed',
+            'enrolled_at' => now()->subMonth(),
+            'completed_at' => now(),
+        ]);
+
+        $cancelledCourse = Course::factory()->for($org)->create(['title' => 'Curso Cancelado']);
+        $user->courses()->attach($cancelledCourse->id, [
+            'status' => 'cancelled',
+            'enrolled_at' => now()->subMonth(),
+        ]);
+
+        $issuedCertificate = Certificate::factory()
+            ->for($user)
+            ->for($completedCourse)
+            ->create(['issued_at' => now()]);
+
+        $revokedCertificate = Certificate::factory()
+            ->revoked()
+            ->for($user)
+            ->for($cancelledCourse)
+            ->create(['issued_at' => now()->subWeek()]);
+
+        $this->actingAsAdmin();
+
+        $response = $this->get(route('admin.users.show', $user));
+
+        $response->assertOk()
+            ->assertViewIs('admin.users.show')
+            ->assertSee('Perfil Com Historico')
+            ->assertSee('Curso Concluido')
+            ->assertSee('Concluído')
+            ->assertSee('Curso Cancelado')
+            ->assertSee('Cancelado')
+            ->assertSee('Emitido')
+            ->assertSee('Revogado');
+
+        $this->assertFalse($issuedCertificate->isRevoked());
+        $this->assertTrue($revokedCertificate->isRevoked());
+    }
+
     public function test_admin_can_view_the_edit_form(): void
     {
         $this->actingAsAdmin();

@@ -18,7 +18,14 @@
 @endphp
 
 @section('content')
-    <x-ui.card title="Novo Quiz" kicker="{{ $lesson->module->course->title }} / {{ $lesson->module->title }} / {{ $lesson->title }}">
+    <x-layout.page-header
+        :breadcrumb="[['label' => 'Cursos', 'url' => route('courses.index')], ['label' => $lesson->module->course->title, 'url' => route('courses.modules.index', $lesson->module->course)], ['label' => $lesson->module->title, 'url' => route('modules.lessons.index', $lesson->module)], ['label' => 'Novo Quiz']]"
+        :kicker="$lesson->module->course->title.' / '.$lesson->module->title.' / '.$lesson->title"
+        title="Novo Quiz"
+        subtitle="Defina as regras da avaliação; as questões são cadastradas depois de salvar."
+    />
+
+    <x-ui.card>
         <form method="POST" action="{{ route('quizzes.store', $lesson) }}" dusk="quiz-form">
             @csrf
 

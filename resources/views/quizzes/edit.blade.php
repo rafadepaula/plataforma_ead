@@ -27,7 +27,14 @@
 @endphp
 
 @section('content')
-    <x-ui.card title="Editar Quiz" kicker="{{ $quiz->lesson->module->course->title }} / {{ $quiz->lesson->module->title }} / {{ $quiz->lesson->title }}">
+    <x-layout.page-header
+        :breadcrumb="[['label' => 'Cursos', 'url' => route('courses.index')], ['label' => $quiz->lesson->module->course->title, 'url' => route('courses.modules.index', $quiz->lesson->module->course)], ['label' => $quiz->lesson->module->title, 'url' => route('modules.lessons.index', $quiz->lesson->module)], ['label' => 'Editar Quiz']]"
+        :kicker="$quiz->lesson->module->course->title.' / '.$quiz->lesson->module->title.' / '.$quiz->lesson->title"
+        title="Editar Quiz"
+        subtitle="Atualize as regras da avaliação e gerencie as questões abaixo."
+    />
+
+    <x-ui.card>
         <form method="POST" action="{{ route('quizzes.update', $quiz) }}" dusk="quiz-form">
             @csrf
             @method('PUT')

@@ -108,7 +108,8 @@ plain `string` resolved through
 - Confirm `resources/js/modules/NotificationBell.js` registered in
   `resources/js/app.js` `DOMContentLoaded` bootstrap and `public/build` not
   stale relative to it. Run `vendor/bin/sail npm run build` (or ask user to
-  run `npm run dev`/`composer run dev`). Stale build is single most common
+  never `npm run dev`/`composer run dev`, which leave `public/hot` behind
+  and break every Dusk run — see `laravel-dusk`). Stale build is single most common
   cause of "bell renders but nothing happens on click". Blade markup ships
   from current source, bundled JS wiring it up does not.
 - Badge stuck at stale count: check `data-unread-count-url` on

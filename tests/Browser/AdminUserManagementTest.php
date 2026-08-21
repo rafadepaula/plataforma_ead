@@ -68,7 +68,7 @@ class AdminUserManagementTest extends DuskTestCase
                 // Selenium's getText() returns the rendered (transformed)
                 // text — mirrors the assertion convention already used by
                 // `UserManagementTest::test_gestor_user_management_full_lifecycle()`.
-                ->assertSeeIn('@admin-user-status-'.$alunoOrgA->id, 'INATIVO');
+                ->assertTextEqualsIgnoringCase('@admin-user-status-'.$alunoOrgA->id, 'Inativo');
         });
 
         $this->assertDatabaseHas('users', [
@@ -103,9 +103,9 @@ class AdminUserManagementTest extends DuskTestCase
                 // `<x-ui.badge>` carries `text-transform: uppercase`, and
                 // Selenium's getText() returns the rendered (transformed)
                 // text — mirrors the status-badge assertion convention above.
-                ->assertSeeIn('@admin-user-role-'.$admin->id, mb_strtoupper(RolesEnum::label(RolesEnum::ADMIN->value)))
-                ->assertSeeIn('@admin-user-role-'.$gestor->id, mb_strtoupper(RolesEnum::label(RolesEnum::GESTOR->value)))
-                ->assertSeeIn('@admin-user-role-'.$aluno->id, mb_strtoupper(RolesEnum::label(RolesEnum::ALUNO->value)));
+                ->assertSeeInIgnoringCase('@admin-user-role-'.$admin->id, RolesEnum::label(RolesEnum::ADMIN->value))
+                ->assertSeeInIgnoringCase('@admin-user-role-'.$gestor->id, RolesEnum::label(RolesEnum::GESTOR->value))
+                ->assertSeeInIgnoringCase('@admin-user-role-'.$aluno->id, RolesEnum::label(RolesEnum::ALUNO->value));
         });
     }
 
@@ -195,7 +195,7 @@ class AdminUserManagementTest extends DuskTestCase
                 ->click('@confirm-modal-confirm-status-'.$target->id.'-confirm')
                 ->waitForLocation('/admin/users')
                 ->waitFor('@admin-user-status-'.$target->id)
-                ->assertSeeIn('@admin-user-status-'.$target->id, 'ATIVO');
+                ->assertTextEqualsIgnoringCase('@admin-user-status-'.$target->id, 'Ativo');
         });
 
         $this->assertDatabaseHas('users', [

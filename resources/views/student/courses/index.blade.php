@@ -10,7 +10,12 @@
 --}}
 
 @section('content')
-    <x-layout.page-header kicker="Área do Aluno" title="Meus Cursos" />
+    <x-layout.page-header
+        :breadcrumb="[['label' => 'Aprendizado'], ['label' => 'Meus Cursos']]"
+        kicker="Aprendizado"
+        title="Meus Cursos"
+        subtitle="Suas matrículas em todas as organizações, com progresso em tempo real."
+    />
 
     @forelse($courses as $orgId => $orgCourses)
         <div class="mb-8x" dusk="org-group-{{ $orgId }}">
@@ -18,7 +23,7 @@
                 {{ optional($orgCourses->first()->organization)->name ?? 'Organização' }}
             </h2>
 
-            <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-4x">
+            <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4x">
                 @foreach($orgCourses as $course)
                     <div class="col">
                         <x-ui.card :title="$course->title" class="h-100" dusk="student-course-{{ $course->id }}">
@@ -32,15 +37,18 @@
                                 dusk="progress-bar-{{ $course->id }}"
                             />
 
-                            <x-ui.button href="{{ route('classroom.show', $course) }}" size="sm" dusk="open-classroom-{{ $course->id }}">Acessar Curso</x-ui.button>
+                            <x-ui.button href="{{ route('classroom.show', $course) }}" dusk="open-classroom-{{ $course->id }}">Acessar Curso</x-ui.button>
                         </x-ui.card>
                     </div>
                 @endforeach
             </div>
         </div>
     @empty
-        <x-ui.empty-state dusk="no-enrollments">
-            Você ainda não está matriculado em nenhum curso.
-        </x-ui.empty-state>
+        <x-ui.empty-state
+            dusk="no-enrollments"
+            icon="book-open"
+            title="Nenhum curso por aqui."
+            description="Quando sua organização matricular você em um curso, ele aparece nesta lista."
+        />
     @endforelse
 @endsection

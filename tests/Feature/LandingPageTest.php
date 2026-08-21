@@ -23,6 +23,9 @@ class LandingPageTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('Capacitação técnica continuada, do jeito certo');
+        $response->assertSee('Como funciona');
+        $response->assertSee('As telas que você vai usar');
+        $response->assertSee('Deseja utilizar esta plataforma em sua organização?');
         $response->assertSee('Entrar');
     }
 

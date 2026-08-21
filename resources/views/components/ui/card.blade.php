@@ -5,6 +5,7 @@
     'elevation' => 'none',
     'border' => true,
     'shadow' => false,
+    'surface' => 'secondary',
 ])
 
 @php
@@ -16,11 +17,17 @@
     };
 
     $borderClass = $border ? '' : 'border-0';
+
+    $surfaceClass = match($surface) {
+        'white' => 'ds-surface',
+        'body' => 'bg-body',
+        default => 'bg-body-secondary',
+    };
 @endphp
 
-<div {{ $attributes->merge(['class' => "card bg-body-secondary {$elevationClass} {$borderClass}"]) }}>
+<div {{ $attributes->merge(['class' => "card {$surfaceClass} {$elevationClass} {$borderClass}"]) }}>
     @if(isset($image))
-        <div class="grayscale w-100 overflow-hidden">
+        <div class="ds-pastel-wash">
             {{ $image }}
         </div>
     @endif
@@ -51,7 +58,7 @@
     </div>
 
     @if(isset($footer))
-        <div class="card-footer p-3 bg-body-tertiary border-top border-secondary">
+        <div class="card-footer p-3 border-top">
             {{ $footer }}
         </div>
     @endif

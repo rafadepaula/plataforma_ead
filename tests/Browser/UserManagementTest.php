@@ -76,8 +76,8 @@ class UserManagementTest extends DuskTestCase
                 ->waitFor('@user-status-'.$aluno->id)
                 // `<x-ui.badge>` carries `text-transform: uppercase`, and
                 // Selenium's getText() returns the rendered (transformed)
-                // text — so the badge reads INATIVO, not Inativo.
-                ->assertSeeIn('@user-status-'.$aluno->id, 'INATIVO');
+                // texto: a caixa é decisão de tema, então a asserção ignora a caixa.
+                ->assertTextEqualsIgnoringCase('@user-status-'.$aluno->id, 'Inativo');
 
             $this->assertDatabaseHas('users', [
                 'id' => $aluno->id,
@@ -93,7 +93,7 @@ class UserManagementTest extends DuskTestCase
                 ->type('@login-email', 'aluno.dusk@example.com')
                 ->type('@login-password', 'password')
                 ->press('@login-submit')
-                ->waitForText('These credentials do not match our records.')
+                ->waitForText('Essas credenciais não foram encontradas em nossos registros.')
                 ->assertGuest();
         });
 
@@ -169,9 +169,9 @@ class UserManagementTest extends DuskTestCase
                 ->type('password', 'password')
                 ->type('password_confirmation', 'password')
                 ->press('Criar Usuário')
-                ->waitForText('The email has already been taken.')
+                ->waitForText('O valor informado para o campo e-mail já está em uso.')
                 ->assertPathIs('/users/create')
-                ->assertSee('The email has already been taken.');
+                ->assertSee('O valor informado para o campo e-mail já está em uso.');
 
             $this->assertDatabaseCount('users', 2);
 
@@ -186,7 +186,7 @@ class UserManagementTest extends DuskTestCase
                 ->type('password', 'password')
                 ->type('password_confirmation', 'outra-senha-qualquer')
                 ->press('Criar Usuário')
-                ->waitForText('The password field confirmation does not match.')
+                ->waitForText('A confirmação do campo senha não confere.')
                 ->assertPathIs('/users/create');
         });
 

@@ -1,0 +1,91 @@
+// =============================================================================
+// Componente: App bar (barra superior fixa)
+// -----------------------------------------------------------------------------
+// Estrutura da barra de navegação superior do shell autenticado (logo, busca,
+// notificações, avatar do usuário). Bootstrap não entrega esse padrão pronto.
+// Conteúdo visual completo: diretriz da biblioteca de componentes.
+// Regra: qualquer declaração aqui só pode consumir var(--*), nunca literal de
+// cor/raio/sombra.
+// =============================================================================
+
+// Área de conteúdo principal do shell autenticado (irmã da app bar e do
+// drawer em `layouts/app.blade.php`). Centralizada, largura máxima de leitura.
+.app-main {
+    width: 100%;
+    max-width: var(--content-max);
+    margin-inline: auto;
+    padding: var(--main-pad);
+    background: var(--surface-body);
+
+    // diretriz de mobile e responsivo: abaixo de `lg` o respiro de 40px do desktop
+    // (`--main-pad`, token intocado) some espaço demais numa tela estreita —
+    // cai para 20px (`--space-5`). O conteúdo em si já vira coluna única:
+    // telas de detalhe com coluna lateral concreta (ex.: `classroom/show`,
+    // progresso/certificado/próxima aula) usam `.row.g-4` com
+    // `.col-lg-8`/`.col-lg-4` — mesma convenção de `dashboard/index`, onde a
+    // coluna principal vem antes da lateral no markup, então o empilhamento
+    // de `.col-12` abaixo de `lg` já deixa a lateral ao final do conteúdo
+    // sem precisar de `order`/CSS extra; a regra abaixo cobre só o respiro.
+    @include media-breakpoint-down(lg) {
+        padding: var(--space-5);
+    }
+}
+
+// `.appbar` é o nome-alvo do design system; `header.nav` cobre o markup atual
+// de `components/layout/topbar.blade.php` (`<header class="nav ...">`) até a
+// migração de classe do bucket de Blade — mesma declaração, sem duplicar
+// regra quando o nome mudar.
+.appbar,
+header.nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--gap-section);
+    height: var(--appbar-height);
+    padding-inline: var(--space-8);
+    background: var(--surface);
+    border-bottom: var(--border-width) solid var(--border-color);
+
+    @include media-breakpoint-down(lg) {
+        height: 64px;
+        padding-inline: var(--space-4);
+        gap: var(--gap-inline);
+    }
+
+    // Abaixo de `sm` (320-375px) o cluster direito (ajuda, notificações,
+    // perfil, sair) não cabe mais com `--space-4` de respiro nas duas
+    // pontas — cai para `--space-2` para devolver 16px ao conteúdo
+    // (diretriz de mobile e responsivo, guardrail de zero scroll horizontal).
+    @include media-breakpoint-down(sm) {
+        padding-inline: var(--space-2);
+    }
+}
+
+// Gatilho do drawer mobile + marca: espaçamento consistente entre o botão de
+// menu (`[data-bs-toggle="offcanvas"]`) e o `.brand-mark` na mesma barra.
+.appbar,
+header.nav {
+    > .d-flex:first-child {
+        gap: var(--space-4);
+
+        @include media-breakpoint-down(sm) {
+            gap: var(--space-2);
+        }
+    }
+}
+
+// Botões-ícone da app bar (sino de notificações, botão de ajuda). Garante o
+// alvo de toque mínimo de `var(--touch-min)` (48px,
+// pela diretriz de mobile e responsivo) como um quadrado exato —
+// o padding-x padrão do `.btn` (`$btn-padding-x` em `_bridge.scss`) sozinho
+// deixa um botão só-ícone com ~72px de largura (`24px + 22px + 24px`), o que
+// estoura o cluster da app bar em 320px; zerar o padding e centralizar via
+// flex é o que faz `min-width`/`min-height` valerem como o tamanho real.
+.appbar-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: var(--touch-min);
+    min-height: var(--touch-min);
+    padding: 0;
+}

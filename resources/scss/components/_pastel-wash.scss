@@ -1,0 +1,84 @@
+// =============================================================================
+// Componente: Pastel wash (fundo gradiente decorativo)
+// -----------------------------------------------------------------------------
+// Gradiente pastel de fundo (ex.: `linear-gradient(135deg, var(--blue-100),
+// var(--mint-100))`) usado em heros e cards de destaque. Bootstrap não entrega
+// esse padrão pronto.
+// Conteúdo visual completo: diretriz da biblioteca de componentes.
+// Regra: qualquer declaração aqui só pode consumir var(--*), nunca literal de
+// cor/raio/sombra.
+// =============================================================================
+
+// Faixa de mídia do `x-ui.card` (slot `image`, diretriz da biblioteca de componentes) — substitui a classe
+// fantasma `grayscale w-100 overflow-hidden` do tema anterior. Cobre a área
+// inteira do card com o wash e recorta qualquer `<img>`/`<svg>` filho.
+.ds-pastel-wash {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 168px;
+    overflow: hidden;
+    background: linear-gradient(135deg, var(--blue-100), var(--mint-100));
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+
+    img,
+    svg {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+}
+
+// =============================================================================
+// Ajustes de apoio — componentes desta camada sem partial próprio
+// -----------------------------------------------------------------------------
+// `x-ui.card`, `x-ui.pagination`, `x-ui.table`/`x-ui.data-table` e `x-ui.avatar`
+// (diretriz da biblioteca de componentes, Bucket B) não ganharam um `_*.scss` dedicado nesta fase; os ajustes
+// finos que dependem de custom property do Bootstrap (não expostos por
+// utility pronta) ficam agrupados aqui em vez de inventar classe onde já
+// existe var(--bs-*) ou de tocar `_bridge.scss`/`_avatar.scss` (fora de
+// escopo desta camada).
+// =============================================================================
+
+// Rodapé do `x-ui.card` (slot `footer`) em `--surface-sunken`, substituindo o
+// `bg-body-tertiary`/`border-secondary` genéricos do Bootstrap.
+.card > .card-footer {
+    background: var(--surface-sunken);
+    border-top-color: var(--divider);
+}
+
+// `x-ui.pagination`: pílulas com o item ativo em `--primary`, via as custom
+// properties que o próprio `.pagination` do Bootstrap 5.3 já expõe
+// (`--bs-pagination-*`) — nenhuma classe nova, só reatribuição de variável.
+.ds-pagination {
+    --bs-pagination-border-radius: var(--radius-pill);
+    --bs-pagination-active-bg: var(--primary);
+    --bs-pagination-active-border-color: var(--primary);
+    --bs-pagination-hover-bg: var(--state-hover);
+    --bs-pagination-focus-box-shadow: 0 0 0 var(--focus-ring-width) var(--focus-ring-alpha);
+
+    .page-link {
+        border-radius: var(--bs-pagination-border-radius) !important;
+        margin-inline: 2px;
+    }
+}
+
+// `x-ui.table`/`x-ui.data-table`: divisores em `--divider` (em vez do
+// `--bs-border-color` genérico), via a custom property que `.table` já expõe.
+.ds-table {
+    --bs-table-border-color: var(--divider);
+}
+
+// `x-ui.avatar`: recorte de `<img>` dentro do círculo `.ds-avatar` (definida
+// em `_avatar.scss`, Fase 1 — não duplicada aqui, só complementada para o
+// caso de foto que aquele arquivo, focado em iniciais, não previa).
+.ds-avatar {
+    overflow: hidden;
+
+    img {
+        width: 100%;
+        height: 100%;
+        border-radius: inherit;
+        object-fit: cover;
+    }
+}

@@ -1,0 +1,101 @@
+// =============================================================================
+// Componente: Drawer (menu lateral de navegação)
+// -----------------------------------------------------------------------------
+// Painel de navegação lateral fixo (280px) do shell autenticado, com itens de
+// menu por papel (Admin/Gestor/Aluno). Bootstrap não entrega esse padrão pronto.
+// Conteúdo visual completo: diretriz da biblioteca de componentes.
+// Regra: qualquer declaração aqui só pode consumir var(--*), nunca literal de
+// cor/raio/sombra.
+// =============================================================================
+
+// `.drawer` é o nome-alvo do design system; `.sidebar` cobre o markup atual
+// de `components/layout/sidebar.blade.php` (aside desktop). Sem sombra no
+// desktop — é um painel fixo ancorado, não flutuante.
+.drawer,
+.sidebar {
+    display: flex;
+    flex-direction: column;
+    width: var(--nav-width);
+    min-height: 100%;
+    padding-block: var(--space-4) var(--space-8);
+    background: var(--nav-bg);
+    border-right: var(--border-width) solid var(--border-color);
+    box-shadow: none;
+}
+
+.sidebar-section-title {
+    padding: var(--space-6) var(--space-6) var(--space-2);
+    font-size: var(--font-size-overline);
+    font-weight: var(--font-weight-bold);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-overline);
+    color: var(--text-secondary);
+}
+
+// Item de navegação — compartilhado entre o `<aside>` desktop
+// (`.sidebar-item`) e o offcanvas mobile (`.mobile-sidebar-item`): mesma
+// altura, tipografia e estado ativo em ambos.
+.sidebar-item,
+.mobile-sidebar-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    height: 52px;
+    padding-inline: var(--space-6);
+    color: var(--nav-fg);
+    font-size: var(--font-size-body);
+    font-weight: var(--font-weight-semibold);
+    text-decoration: none;
+    border-right: var(--border-width) solid transparent;
+    transition: var(--transition-base);
+
+    svg {
+        width: 20px;
+        height: 20px;
+        flex-shrink: 0;
+    }
+
+    &:hover,
+    &:focus-visible {
+        background: var(--state-hover);
+        color: var(--nav-fg-active);
+        text-decoration: none;
+    }
+
+    &.active {
+        background: var(--nav-active-bg);
+        color: var(--nav-fg-active);
+        font-weight: var(--font-weight-bold);
+        border-right-color: var(--primary);
+    }
+}
+
+.sidebar-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    margin-inline-start: auto;
+    padding-inline: var(--space-2);
+    border-radius: var(--radius-pill);
+    background: var(--secondary-container);
+    color: var(--on-secondary-container);
+    font-size: var(--font-size-caption);
+    font-weight: var(--font-weight-bold);
+    line-height: 1;
+}
+
+// Drawer mobile: mesmo painel claro do desktop, entregue pelo `.offcanvas` do
+// Bootstrap. Sem o `text-bg-dark` do tema anterior — as diretrizes de shell e de mobile pedem
+// drawer claro em qualquer viewport, sobre o scrim de 42% que o próprio
+// Bootstrap gera.
+.mobile-drawer {
+    width: var(--nav-width);
+    background: var(--nav-bg);
+    color: var(--text-primary);
+
+    .offcanvas-header {
+        border-color: var(--divider) !important;
+    }
+}

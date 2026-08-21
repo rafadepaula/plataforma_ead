@@ -70,12 +70,90 @@ export class AuditLogDiffModal {
             eventLabel.textContent = button.getAttribute('data-event') || '';
         }
 
+        const rawOld = button.getAttribute('data-old-values');
+        const rawNew = button.getAttribute('data-new-values');
+        const parsedOld = this.tryParseJson(rawOld);
+        const parsedNew = this.tryParseJson(rawNew);
+
         if (oldValues) {
-            oldValues.textContent = this.formatJson(button.getAttribute('data-old-values'));
+            this.renderPane(oldValues, rawOld, parsedOld, parsedNew);
         }
 
         if (newValues) {
-            newValues.textContent = this.formatJson(button.getAttribute('data-new-values'));
+            this.renderPane(newValues, rawNew, parsedNew, parsedOld);
+        }
+    }
+
+    /**
+     * Fills one `<pre>` pane of the diff modal.
+     *
+     * When BOTH sides parse as plain JSON objects, each `key: value` pair
+     * is rendered on its own line so the keys whose value differs from the
+     * OTHER pane's value for that same key can be flagged as changed. Per
+     * the accessibility guideline's "color is never the only signal" rule, a changed line is
+     * NOT colored — it is marked with weight (`fw-semibold`) and a
+     * container (`border-start border-3 ps-2`, all pre-existing Bootstrap
+     * utility classes) plus a `diff-changed` class used purely as a test
+     * hook, no new CSS class is introduced.
+     *
+     * Anything that is not a plain object on both sides (arrays, scalars,
+     * unparsed/invalid JSON) falls back to the original pretty-printed
+     * plain-text rendering — no diffing is attempted.
+     */
+    renderPane(paneEl, rawValue, parsed, otherParsed) {
+        paneEl.textContent = '';
+
+        if (!rawValue) {
+            paneEl.textContent = '—';
+            return;
+        }
+
+        if (!this.isPlainObject(parsed) || !this.isPlainObject(otherParsed)) {
+            paneEl.textContent = this.formatJson(rawValue);
+            return;
+        }
+
+        const keys = Object.keys(parsed);
+
+        if (keys.length === 0) {
+            paneEl.textContent = '{}';
+            return;
+        }
+
+        paneEl.appendChild(document.createTextNode('{\n'));
+
+        keys.forEach((key, index) => {
+            const value = parsed[key];
+            const changed = JSON.stringify(value) !== JSON.stringify(otherParsed[key]);
+            const separator = index < keys.length - 1 ? ',' : '';
+            const line = `  ${JSON.stringify(key)}: ${JSON.stringify(value)}${separator}`;
+
+            if (changed) {
+                const span = document.createElement('span');
+                span.className = 'diff-changed fw-semibold border-start border-3 ps-2 d-inline-block';
+                span.textContent = line;
+                paneEl.appendChild(span);
+            } else {
+                paneEl.appendChild(document.createTextNode(line));
+            }
+
+            paneEl.appendChild(document.createTextNode('\n'));
+        });
+
+        paneEl.appendChild(document.createTextNode('}'));
+    }
+
+    isPlainObject(value) {
+        return value !== null && typeof value === 'object' && !Array.isArray(value);
+    }
+
+    tryParseJson(rawValue) {
+        if (!rawValue) return null;
+
+        try {
+            return JSON.parse(rawValue);
+        } catch (error) {
+            return undefined;
         }
     }
 

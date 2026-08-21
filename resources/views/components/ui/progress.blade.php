@@ -14,8 +14,19 @@
       - max       int    (100)      denominador do percentual.
       - label     string (null)     texto acessível (aria-label). Default: "Progresso".
       - variant   string ('primary') primary|success|danger|warning|neutral.
-                                     ATENÇÃO: neste tema `success` é o accent VERMELHO
-                                     (#ec3013) e `danger` é #e15b47 — não há verde.
+                                     Nunca vermelho/laranja/amarelo: `success` usa a
+                                     rampa menta (par --success-container/
+                                     --on-success-container, via `.bg-success-subtle`/
+                                     `.text-success-emphasis`), `danger` usa o par
+                                     --critical-container/--on-critical-container
+                                     (`.bg-danger-subtle`/`.text-danger-emphasis`) e
+                                     `warning` usa --attention-container/
+                                     --on-attention-container (`.bg-warning-subtle`/
+                                     `.text-warning-emphasis`). Essas utilities do
+                                     Bootstrap já nascem tematizadas: `$success`/
+                                     `$danger`/`$warning` foram remapeados em
+                                     resources/scss/_bridge.scss, então nenhuma classe
+                                     nova foi inventada aqui.
       - height    int    (null)     altura em px. Só aceita as chaves já geradas pela
                                      Utility API em resources/scss/_utilities.scss →
                                      "height-px": 4, 6, 8, 16, 24, 32, 36, 60. Outro valor
@@ -48,9 +59,9 @@
     $pct = max(0, min(100, (int) round(((float) $value / $maxValue) * 100)));
 
     $variantClass = match ($variant) {
-        'success' => 'bg-success',
-        'danger' => 'bg-danger',
-        'warning' => 'bg-warning',
+        'success' => 'bg-success-subtle text-success-emphasis',
+        'danger' => 'bg-danger-subtle text-danger-emphasis',
+        'warning' => 'bg-warning-subtle text-warning-emphasis',
         'neutral' => 'bg-secondary',
         default => 'bg-primary',
     };

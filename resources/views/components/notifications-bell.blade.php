@@ -40,7 +40,7 @@
     >
         <button
             type="button"
-            class="btn btn-link text-body text-decoration-none p-0 position-relative"
+            class="btn btn-link text-body text-decoration-none appbar-icon-btn rounded-circle position-relative"
             aria-label="Notificações"
             data-notifications-toggle
             data-bs-toggle="dropdown"
@@ -49,16 +49,24 @@
             aria-expanded="false"
             dusk="notifications-toggle"
         >
-            <x-ui.icon name="bell" size="18" />
+            <x-ui.icon name="bell" size="22" />
             <span
                 data-notifications-badge
                 dusk="notifications-badge"
-                class="position-absolute top-0 start-100 translate-middle-x {{ $unreadCount > 0 ? 'd-flex' : 'd-none' }} align-items-center justify-content-center bg-danger text-white fw-bold min-w-16 h-16 px-1 fs-10 lh-1"
+                class="badge rounded-pill bg-danger position-absolute top-0 start-100 translate-middle {{ $unreadCount > 0 ? 'd-flex' : 'd-none' }} align-items-center justify-content-center"
             >{{ $unreadCount > 99 ? '99+' : $unreadCount }}</span>
         </button>
 
+        {{--
+            `--dropdown-width` (380px, `_ds/.../tokens/spacing.css`) ainda não
+            tem ponte para uma variável Sass do Bootstrap
+            (`resources/scss/_bridge.scss` está fora do escopo deste bucket),
+            então a largura fica no comportamento padrão do `.dropdown-menu`
+            (auto, respeitando `--bs-dropdown-min-width`) em vez de um valor
+            fixo — sem classe utilitária inventada.
+        --}}
         <div
-            class="dropdown-menu dropdown-menu-end shadow-lg w-340 max-w-90vw max-h-420"
+            class="dropdown-menu dropdown-menu-end shadow-lg p-0"
             data-notifications-dropdown
             dusk="notifications-dropdown"
         >
@@ -72,7 +80,7 @@
                 >marcar todas como lidas</a>
             </div>
 
-            <div class="overflow-y-auto max-h-360" data-notifications-list>
+            <div class="overflow-y-auto" data-notifications-list>
                 @forelse($recentNotifications as $notification)
                     <a
                         href="{{ $notification->data['action_url'] ?? '#' }}"

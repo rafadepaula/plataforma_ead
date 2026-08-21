@@ -108,7 +108,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 return response()->json(['message' => $message], 404);
             }
 
-            return response($message, 404);
+            return response()->view('convite.invalid', ['message' => $message], 404);
         });
 
         // A `role:`-gated route hit by a guest (no authenticated user at all) should redirect to login

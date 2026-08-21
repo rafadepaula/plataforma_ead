@@ -5,7 +5,7 @@ description: >
   (SPEC-10): mandatory PHPUnit/Dusk test files, common
   postable_type/withTrashed() and cross-tenant Policy failure modes,
   ForumTopic::withoutEvents() gotcha, frontend-build gotcha for
-  ForumPolling.js/ForumEditHistory.js/ForumReportModal.js. Use when
+  ForumPolling.js/ForumReportModal.js. Use when
   ForumTopicTest, XssSanitizationTest, ForumModerationQueueTest, or
   ForumEditHistoryTest fail; report postable can't resolve; multi-org
   Aluno gets UnresolvedOrgContextException creating topic; or "ver
@@ -98,21 +98,27 @@ vendor/bin/sail dusk --filter=ForumDuskTest
   `withoutGlobalScopes()`). Cross-org lookup there come back as if course
   do not exist, turning legitimate 200 into false 403.
 
-## `ForumPolling.js`/`ForumEditHistory.js`/`ForumReportModal.js` Dead in Browser
+## `ForumPolling.js`/`ForumReportModal.js` Dead in Browser
 
-- Confirm all three modules registered in `resources/js/app.js`
+- Confirm both modules registered in `resources/js/modules/index.js`
   `DOMContentLoaded` bootstrap and `public/build` not stale relative to
   `resources/js/modules/Forum*.js` — run `vendor/bin/sail npm run build`
-  (or ask user to run `npm run dev`/`composer run dev`).
+  — `vendor/bin/sail npm run build` only, never `npm run dev`, which
+  leaves `public/hot` behind and kills the whole Dusk suite (see
+  `laravel-dusk`).
 - Polling silently doing nothing: check `[data-forum-polling]` container
   `data-fetch-url` really resolve to `forum-replies.fetch` for **current**
   topic. Stale/missing attribute mean `bind()` return early without
   registering interval, no error surfaced.
-- Edit-history modal not opening: `ForumEditHistory.js` require
-  `window.ModalManager` already initialized and every
-  `[id^="edit-history-"]` modal backdrop hidden on `init()`. Modal
-  rendered *after* `bind()` ran (e.g. injected by `ForumPolling.js`
-  appending new reply with own history modal) will not have backdrop
+- Edit-history modal not opening: it is declarative
+  (`data-bs-toggle="modal"` in
+  `forum/partials/_edit-history-modal.blade.php`), so the failure is
+  almost always the JS bundle never loading `bootstrap` at all, or a
+  stale `public/build`. A history modal injected *after* page load by
+  `ForumPolling.js` appending a new reply still works, because
+  `bootstrap.Modal` resolves the trigger by delegation — what will not
+  work is a duplicate `id`, which makes the trigger open the first
+  matching modal
   pre-hidden. This module scan once at page load on purpose, matching
   rest of forum server-rendered history (no AJAX re-render of history
   modals).
@@ -120,7 +126,20 @@ vendor/bin/sail dusk --filter=ForumDuskTest
   clicked "Denunciar" button carry both
   `data-postable-type`/`data-postable-id` and that `prefill()` found
   shared `[data-forum-report-form]`. Form and every trigger button must
-  share same `data-modal-target="report-modal"` id `ModalManager` open.
+  share the same `#report-modal` id, opened declaratively by
+  `data-bs-toggle="modal"` + `data-bs-target="#report-modal"`.
+
+## `DuskSelectorContractTest` Fails After Only Adding Explanatory Comments
+
+`DuskSelectorContractTest` regex-matches `dusk="..."` literally, including
+inside Blade `{{-- ... --}}` comments — it does not parse HTML/Blade, it
+greps the raw file. Writing a comment that quotes the frozen selector as
+`dusk="remove-form-{id}"` (e.g. explaining why a selector moved onto a
+wrapping `<div>`) inflates the matched-selector count and fails the
+snapshot diff, even though no real `dusk=` attribute changed. When
+documenting a selector in a comment, describe it without the literal
+`dusk="..."` attribute form (e.g. "the remove-form-{id} selector"), or the
+contract test will count it as a new occurrence.
 
 ## Auto-Update Protocol (SPEC-03)
 
@@ -131,7 +150,7 @@ change to `ForumTopicController`/`ForumReplyController`/
 `ForumTopicPolicy`/`ForumReplyPolicy`, `ForumContentSanitizerService`,
 `forum.*`/`forum-replies.*`/`forum-reports.*`/`forum-moderation.*` routes,
 Blade views under `resources/views/forum/`, or
-`ForumPolling.js`/`ForumEditHistory.js`/`ForumReportModal.js` **must**
+`ForumPolling.js`/`ForumReportModal.js` **must**
 update all three forum skills (`forum-architecture`, `forum-conventions`,
 `forum-maintenance`) in same change, before task counted done. Also
 re-check `tenancy-architecture` cascade-inherited table list for

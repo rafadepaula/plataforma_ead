@@ -13,7 +13,12 @@
 @extends('layouts.app')
 
 @section('content')
-    <x-layout.page-header title="Meu Perfil" />
+    <x-layout.page-header
+        :breadcrumb="[['label' => 'Meu Perfil']]"
+        kicker="Conta"
+        title="Meu Perfil"
+        subtitle="Atualize seus dados cadastrais e sua senha de acesso."
+    />
 
     {{-- `col-lg-6` substitui o antigo `max-width: 560px`: o Bootstrap não tem
          utility de largura máxima em px, e a coluna do grid é o degrau
@@ -21,6 +26,21 @@
     <div class="row">
         <div class="col-12 col-lg-6 d-flex flex-column gap-4">
             <x-ui.card title="Informações do Perfil" kicker="Dados Cadastrais">
+                {{-- Organização e status são somente-leitura aqui de propósito:
+                     `ProfileController::update()` nunca aceita `org_id`/`status`
+                     do request — só Admin/Gestor mudam isso, em telas próprias. --}}
+                <dl class="row mb-4">
+                    <dt class="col-sm-4 ds-muted">Organização</dt>
+                    <dd class="col-sm-8">{{ $user->organization->name ?? 'Nenhuma — Admin do Sistema' }}</dd>
+
+                    <dt class="col-sm-4 ds-muted">Status</dt>
+                    <dd class="col-sm-8">
+                        <x-ui.badge :variant="$user->status === 'active' ? 'accent' : 'neutral'" data-status="{{ $user->status }}">
+                            {{ $user->status === 'active' ? 'Ativo' : 'Inativo' }}
+                        </x-ui.badge>
+                    </dd>
+                </dl>
+
                 <form method="POST" action="{{ route('profile.update') }}" dusk="profile-form">
                     @csrf
                     @method('PATCH')
@@ -40,6 +60,14 @@
             </x-ui.card>
 
             <x-ui.card title="Atualizar Senha" kicker="Segurança">
+                {{-- `PasswordController::update()` chama `Auth::logoutOtherDevices()`
+                     antes de rotacionar a senha — todas as demais sessões
+                     ativas do usuário são encerradas. Este alerta é o aviso
+                     obrigatório dessa consequência, exibido antes do envio. --}}
+                <x-ui.alert variant="info" class="mb-4">
+                    Ao trocar sua senha, todas as suas outras sessões ativas serão desconectadas.
+                </x-ui.alert>
+
                 <form method="POST" action="{{ route('password.update') }}" dusk="password-form">
                     @csrf
                     @method('PUT')

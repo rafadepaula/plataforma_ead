@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Course extends Model
@@ -53,6 +54,18 @@ class Course extends Model
     public function modules(): HasMany
     {
         return $this->hasMany(Module::class);
+    }
+
+    /**
+     * Used to feed the "N módulos · N aulas" caption on `courses.index`
+     * (`CourseController::index()`'s `withCount()`) without an N+1 query
+     * per row — `Lesson` has no direct `course_id`, only `module_id`.
+     *
+     * @return HasManyThrough<Lesson, Module, $this>
+     */
+    public function lessons(): HasManyThrough
+    {
+        return $this->hasManyThrough(Lesson::class, Module::class);
     }
 
     /**

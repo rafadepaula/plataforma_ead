@@ -93,6 +93,7 @@ class InvitationHttpTest extends TestCase
             'cpf' => '12345678909',
             'password' => 'password123',
             'password_confirmation' => 'password123',
+            'consent' => true,
         ]);
 
         $response->assertRedirect();
@@ -122,6 +123,7 @@ class InvitationHttpTest extends TestCase
             'cpf' => '111.444.777-36',
             'password' => 'password123',
             'password_confirmation' => 'password123',
+            'consent' => true,
         ])->assertSessionHasErrors('cpf');
 
         $this->assertFalse(User::where('email', 'aluno-cpf-invalido@example.com')->exists());
@@ -141,6 +143,7 @@ class InvitationHttpTest extends TestCase
         $response = $this->post(route('invitation.store', $invitationLink->token), [
             'email' => 'existente@example.com',
             'password' => 'senha-correta',
+            'consent' => true,
         ]);
 
         $response->assertRedirect();
@@ -161,6 +164,7 @@ class InvitationHttpTest extends TestCase
         $this->post(route('invitation.store', $invitationLink->token), [
             'email' => 'existente2@example.com',
             'password' => 'senha-errada',
+            'consent' => true,
         ])->assertSessionHasErrors('password');
 
         $this->assertGuest();

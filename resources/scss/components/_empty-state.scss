@@ -1,0 +1,31 @@
+// =============================================================================
+// Componente: Empty state (estado vazio)
+// -----------------------------------------------------------------------------
+// Ilustração/ícone + mensagem + CTA exibidos quando uma listagem não tem dados
+// (cursos, turmas, notificações). Bootstrap não entrega esse padrão pronto.
+// Conteúdo visual completo: diretriz da biblioteca de componentes.
+// Regra: qualquer declaração aqui só pode consumir var(--*), nunca literal de
+// cor/raio/sombra.
+// =============================================================================
+
+// Envelope do `x-ui.empty-state` fora de tabela (variante em bloco). Substitui
+// a classe fantasma `border-dashed` (nunca definida em folha de estilo) do
+// tema anterior.
+.ds-empty-state {
+    border: 1.5px dashed var(--divider);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+}
+
+// Círculo pastel ao redor do ícone de 32px, nas duas variantes (bloco e
+// dentro de célula de tabela).
+.ds-empty-state-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: var(--radius-pill);
+    background: var(--primary-container);
+    color: var(--on-primary-container);
+}

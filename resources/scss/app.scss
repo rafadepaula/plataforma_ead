@@ -2,4 +2,14 @@
 // Plataforma EAD — Entrypoint SCSS (Padrão Bootstrap 5.3)
 // =============================================================================
 
+// 1. Tokens do design system (custom properties, disponíveis em runtime)
+@import "../../_ds/plataforma-ead-design-system/styles.css";
+
+// 2. Ponte: valores literais alimentam as variáveis Sass do Bootstrap
+@import "bridge";
+
+// 3. Bootstrap completo, já temático
 @import "bootstrap/scss/bootstrap";
+
+// 4. Componentes que o Bootstrap não entrega
+@import "components/index";

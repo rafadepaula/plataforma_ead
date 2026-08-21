@@ -37,7 +37,15 @@
 @extends('layouts.app')
 
 @section('content')
-    <x-layout.page-header kicker="Fórum" title="Fila de Denúncias" />
+    <x-layout.page-header
+        :breadcrumb="[['label' => 'Fórum']]"
+        kicker="Fórum"
+        title="Acompanhamento / Moderação do fórum"
+        subtitle="Revise as denúncias pendentes e decida se a publicação permanece no ar.">
+        <x-slot:actions>
+            <x-ui.badge variant="neutral">{{ $reports->count() }} denúncias pendentes</x-ui.badge>
+        </x-slot:actions>
+    </x-layout.page-header>
 
     <x-ui.data-table striped hover responsive :headers="['Denunciado por', 'Motivo', 'Publicação', 'Ações']">
         @forelse($reports as $report)
@@ -47,25 +55,45 @@
                 $postableContent = $postable?->content;
             @endphp
             <tr dusk="report-row-{{ $report->id }}">
-                <td>{{ optional($report->reporter)->name ?? 'Usuário removido' }}</td>
-                <td>{{ $report->reason }}</td>
-                <td>
+                <td data-label="Denunciado por">{{ optional($report->reporter)->name ?? 'Usuário removido' }}</td>
+                <td data-label="Motivo">{{ $report->reason }}</td>
+                <td data-label="Publicação">
                     <x-ui.badge variant="outline">{{ $postableLabel }}</x-ui.badge>
                     <div class="small text-body-secondary text-truncate max-w-400 mt-1">
                         {{ $postableContent ?? 'Publicação já removida.' }}
                     </div>
                 </td>
-                <td>
+                <td data-label="Ações">
                     <div class="d-flex flex-wrap gap-2">
                         <form method="POST" action="{{ route('forum-moderation.dismiss', $report) }}" dusk="dismiss-form-{{ $report->id }}">
                             @csrf
-                            <x-ui.button type="submit" variant="secondary" size="sm" dusk="dismiss-report-{{ $report->id }}">Descartar</x-ui.button>
+                            <x-ui.button type="submit" variant="ghost" size="sm" dusk="dismiss-report-{{ $report->id }}">Manter</x-ui.button>
                         </form>
 
-                        <form method="POST" action="{{ route('forum-moderation.remove', $report) }}" dusk="remove-form-{{ $report->id }}">
-                            @csrf
-                            <x-ui.button type="submit" variant="danger" size="sm" dusk="remove-post-{{ $report->id }}">Remover Publicação</x-ui.button>
-                        </form>
+                        {{--
+                            Regra dura: toda remoção passa por confirm-modal.
+                            `x-ui.confirm-modal` já é o dono do `<form>` real
+                            (não pode ser tocado aqui), então o seletor dusk
+                            de remoção-do-form original fica no contêiner que
+                            agrupa o gatilho + o modal — o gatilho continua
+                            com o seletor dusk de remoção-de-post intacto.
+                        --}}
+                        <div dusk="remove-form-{{ $report->id }}">
+                            <x-ui.button type="button"
+                                         variant="danger"
+                                         size="sm"
+                                         data-bs-toggle="modal"
+                                         data-bs-target="#remove-post-modal-{{ $report->id }}"
+                                         dusk="remove-post-{{ $report->id }}">Remover Publicação</x-ui.button>
+
+                            <x-ui.confirm-modal :id="'remove-post-modal-'.$report->id"
+                                                 title="Remover publicação"
+                                                 :action="route('forum-moderation.remove', $report)"
+                                                 method="POST"
+                                                 variant="danger"
+                                                 confirm-label="Remover"
+                                                 message="A publicação denunciada será removida e a denúncia marcada como tratada. Esta ação não poderá ser desfeita." />
+                        </div>
                     </div>
                 </td>
             </tr>

@@ -48,7 +48,7 @@ class DashboardDuskTest extends DuskTestCase
                 ->visit(route('admin.dashboard'))
                 ->waitFor('@admin-dashboard')
                 ->assertSee('Dashboard')
-                ->assertSee('ALUNOS ATIVOS')
+                ->assertSeeIgnoringCase('Alunos ativos')
                 ->waitFor('@recent-enrollments-table')
                 ->assertSee('Matrículas recentes')
                 ->assertSee('João Pereira');

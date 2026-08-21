@@ -25,7 +25,12 @@
 @props([
     'title',
     'container' => true,
+    'surface' => 'body',
 ])
+
+@php
+    $surfaceClass = $surface === 'white' ? 'ds-surface' : 'bg-body';
+@endphp
 
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -44,7 +49,7 @@
 
     @stack('styles')
 </head>
-<body {{ $attributes->merge(['class' => 'antialiased bg-body text-body min-vh-100 d-flex flex-column']) }}>
+<body {{ $attributes->merge(['class' => "antialiased {$surfaceClass} text-body min-vh-100 d-flex flex-column"]) }}>
     <main class="flex-fill">
         @if ($container)
             <div class="container py-5">

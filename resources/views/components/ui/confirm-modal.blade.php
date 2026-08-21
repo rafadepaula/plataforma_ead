@@ -8,6 +8,11 @@
     O markup NUNCA emite `.show` nem `style=` — o modal nasce fechado
     (`.modal` sozinho é `display:none`) e quem adiciona `.show` é o
     `bootstrap.Modal` no momento de abrir. Ver `UiModalComponentTest`.
+
+    Texto padrão calmo e explícito ("Esta ação não poderá ser desfeita...").
+    Botão de confirmação da variante `danger` (default) ganha o ícone
+    `trash` — cor nunca é o único sinal de ação destrutiva, a palavra do
+    `$confirmLabel` continua obrigatória.
 --}}
 @props([
     'id',
@@ -63,6 +68,7 @@
 
                     <x-ui.button type="submit"
                                  :variant="$variant"
+                                 :icon="$variant === 'danger' ? 'trash' : null"
                                  dusk="confirm-modal-{{ $id }}-confirm">{{ $confirmLabel }}</x-ui.button>
                 </form>
             </div>

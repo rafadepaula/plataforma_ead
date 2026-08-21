@@ -4,6 +4,8 @@ namespace Tests\Feature;
 
 use App\Enums\Permissions\RolesEnum;
 use App\Models\Course;
+use App\Models\Lesson;
+use App\Models\Module;
 use App\Models\Organization;
 use App\Models\User;
 use Tests\TestCase;
@@ -29,6 +31,31 @@ class MultiTenantCourseManagementTest extends TestCase
             ->assertViewIs('courses.index')
             ->assertSee('Curso da Minha Org')
             ->assertDontSee('Curso de Outra Org');
+    }
+
+    public function test_courses_index_exposes_module_lesson_and_student_counts_per_course(): void
+    {
+        $org = Organization::factory()->create();
+        $course = Course::factory()->create(['org_id' => $org->id, 'title' => 'Curso com Contagens']);
+        $moduleOne = Module::factory()->for($course)->create();
+        $moduleTwo = Module::factory()->for($course)->create();
+        Lesson::factory()->for($moduleOne)->count(2)->create();
+        Lesson::factory()->for($moduleTwo)->count(1)->create();
+        $student = User::factory()->create(['org_id' => $org->id]);
+        $student->assignRole(RolesEnum::ALUNO->value);
+        $course->students()->attach($student->id, ['enrolled_at' => now(), 'status' => 'active']);
+
+        $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
+
+        $response = $this->get(route('courses.index'));
+
+        $response->assertOk();
+
+        $viewCourse = $response->viewData('courses')->firstWhere('id', $course->id);
+
+        $this->assertSame(2, $viewCourse->modules_count);
+        $this->assertSame(3, $viewCourse->lessons_count);
+        $this->assertSame(1, $viewCourse->students_count);
     }
 
     public function test_aluno_is_forbidden_from_the_courses_index(): void

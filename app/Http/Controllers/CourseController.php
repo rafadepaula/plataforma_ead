@@ -26,6 +26,7 @@ class CourseController extends Controller
         Gate::authorize('viewAny', Course::class);
 
         $courses = Course::query()
+            ->withCount(['modules', 'lessons', 'students'])
             ->orderBy('title')
             ->paginate(15);
 

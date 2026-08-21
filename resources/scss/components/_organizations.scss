@@ -1,0 +1,19 @@
+// =============================================================================
+// Componente: Organização — preview do logo em `_form.blade.php`
+// -----------------------------------------------------------------------------
+// `.org-logo` (diretriz das telas de admin): preview circular pastel do logo já persistido no
+// formulário de Organização. Não confundir com a regra homônima e isolada de
+// `certificates/pdf.blade.php` — aquele `<style>` é inline porque o PDF é
+// renderizado pelo dompdf, fora do pipeline de build deste arquivo.
+// Regra: só consumir var(--*), nunca literal.
+// =============================================================================
+
+.org-logo {
+    display: block;
+    width: 96px;
+    height: 96px;
+    padding: var(--space-3);
+    object-fit: contain;
+    border-radius: var(--radius-pill);
+    background: linear-gradient(135deg, var(--blue-100), var(--mint-100));
+}

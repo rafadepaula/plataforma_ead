@@ -110,7 +110,9 @@ Unlike `forum/partials/_edit-history-modal.blade.php` (one modal per post), `aud
 </button>
 ```
 
-`resources/js/modules/AuditLogDiffModal.js` reads attributes on click, writes into shared modal's `[dusk="audit-diff-old"]`/`[dusk="audit-diff-new"]` `<pre>` blocks, calls `window.ModalManager.open('audit-diff-modal')`. JS-only render, no AJAX. Do not add per-row `<x-ui.modal>` — 25 duplicated modals per page is what this avoids.
+`resources/js/modules/AuditLogDiffModal.js` reads attributes on click, writes into shared modal's `[dusk="audit-diff-old"]`/`[dusk="audit-diff-new"]` `<pre>` blocks, then opens it imperatively with `bootstrap.Modal.getOrCreateInstance()` (the trigger keeps the legacy `data-modal-target` spelling on purpose, so Bootstrap's delegated handler cannot open the modal before the panes are filled). JS-only render, no AJAX. Do not add per-row `<x-ui.modal>` — 25 duplicated modals per page is what this avoids.
+
+`index.blade.php` renders the results as **two** variants per the `bootstrap-conventions` desktop-table/mobile-card responsive split (`d-none d-md-block` table below `md`, `d-md-none` card list above it, same `#audit-diff-modal`). The mobile "Ver diff" trigger carries the identical `data-modal-target`/`data-audit-diff-trigger`/`data-event`/`data-old-values`/`data-new-values` dataset so `AuditLogDiffModal.js` needs no branching — but it drops `dusk="view-diff-{id}"` (dusk selectors live on the desktop variant only, never duplicated). Do not add `dusk` to the mobile trigger.
 
 ## `dusk` Selector Contract
 

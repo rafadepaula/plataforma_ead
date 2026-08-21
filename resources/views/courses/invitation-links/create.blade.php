@@ -5,10 +5,17 @@
 @extends('layouts.app')
 
 @section('content')
+    <x-layout.page-header
+        :breadcrumb="[['label' => 'Cursos', 'url' => route('courses.index')], ['label' => $course->title, 'url' => route('courses.invitation-links.index', $course)], ['label' => 'Novo Link']]"
+        :kicker="$course->title"
+        title="Novo Link de Convite"
+        subtitle="Gere um link para que alunos se matriculem sozinhos neste curso."
+    />
+
     {{-- `col-lg-6` substitui o antigo `max-width: 480px` do bloco de campos. --}}
     <div class="row">
         <div class="col-12 col-lg-6">
-            <x-ui.card title="Novo Link de Convite" kicker="{{ $course->title }}">
+            <x-ui.card>
                 <form method="POST" action="{{ route('courses.invitation-links.store', $course) }}" dusk="invitation-link-form">
                     @csrf
 

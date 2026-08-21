@@ -16,13 +16,23 @@
             dusk="login-email"
         />
 
-        <x-ui.input
-            type="password"
-            name="password"
-            label="Senha"
-            required
-            dusk="login-password"
-        />
+        <div class="password-field" data-password-toggle-field>
+            <x-ui.input
+                type="password"
+                name="password"
+                label="Senha"
+                required
+                dusk="login-password"
+            />
+
+            <button type="button"
+                    class="btn btn-link password-toggle-btn"
+                    data-password-toggle-btn
+                    aria-label="Mostrar senha">
+                <x-ui.icon name="eye" size="18" data-password-toggle-icon="show" aria-hidden="true" />
+                <x-ui.icon name="eye-off" size="18" class="d-none" data-password-toggle-icon="hide" aria-hidden="true" />
+            </button>
+        </div>
 
         <x-ui.checkbox
             name="remember"

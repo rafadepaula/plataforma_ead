@@ -1,0 +1,54 @@
+// =============================================================================
+// Componente: FAB (floating action button)
+// -----------------------------------------------------------------------------
+// Botão de ação flutuante circular, usado para ação primária de tela em
+// contextos mobile/compactos. Bootstrap não entrega esse padrão pronto.
+// Conteúdo visual completo: diretriz da biblioteca de componentes.
+// Regra: qualquer declaração aqui só pode consumir var(--*), nunca literal de
+// cor/raio/sombra.
+// =============================================================================
+
+// `--elev-3` (hover de card/FAB) somado a `--elev-primary` (exclusivo do CTA
+// primário e do FAB, diretriz de direção visual e tokens) — os dois tokens já são
+// listas de sombra completas; concatená-los em `box-shadow` empilha as
+// camadas em vez de substituir uma pela outra.
+.ds-fab {
+    position: fixed;
+    right: var(--space-7);
+    // diretriz de mobile e responsivo: soma 24px ao respiro padrão de `--space-7` para
+    // o FAB nunca ficar encoberto pela barra de chrome inferior de um
+    // navegador mobile. `env(safe-area-inset-bottom, 0px)` é uma função CSS
+    // nativa de inset de área segura do navegador, não um token do design
+    // system — exceção documentada à regra de "só var(--*)", já que não existe
+    // (nem faria sentido existir) token para o inset de chrome do dispositivo.
+    bottom: calc(var(--space-7) + 24px + env(safe-area-inset-bottom, 0px));
+    z-index: 20;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    padding: 0;
+    color: var(--on-primary);
+    background-color: var(--primary);
+    border: none;
+    border-radius: var(--radius-pill);
+    box-shadow: var(--elev-3), var(--elev-primary);
+    transition: var(--transition-elevation), background-color var(--duration-base) var(--ease-standard);
+}
+
+.ds-fab:hover {
+    color: var(--on-primary);
+    background-color: var(--primary-hover);
+    transform: translateY(-2px);
+}
+
+.ds-fab:active {
+    background-color: var(--primary-pressed);
+    transform: translateY(0);
+}
+
+.ds-fab:focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring);
+    outline-offset: 3px;
+}

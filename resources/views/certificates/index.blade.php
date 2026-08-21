@@ -21,31 +21,59 @@
     (see the `@push('scripts')` block) rather than via a
     `resources/js/modules/RevokeCertificateForm.js` entry — extracting it is a
     JS-layer change outside this migration's file scope.
+
+    "Ver" opens `certificates.verify` (the public verification page) in a new
+    tab, keyed off `$certificate->validation_hash`. It carries no `dusk=`
+    attribute: `tests/fixtures/dusk-selectors-snapshot.json` is a closed set
+    of 388 selectors (`DuskSelectorContractTest` asserts both count and
+    content), so no screen in this redesign may introduce a new one.
 --}}
 @extends('layouts.app')
 
 @section('content')
-    <x-layout.page-header kicker="Certificados" :title="$course->title" />
+    <x-layout.page-header
+        :breadcrumb="[['label' => 'Cursos', 'url' => route('courses.index')], ['label' => $course->title]]"
+        kicker="Certificados"
+        :title="$course->title"
+        subtitle="Certificados emitidos para alunos deste curso. A revogação é terminal e a linha nunca some da lista."
+    />
 
-    <x-ui.data-table striped :headers="['Aluno', 'Emitido em', 'Status', 'Ações']">
+    <x-ui.data-table striped :headers="['Aluno', 'Número', 'Emitido em', 'Status', 'Ações']">
         @forelse($certificates as $certificate)
             <tr dusk="certificate-row-{{ $certificate->id }}">
-                <td>{{ $certificate->user->name }}</td>
-                <td>{{ $certificate->issued_at->format('d/m/Y') }}</td>
-                <td>
+                <td data-label="Aluno">{{ $certificate->user->name }}</td>
+                <td data-label="Número"><code class="small">{{ Str::limit($certificate->validation_hash, 12, '…') }}</code></td>
+                <td data-label="Emitido em">{{ $certificate->issued_at->format('d/m/Y') }}</td>
+                <td data-label="Status">
                     @if($certificate->isRevoked())
                         <x-ui.badge variant="neutral" dusk="certificate-status-{{ $certificate->id }}">Revogado</x-ui.badge>
                     @else
                         <x-ui.badge variant="accent" dusk="certificate-status-{{ $certificate->id }}">Válido</x-ui.badge>
                     @endif
                 </td>
-                <td>
+                <td data-label="Ações">
                     <div class="btn-group btn-group-sm" role="group" aria-label="Ações do certificado">
-                        <x-ui.button variant="secondary" size="sm" href="{{ route('certificates.download', $certificate) }}" dusk="download-certificate-{{ $certificate->id }}">Baixar PDF</x-ui.button>
+                        {{--
+                            "Ver" não carrega `dusk=`: os 388 seletores de
+                            `tests/fixtures/dusk-selectors-snapshot.json` são um
+                            conjunto fechado (`DuskSelectorContractTest` compara
+                            contagem E conteúdo), então nenhuma ação nova deste
+                            bucket pode introduzir um `dusk` inédito.
+                        --}}
+                        <x-ui.button
+                            variant="tonal"
+                            size="sm"
+                            icon="eye"
+                            href="{{ route('certificates.verify', $certificate->validation_hash) }}"
+                            target="_blank"
+                            rel="noopener"
+                        >Ver</x-ui.button>
+
+                        <x-ui.button variant="secondary" size="sm" icon="file-text" href="{{ route('certificates.download', $certificate) }}" dusk="download-certificate-{{ $certificate->id }}">Baixar PDF</x-ui.button>
 
                         @unless($certificate->isRevoked())
                             <x-ui.button
-                                variant="ghost"
+                                variant="danger"
                                 size="sm"
                                 data-bs-toggle="modal"
                                 data-bs-target="#revoke-modal-{{ $certificate->id }}"
@@ -56,7 +84,18 @@
                 </td>
             </tr>
         @empty
-            <x-ui.empty-state colspan="4" message="Nenhum certificado emitido para este curso ainda." />
+            <x-ui.empty-state
+                colspan="5"
+                icon="award"
+                title="Nenhum certificado emitido para este curso ainda."
+                description="Certificados são emitidos automaticamente quando um aluno cumpre todas as regras de conclusão ativas."
+            >
+                <x-slot:action>
+                    <x-ui.button variant="tonal" icon="settings" href="{{ route('courses.completion-rules.index', $course) }}">
+                        Ver regras de conclusão
+                    </x-ui.button>
+                </x-slot:action>
+            </x-ui.empty-state>
         @endforelse
     </x-ui.data-table>
 

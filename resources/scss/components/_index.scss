@@ -1,0 +1,29 @@
+// =============================================================================
+// Componentes — camada 4 da arquitetura de tema (diretriz da camada de tema)
+// -----------------------------------------------------------------------------
+// Um partial por peça que o Bootstrap não entrega pronta. Nada aqui pode
+// redefinir cor/raio/sombra em literal — só consumir var(--*).
+// =============================================================================
+
+@import "appbar";
+@import "drawer";
+@import "page-header";
+@import "stat-card";
+@import "empty-state";
+@import "fab";
+@import "chip";
+@import "tabs";
+@import "avatar";
+@import "brand-mark";
+@import "pastel-wash";
+@import "state-layer";
+@import "floating-label";
+@import "reorder-list";
+@import "guest-panel";
+@import "card";
+@import "organizations";
+@import "public-pages";
+@import "utilities";
+@import "modal";
+@import "table-cards";
+@import "reduced-motion";
