@@ -59,7 +59,9 @@ class AdminUserManagementTest extends DuskTestCase
                 ->waitFor('@admin-user-row-'.$alunoOrgA->id);
 
             // 4. Deactivate the aluno via the confirm modal.
-            $browser->click('@toggle-status-admin-user-'.$alunoOrgA->id)
+            $browser->click('#admin-user-actions-toggle-'.$alunoOrgA->id)
+                ->waitFor('@toggle-status-admin-user-'.$alunoOrgA->id)
+                ->click('@toggle-status-admin-user-'.$alunoOrgA->id)
                 ->waitForModalShown('confirm-status-'.$alunoOrgA->id)
                 ->click('@confirm-modal-confirm-status-'.$alunoOrgA->id.'-confirm')
                 ->waitForLocation('/admin/users')
@@ -190,6 +192,8 @@ class AdminUserManagementTest extends DuskTestCase
             $browser->loginAs($admin)
                 ->visit(route('admin.users.index'))
                 ->waitFor('@admin-user-row-'.$target->id)
+                ->click('#admin-user-actions-toggle-'.$target->id)
+                ->waitFor('@toggle-status-admin-user-'.$target->id)
                 ->click('@toggle-status-admin-user-'.$target->id)
                 ->waitForModalShown('confirm-status-'.$target->id)
                 ->click('@confirm-modal-confirm-status-'.$target->id.'-confirm')
@@ -266,6 +270,8 @@ class AdminUserManagementTest extends DuskTestCase
             $browser->loginAs($admin)
                 ->visit(route('admin.users.index'))
                 ->waitFor('@admin-user-row-'.$admin->id)
+                ->click('#admin-user-actions-toggle-'.$admin->id)
+                ->waitFor('@toggle-status-admin-user-'.$admin->id)
                 ->click('@toggle-status-admin-user-'.$admin->id)
                 ->waitForModalShown('confirm-status-'.$admin->id)
                 ->click('@confirm-modal-confirm-status-'.$admin->id.'-confirm')

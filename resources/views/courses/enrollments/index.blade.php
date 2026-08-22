@@ -89,19 +89,19 @@
                             <x-ui.avatar :initials="$initialsFor($student->name)" />
                             <div class="min-w-0">
                                 <div class="fw-semibold">{{ $student->name }}</div>
-                                <div class="small text-body-secondary text-truncate">{{ $student->email }}</div>
+                                <div class="ds-caption text-body-secondary text-truncate">{{ $student->email }}</div>
                             </div>
                         </div>
                     </td>
-                    <td class="max-w-400" data-label="Progresso">
+                    <td class="ds-tabular-nums" data-label="Progresso">
                         <x-ui.progress :value="$student->pivot->progress_percentage" show-label />
                     </td>
                     <td data-label="Status">
-                        <x-ui.badge :variant="$student->pivot->status === 'cancelled' ? 'neutral' : 'accent'">
+                        <x-ui.badge :variant="$student->pivot->status === 'cancelled' ? 'neutral' : 'success'">
                             {{ $statusLabel[$student->pivot->status] ?? ucfirst($student->pivot->status) }}
                         </x-ui.badge>
                     </td>
-                    <td class="text-nowrap" data-label="Matriculado em">{{ optional($student->pivot->enrolled_at)->format('d/m/Y') }}</td>
+                    <td class="text-nowrap ds-tabular-nums" data-label="Matriculado em">{{ optional($student->pivot->enrolled_at)->format('d/m/Y') }}</td>
                     <td data-label="Ações">
                         @if($student->pivot->status === 'active')
                             {{--

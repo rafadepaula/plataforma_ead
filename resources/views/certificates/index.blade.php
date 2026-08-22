@@ -30,6 +30,14 @@
 --}}
 @extends('layouts.app')
 
+@php
+    $initialsFor = function (string $name): string {
+        $parts = array_values(array_filter(preg_split('/\s+/', trim($name)) ?: []));
+
+        return mb_strtoupper(collect($parts)->take(2)->map(fn ($part) => mb_substr($part, 0, 1))->implode(''));
+    };
+@endphp
+
 @section('content')
     <x-layout.page-header
         :breadcrumb="[['label' => 'Cursos', 'url' => route('courses.index')], ['label' => $course->title]]"
@@ -41,14 +49,22 @@
     <x-ui.data-table striped :headers="['Aluno', 'Número', 'Emitido em', 'Status', 'Ações']">
         @forelse($certificates as $certificate)
             <tr dusk="certificate-row-{{ $certificate->id }}">
-                <td data-label="Aluno">{{ $certificate->user->name }}</td>
+                <td data-label="Aluno">
+                    <div class="d-flex align-items-center gap-3">
+                        <x-ui.avatar size="sm" :initials="$initialsFor($certificate->user->name)" aria-hidden="true" />
+                        <div class="min-w-0">
+                            <div class="fw-semibold">{{ $certificate->user->name }}</div>
+                            <div class="ds-caption text-body-secondary text-truncate">{{ $certificate->user->email }}</div>
+                        </div>
+                    </div>
+                </td>
                 <td data-label="Número"><code class="small">{{ Str::limit($certificate->validation_hash, 12, '…') }}</code></td>
-                <td data-label="Emitido em">{{ $certificate->issued_at->format('d/m/Y') }}</td>
+                <td class="ds-tabular-nums" data-label="Emitido em">{{ $certificate->issued_at->format('d/m/Y') }}</td>
                 <td data-label="Status">
                     @if($certificate->isRevoked())
                         <x-ui.badge variant="neutral" dusk="certificate-status-{{ $certificate->id }}">Revogado</x-ui.badge>
                     @else
-                        <x-ui.badge variant="accent" dusk="certificate-status-{{ $certificate->id }}">Válido</x-ui.badge>
+                        <x-ui.badge variant="success" dusk="certificate-status-{{ $certificate->id }}">Válido</x-ui.badge>
                     @endif
                 </td>
                 <td data-label="Ações">

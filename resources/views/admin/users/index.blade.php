@@ -26,15 +26,8 @@
     (`resources/scss/components/_index.scss`), então os testes Dusk devem
     ler o atributo `data`, não o texto renderizado.
 
-    A tabela tem 7 colunas — acima do limiar da diretriz de mobile e responsivo
-    para o padrão desktop-table (`d-none d-md-block`, mantém todo o
-    `dusk`) + mobile-card (`d-md-none`, mesmo conteúdo, sem `dusk`
-    duplicado), espelhando `courses/index.blade.php`. Os dois modais de
-    confirmação por linha (`#confirm-status-{id}`/`#confirm-delete-{id}`)
-    existem uma única vez no DOM, fora dos wrappers `d-none`/`d-md-none`
-    (um ancestral `display:none` suprime toda a subárvore mesmo depois do
-    Bootstrap alternar `.show` no modal) — só o gatilho visível muda por
-    breakpoint, o alvo do modal é sempre o mesmo.
+    A tabela usa uma única marcação responsiva. Os rótulos das células
+    alimentam o reflow para cards em telas menores.
 --}}
 @extends('layouts.app')
 
@@ -131,130 +124,86 @@
             </div>
         </x-ui.filter-bar>
 
-        {{-- Tabela — visível a partir de `md`; abaixo disso a lista de cards assume. --}}
-        <div class="d-none d-md-block">
-            <x-ui.data-table striped hover responsive
-                             :headers="['Usuário', 'Organização', 'Papel', 'Status', 'Criado em', 'Ações']"
-                             dusk="admin-users-table">
-                @forelse($users as $user)
-                    @php
-                        $userRole = $user->getRoleNames()->first() ?? '';
-                    @endphp
-                    <tr dusk="admin-user-row-{{ $user->id }}">
-                        <td>
-                            <div class="d-flex align-items-center gap-3">
-                                <x-ui.avatar :initials="$initialsFor($user->name)" />
-                                <div class="min-w-0">
-                                    <div class="fw-semibold">{{ $user->name }}</div>
-                                    <div class="small text-body-secondary text-truncate">{{ $user->email }}</div>
-                                </div>
-                            </div>
-                        </td>
-                        <td>{{ $user->organization->name ?? 'Nenhuma — Admin do Sistema' }}</td>
-                        <td>
-                            <x-ui.badge variant="accent"
-                                        data-role="{{ $userRole }}"
-                                        dusk="admin-user-role-{{ $user->id }}">
-                                {{ \App\Enums\Permissions\RolesEnum::label($userRole) }}
-                            </x-ui.badge>
-                        </td>
-                        <td>
-                            <x-ui.badge :variant="$user->status === 'active' ? 'accent' : 'neutral'"
-                                        data-status="{{ $user->status }}"
-                                        dusk="admin-user-status-{{ $user->id }}">
-                                {{ $user->status === 'active' ? 'Ativo' : 'Inativo' }}
-                            </x-ui.badge>
-                        </td>
-                        <td>{{ $user->created_at?->format('d/m/Y') }}</td>
-                        <td>
-                            {{-- `d-flex`, não `.btn-group`: os filhos diretos aqui são
-                                 `<form>`, então o agrupamento fica com o `organizations/index.blade.php:37-40`
-                                 precedente. --}}
-                            <div class="d-flex flex-wrap align-items-center gap-2">
-                                <x-ui.button variant="secondary"
-                                             size="sm"
-                                             href="{{ route('admin.users.show', $user) }}"
-                                             dusk="view-admin-user-{{ $user->id }}">Ver</x-ui.button>
-
-                                <x-ui.button variant="secondary"
-                                             size="sm"
-                                             href="{{ route('admin.users.edit', $user) }}"
-                                             dusk="edit-admin-user-{{ $user->id }}">Editar</x-ui.button>
-
-                                <x-ui.button variant="ghost"
-                                             size="sm"
-                                             data-bs-toggle="modal"
-                                             data-bs-target="#confirm-status-{{ $user->id }}"
-                                             dusk="toggle-status-admin-user-{{ $user->id }}">
-                                    {{ $user->status === 'active' ? 'Desativar' : 'Ativar' }}
-                                </x-ui.button>
-
-                                <x-ui.button variant="danger"
-                                             size="sm"
-                                             data-bs-toggle="modal"
-                                             data-bs-target="#confirm-delete-{{ $user->id }}"
-                                             dusk="delete-admin-user-{{ $user->id }}">Excluir</x-ui.button>
-                            </div>
-                        </td>
-                    </tr>
-                @empty
-                    <x-ui.empty-state colspan="6"
-                                      icon="user"
-                                      title="Nenhum usuário encontrado."
-                                      description="Ajuste os filtros ou aguarde novos cadastros — usuários são criados a partir de cada Organização.">
-                        <x-slot:action>
-                            <x-ui.button variant="secondary" :href="route('admin.users.index')">Limpar filtros</x-ui.button>
-                        </x-slot:action>
-                    </x-ui.empty-state>
-                @endforelse
-            </x-ui.data-table>
-        </div>
-
-        {{-- Lista de cards — abaixo de `md`, substitui a tabela (mesmo conteúdo, sem `dusk` duplicado). --}}
-        <div class="d-md-none d-flex flex-column gap-3">
+        <x-ui.data-table striped hover responsive
+                         :headers="['Usuário', 'Organização', 'Papel', 'Status', 'Criado em', 'Ações']"
+                         dusk="admin-users-table">
             @forelse($users as $user)
                 @php
                     $userRole = $user->getRoleNames()->first() ?? '';
                 @endphp
-                <x-ui.card>
-                    <x-slot:kickerSlot>
-                        <div class="d-flex flex-wrap gap-2">
-                            <x-ui.badge variant="accent" data-role="{{ $userRole }}">
-                                {{ \App\Enums\Permissions\RolesEnum::label($userRole) }}
-                            </x-ui.badge>
-                            <x-ui.badge :variant="$user->status === 'active' ? 'accent' : 'neutral'" data-status="{{ $user->status }}">
-                                {{ $user->status === 'active' ? 'Ativo' : 'Inativo' }}
-                            </x-ui.badge>
+                <tr dusk="admin-user-row-{{ $user->id }}">
+                    <td data-label="Usuário">
+                        <div class="d-flex align-items-center gap-3">
+                            <x-ui.avatar :initials="$initialsFor($user->name)" />
+                            <div class="min-w-0">
+                                <div class="fw-semibold">{{ $user->name }}</div>
+                                <div class="small text-body-secondary text-truncate">{{ $user->email }}</div>
+                            </div>
                         </div>
-                    </x-slot:kickerSlot>
+                    </td>
+                    <td data-label="Organização">{{ $user->organization->name ?? 'Nenhuma — Admin do Sistema' }}</td>
+                    <td data-label="Papel">
+                        <x-ui.badge variant="accent"
+                                    data-role="{{ $userRole }}"
+                                    dusk="admin-user-role-{{ $user->id }}">
+                            {{ \App\Enums\Permissions\RolesEnum::label($userRole) }}
+                        </x-ui.badge>
+                    </td>
+                    <td data-label="Status">
+                        <x-ui.badge :variant="$user->status === 'active' ? 'success' : 'neutral'"
+                                    data-status="{{ $user->status }}"
+                                    dusk="admin-user-status-{{ $user->id }}">
+                            {{ $user->status === 'active' ? 'Ativo' : 'Inativo' }}
+                        </x-ui.badge>
+                    </td>
+                    <td data-label="Criado em" class="ds-tabular-nums">{{ $user->created_at?->format('d/m/Y') }}</td>
+                    <td data-label="Ações">
+                        {{-- `d-flex`, não `.btn-group`: os filhos diretos aqui são
+                             `<form>`, então o agrupamento fica com o `organizations/index.blade.php:37-40`
+                             precedente. --}}
+                        <div class="d-flex flex-wrap align-items-center gap-2">
+                            <x-ui.button variant="secondary"
+                                         size="sm"
+                                         href="{{ route('admin.users.show', $user) }}"
+                                         dusk="view-admin-user-{{ $user->id }}">Ver</x-ui.button>
 
-                    <div class="d-flex align-items-center gap-3 mb-2">
-                        <x-ui.avatar :initials="$initialsFor($user->name)" />
-                        <div class="min-w-0">
-                            <div class="fw-semibold">{{ $user->name }}</div>
-                            <div class="small text-body-secondary text-truncate">{{ $user->email }}</div>
+                            <x-ui.button variant="secondary"
+                                         size="sm"
+                                         href="{{ route('admin.users.edit', $user) }}"
+                                         dusk="edit-admin-user-{{ $user->id }}">Editar</x-ui.button>
+
+                            <x-ui.button variant="danger"
+                                         size="sm"
+                                         data-bs-toggle="modal"
+                                         data-bs-target="#confirm-delete-{{ $user->id }}"
+                                         dusk="delete-admin-user-{{ $user->id }}">Excluir</x-ui.button>
+
+                            <div class="dropdown">
+                                <x-ui.button variant="ghost"
+                                             size="sm"
+                                             id="admin-user-actions-toggle-{{ $user->id }}"
+                                             data-bs-toggle="dropdown"
+                                             aria-expanded="false"
+                                             aria-label="Mais ações para {{ $user->name }}">
+                                    Mais
+                                </x-ui.button>
+                                <div class="dropdown-menu dropdown-menu-end p-2" aria-labelledby="admin-user-actions-toggle-{{ $user->id }}">
+                                    <button type="button"
+                                            class="dropdown-item d-flex align-items-center gap-2"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#confirm-status-{{ $user->id }}"
+                                            dusk="toggle-status-admin-user-{{ $user->id }}">
+                                        <x-ui.icon name="user" size="16" aria-hidden="true" />
+                                        <span>{{ $user->status === 'active' ? 'Desativar' : 'Ativar' }}</span>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-
-                    <p class="mb-0">
-                        {{ $user->organization->name ?? 'Nenhuma — Admin do Sistema' }}
-                        &middot;
-                        Criado em {{ $user->created_at?->format('d/m/Y') }}
-                    </p>
-
-                    <x-slot:metaSlot>
-                        <div class="d-flex flex-wrap gap-2">
-                            <x-ui.button variant="secondary" href="{{ route('admin.users.show', $user) }}">Ver</x-ui.button>
-                            <x-ui.button variant="secondary" href="{{ route('admin.users.edit', $user) }}">Editar</x-ui.button>
-                            <x-ui.button variant="ghost" data-bs-toggle="modal" data-bs-target="#confirm-status-{{ $user->id }}">
-                                {{ $user->status === 'active' ? 'Desativar' : 'Ativar' }}
-                            </x-ui.button>
-                            <x-ui.button variant="danger" data-bs-toggle="modal" data-bs-target="#confirm-delete-{{ $user->id }}">Excluir</x-ui.button>
-                        </div>
-                    </x-slot:metaSlot>
-                </x-ui.card>
+                    </td>
+                </tr>
             @empty
-                <x-ui.empty-state icon="user"
+                <x-ui.empty-state colspan="6"
+                                  icon="user"
                                   title="Nenhum usuário encontrado."
                                   description="Ajuste os filtros ou aguarde novos cadastros — usuários são criados a partir de cada Organização.">
                     <x-slot:action>
@@ -262,13 +211,9 @@
                     </x-slot:action>
                 </x-ui.empty-state>
             @endforelse
-        </div>
+        </x-ui.data-table>
 
-        {{-- Modais de confirmação — fora dos wrappers `d-none`/`d-md-none`: um
-             ancestral `display:none` suprime toda a subárvore mesmo depois do
-             Bootstrap alternar `.show` no modal, então o modal precisa existir
-             fora de qualquer bloco condicional por breakpoint para ser
-             alcançável tanto pelo gatilho desktop quanto pelo mobile. --}}
+        {{-- Modais de confirmação ficam fora da tabela para evitar recorte pelo wrapper responsivo. --}}
         @foreach($users as $user)
             @php
                 $toggledStatus = $user->status === 'active' ? 'inactive' : 'active';

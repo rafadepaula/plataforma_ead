@@ -106,12 +106,103 @@ class ResponsiveNoHorizontalScrollTest extends DuskTestCase
 
     public function test_courses_index_management_screen_has_no_horizontal_scroll(): void
     {
-        $gestor = $this->gestor();
+        [$gestor, $course] = $this->gestorWithCourse();
 
-        $this->browse(function (Browser $browser) use ($gestor): void {
-            $browser->loginAs($gestor)
+        $this->browse(function (Browser $browser) use ($gestor, $course): void {
+            $browser->resize(375, 900)
+                ->loginAs($gestor)
                 ->visit(route('courses.index'))
-                ->waitFor('@topbar-profile-link');
+                ->waitFor('@course-row-'.$course->id);
+
+            $courseRowSelector = '[dusk="course-row-'.$course->id.'"]';
+            $layout = $browser->script(sprintf(<<<'JS'
+                const rowSelector = %s;
+                const rows = document.querySelectorAll(rowSelector);
+                const row = rows[0];
+                const table = row.closest('table');
+                const tableHead = table.querySelector('thead');
+                const firstHeader = tableHead.querySelector('th');
+                const firstCell = row.querySelector('td[data-label="Título"]');
+                const body = table.querySelector('tbody');
+                const rowRect = row.getBoundingClientRect();
+                const cellRect = firstCell.getBoundingClientRect();
+                const labelStyle = getComputedStyle(firstCell, '::before');
+                const labelColorParts = labelStyle.color.match(/[\d.]+/g) ?? [];
+                const labelColorAlpha = labelColorParts.length >= 4 ? Number(labelColorParts[3]) : 1;
+
+                return {
+                    selectorCount: rows.length,
+                    rowDisplay: getComputedStyle(row).display,
+                    rowWidth: rowRect.width,
+                    rowHeight: rowRect.height,
+                    cellWidth: cellRect.width,
+                    cellHeight: cellRect.height,
+                    bodyDisplay: getComputedStyle(body).display,
+                    headerDisplay: getComputedStyle(tableHead).display,
+                    headerPosition: getComputedStyle(tableHead).position,
+                    headerWidth: tableHead.getBoundingClientRect().width,
+                    headerHeight: tableHead.getBoundingClientRect().height,
+                    headerOverflow: getComputedStyle(tableHead).overflow,
+                    headerAriaHidden: tableHead.getAttribute('aria-hidden'),
+                    firstHeaderDisplay: getComputedStyle(firstHeader).display,
+                    labelContent: labelStyle.content,
+                    labelDisplay: labelStyle.display,
+                    labelVisibility: labelStyle.visibility,
+                    labelOpacity: Number(labelStyle.opacity),
+                    labelColor: labelStyle.color,
+                    labelColorAlpha,
+                };
+            JS, json_encode($courseRowSelector, JSON_THROW_ON_ERROR)))[0];
+
+            self::assertSame(1, $layout['selectorCount']);
+            self::assertSame('block', $layout['rowDisplay']);
+            self::assertSame('grid', $layout['bodyDisplay']);
+            self::assertGreaterThan(0, $layout['rowWidth']);
+            self::assertLessThanOrEqual(375, $layout['rowWidth']);
+            self::assertGreaterThan(0, $layout['rowHeight']);
+            self::assertGreaterThan(0, $layout['cellWidth']);
+            self::assertGreaterThan(0, $layout['cellHeight']);
+            self::assertNotSame('none', $layout['headerDisplay']);
+            self::assertSame('absolute', $layout['headerPosition']);
+            self::assertLessThanOrEqual(1, $layout['headerWidth']);
+            self::assertLessThanOrEqual(1, $layout['headerHeight']);
+            self::assertSame('hidden', $layout['headerOverflow']);
+            self::assertNull($layout['headerAriaHidden']);
+            self::assertNotSame('none', $layout['firstHeaderDisplay']);
+            self::assertSame('"Título"', $layout['labelContent']);
+            self::assertNotSame('none', $layout['labelDisplay']);
+            self::assertSame('visible', $layout['labelVisibility']);
+            self::assertGreaterThan(0, $layout['labelOpacity']);
+            self::assertNotSame('transparent', $layout['labelColor']);
+            self::assertGreaterThan(0, $layout['labelColorAlpha']);
+
+            $browser->assertVisible('@edit-course-'.$course->id)
+                ->assertVisible('@delete-course-'.$course->id)
+                ->assertVisible('#course-actions-toggle-'.$course->id);
+
+            $toggleHasFocus = $browser->script(
+                'document.querySelector('.json_encode('#course-actions-toggle-'.$course->id, JSON_THROW_ON_ERROR).').focus(); return document.activeElement === document.querySelector('.json_encode('#course-actions-toggle-'.$course->id, JSON_THROW_ON_ERROR).');'
+            )[0];
+
+            self::assertTrue($toggleHasFocus);
+
+            $browser->keys('#course-actions-toggle-'.$course->id, '{ARROW_DOWN}')
+                ->waitFor('@manage-completion-rules-'.$course->id)
+                ->assertVisible('@manage-completion-rules-'.$course->id);
+
+            $dropdownItemHasFocus = $browser->script(
+                'return document.activeElement === document.querySelector('.json_encode('[dusk="manage-completion-rules-'.$course->id.'"]', JSON_THROW_ON_ERROR).');'
+            )[0];
+
+            self::assertTrue($dropdownItemHasFocus);
+
+            $browser->keys('@manage-completion-rules-'.$course->id, '{ESCAPE}')
+                ->waitUntil('!document.querySelector('.json_encode('#course-actions-toggle-'.$course->id, JSON_THROW_ON_ERROR).').closest(".dropdown").querySelector(".dropdown-menu").classList.contains("show")')
+                ->click('#course-actions-toggle-'.$course->id)
+                ->waitFor('@manage-completion-rules-'.$course->id)
+                ->assertVisible('@manage-completion-rules-'.$course->id)
+                ->click('#course-actions-toggle-'.$course->id)
+                ->waitUntil('!document.querySelector('.json_encode('#course-actions-toggle-'.$course->id, JSON_THROW_ON_ERROR).').closest(".dropdown").querySelector(".dropdown-menu").classList.contains("show")');
 
             $this->assertNoHorizontalScrollAtEveryWidth($browser);
         });
@@ -169,13 +260,27 @@ class ResponsiveNoHorizontalScrollTest extends DuskTestCase
         return $admin;
     }
 
-    private function gestor(): User
+    /**
+     * @return array{0: User, 1: Course}
+     */
+    private function gestorWithCourse(): array
     {
         $org = Organization::factory()->create();
         $gestor = User::factory()->create(['org_id' => $org->id]);
         $gestor->assignRole(RolesEnum::GESTOR->value);
+        $course = Course::factory()->create([
+            'org_id' => $org->id,
+            'title' => 'Curso Responsivo',
+            'is_published' => true,
+        ]);
+        $module = Module::factory()->for($course)->create();
+        Lesson::factory()->richText()->for($module)->create(['is_published' => true]);
 
-        return $gestor;
+        $student = User::factory()->create(['org_id' => $org->id]);
+        $student->assignRole(RolesEnum::ALUNO->value);
+        $course->students()->attach($student->id, ['enrolled_at' => now(), 'status' => 'active']);
+
+        return [$gestor, $course];
     }
 
     /**

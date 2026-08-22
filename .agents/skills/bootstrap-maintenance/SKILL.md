@@ -6,8 +6,8 @@ description: >
   verify loop (`vendor/bin/sail npm run build` then screen's Dusk
   filter), recurring failure modes — `data-bs-toggle` inert because JS
   bundle never imported, stacked modal backdrops, dropdowns dead without
-  Popper, utility class losing to leftover inline `style=`, missing
-  `.table-responsive` causing horizontal overflow, dompdf choking on
+  Popper, utility class losing to leftover inline `style=`, table reflow/
+  accessible `thead`/action-dropdown regressions, dompdf choking on
   Bootstrap CSS in `certificates/pdf.blade.php`. Use when Dusk test fails
   after UI change, modal/toast/dropdown does nothing in browser, migrated
   screen looks unstyled or overflows, certificate PDF renders blank.
@@ -125,6 +125,24 @@ Mapa tela, teste Dusk (usar sempre filtro mais estreito):
 | Impersonate org | `ImpersonateOrgTest` |
 | Matrícula multi-org | `MultiOrgEnrollmentTest`, `MultiOrgStudentClassroomTest` |
 
+Tabela, filtros mínimos:
+
+```bash
+# Contrato Blade, alias, tokens, reflow e paginação
+vendor/bin/sail artisan test --compact tests/Feature/UiTableComponentTest.php
+
+# Build obrigatório antes do browser; reflow, thead acessível, seletor único,
+# foco/teclado do dropdown e ausência de scroll horizontal
+vendor/bin/sail npm run build && vendor/bin/sail artisan dusk --filter=test_courses_index_management_screen_has_no_horizontal_scroll
+
+# Outras listagens migradas para markup único
+vendor/bin/sail artisan dusk --filter=test_organizations_index_management_screen_has_no_horizontal_scroll
+vendor/bin/sail artisan dusk --filter=test_admin_users_index_management_screen_has_no_horizontal_scroll
+
+# Dropdown de ações do admin dentro da cadeia real
+vendor/bin/sail artisan dusk --filter=test_admin_manages_users_across_orgs_without_impersonating
+```
+
 Fim de fase (não a cada tela): `vendor/bin/sail artisan dusk` completo.
 
 ---
@@ -211,23 +229,40 @@ Fim de fase (não a cada tela): `vendor/bin/sail artisan dusk` completo.
   ```
   Alvo ao fim da migração: **zero linha** nessa saída.
 
-### 3.5 Tabela estourando na horizontal (falta `.table-responsive`)
+### 3.5 Tabela estourando na horizontal ou sem reflow
 
 - **Sintoma:** scroll horizontal na página inteira no mobile; Dusk com
   viewport estreito falha ao clicar botão da última coluna ("element not
   interactable"/"outside of viewport").
-- **Causa:** `<table class="table">` sem wrapper.
-- **Solução:** sempre
-  ```blade
-  <div class="table-responsive">
-      <table class="table align-middle">…</table>
-  </div>
-  ```
-  `<x-ui.table>` já emite wrapper — erro só aparece quando alguém escreve
-  `<table>` cru numa tela (proibido, ver `bootstrap-conventions` §3.12).
-- Sintoma correlato: dropdown de ações da última coluna cortado pelo
-  `overflow: auto` do `.table-responsive`. Solução: `data-bs-strategy="fixed"`
-  no gatilho, ou mover ação para modal.
+- **Causas:** tabela crua; `responsive=false`; `<td>` sem `data-label`;
+  `_table.scss` ausente de `components/_index.scss`; build velho.
+- **Solução:** `<x-ui.table>` ou alias `<x-ui.data-table>`, prop responsive
+  default, um `data-label` por célula. Nunca duplique desktop/mobile.
+- **Checagem:** em 375px, `.ds-table tbody` = `grid`; `<tr>` = `block`;
+  célula = `grid`; `::before` contém rótulo; `scrollWidth <= innerWidth`.
+
+### 3.5.1 Cabeçalho some para leitor de tela no mobile
+
+- **Sintoma:** layout em cards funciona, mas árvore acessível não contém
+  cabeçalhos.
+- **Causa:** `display:none` ou `aria-hidden="true"` no `<thead>`.
+- **Solução:** manter `<thead>` sem `aria-hidden`; `_table.scss` usa recorte
+  visual (posição absoluta, caixa 1px, overflow oculto). `th` continua
+  renderizado.
+
+### 3.5.2 Dropdown “Mais” não abre, não recebe foco ou corta ações
+
+- **Sintoma:** quarta ação inacessível; seta para baixo não foca item; Escape
+  não fecha; menu recortado.
+- **Causas:** mais de 3 ações expostas sem menu; id repetido; `aria-labelledby`
+  inválido; gatilho sem `data-bs-toggle="dropdown"`; menu fora de `.dropdown`;
+  build JS velho.
+- **Solução:** máximo 3 ações visíveis. Gatilho com id único,
+  `aria-expanded="false"`, `aria-label` contextual; menu
+  `.dropdown-menu-end` com `aria-labelledby`. Ícone decorativo =
+  `aria-hidden="true"`. Confirme ArrowDown e Escape no navegador.
+- Modal de confirmação fica fora da tabela. Se menu ainda recortar, use
+  estratégia fixa do Bootstrap no gatilho; não duplique ações fora do menu.
 
 ### 3.6 dompdf engasga com CSS do Bootstrap (certificado em branco/quebrado)
 
@@ -380,9 +415,13 @@ Marque tudo antes de considerar tela concluída:
       `.invalid-feedback`; `dusk="error-{campo}"` presente.
 - [ ] Modais: `aria-labelledby`, `.btn-close` com `aria-label="Fechar"`, foco
   volta ao gatilho ao fechar.
-- [ ] Tabelas dentro de `.table-responsive`; 4+ colunas usam `.ds-table` +
-      `data-label` por `<td>` (ver `bootstrap-conventions` §4.1) — nunca
-      duas marcações da mesma linha no DOM.
+- [ ] Tabela usa `<x-ui.table>` ou alias `<x-ui.data-table>`; anatomia
+      `.ds-table-wrap > .ds-table-scroll > .ds-table`; `data-label` em cada
+      `<td>`; zero marcação desktop/mobile duplicada.
+- [ ] Mobile: `<thead>` recortado visualmente, presente na árvore acessível,
+      sem `display:none`/`aria-hidden`; rótulo `::before` visível.
+- [ ] Máximo 3 ações visíveis. Quarta+ no dropdown “Mais”, com id único,
+      `aria-label`, `aria-labelledby`, ArrowDown e Escape funcionais.
 - [ ] **[Fase 8]** Sem scroll horizontal em 320/375/768/1024/1440px de
       largura (`document.body.scrollWidth === window.innerWidth`).
 - [ ] **[Fase 8]** Todo controle interativo ≥ 48px de alvo de toque
@@ -408,6 +447,13 @@ grep -rnE 'class="[^"]*(\bflex\b|\bgrid\b|space-y-|text-(xs|sm|base|lg|xl)\b|bg-
 
 # módulos JS artesanais que deveriam ter sumido
 grep -rn 'ModalManager' resources/js resources/views
+
+# padrões tabulares obsoletos ou células sem revisão manual de data-label
+grep -rnE 'd-none d-md-block|d-md-none' resources/views/{courses,organizations,users,admin/users,audit-logs}
+grep -rn '<table' resources/views --include='*.blade.php'
+
+# contrato canônico da tabela
+vendor/bin/sail artisan test --compact tests/Feature/UiTableComponentTest.php
 
 # contagem de dusk= (deve permanecer == 388, congelado em spec/front_redesign/14)
 grep -ro 'dusk="' resources/views | wc -l

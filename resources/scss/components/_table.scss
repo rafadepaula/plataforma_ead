@@ -1,0 +1,206 @@
+// Canonical tabular surface. Layout and color values come exclusively from
+// the published design-system tokens.
+.ds-table-wrap {
+    overflow: hidden;
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--elev-1);
+}
+
+.ds-table-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    padding: var(--space-5) var(--space-6);
+}
+
+.ds-table-scroll {
+    overflow-x: auto;
+}
+
+.ds-table {
+    width: 100%;
+    margin: 0;
+    color: var(--text-primary);
+    font-size: var(--font-size-body);
+    border-collapse: collapse;
+
+    th,
+    td {
+        padding: var(--pad-cell-y) var(--pad-cell-x);
+        text-align: left;
+        vertical-align: middle;
+        border: 0;
+    }
+
+    thead th {
+        color: var(--text-secondary);
+        font-size: var(--font-size-caption);
+        font-weight: var(--font-weight-bold);
+        letter-spacing: var(--tracking-overline);
+        white-space: nowrap;
+        text-transform: uppercase;
+        background: var(--surface-sunken);
+    }
+
+    tbody tr {
+        height: var(--space-10);
+        border-top: var(--border-width) solid var(--divider);
+    }
+
+    tfoot {
+        font-weight: var(--font-weight-bold);
+        border-top: var(--border-width) solid var(--divider);
+    }
+}
+
+.ds-table-sm {
+    th,
+    td {
+        padding: var(--space-3) var(--space-4);
+    }
+
+    tbody tr {
+        height: var(--touch-min);
+    }
+}
+
+.ds-table-striped tbody tr:nth-of-type(even) {
+    background: var(--surface-sunken);
+}
+
+.ds-table-hover tbody tr {
+    transition: background var(--duration-fast) var(--ease-standard);
+}
+
+.ds-table-hover tbody tr:hover {
+    background: var(--state-hover);
+}
+
+.ds-tabular-nums {
+    font-variant-numeric: tabular-nums;
+}
+
+.ds-pagination > nav {
+    margin-inline-start: auto;
+}
+
+@media (max-width: 767.98px) {
+    .ds-table-wrap:has(.ds-table-scroll.table-responsive) {
+        overflow: visible;
+        background: transparent;
+        box-shadow: none;
+    }
+
+    .ds-table-scroll.table-responsive {
+        overflow: visible;
+    }
+
+    .ds-table-scroll.table-responsive .ds-table,
+    .ds-table-scroll.table-responsive .ds-table tbody,
+    .ds-table-scroll.table-responsive .ds-table tr,
+    .ds-table-scroll.table-responsive .ds-table td {
+        display: block;
+        width: 100%;
+    }
+
+    .ds-table-scroll.table-responsive .ds-table thead {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        white-space: nowrap;
+        border: 0;
+        clip: rect(0, 0, 0, 0);
+    }
+
+    .ds-table-scroll.table-responsive .ds-table tbody {
+        display: grid;
+        gap: var(--space-4);
+    }
+
+    .ds-table-scroll.table-responsive .ds-table tbody tr {
+        height: auto;
+        overflow: hidden;
+        background: var(--surface);
+        border: 0;
+        border-radius: var(--radius-lg);
+        box-shadow: var(--elev-1);
+    }
+
+    .ds-table-scroll.table-responsive .ds-table tbody td {
+        display: grid;
+        grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+        gap: var(--space-3);
+        min-height: var(--touch-min);
+        padding: var(--space-3) var(--space-5);
+        border-top: var(--border-width) solid var(--divider);
+    }
+
+    .ds-table-scroll.table-responsive .ds-table tbody td:first-child {
+        border-top: 0;
+    }
+
+    .ds-table-scroll.table-responsive .ds-table tbody td::before {
+        align-self: center;
+        color: var(--text-secondary);
+        font-size: var(--font-size-caption);
+        font-weight: var(--font-weight-bold);
+        letter-spacing: var(--tracking-overline);
+        text-transform: uppercase;
+        content: attr(data-label);
+    }
+
+    .ds-table-scroll.table-responsive .ds-table tbody td[colspan] {
+        display: block;
+        border-top: 0;
+    }
+
+    .ds-table-scroll.table-responsive .ds-table tbody td[colspan]::before {
+        display: none;
+    }
+
+    .ds-table-scroll.table-responsive .ds-table tfoot,
+    .ds-table-scroll.table-responsive .ds-table tfoot tr,
+    .ds-table-scroll.table-responsive .ds-table tfoot td {
+        display: block;
+        width: 100%;
+    }
+
+    .ds-table-scroll.table-responsive .ds-table tfoot {
+        margin-top: var(--space-4);
+        background: var(--surface);
+        border: 0;
+        border-radius: var(--radius-lg);
+        box-shadow: var(--elev-1);
+    }
+
+    .ds-table-scroll.table-responsive .ds-table tfoot tr {
+        height: auto;
+    }
+
+    .ds-table-scroll.table-responsive .ds-table tfoot td {
+        min-height: var(--touch-min);
+        padding: var(--space-3) var(--space-5);
+    }
+
+    .ds-table-scroll.table-responsive .ds-table tfoot td[data-label] {
+        display: grid;
+        grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+        gap: var(--space-3);
+    }
+
+    .ds-table-scroll.table-responsive .ds-table tfoot td[data-label]::before {
+        align-self: center;
+        color: var(--text-secondary);
+        font-size: var(--font-size-caption);
+        font-weight: var(--font-weight-bold);
+        letter-spacing: var(--tracking-overline);
+        text-transform: uppercase;
+        content: attr(data-label);
+    }
+}

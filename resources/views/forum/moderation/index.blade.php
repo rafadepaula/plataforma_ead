@@ -55,11 +55,11 @@
                 $postableContent = $postable?->content;
             @endphp
             <tr dusk="report-row-{{ $report->id }}">
-                <td data-label="Denunciado por">{{ optional($report->reporter)->name ?? 'Usuário removido' }}</td>
+                <td class="fw-semibold" data-label="Denunciado por">{{ optional($report->reporter)->name ?? 'Usuário removido' }}</td>
                 <td data-label="Motivo">{{ $report->reason }}</td>
                 <td data-label="Publicação">
                     <x-ui.badge variant="outline">{{ $postableLabel }}</x-ui.badge>
-                    <div class="small text-body-secondary text-truncate max-w-400 mt-1">
+                    <div class="small text-body-secondary text-truncate mt-1">
                         {{ $postableContent ?? 'Publicação já removida.' }}
                     </div>
                 </td>

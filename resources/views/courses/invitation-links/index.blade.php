@@ -25,9 +25,9 @@
                 $fullLink = url('/convite/'.$invitationLink->token);
             @endphp
             <tr dusk="invitation-link-row-{{ $invitationLink->id }}">
-                <td class="max-w-400" data-label="Link">
+                <td data-label="Link">
                     <div class="d-flex align-items-center gap-2">
-                        <code class="text-truncate flex-1 min-w-0" title="{{ $fullLink }}">{{ $fullLink }}</code>
+                        <code class="fw-semibold text-truncate flex-1 min-w-0" title="{{ $fullLink }}">{{ $fullLink }}</code>
                         <button type="button"
                                 class="btn btn-ghost btn-sm d-inline-flex align-items-center justify-content-center flex-shrink-0"
                                 data-copy-link="{{ $fullLink }}"
@@ -36,17 +36,17 @@
                         </button>
                     </div>
                 </td>
-                <td class="text-nowrap" data-label="Usos">
+                <td class="text-nowrap ds-tabular-nums" data-label="Usos">
                     {{ $invitationLink->current_uses }}{{ $invitationLink->max_uses ? '/'.$invitationLink->max_uses : '' }}
                 </td>
-                <td class="text-nowrap" data-label="Expira em">
+                <td class="text-nowrap ds-tabular-nums" data-label="Expira em">
                     {{ $invitationLink->expires_at?->format('d/m/Y H:i') ?? 'Sem expiração' }}
                 </td>
                 <td data-label="Status">
                     @if($invitationLink->revoked_at)
                         <x-ui.badge variant="neutral">Revogado</x-ui.badge>
                     @elseif($invitationLink->isUsable())
-                        <x-ui.badge variant="accent">Ativo</x-ui.badge>
+                        <x-ui.badge variant="success">Ativo</x-ui.badge>
                     @else
                         <x-ui.badge variant="neutral">Expirado ou esgotado</x-ui.badge>
                     @endif

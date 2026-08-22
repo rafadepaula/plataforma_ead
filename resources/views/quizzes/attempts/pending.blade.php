@@ -11,6 +11,14 @@
 --}}
 @extends('layouts.app')
 
+@php
+    $initialsFor = function (string $name): string {
+        $parts = array_values(array_filter(preg_split('/\s+/', trim($name)) ?: []));
+
+        return mb_strtoupper(collect($parts)->take(2)->map(fn ($part) => mb_substr($part, 0, 1))->implode(''));
+    };
+@endphp
+
 @section('content')
     <x-layout.page-header
         :breadcrumb="[['label' => 'Avaliações'], ['label' => 'Correções Pendentes']]"
@@ -22,13 +30,21 @@
     <x-ui.table :headers="['Aluno', 'Curso / Quiz', 'Enviado em', 'Ações']">
         @forelse($attempts as $attempt)
             <tr dusk="pending-attempt-row-{{ $attempt->id }}">
-                <td data-label="Aluno">{{ $attempt->user->name }}</td>
-                <td data-label="Curso / Quiz">
-                    {{ $attempt->quiz->lesson->module->course->title }}
-                    <br>
-                    <span class="small text-body-secondary">{{ $attempt->quiz->title }}</span>
+                <td data-label="Aluno">
+                    <div class="d-flex align-items-center gap-3">
+                        <x-ui.avatar size="sm" :initials="$initialsFor($attempt->user->name)" aria-hidden="true" />
+                        <div class="min-w-0">
+                            <div class="fw-semibold">{{ $attempt->user->name }}</div>
+                            <div class="ds-caption text-body-secondary text-truncate">{{ $attempt->user->email }}</div>
+                        </div>
+                    </div>
                 </td>
-                <td data-label="Enviado em">{{ optional($attempt->completed_at)->format('d/m/Y H:i') }}</td>
+                <td data-label="Curso / Quiz">
+                    <span class="fw-semibold">{{ $attempt->quiz->lesson->module->course->title }}</span>
+                    <br>
+                    <span class="ds-caption text-body-secondary">{{ $attempt->quiz->title }}</span>
+                </td>
+                <td class="ds-tabular-nums" data-label="Enviado em">{{ optional($attempt->completed_at)->format('d/m/Y H:i') }}</td>
                 <td data-label="Ações">
                     <x-ui.button variant="secondary" size="sm" href="{{ route('quiz-attempts.show', $attempt) }}" dusk="grade-attempt-{{ $attempt->id }}">
                         Corrigir

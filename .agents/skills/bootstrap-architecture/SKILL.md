@@ -75,11 +75,12 @@ metadata:
 > seguem o trabalho das Fases 5–6 do plano. **Fase 8 (mobile, acessibilidade
 > e polimento, docs 11 e 13 — última fase do redesign) também concluída**:
 > `prefers-reduced-motion` passa a existir (`_reduced-motion.scss`, escopo
-> **só** modal e drawer — nada mais some animação de entrada), tabela de 4+
-> colunas reflui para cards abaixo de `md` via markup único (`.ds-table` +
-> `data-label` no `<td>`, `_table-cards.scss` — ver `bootstrap-conventions`
-> §4.1 para a distinção com o padrão antigo de duas marcações que 5 telas
-> legadas ainda usam, congelado), `<x-ui.fab>` soma `env(safe-area-inset-
+> **só** modal e drawer — nada mais some animação de entrada). Tabela usa
+> componente canônico `<x-ui.table>`; `<x-ui.data-table>` = alias compatível.
+> `_table.scss` entrega anatomia `.ds-table-wrap`/`.ds-table-toolbar`/
+> `.ds-table-scroll`/`.ds-table`, reflow abaixo de `md` por markup único e
+> `data-label` no `<td>`. Cursos, organizações, usuários, admin/usuários e
+> audit logs já eliminaram marcação desktop/mobile duplicada. `<x-ui.fab>` soma `env(safe-area-inset-
 > bottom)`, modal abaixo de `sm` vira full-bleed com raio só no topo
 > (`_modal.scss`), `.max-w-reading` cede para 100% com padding 20px abaixo de
 > `md` (`_public-pages.scss`), `.app-main` cai para `padding: var(--space-5)`
@@ -161,7 +162,7 @@ inteiro fechado):
 `_appbar`, `_drawer`, `_page-header`, `_stat-card`, `_empty-state`, `_fab`,
 `_chip`, `_tabs`, `_avatar`, `_brand-mark`, `_pastel-wash`, `_state-layer`,
 `_floating-label`, `_reorder-list`, `_guest-panel`, `_card`, `_organizations`,
-`_public-pages`, `_utilities`, `_modal`, `_table-cards`, `_reduced-motion` —
+`_public-pages`, `_utilities`, `_modal`, `_table`, `_reduced-motion` —
 substitui a lista antiga (`sidebar`/`topbar`/`stat-card`/`lesson-player`/
 `grayscale`) conforme as telas migraram nas Fases 1–8. `_guest-panel` foi
 acrescentado na Fase 1 para a coluna de formulário de 440px (`.guest-form`,
@@ -171,9 +172,9 @@ na Fase 3/4; `_public-pages` na Fase 7, para os blocos de layout de
 Bootstrap (`.hero-panel`, `.numbers-band`, `.max-w-reading`, `.icon-circle*`
 — ver `bootstrap-conventions` §3 item 4 sobre quando um bloco novo vira
 partial em vez de utility); e os três últimos na Fase 8: `_modal` (dialog
-full-bleed com raio só no topo abaixo de `sm`), `_table-cards` (reflow de
-`.ds-table` para lista de cards abaixo de `md` via `data-label`, markup
-único — ver `bootstrap-conventions` §4.1) e `_reduced-motion` (`@media
+full-bleed com raio só no topo abaixo de `sm`), `_table` (superfície tabular
+canônica + reflow para cards abaixo de `md` via `data-label`, markup único;
+importado por `components/_index.scss`) e `_reduced-motion` (`@media
 (prefers-reduced-motion: reduce)`, escopo fechado em `.modal.fade
 .modal-dialog` e `.offcanvas.fade`, nada mais). Nenhum desses partials
 consome hex literal: só `var(--*)` ou variável Sass já alimentada pela
@@ -271,8 +272,43 @@ Exceção única: **utilities de layout** (`row`, `col-*`, `d-flex`, `gap-*`, `m
 | Tailwind 4 (`@tailwindcss/vite`, `tailwindcss`) instalado e não usado | removido de `package.json` e `vite.config.js` | dependência morta; remoção exige aprovação (Parte C, T0) |
 | `bunny('Instrument Sans')` no `vite.config.js` | removido — fonte real é Archivo self-hosted | fonte baixada e nunca aplicada |
 | `<x-ui.select>` com chevron SVG absoluto + `appearance:none` | `.form-select` | |
-| `<x-ui.table>` com styles inline | `.table` + wrapper `.table-responsive` | |
+| `<x-ui.table>` com styles inline / `<x-ui.data-table>` independente | `<x-ui.table>` canônico: `.ds-table-wrap` + toolbar opcional + `.ds-table-scroll` + `.ds-table`; `<x-ui.data-table>` delega como alias | props e slots idênticos; atributos chegam ao `<table>` |
 | erros de validação renderizados à mão | `.is-invalid` + `.invalid-feedback` | ver `bootstrap-conventions` |
+
+---
+
+## Superfície Tabular Canônica
+
+Fluxo único:
+
+```text
+<x-ui.data-table> (alias)
+        │
+        └─ <x-ui.table>
+              └─ .ds-table-wrap
+                   ├─ .ds-table-toolbar (slot opcional)
+                   └─ .ds-table-scroll[.table-responsive]
+                        └─ table.ds-table
+                             ├─ thead
+                             ├─ tbody
+                             └─ tfoot (slot opcional)
+```
+
+- Props: `headers`, `striped`, `hover`, `hoverable`, `responsive`, `size`.
+- `hover` e `hoverable` = aliases; ambos ativam `.ds-table-hover`.
+- `size="sm"` ativa `.ds-table-sm`; `responsive=false` remove só
+  `.table-responsive`, mantendo `.ds-table-scroll`.
+- Slots: `toolbar`, `header`, default (`tbody`), `footer`.
+- `$attributes` chega ao `<table>`: `aria-label`, `dusk`, classes e demais
+  atributos semânticos nunca ficam no wrapper.
+- `_table.scss` consome tokens publicados; zero literal visual.
+- Mobile responsivo mantém `thead` no DOM e árvore de acessibilidade. CSS o
+  oculta visualmente com técnica de recorte; nunca `display:none` nem
+  `aria-hidden`. `tbody` vira grid de cards; cada `<td data-label>` expõe
+  rótulo visível em `::before`.
+- Cinco listagens antes duplicadas agora usam este fluxo: cursos,
+  organizações, usuários, admin/usuários e audit logs. Um registro = um `<tr>`
+  = um seletor `dusk`.
 
 ---
 

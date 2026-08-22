@@ -108,7 +108,7 @@
                     @forelse($recentEnrollments as $enrollment)
                         <tr dusk="enrollment-row">
                             <td data-label="Aluno">
-                                <div class="d-flex align-items-center gap-2">
+                                <div class="d-flex align-items-center gap-3">
                                     <x-ui.avatar :initials="data_get($enrollment, 'student_initials')" />
                                     <div>
                                         <div class="fw-semibold">{{ data_get($enrollment, 'student_name') }}</div>
@@ -117,7 +117,7 @@
                                 </div>
                             </td>
                             <td class="text-body-secondary" data-label="Curso">{{ data_get($enrollment, 'course_name') }}</td>
-                            <td class="min-w-0" data-label="Progresso">
+                            <td class="min-w-0 ds-tabular-nums" data-label="Progresso">
                                 <x-ui.progress :value="data_get($enrollment, 'progress_percentage')"
                                                :label="'Progresso de '.data_get($enrollment, 'student_name').' no curso '.data_get($enrollment, 'course_name').': '.data_get($enrollment, 'progress_percentage').'%'"
                                                height="8"
@@ -230,9 +230,9 @@
                     @forelse($organizationsSummary as $organization)
                         <tr dusk="organization-summary-row-{{ data_get($organization, 'id') }}">
                             <td class="fw-semibold" data-label="Organização">{{ data_get($organization, 'name') }}</td>
-                            <td data-label="Alunos" dusk="org-summary-students-{{ data_get($organization, 'id') }}">{{ data_get($organization, 'students_count') }}</td>
-                            <td data-label="Cursos" dusk="org-summary-courses-{{ data_get($organization, 'id') }}">{{ data_get($organization, 'courses_count') }}</td>
-                            <td data-label="Certificados" dusk="org-summary-certificates-{{ data_get($organization, 'id') }}">{{ data_get($organization, 'certificates_count') }}</td>
+                            <td class="ds-tabular-nums" data-label="Alunos" dusk="org-summary-students-{{ data_get($organization, 'id') }}">{{ data_get($organization, 'students_count') }}</td>
+                            <td class="ds-tabular-nums" data-label="Cursos" dusk="org-summary-courses-{{ data_get($organization, 'id') }}">{{ data_get($organization, 'courses_count') }}</td>
+                            <td class="ds-tabular-nums" data-label="Certificados" dusk="org-summary-certificates-{{ data_get($organization, 'id') }}">{{ data_get($organization, 'certificates_count') }}</td>
                         </tr>
                     @empty
                         <x-ui.empty-state colspan="4"

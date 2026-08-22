@@ -2,47 +2,29 @@
     'headers' => [],
     'striped' => false,
     'hover' => false,
+    'hoverable' => false,
     'responsive' => true,
     'size' => null,
 ])
 
-@php
-    $tableClasses = collect([
-        'table',
-        $size === 'sm' ? 'table-sm' : null,
-        $hover ? 'table-hover' : null,
-        $striped ? 'table-striped' : null,
-    ])->filter()->implode(' ');
+<x-ui.table :headers="$headers"
+            :striped="$striped"
+            :hover="$hover"
+            :hoverable="$hoverable"
+            :responsive="$responsive"
+            :size="$size"
+            {{ $attributes }}>
+    @isset($toolbar)
+        <x-slot:toolbar>{{ $toolbar }}</x-slot:toolbar>
+    @endisset
 
-    $wrapperClasses = $responsive ? 'table-responsive' : '';
-@endphp
+    @isset($header)
+        <x-slot:header>{{ $header }}</x-slot:header>
+    @endisset
 
-<div class="{{ $wrapperClasses }}">
-    <table {{ $attributes->merge(['class' => $tableClasses]) }}>
-        @if (isset($header) || count($headers) > 0)
-            <thead>
-                @isset($header)
-                    {{ $header }}
-                @else
-                    <tr>
-                        @foreach ($headers as $h)
-                            <th scope="col">
-                                {{ $h }}
-                            </th>
-                        @endforeach
-                    </tr>
-                @endisset
-            </thead>
-        @endif
+    {{ $slot }}
 
-        <tbody>
-            {{ $slot }}
-        </tbody>
-
-        @isset($footer)
-            <tfoot>
-                {{ $footer }}
-            </tfoot>
-        @endisset
-    </table>
-</div>
+    @isset($footer)
+        <x-slot:footer>{{ $footer }}</x-slot:footer>
+    @endisset
+</x-ui.table>

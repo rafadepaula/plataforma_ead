@@ -251,38 +251,84 @@ Escala de espaçamento: as utilities `p-N`/`m-N`/`gap-N` do Bootstrap continuam 
 
 ---
 
-## 4.1 Listagem responsiva: markup único que reflui (padrão desde a Fase 8)
+## 4.1 Table/DataTable: contrato único
 
-Mandato de `spec/front_redesign/11-mobile-e-responsivo.md`: toda tabela de listagem com 4+ colunas vira lista de cards com rótulo + valor por linha abaixo de `md`, **nunca** duas variantes visíveis ao mesmo tempo, e o `dusk=` do contrato (`tests/fixtures/dusk-selectors-snapshot.json`) vive em **um** único elemento. A armadilha documentada no doc 11: renderizar as duas variantes e esconder uma via CSS deixa o mesmo `dusk=` duplicado no DOM, e o Dusk casa com a errada.
+`<x-ui.table>` = componente canônico. `<x-ui.data-table>` = alias compatível;
+delega props, slots e atributos ao canônico. Nunca mantenha duas
+implementações.
 
-**Padrão atual (Fase 8 em diante, é o que usar em tabela nova):** markup único que reflui — `<x-ui.table>`/`<x-ui.data-table>` já emitem a classe `.ds-table`; `resources/scss/components/_table-cards.scss` transforma essa mesma marcação em lista de cards abaixo de `md` via CSS puro (`display: block` em `thead`/`tr`/`td`, rótulo do `content: attr(data-label)`). Nenhuma segunda cópia de linha, nenhum `d-md-none` par. A única obrigação da tela: todo `<td>` carrega `data-label="Coluna"` batendo com o `<th>` correspondente — inclusive `<td>` só com botão/badge, senão a versão card mostra linha em branco.
+| Prop | Default | Efeito |
+| :--- | :--- | :--- |
+| `headers` | `[]` | Gera `thead > tr > th[scope=col]`; slot `header` substitui geração |
+| `striped` | `false` | `.ds-table-striped` |
+| `hover` / `hoverable` | `false` | Qualquer `true` ativa `.ds-table-hover` |
+| `responsive` | `true` | Adiciona `.table-responsive` a `.ds-table-scroll`; habilita reflow mobile |
+| `size` | `null` | `sm` ativa `.ds-table-sm` |
+
+Slots: `toolbar` antes do scroll; `header` dentro de `thead`; default dentro
+de `tbody`; `footer` dentro de `tfoot`. `$attributes` pertence ao `<table>`:
+`class`, `aria-label`, `dusk` e atributos semânticos nunca vão para
+`.ds-table-wrap`.
+
+Anatomia fixa:
 
 ```blade
-<x-ui.table :headers="['Nome', 'Status', 'Criado em', 'Ações']">
+<x-ui.table :headers="['Nome', 'Status', 'Criado em', 'Ações']"
+            striped hover aria-label="Usuários">
+    <x-slot:toolbar>...</x-slot:toolbar>
+
     <tr dusk="user-row-{{ $user->id }}">
         <td data-label="Nome">{{ $user->name }}</td>
         <td data-label="Status"><x-ui.badge>...</x-ui.badge></td>
-        <td data-label="Criado em">{{ $user->created_at->format('d/m/Y') }}</td>
+        <td data-label="Criado em" class="ds-tabular-nums">
+            {{ $user->created_at->format('d/m/Y') }}
+        </td>
         <td data-label="Ações">...</td>
     </tr>
 </x-ui.table>
+
+<x-ui.pagination :paginator="$users" />
 ```
 
-**Padrão antigo, congelado (não replicar em tela nova):** `courses/index.blade.php`, `organizations/index.blade.php`, `users/index.blade.php`, `admin/users/index.blade.php` (2 tabelas) e `audit-logs/index.blade.php` ainda usam o par `d-none d-md-block` (desktop, com o `dusk=`) + `d-md-none` (cards mobile, zero `dusk=`) consolidado na Fase 3. Essas 5 telas **não** foram migradas para `.ds-table`/`data-label` na Fase 8 — mexer nelas exigiria remover markup existente com `dusk=`, fora do escopo mínimo da fase. Como a variante desktop delas já é `display: none` abaixo de `md` pelo próprio wrapper `d-none d-md-block`, a regra de reflow de `_table-cards.scss` nunca chega a se aplicar ali — convivem sem conflito, mas **não misture os dois padrões na mesma tabela**.
+- `_table.scss` = único partial. `components/_index.scss` importa `table`.
+- `.ds-table-wrap`: superfície, raio, elevação. `.ds-table-toolbar`: slot
+  opcional. `.ds-table-scroll`: contenção. `.ds-table`: sem borda própria.
+- FilterBar e paginação ficam fora do wrap. Paginação alinha à direita.
+- Número/data usa `.ds-tabular-nums`. Status usa badge/chip com texto.
+- Máximo 6 colunas. Identidade primeiro; ações por último.
+- Empty state usa `<x-ui.empty-state colspan="N">` dentro do slot default.
+- Modal de confirmação fica fora da tabela; wrapper responsivo não recorta
+  backdrop/menu.
 
-```blade
-<div class="d-none d-md-block">
-    {{-- <table>, todo dusk="..." do contrato vive aqui, um único registro por dado --}}
-</div>
+### Reflow mobile e acessibilidade
 
-<div class="d-md-none">
-    {{-- mesmas linhas via <x-ui.card>, mesmas ações/modais, zero dusk="" --}}
-</div>
-```
+Markup único obrigatório. Nunca renderize tabela desktop e cards mobile em
+par. Cursos, organizações, usuários, admin/usuários e audit logs já usam
+marcação única.
 
-- Regra dura, para os dois padrões: nunca duplicar um seletor `dusk` na variante/marcação mobile — o snapshot é a lista fechada de seletores existentes, e um duplicado quebra `DuskSelectorContractTest`.
-- Um `<x-ui.confirm-modal>`/modal compartilhado (ex.: `#audit-diff-modal`) é declarado **uma vez**, fora de qualquer par de variantes.
-- Empty state, paginação e filtros não se duplicam em nenhum dos dois padrões — ficam fora, acima da tabela.
+- Cada `<td>` recebe `data-label` idêntico ao cabeçalho, inclusive ação e
+  badge. `::before` mostra rótulo no card abaixo de `md`.
+- `<thead>` continua no DOM e árvore acessível. `_table.scss` aplica recorte
+  visual (`position:absolute`, caixa 1px, `overflow:hidden`, `clip`); proibido
+  `display:none` e `aria-hidden="true"`.
+- `tbody` vira grid; cada `<tr>` vira card; seletor `dusk` continua único.
+- `td[colspan]` não gera rótulo; `tfoot` vira card separado.
+- `responsive=false` mantém tabela rolável, sem reflow em cards.
+
+### Ações de linha
+
+- Ordem: abrir, editar, remover. Máximo 3 ações visíveis; quarta em diante
+  entra no dropdown “Mais”.
+- Gatilho: `id` único, `data-bs-toggle="dropdown"`,
+  `aria-expanded="false"`, `aria-label="Mais ações para {identidade}"`.
+- Menu: `.dropdown-menu.dropdown-menu-end`, `aria-labelledby` apontando ao
+  gatilho. Item mantém texto; ícone decorativo usa `aria-hidden="true"`.
+- Bootstrap gerencia teclado: seta para baixo abre/foca primeiro item;
+  Escape fecha. Gatilho e item precisam foco visível.
+- Ação destrutiva visível usa palavra explícita. Ação indisponível fica
+  desabilitada e motivo aparece no contexto da linha; nunca some sem motivo.
+- Ícone sozinho só em tabela com mais de 5 colunas; `aria-label` obrigatório.
+- Dropdown após três ações não autoriza duplicar ação ou seletor `dusk`.
 
 ---
 
