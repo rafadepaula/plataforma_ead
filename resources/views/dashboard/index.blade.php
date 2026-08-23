@@ -21,7 +21,7 @@
 @section('content')
     <x-slot:title>Dashboard Administrativo — Plataforma EAD</x-slot:title>
 
-    <div class="dashboard-page" dusk="admin-dashboard">
+    <div class="dashboard-page" dusk="admin-dashboard" data-dashboard-root>
         <x-layout.page-header kicker="Painel" :title="$greeting.', '.$firstName">
             <x-slot:subtitle>
                 {{ $isGlobalAdminView
@@ -54,6 +54,12 @@
             </x-slot:actions>
         </x-layout.page-header>
 
+        <div class="d-flex align-items-center gap-2 mb-4" data-dashboard-filter-bar>
+            <x-ui.chip :pressed="($period ?? '30d') === '7d'" data-period="7d" dusk="filter-period-7d">Últimos 7 dias</x-ui.chip>
+            <x-ui.chip :pressed="($period ?? '30d') === '30d'" data-period="30d" dusk="filter-period-30d">Últimos 30 dias</x-ui.chip>
+            <x-ui.chip :pressed="($period ?? '30d') === 'year'" data-period="year" dusk="filter-period-year">Este ano</x-ui.chip>
+        </div>
+
         <div class="dashboard-stat-grid">
             <x-ui.stat-card kicker="Alunos ativos"
                             value="{{ $stats['active_students'] }}"
@@ -63,6 +69,7 @@
                             icon="user"
                             tone="primary"
                             :no-data="$isFirstAccess"
+                            data-stat-active-students
                             dusk="stat-active-students" />
 
             <x-ui.stat-card kicker="Certificados emitidos"
@@ -73,6 +80,7 @@
                             icon="award"
                             tone="secondary"
                             :no-data="$isFirstAccess"
+                            data-stat-certificates-issued
                             dusk="stat-certificates-issued" />
 
             <x-ui.stat-card kicker="Taxa de conclusão"
@@ -81,6 +89,7 @@
                             icon="check"
                             tone="tertiary"
                             :no-data="$isFirstAccess"
+                            data-stat-completion-rate
                             dusk="stat-completion-rate" />
 
             <x-ui.stat-card kicker="Cursos publicados"
@@ -89,6 +98,7 @@
                             icon="book-open"
                             tone="neutral"
                             :no-data="$isFirstAccess"
+                            data-stat-courses-count
                             dusk="stat-courses-count" />
         </div>
 

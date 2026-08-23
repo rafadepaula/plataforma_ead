@@ -1,6 +1,6 @@
 {
-    "count": 397,
-    "generated_at": "2026-08-23T00:30:17+00:00",
+    "count": 400,
+    "generated_at": "2026-08-23T00:40:21+00:00",
     "entries": [
         {
             "file": "admin/users/edit.blade.php",
@@ -821,6 +821,18 @@
         {
             "file": "dashboard/index.blade.php",
             "selector": "export-enrollments-csv"
+        },
+        {
+            "file": "dashboard/index.blade.php",
+            "selector": "filter-period-30d"
+        },
+        {
+            "file": "dashboard/index.blade.php",
+            "selector": "filter-period-7d"
+        },
+        {
+            "file": "dashboard/index.blade.php",
+            "selector": "filter-period-year"
         },
         {
             "file": "dashboard/index.blade.php",

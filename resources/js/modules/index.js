@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------------
 import AuditLogDiffModal   from './AuditLogDiffModal';
 import CsvImporter         from './CsvImporter';
+import DashboardFilter     from './DashboardFilter';
 import ForumPolling        from './ForumPolling';
 import ForumReportModal    from './ForumReportModal';
 import HttpClient          from './HttpClient';
@@ -28,6 +29,7 @@ export default {
     NotificationService: notifications,
     AuditLogDiffModal:   new AuditLogDiffModal(),
     CsvImporter:         new CsvImporter(httpClient),
+    DashboardFilter:     new DashboardFilter(httpClient),
     ForumPolling:        new ForumPolling(httpClient),
     ForumReportModal:    new ForumReportModal(httpClient, notifications),
     LessonPlayer:        new LessonPlayer(httpClient, notifications),
