@@ -74,10 +74,12 @@ not know or care which `DashboardMetricsService` return.
 | --- | --- |
 | Dashboard root container | `dusk="admin-dashboard"` |
 | Each stat card | `dusk="stat-active-students"`, `dusk="stat-certificates-issued"`, `dusk="stat-completion-rate"`, `dusk="stat-courses-count"` |
+| Period filter chips | `dusk="filter-period-7d"`, `dusk="filter-period-30d"`, `dusk="filter-period-year"` |
 | Recent enrollments table | `dusk="recent-enrollments-table"` |
+| Recent enrollment row | `dusk="enrollment-row"` |
 | CSV export links | `dusk="export-{type}-csv"` (e.g. `export-enrollments-csv`, `export-certificates-csv`) |
 | Settings form | `dusk="settings-form"` / `dusk="settings-submit"` |
-| Organizations summary table (SPEC-001, Admin-global-only) | `dusk="organizations-summary-table"` |
+| Organizations summary table (Admin-global-only) | `dusk="organizations-summary-table"` |
 | Organizations summary row | `dusk="organization-summary-row-{id}"` |
 | Organizations summary per-metric cell | `dusk="org-summary-students-{id}"` / `dusk="org-summary-courses-{id}"` / `dusk="org-summary-certificates-{id}"` |
 
@@ -101,6 +103,15 @@ strings — keep them if you touch this block:
 ...
 :headers="['Organização', 'Alunos', 'Cursos', 'Certificados']"
 ```
+
+## Period Filter Chips: `DashboardFilter.js` Module
+
+The period filter chips in `resources/views/dashboard/index.blade.php` (`Últimos 7 dias`, `Últimos 30 dias`, `Este ano`) are managed by `resources/js/modules/DashboardFilter.js`:
+- Intercepts clicks on `[data-dashboard-filter-bar] [data-period]`
+- Updates `aria-pressed` states on chips
+- Performs async `GET /admin/dashboard?period={period}` via `HttpClient`
+- Dynamically updates StatCard values without a full page refresh
+- Initial render falls back to server-rendered Blade state
 
 ## CSV Export Entry Point: Plain `<a>`, No JS Module
 
