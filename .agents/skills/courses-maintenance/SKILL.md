@@ -193,3 +193,43 @@ module, spec, or use case. Consequences when maintaining this module:
   between methods.
 
 Full rule: `testing-conventions`. Chain debugging: `testing-maintenance`.
+
+## Gestor Catalog Verification
+
+Focused backend/component gates:
+
+```bash
+vendor/bin/sail artisan test --compact tests/Feature/MultiTenantCourseManagementTest.php
+vendor/bin/sail artisan test --compact tests/Feature/UiTableComponentTest.php
+vendor/bin/sail artisan test --compact tests/Feature/Theme/DuskSelectorContractTest.php
+```
+
+Browser gate requires fresh assets:
+
+```bash
+vendor/bin/sail npm run build
+vendor/bin/sail artisan dusk --filter=CourseManagementTest
+vendor/bin/sail artisan dusk --filter=test_courses_index_management_screen_has_no_horizontal_scroll
+```
+
+Catalog checks: partial/combined filters, array-shaped query input, 10-row
+pagination with retained query string, total versus active enrollment counts,
+five columns, filtered empty state, four visible actions, unique selectors,
+modal content/form, soft delete, protected course without modal.
+
+Common failures:
+
+- Active course still opens modal: query missing `active_students_count`, or
+  row action reads `students_count`.
+- Duplicate/English pagination summary: shared component fell back to framework
+  `bootstrap-5` view instead of internal links-only views.
+- Mobile horizontal overflow: numbered pagination branch visible below `sm`, or
+  catalog column widths not reset below `md`.
+- Snapshot failure after component extraction: keep selector literals at
+  `courses/index.blade.php` call site through `*-dusk` props.
+
+Harness audit command:
+
+```bash
+vendor/bin/sail php scripts/check-skills.php
+```

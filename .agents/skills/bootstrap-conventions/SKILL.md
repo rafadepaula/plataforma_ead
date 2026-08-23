@@ -606,3 +606,26 @@ Regra absoluta em qualquer migração de markup:
   <div class="toast-container position-fixed bottom-0 end-0 p-3" id="notification-container"></div>
   ```
   Id `#notification-container` preservado — `NotificationService` e testes Dusk dependem dele.
+
+---
+
+## 10. Paginação e formulário destrutivo
+
+`<x-ui.pagination>` recebe `paginator`, `label`, `itemLabel`. Renderiza só com
+2+ páginas. Mantém um único `<nav>`; nunca use diretamente
+`pagination::bootstrap-5` dentro dele, pois view padrão duplica landmark e
+resumo. Views internas:
+
+- `components.ui.pagination-links`: previous/next compacto abaixo de `sm`,
+  números a partir de `sm`.
+- `components.ui.simple-pagination-links`: previous/next.
+
+`.ds-pagination .page-link` = 40x40, `--radius-pill`, tokens apenas.
+
+`<x-ui.confirm-modal form-dusk="...">` põe seletor no `<form>` real. Atributo
+`dusk="..."` comum continua pertencendo à raiz modal. Use `formDusk` quando
+teste precisa provar submissão DELETE; use id modal para título/mensagem.
+
+Catálogo de cursos é exceção explícita à regra genérica de três ações: quatro
+ações visíveis, coluna 470px, contrato de produto. Mobile continua marcação
+única refluída; não crie cards duplicados.

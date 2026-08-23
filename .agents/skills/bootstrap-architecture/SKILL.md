@@ -314,7 +314,19 @@ Fluxo único:
 
 ## Contrato com o Resto do Sistema
 
-- **Dusk é intocável.** Os **388** `dusk="..."` em `resources/views/` (contagem congelada em `spec/front_redesign/14-contrato-dusk-e-testes.md`, snapshot de teste em `tests/fixtures/dusk-selectors-snapshot.json`) são contrato de teste. Migrar markup **nunca** renomeia, move para outro elemento semântico, nem remove um `dusk=`. Se o elemento sumir, o atributo migra para o equivalente mais próximo — e isso precisa de justificativa no receipt da migração.
+- **Dusk é intocável.** Os **400** `dusk="..."` em `resources/views/` (baseline atual em `tests/fixtures/dusk-selectors-snapshot.json`) são contrato de teste. Migrar markup **nunca** renomeia, move para outro elemento semântico, nem remove um `dusk=`. Se o elemento sumir, o atributo migra para o equivalente mais próximo — e isso precisa de justificativa no receipt da migração.
 - **PDF é território separado.** `resources/views/certificates/pdf.blade.php` roda em `barryvdh/laravel-dompdf`, que **não** entende CSS do Bootstrap 5 (custom properties, `color-mix()`, flexbox moderno, grid). A view de PDF mantém CSS próprio em `<style>` — **única** exceção à regra de zero CSS ad-hoc. Ver `bootstrap-maintenance`.
 - **Multi-tenant/roles não mudam.** Sidebar continua montando itens por `role:admin|gestor|aluno` (Spatie). Migração é só camada de apresentação.
 - **`<x-help-button>`** (SPEC-11) segue em 100% das telas. Passa a abrir `.modal` do Bootstrap, mantendo `dusk="help-button-{key}"` e `dusk="help-article-content-{key}"`.
+
+## Pagination and Course Catalog Surfaces
+
+Shared `<x-ui.pagination>` owns one `nav` landmark, Portuguese result counter,
+and internal links-only views. Length-aware paginator uses numbered desktop
+branch plus compact previous/next mobile branch. Simple paginator uses
+previous/next only. `.ds-pagination .page-link` = 40x40 pill.
+
+Course catalog adds `_courses.scss` to component-layer inventory. Partial owns
+fixed desktop column widths/alignment only; canonical `_table.scss` still owns
+single-markup mobile card reflow. `_courses.scss` resets fixed widths below
+`md`, preventing horizontal overflow.

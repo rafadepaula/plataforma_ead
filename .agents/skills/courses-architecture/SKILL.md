@@ -109,6 +109,24 @@ wired content path in this spec scope. Do not add
 `content_text`/`youtube_url`/`pdf_path`/`image_path` population logic for
 `type = quiz` rows.
 
+## Gestor Course Catalog Read Model
+
+`CourseController::index(Request)` builds tenant-scoped management catalog.
+Input normalization happens before query: `search` accepts scalar string only;
+`status` whitelist = `all|published|draft`; array/unknown input becomes neutral
+filter, never exception. Query applies partial title search, publication filter,
+alphabetical order, 10-row `LengthAwarePaginator`, `withQueryString()`.
+
+Single query supplies four aggregates:
+
+- `modules_count`
+- `lessons_count`
+- `students_count` = every enrollment status, shown in Alunos column
+- `active_students_count` = pivot `course_user.status = active`, drives delete UI
+
+Never use `students_count` for delete protection. Cancelled/completed rows belong
+in displayed total but cannot disable removal.
+
 ## Related Specs
 
 - `spec/specs/05-courses-modules-and-content-management.md` — this feature's

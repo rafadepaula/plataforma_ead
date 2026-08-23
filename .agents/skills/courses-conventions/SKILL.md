@@ -214,3 +214,32 @@ if ($lessons->count() !== count($orderedIds)) {
 Without this check, Gestor could reorder — or leak existence of — other org's
 rows by guessing IDs, since reorder route only route-model-bind parent, not each
 child ID individually.
+
+## Course Catalog Composition
+
+`resources/views/courses/index.blade.php` composes shared widgets plus two domain
+components:
+
+- `<x-course.title-cell>`: title; zero-module caption; module/lesson pluralization.
+- `<x-course.row-actions>`: Módulos tonal, Regras de conclusão ghost, Editar
+  ghost, Remover critical icon.
+
+Catalog uses one `<x-ui.data-table>` markup. Mobile card presentation comes from
+canonical table reflow; never add parallel desktop/mobile loops or duplicate
+`dusk` selectors. Explicit header slot applies
+`course-catalog-*-column`; `_courses.scss` owns 150/110/130/470px widths and
+right alignment.
+
+Controller passes `search`, normalized `status`, paginator aggregates. Filter
+form submits GET with scalar `search` and `status=all|published|draft`. Preserve
+query string across pages.
+
+Active enrollment action rule:
+
+- `active_students_count > 0`: disabled delete button, no modal target, caption
+  with count.
+- zero active: modal trigger rendered; modal exists outside table wrapper;
+  `form-dusk="delete-form-{id}"` targets actual DELETE `<form>`.
+
+Four actions stay visible here despite generic three-action guideline: catalog
+contract reserves 470px action column and requires all four.

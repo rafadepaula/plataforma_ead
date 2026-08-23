@@ -455,7 +455,7 @@ grep -rn '<table' resources/views --include='*.blade.php'
 # contrato canônico da tabela
 vendor/bin/sail artisan test --compact tests/Feature/UiTableComponentTest.php
 
-# contagem de dusk= (deve permanecer == 388, congelado em spec/front_redesign/14)
+# contagem de dusk= (deve permanecer == 400, baseline versionado atual)
 grep -ro 'dusk="' resources/views | wc -l
 
 # suíte completa
@@ -477,7 +477,7 @@ acima — rode-os antes do gate manual:
   qualquer `style="..."` fora de `certificates/pdf.blade.php`.
 - `DuskSelectorContractTest` — compara a contagem e o conjunto
   `arquivo::seletor` de `dusk="..."` atual contra
-  `tests/fixtures/dusk-selectors-snapshot.json` (congelado com 388
+  `tests/fixtures/dusk-selectors-snapshot.json` (baseline com 400
   entradas). Atualizar o snapshot **só** com justificativa explícita —
   nunca para "fazer o teste passar".
 
@@ -508,3 +508,27 @@ cruzar módulos. Consequências ao migrar tela:
   `Tests\DuskTestCase`.
 
 Regra completa: `testing-conventions`.
+
+## Paginação e catálogo de cursos
+
+Sintoma: resumo aparece duas vezes ou landmark `nav` fica aninhado. Causa:
+`<x-ui.pagination>` voltou a usar `pagination::bootstrap-5`. Corrija mantendo
+views internas links-only.
+
+Sintoma: página estoura abaixo de `sm`. Causa: lista numerada visível no mobile.
+Branch mobile deve mostrar previous/next apenas; branch numerado usa
+`d-none d-sm-flex`. Cada `.page-link` mede 40x40.
+
+Sintoma: catálogo estoura abaixo de `md`. Confirme `_courses.scss` importado,
+larguras 150/110/130/470px só no desktop e reset para 100% no media query.
+Catálogo mantém quatro ações visíveis; teste responsivo não deve procurar
+dropdown `course-actions-toggle` aposentado.
+
+Gates focados:
+
+```bash
+vendor/bin/sail npm run build
+vendor/bin/sail artisan test --compact tests/Feature/UiTableComponentTest.php
+vendor/bin/sail artisan dusk --filter=CourseManagementTest
+vendor/bin/sail artisan dusk --filter=test_courses_index_management_screen_has_no_horizontal_scroll
+```
