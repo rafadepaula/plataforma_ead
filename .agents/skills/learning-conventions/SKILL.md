@@ -14,6 +14,7 @@ metadata:
   role: conventions
   specs:
     - spec/specs/07-student-learning-experience-and-progress.md
+    - spec/specs/26-student-course-catalog-meus-cursos.md
 ---
 
 # Learning Conventions
@@ -88,6 +89,16 @@ student-facing route in this module. Implicit binding uses model's default
 (nonexistent) `org_id`. `ClassroomController::show()` takes `int $course`
 for exactly this reason.
 
+**One deliberate exception**: `StudentCourseController::index()` calls
+`$user->courses()->withoutGlobalScope('org')` — bypassing only the `org`
+scope, not the full `withoutGlobalScopes()` — because the catalog must
+still exclude a soft-deleted Course (its `course_user` row is not
+cascade-removed by a soft delete). Dropping every scope there would let a
+soft-deleted Course's card render. Copy this narrower, named-scope form
+only for a query that must also keep `SoftDeletes`' own scope; every other
+lookup in this module keeps using the blanket `withoutGlobalScopes()` form
+above.
+
 When controller needs Course cached onto relation the view reads directly
 (e.g. `$lesson->module->course`), set it explicitly so later access does
 not re-trigger scoped, empty-for-Aluno query:
@@ -142,3 +153,43 @@ either approach. Never rename/replace `.d-none` with another hide utility
 on these two selectors without updating `LessonPlayer.js` in lockstep —
 `classroom/lesson.blade.php` and every `classroom/partials/_*` template
 (`_video`, `_text-image`, `_pdf`) depend on this exact class name.
+
+## SPEC-26 `<x-course.card>`: 4 Sub-Components, One View Model, No Extra Query
+
+The "Meus Cursos" card is a shell (`resources/views/components/course/
+card.blade.php`) that forwards `$attributes` (the `dusk="course-card-{id}"`
+selector) plus one `enrollment` prop into 3 sibling sub-components —
+`card-header` (168px media band + status chip), `card-body` (org overline,
+clamped title/summary, 10px progress bar), `card-footer` (contextual CTA
+button + `"{N} aulas · {N}h · Prazo: ..."` caption). Every sub-component
+reads its fields through `data_get($enrollment, '...')`, never `$enrollment
+->course`, so the component tree works whether the controller hands a
+plain array or an object, and every field defensively degrades (missing
+`coverUrl` → pastel-wash gradient, `null` `ctaHref` → disabled button, no
+`organization` → the literal fallback string `"Organização"`). Do not add
+a 5th sub-component or inline the header/body/footer back into the shell —
+each is unit-tested in isolation by
+`tests/Feature/UiSortableFieldComponentsTest.php`'s sibling,
+`tests/Browser/StudentCoursesCatalogUiTest.php`.
+
+`card-footer`'s CTA button variant is derived from `displayStatus`, not
+passed in by the controller: `concluido`/`expirado` render `tonal`,
+`nao_iniciado`/`em_andamento` render `primary`; only `em_andamento` (and
+only with a resolved `ctaHref`) shows the trailing `chevron-right` icon.
+Keep that branching inside `card-footer.blade.php` — do not move it into
+the controller's view model, which only supplies `ctaLabel`/`ctaHref`, not
+button styling.
+
+## SPEC-26 `resolveResumeLesson()`: One Algorithm, Two Callers
+
+`StudentCourseController::resumeLessonFor()` is an **in-memory port** of
+`Course::resumeLessonFor(User $user)` — it builds `$publishedLessons` and
+`$progressRecords` from the already eager-loaded `modules`/
+`modules.lessons`/`modules.lessons.progress` relations set up by
+`index()`'s `with()` (see `learning-architecture`'s multi-org section for
+why this must stay `withoutGlobalScope('org')`, not a fresh query per row)
+instead of issuing Course's own DB queries — avoids an N+1 per enrollment
+card. Both call sites delegate the actual tie-break rule to the single
+static `Course::resolveResumeLesson()`. Never re-implement the
+"most-recently-touched, or next-incomplete-if-already-done" rule at either
+call site directly; extend `resolveResumeLesson()` so both stay in sync.

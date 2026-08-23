@@ -67,11 +67,11 @@ class CourseManagementTest extends DuskTestCase
                 ->assertPresent('button[name="status"][value="published"]')
                 ->assertPresent('button[name="status"][value="draft"]')
                 ->assertPresent('#courses-filter-reset')
-                ->assertSeeIn('#courses-table', 'Título')
-                ->assertSeeIn('#courses-table', 'Carga horária')
-                ->assertSeeIn('#courses-table', 'Alunos')
-                ->assertSeeIn('#courses-table', 'Status')
-                ->assertSeeIn('#courses-table', 'Ações')
+                ->assertSeeIn('#courses-table', 'TÍTULO')
+                ->assertSeeIn('#courses-table', 'CARGA HORÁRIA')
+                ->assertSeeIn('#courses-table', 'ALUNOS')
+                ->assertSeeIn('#courses-table', 'STATUS')
+                ->assertSeeIn('#courses-table', 'AÇÕES')
                 ->assertSeeIn('@course-row-'.$course->id, 'Sem módulos cadastrados')
                 ->assertSeeIn('@course-row-'.$course->id, '20 horas')
                 ->assertSeeIn('@course-row-'.$course->id, 'Rascunho')
@@ -178,7 +178,9 @@ class CourseManagementTest extends DuskTestCase
 
             // 10. Remoção da lição
             $browser->visit(route('modules.lessons.index', $module))
-                ->waitFor('@delete-lesson-'.$lesson->id)
+                ->waitFor('@open-delete-lesson-'.$lesson->id)
+                ->click('@open-delete-lesson-'.$lesson->id)
+                ->waitFor('#delete-lesson-modal-'.$lesson->id.'.show')
                 ->clickAndWaitForReload('@delete-lesson-'.$lesson->id)
                 ->assertDontSee('Lição Dusk');
 

@@ -1,0 +1,74 @@
+// =============================================================================
+// Componente: Course card (card rico de "Meus cursos", SPEC-26)
+// -----------------------------------------------------------------------------
+// `.ds-course-grid`: grid responsivo do catálogo do aluno. `.ds-course-card-*`:
+// faixa de mídia de 168px (pastel wash ou capa com véu), chip de status fixo
+// no canto inferior esquerdo, e os utilitários de clamp de título/resumo que
+// o Bootstrap não entrega pronto.
+// Regra: qualquer declaração aqui só pode consumir var(--*), nunca literal de
+// cor/raio/sombra.
+// =============================================================================
+
+.ds-course-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 24px;
+}
+
+.ds-course-card-media {
+    position: relative;
+    height: 168px;
+    overflow: hidden;
+    border-top-left-radius: var(--radius-lg);
+    border-top-right-radius: var(--radius-lg);
+}
+
+.ds-course-card-wash {
+    width: 100%;
+    height: 100%;
+}
+
+.ds-course-card-cover {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.ds-course-card-veil {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, var(--overlay-scrim), transparent 62%);
+}
+
+.ds-course-card-chip {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+}
+
+// Título e resumo do corpo do card usam clamp multi-linha — sem equivalente
+// Bootstrap. `-webkit-line-clamp` é suportado por todo motor relevante
+// (Chromium/WebKit/Firefox 68+) mesmo com o prefixo.
+.ds-course-card-title {
+    display: -webkit-box;
+    overflow: hidden;
+    font-size: var(--font-size-h4);
+    font-weight: var(--font-weight-bold);
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+}
+
+.ds-course-card-summary {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+// Altura fixa de 10px pedida pelo design — `x-ui.progress`'s `height` prop
+// só aceita as chaves geradas pela Utility API (4/6/8/16/24/32/36/60), então
+// o 10px é aplicado aqui, escopado ao card, em vez de alterar o componente
+// compartilhado ou a Utility API por causa de um único consumidor.
+.ds-course-card-progress .progress {
+    height: 10px;
+}

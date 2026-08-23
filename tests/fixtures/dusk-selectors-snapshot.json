@@ -1,5 +1,5 @@
 {
-    "count": 411,
+    "count": 419,
     "entries": [
         {
             "file": "forum/partials/_edit-history-modal.blade.php",
@@ -438,26 +438,6 @@
             "selector": "quiz-attempt-submit"
         },
         {
-            "file": "student/courses/index.blade.php",
-            "selector": "org-group-{{ $orgId }}"
-        },
-        {
-            "file": "student/courses/index.blade.php",
-            "selector": "student-course-{{ $course->id }}"
-        },
-        {
-            "file": "student/courses/index.blade.php",
-            "selector": "progress-bar-{{ $course->id }}"
-        },
-        {
-            "file": "student/courses/index.blade.php",
-            "selector": "open-classroom-{{ $course->id }}"
-        },
-        {
-            "file": "student/courses/index.blade.php",
-            "selector": "no-enrollments"
-        },
-        {
             "file": "modules/lessons/_form.blade.php",
             "selector": "lesson-type-select"
         },
@@ -492,6 +472,10 @@
         {
             "file": "modules/lessons/index.blade.php",
             "selector": "edit-lesson-{{ $lesson->id }}"
+        },
+        {
+            "file": "modules/lessons/index.blade.php",
+            "selector": "open-delete-lesson-{{ $lesson->id }}"
         },
         {
             "file": "modules/lessons/index.blade.php",
@@ -1546,6 +1530,26 @@
             "selector": "delete-module-{{ $module->id }}"
         },
         {
+            "file": "components/course/card-row.blade.php",
+            "selector": "course-card-row-{{ $course->id }}"
+        },
+        {
+            "file": "components/course/card-row.blade.php",
+            "selector": "mobile-manage-modules-{{ $course->id }}"
+        },
+        {
+            "file": "components/course/card-row.blade.php",
+            "selector": "mobile-manage-completion-rules-{{ $course->id }}"
+        },
+        {
+            "file": "components/course/card-row.blade.php",
+            "selector": "mobile-edit-course-{{ $course->id }}"
+        },
+        {
+            "file": "components/course/card-row.blade.php",
+            "selector": "mobile-delete-course-{{ $course->id }}"
+        },
+        {
             "file": "courses/index.blade.php",
             "selector": "new-course"
         },
@@ -1644,6 +1648,34 @@
         {
             "file": "courses/enrollments/index.blade.php",
             "selector": "revoke-enrollment-{{ $student->id }}"
+        },
+        {
+            "file": "student/courses/index.blade.php",
+            "selector": "tab-{{ Str::slug($tabKey, '-') }}"
+        },
+        {
+            "file": "student/courses/index.blade.php",
+            "selector": "no-enrollments"
+        },
+        {
+            "file": "student/courses/index.blade.php",
+            "selector": "course-card-{{ optional(data_get($row, 'course'))->id }}"
+        },
+        {
+            "file": "components/course/card.blade.php",
+            "selector": "course-card-{id}"
+        },
+        {
+            "file": "components/course/card-header.blade.php",
+            "selector": "course-status-{{ $courseId }}"
+        },
+        {
+            "file": "components/course/card-body.blade.php",
+            "selector": "course-progress-{{ $courseId }}"
+        },
+        {
+            "file": "components/course/card-footer.blade.php",
+            "selector": "course-continue-{{ $courseId }}"
         }
     ]
 }

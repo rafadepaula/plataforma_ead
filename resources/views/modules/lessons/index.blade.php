@@ -36,6 +36,7 @@
                                  icon="trash"
                                  data-bs-toggle="modal"
                                  data-bs-target="#delete-lesson-modal-{{ $lesson->id }}"
+                                 dusk="open-delete-lesson-{{ $lesson->id }}"
                                  aria-label="Remover lição {{ $lesson->title }}" />
                 </x-slot:actions>
             </x-ui.sortable-row>

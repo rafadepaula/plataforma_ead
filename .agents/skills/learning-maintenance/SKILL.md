@@ -15,6 +15,7 @@ metadata:
   role: maintenance
   specs:
     - spec/specs/07-student-learning-experience-and-progress.md
+    - spec/specs/26-student-course-catalog-meus-cursos.md
     - spec/specs/00-architecture-database-and-guardrails.md
 ---
 
@@ -50,6 +51,21 @@ Tests guard SPEC-07 contract. Must stay green (PHPUnit, no Pest):
   `tests/Browser/VideoThresholdCompletionTest.php` (Dusk E2E) — full
   browser flow, latter drive `window.LessonPlayer.reportProgress()`
   directly rather than real YouTube embed.
+- `tests/Feature/StudentCourseControllerTest.php` (SPEC-26) — 19 tests:
+  multi-org enrollment aggregation (including duplicate course titles
+  across orgs resolving to the right org per card, N+1-free), all 3 tabs
+  filtered by raw pivot `status` (never derived `displayStatus`), tab
+  badge counts, a `cancelled` enrollment never appearing in any tab, all 4
+  derived statuses (`concluido` winning over a past `expires_at`
+  included), the 2%-visual-minimum floor on an `expirado` row with zero
+  real progress, certificate-issued vs certificate-not-yet-issued CTA
+  degradation, a zero-published-lesson course not crashing, soft-deleted
+  Course exclusion, an unpublished-but-enrolled Course still rendering
+  read-only, and a `role:gestor` 403.
+- `tests/Browser/StudentCoursesCatalogUiTest.php` (SPEC-26 Dusk) — the
+  tabs/cards lifecycle chain (all 3 tabs, all 4 status chips, progress bar
+  selector, per-status CTA target) plus a separate contextual-empty-state-
+  per-tab test.
 
 Run narrowest first after touch module:
 
@@ -61,8 +77,10 @@ vendor/bin/sail artisan test --filter=CourseProgressCalculationTest
 vendor/bin/sail artisan test --filter=MultiOrgStudentClassroomTest
 vendor/bin/sail artisan test --filter=LessonManualCompletionTest
 vendor/bin/sail artisan test --filter=VideoThresholdCompletionTest
+vendor/bin/sail artisan test --filter=StudentCourseControllerTest
 vendor/bin/sail artisan dusk --filter=MultiOrgStudentClassroomTest
 vendor/bin/sail artisan dusk --filter=VideoThresholdCompletionTest
+vendor/bin/sail artisan dusk --filter=StudentCoursesCatalogUiTest
 ```
 
 ## `progress_percentage` Not Updating
@@ -111,15 +129,38 @@ state), `public/build` stale relative to
 which leave `public/hot` behind and break every Dusk run (see
 `laravel-dusk`) — before re-running Dusk.
 
+## SPEC-26 Dusk Gotchas
+
+- **Selector rename**: the pre-SPEC-26 catalog used
+  `org-group-{id}`/`student-course-{id}`/`open-classroom-{id}`. These are
+  retired — current selectors are `course-card-{id}`, `course-status-
+  {id}`, `course-progress-{id}`, `course-continue-{id}` (on the
+  `<x-course.card>` family; see `learning-conventions`). If a Dusk test
+  still references the old names it is asserting against the pre-refactor
+  layout — update it, and update
+  `tests/fixtures/dusk-selectors-snapshot.json` in the same change
+  (`DuskSelectorContractTest` fails the frozen-selector-baseline guardrail
+  otherwise).
+- **`.kicker` is uppercase**: `card-body`'s organization overline uses the
+  existing `.kicker` class, whose `text-transform: uppercase` makes a
+  literal-case `assertSee('Organização A')` fail even though the text is
+  correct. Use `assertSeeIgnoringCase()` against anything rendered inside
+  `.kicker`.
+- **Card CTA disabled state**: when `ctaHref` is `null` (see
+  `learning-architecture`'s CTA-degrades-to-null rule), `course-continue-
+  {id}` renders a disabled `<x-ui.button>`, not a missing element — assert
+  `disabled`, don't assert the selector is absent.
+
 ## Auto-Update Protocol (SPEC-03)
 
 Per `spec/specs/03-agentic-harness-and-self-updating-skills.md`: any
 change to `MarkLessonCompleteAction`, `RecalculateCourseProgress`,
 `EnsureStudentIsEnrolled`, `LessonMarkedAsCompleted`/
 `CourseCompletedByStudent` events, `StudentCourseController`/
-`ClassroomController`/`LessonProgressController`,
-`student.enrolled`/`role:aluno` routes, `lesson_progress` schema, or
-`LessonPlayer.js` **must** update all three learning skills
+`ClassroomController`/`LessonProgressController`, the `x-course.*`
+component family, `resources/scss/components/_course-card.scss`,
+`student.enrolled`/`role:aluno` routes, `lesson_progress`/`course_user`
+schema, or `LessonPlayer.js` **must** update all three learning skills
 (`learning-architecture`, `learning-conventions`, `learning-maintenance`)
 in same change, before task considered done. Also re-check:
 
@@ -132,6 +173,9 @@ in same change, before task considered done. Also re-check:
 
 - `spec/specs/07-student-learning-experience-and-progress.md` — RF13,
   RF14, RF15, RF20/RN08, RF24.
+- `spec/specs/26-student-course-catalog-meus-cursos.md` — "Meus Cursos"
+  tabbed catalog rebuild, `<x-course.card>` family, CTA-per-status
+  contract.
 - `courses-maintenance` — analogous module this one read Course/Module/
   Lesson data from; mirror its `withoutGlobalScopes()` cross-tenant-lookup
   convention.

@@ -2,11 +2,7 @@
     'course',
 ])
 
-@php
-    $activeStudentsCount = (int) $course->active_students_count;
-@endphp
-
-<x-ui.card surface="white">
+<x-ui.card surface="white" dusk="course-card-row-{{ $course->id }}">
     <div>
         <x-ui.badge :variant="$course->is_published ? 'success' : 'neutral'">
             {{ $course->is_published ? 'Publicado' : 'Rascunho' }}
@@ -27,15 +23,15 @@
     </p>
 
     <x-slot:footer>
-        <div class="d-flex flex-wrap align-items-center justify-content-end gap-2">
-            <x-ui.button variant="tonal" size="sm" :href="route('courses.modules.index', $course)">Módulos</x-ui.button>
-            <x-ui.button variant="ghost" size="sm" :href="route('courses.completion-rules.index', $course)">Regras</x-ui.button>
-            <x-ui.button variant="ghost" size="sm" :href="route('courses.edit', $course)">Editar</x-ui.button>
-            @if ($activeStudentsCount > 0)
-                <x-ui.button variant="ghost" size="sm" icon="trash" disabled aria-label="Remover {{ $course->title }}"><span class="visually-hidden">Remover</span></x-ui.button>
-            @else
-                <x-ui.button variant="ghost" size="sm" icon="trash" data-bs-toggle="modal" data-bs-target="#delete-course-{{ $course->id }}" aria-label="Remover {{ $course->title }}"><span class="visually-hidden">Remover</span></x-ui.button>
-            @endif
-        </div>
+        {{-- Desktop's `<tr>` renders the same `<x-course.row-actions>` with
+             its default (unprefixed) dusk ids; this mobile copy prefixes
+             them so both DOM instances stay individually addressable —
+             `DuskSelectorContractTest`'s per-course-id uniqueness guard
+             would otherwise see 2 elements for one dusk selector. --}}
+        <x-course.row-actions :course="$course"
+                              manage-modules-dusk="mobile-manage-modules-{{ $course->id }}"
+                              manage-completion-rules-dusk="mobile-manage-completion-rules-{{ $course->id }}"
+                              edit-course-dusk="mobile-edit-course-{{ $course->id }}"
+                              delete-course-dusk="mobile-delete-course-{{ $course->id }}" />
     </x-slot:footer>
 </x-ui.card>

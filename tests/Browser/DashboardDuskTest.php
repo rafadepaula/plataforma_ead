@@ -33,7 +33,7 @@ class DashboardDuskTest extends DuskTestCase
             $browser->loginAs($admin)
                 ->visit(route('admin.dashboard'))
                 ->waitFor('@admin-dashboard')
-                ->assertSee('Painel')
+                ->assertSeeIgnoringCase('Painel')
                 ->assertSee('Um panorama da plataforma nos últimos 30 dias.')
                 ->assertDontSee('Novo curso')
                 ->assertSeeIgnoringCase('Alunos ativos')

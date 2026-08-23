@@ -13,10 +13,11 @@ use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 
 /**
- * E2E coverage of the student learning experience:
- * "Meus Cursos" grouped by Organization, opening the classroom, manually
- * completing a text lesson, seeing the course progress bar reflect it, and
- * the idempotency of a second completion call.
+ * E2E coverage of the student learning experience: "Meus Cursos" (SPEC-26's
+ * `x-course.card` grid), the "Começar curso" CTA landing directly on the
+ * first published lesson, manually completing a text lesson, seeing the
+ * course progress bar reflect it, and the idempotency of a second
+ * completion call.
  *
  * Agrupado por cadeia de ciclo de vida (ver `testing-conventions`): a
  * jornada de aprendizagem inteira num método; as negativas de acesso (não
@@ -44,22 +45,24 @@ class MultiOrgStudentClassroomTest extends DuskTestCase
         $courseA->students()->attach($student->id, ['enrolled_at' => now(), 'status' => 'active']);
         $courseB->students()->attach($student->id, ['enrolled_at' => now(), 'status' => 'active']);
 
-        $this->browse(function (Browser $browser) use ($student, $orgA, $courseA, $lesson): void {
-            // 1. "Meus Cursos" agrupado por Organização + abertura da sala.
+        $this->browse(function (Browser $browser) use ($student, $courseA, $lesson): void {
+            // 1. "Meus Cursos" (grade de cards, sem mais seções por
+            //    Organização — o nome dela vive na overline de cada card) e o
+            //    CTA "Começar curso" (curso `nao_iniciado`) leva direto à
+            //    primeira aula publicada.
             $browser->loginAs($student)
                 ->visit('/meus-cursos')
-                ->waitFor('@org-group-'.$orgA->id)
-                ->assertSee('Organização A')
-                ->assertSee('Organização B')
-                ->assertVisible('@student-course-'.$courseA->id)
-                ->click('@open-classroom-'.$courseA->id)
-                ->waitFor('@lesson-'.$lesson->id)
-                ->assertSeeIn('@course-progress-label', '0%');
+                ->waitFor('@course-card-'.$courseA->id)
+                // `.kicker` (the card's org overline) is `text-transform:
+                // uppercase`, so the rendered text is not a literal-case
+                // match — see the laravel-dusk skill's `assertSeeIn` note.
+                ->assertSeeIgnoringCase('Organização A')
+                ->assertSeeIgnoringCase('Organização B')
+                ->click('@course-continue-'.$courseA->id)
+                ->waitFor('@mark-complete-button');
 
             // 2. Conclusão manual da lição de texto.
-            $browser->click('@open-lesson-'.$lesson->id)
-                ->waitFor('@mark-complete-button')
-                ->assertVisible('@mark-complete-button')
+            $browser->assertVisible('@mark-complete-button')
                 ->click('@mark-complete-button')
                 ->waitUntilMissing('@mark-complete-button')
                 ->assertVisible('@lesson-completed-badge');

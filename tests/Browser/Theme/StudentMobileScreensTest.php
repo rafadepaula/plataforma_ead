@@ -32,15 +32,15 @@ class StudentMobileScreensTest extends DuskTestCase
             $browser->loginAs($student)
                 ->resize(375, 812)
                 ->visit(route('student.courses.index'))
-                ->waitFor('@student-course-'.$courseA->id)
-                ->assertVisible('@student-course-'.$courseB->id);
+                ->waitFor('@course-card-'.$courseA->id)
+                ->assertVisible('@course-card-'.$courseB->id);
 
             // Single-column stacking at 375px: the second card sits BELOW
             // the first one (not beside it), i.e. its top offset is past
             // the first card's bottom edge.
             $offsets = $browser->script([
-                "return document.querySelector('[dusk=\"student-course-{$courseA->id}\"]').getBoundingClientRect().bottom;",
-                "return document.querySelector('[dusk=\"student-course-{$courseB->id}\"]').getBoundingClientRect().top;",
+                "return document.querySelector('[dusk=\"course-card-{$courseA->id}\"]').getBoundingClientRect().bottom;",
+                "return document.querySelector('[dusk=\"course-card-{$courseB->id}\"]').getBoundingClientRect().top;",
             ]);
 
             self::assertLessThanOrEqual(

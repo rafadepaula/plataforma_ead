@@ -135,7 +135,7 @@ class NavigationMenuDuskTest extends DuskTestCase
             ]);
 
             $browser->visit(route('student.courses.index'))
-                ->waitFor('@open-classroom-'.$course->id)
+                ->waitFor('@course-card-'.$course->id)
                 ->assertPresent('@sidebar-forum-link')
                 // Continua sem qualquer superfície administrativa.
                 ->assertMissing('@sidebar-audit-logs-link')

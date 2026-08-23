@@ -59,7 +59,7 @@ class ResponsiveNoHorizontalScrollTest extends DuskTestCase
         $this->browse(function (Browser $browser) use ($student, $course): void {
             $browser->loginAs($student)
                 ->visit(route('student.courses.index'))
-                ->waitFor('@student-course-'.$course->id, 10);
+                ->waitFor('@course-card-'.$course->id, 10);
 
             $this->assertNoHorizontalScrollAtEveryWidth($browser);
         });
@@ -112,78 +112,50 @@ class ResponsiveNoHorizontalScrollTest extends DuskTestCase
             $browser->resize(375, 900)
                 ->loginAs($gestor)
                 ->visit(route('courses.index'))
-                ->waitFor('@course-row-'.$course->id);
+                ->waitFor('@course-card-row-'.$course->id);
 
-            $courseRowSelector = '[dusk="course-row-'.$course->id.'"]';
+            // Below md, the catalog swaps the desktop `<table>` for a
+            // `x-course.card-row` stack (`d-none d-md-block` / `d-md-none`).
+            // Both reuse `<x-course.row-actions>`, so its `dusk="..."`
+            // action selectors exist twice in the DOM (hidden desktop row +
+            // visible mobile card) — every assertion below is scoped inside
+            // the mobile card's own selector to resolve the visible copy,
+            // not whichever instance the DOM happens to list first.
+            $courseRowSelector = '[dusk="course-card-row-'.$course->id.'"]';
             $layout = $browser->script(sprintf(<<<'JS'
                 const rowSelector = %s;
                 const rows = document.querySelectorAll(rowSelector);
                 const row = rows[0];
-                const table = row.closest('table');
-                const tableHead = table.querySelector('thead');
-                const firstHeader = tableHead.querySelector('th');
-                const firstCell = row.querySelector('td[data-label="Título"]');
-                const body = table.querySelector('tbody');
+                const table = document.getElementById('courses-table');
                 const rowRect = row.getBoundingClientRect();
-                const cellRect = firstCell.getBoundingClientRect();
-                const labelStyle = getComputedStyle(firstCell, '::before');
-                const labelColorParts = labelStyle.color.match(/[\d.]+/g) ?? [];
-                const labelColorAlpha = labelColorParts.length >= 4 ? Number(labelColorParts[3]) : 1;
 
                 return {
                     selectorCount: rows.length,
                     rowDisplay: getComputedStyle(row).display,
                     rowWidth: rowRect.width,
                     rowHeight: rowRect.height,
-                    cellWidth: cellRect.width,
-                    cellHeight: cellRect.height,
-                    bodyDisplay: getComputedStyle(body).display,
-                    headerDisplay: getComputedStyle(tableHead).display,
-                    headerPosition: getComputedStyle(tableHead).position,
-                    headerWidth: tableHead.getBoundingClientRect().width,
-                    headerHeight: tableHead.getBoundingClientRect().height,
-                    headerOverflow: getComputedStyle(tableHead).overflow,
-                    headerAriaHidden: tableHead.getAttribute('aria-hidden'),
-                    firstHeaderDisplay: getComputedStyle(firstHeader).display,
-                    labelContent: labelStyle.content,
-                    labelDisplay: labelStyle.display,
-                    labelVisibility: labelStyle.visibility,
-                    labelOpacity: Number(labelStyle.opacity),
-                    labelColor: labelStyle.color,
-                    labelColorAlpha,
+                    tableDisplay: table ? getComputedStyle(table.closest('.d-none.d-md-block') ?? table).display : null,
                 };
             JS, json_encode($courseRowSelector, JSON_THROW_ON_ERROR)))[0];
 
             self::assertSame(1, $layout['selectorCount']);
-            self::assertSame('block', $layout['rowDisplay']);
-            self::assertSame('grid', $layout['bodyDisplay']);
+            self::assertNotSame('none', $layout['rowDisplay']);
             self::assertGreaterThan(0, $layout['rowWidth']);
             self::assertLessThanOrEqual(375, $layout['rowWidth']);
             self::assertGreaterThan(0, $layout['rowHeight']);
-            self::assertGreaterThan(0, $layout['cellWidth']);
-            self::assertGreaterThan(0, $layout['cellHeight']);
-            self::assertNotSame('none', $layout['headerDisplay']);
-            self::assertSame('absolute', $layout['headerPosition']);
-            self::assertLessThanOrEqual(1, $layout['headerWidth']);
-            self::assertLessThanOrEqual(1, $layout['headerHeight']);
-            self::assertSame('hidden', $layout['headerOverflow']);
-            self::assertNull($layout['headerAriaHidden']);
-            self::assertNotSame('none', $layout['firstHeaderDisplay']);
-            self::assertSame('"Título"', $layout['labelContent']);
-            self::assertNotSame('none', $layout['labelDisplay']);
-            self::assertSame('visible', $layout['labelVisibility']);
-            self::assertGreaterThan(0, $layout['labelOpacity']);
-            self::assertNotSame('transparent', $layout['labelColor']);
-            self::assertGreaterThan(0, $layout['labelColorAlpha']);
+            self::assertSame('none', $layout['tableDisplay'], 'The desktop table must stay hidden below the md breakpoint.');
 
-            $browser->assertVisible('@manage-modules-'.$course->id)
-                ->assertVisible('@manage-completion-rules-'.$course->id)
-                ->assertVisible('@edit-course-'.$course->id)
-                ->assertVisible('@delete-course-'.$course->id)
-                ->assertDisabled('@delete-course-'.$course->id)
+            // The mobile card renders `<x-course.row-actions>` with
+            // `mobile-`-prefixed dusk ids so it stays individually
+            // addressable alongside the (hidden) desktop `<tr>`'s copy.
+            $browser->assertVisible('@mobile-manage-modules-'.$course->id)
+                ->assertVisible('@mobile-manage-completion-rules-'.$course->id)
+                ->assertVisible('@mobile-edit-course-'.$course->id)
+                ->assertVisible('@mobile-delete-course-'.$course->id)
+                ->assertDisabled('@mobile-delete-course-'.$course->id)
                 ->assertMissing('#course-actions-toggle-'.$course->id);
 
-            foreach (['manage-modules', 'manage-completion-rules', 'edit-course'] as $action) {
+            foreach (['mobile-manage-modules', 'mobile-manage-completion-rules', 'mobile-edit-course'] as $action) {
                 $actionSelector = '[dusk="'.$action.'-'.$course->id.'"]';
                 $actionHasFocus = $browser->script(
                     'document.querySelector('.json_encode($actionSelector, JSON_THROW_ON_ERROR).').focus(); return document.activeElement === document.querySelector('.json_encode($actionSelector, JSON_THROW_ON_ERROR).');'

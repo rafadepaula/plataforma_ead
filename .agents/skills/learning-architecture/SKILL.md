@@ -15,6 +15,7 @@ metadata:
   role: architecture
   specs:
     - spec/specs/07-student-learning-experience-and-progress.md
+    - spec/specs/26-student-course-catalog-meus-cursos.md
     - spec/specs/00-architecture-database-and-guardrails.md
 ---
 
@@ -136,10 +137,77 @@ Middleware resolves Course from either `{course}` or `{lesson}` route
 parameter (supports both route shapes registered in `routes/web.php`),
 always `withoutGlobalScopes()`, same reason as above.
 
+## SPEC-26: "Meus Cursos" Catalog Helpers on `Course`
+
+SPEC-26 rebuilt the Aluno-facing "Meus Cursos" catalog
+(`StudentCourseController` + `student.courses.index`) as a tabbed grid of
+rich cards. It added no new table — only read helpers on `Course` (owned
+here, alongside `publishedLessonsCountFor()`/`completedLessonsCountFor()`,
+because they serve this module's student-facing read path, not SPEC-05's
+Gestor CRUD) and a `course_user.expires_at` column (schema itself owned by
+`courses-architecture`, since `course_user` is a SPEC-05 table):
+
+- **`Course::publishedLessonsInOrder(): Collection`** (private) — this
+  Course's published Lessons through non-soft-deleted Modules, ordered
+  Module `order_index` then Lesson `order_index`. Backs the next three
+  methods.
+- **`Course::firstPublishedLessonFor(): ?Lesson`** — earliest published
+  Lesson, or `null` when the Course has none yet (every Lesson still a
+  draft, or all soft-deleted). Drives the `nao_iniciado` → "Começar curso"
+  CTA.
+- **`Course::resumeLessonFor(User $user): ?Lesson`** — the "Continuar" CTA
+  target: no `lesson_progress` yet → first published Lesson; otherwise the
+  most-recently-touched Lesson, UNLESS it is already completed, in which
+  case the next not-yet-completed Lesson after it (falling back to the
+  last-touched Lesson itself when everything after it is also done).
+- **`Course::resolveResumeLesson(Collection $publishedLessons, Collection
+  $progressRecords): ?Lesson`** (`static`) — the pure ordering/tie-break
+  algorithm behind `resumeLessonFor()`, factored out so
+  `StudentCourseController` can share the exact same rule from an
+  in-memory port (see `learning-conventions`) instead of re-implementing
+  it against already eager-loaded relations. Never duplicate this
+  tie-break logic at a second call site — extend this one method.
+- **`Course::enrollmentDisplayStatusFor(object $pivot): string`** — derives
+  one of 4 card states (`nao_iniciado`\|`em_andamento`\|`concluido`\|`expirado`)
+  from a `course_user` pivot row (real pivot model or any `object` with
+  the same 4 fields, so callers can compose it from an eager-loaded row
+  with no extra query). `completed` pivot status always wins as
+  `concluido`, even past `expires_at` — finishing before the deadline
+  never regresses to "expired" after the fact. An `active` pivot past a
+  set `expires_at` is `expirado` regardless of progress. Otherwise
+  `active` is `nao_iniciado`/`em_andamento` by whether progress is zero.
+  `expirado` is a **read** of an `active` row, never a 5th `course_user
+  .status` enum value.
+
+## SPEC-26: Card View-Model Contract (`StudentCourseController` → `x-course.card`)
+
+`StudentCourseController::index()` groups the Aluno's `active`/`completed`
+enrollments (never `cancelled`, see the multi-org section above) into 3
+tabs by the **raw pivot `status`**, not the derived display status —
+`em_andamento` tab is every `active` row regardless of whether its chip
+reads `nao_iniciado`/`em_andamento`/`expirado`; `concluidos` is every
+`completed` row; `todos` is both. Each row becomes one plain `object` view
+model (`course`, `organization`, `pivotStatus`, `displayStatus`,
+`progressPercentage`, `ctaLabel`, `ctaHref`, `lessonsCount`,
+`workloadHours`, `deadlineLabel`) consumed by `<x-course.card>` and its 3
+sub-components (`card-header`/`card-body`/`card-footer`). Two rules any
+change to this pipeline must preserve:
+
+- **CTA degrades to `null`, never a 404 link**: a course with zero
+  published Lessons, or a `concluido` row whose Certificate has not been
+  issued yet, gets `ctaHref = null` — `<x-course.card-footer>` renders a
+  disabled button instead of linking to a route that would 404/403.
+- **2% visual progress floor**: any row that is not `nao_iniciado` shows
+  at least a 2% bar even at 0 real progress (e.g. an `expirado` row the
+  student never started), so the bar never reads as a rendering bug. A
+  genuinely `nao_iniciado` row still shows a true 0%.
+
 ## Related Specs
 
 - `spec/specs/07-student-learning-experience-and-progress.md` — RF13, RF14,
   RF15, RF20/RN08, RF24.
+- `spec/specs/26-student-course-catalog-meus-cursos.md` — "Meus Cursos"
+  tabbed catalog, card anatomy, CTA-per-status contract.
 - `spec/specs/05-courses-modules-and-content-management.md` /
   `courses-architecture` — `courses`/`modules`/`lessons` schema and
   `OrgScope`/cascade-inheritance model this feature reads from.

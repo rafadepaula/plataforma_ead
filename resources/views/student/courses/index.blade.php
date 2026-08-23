@@ -1,12 +1,29 @@
 @extends('layouts.app')
 
 {{--
-    "Meus Cursos": the Aluno's own enrollments across every
-    Organization they belong to, grouped by `org_id` (matches
-    `StudentCourseController@index`'s
-    `Auth::user()->courses()->with('organization')->get()->groupBy('org_id')`
-    — intentionally NOT `OrgScope`-filtered, since a student may be enrolled
-    in Courses from more than one Organization).
+    "Meus Cursos": the Aluno's own enrollments across every Organization
+    they belong to (SPEC-26). The controller (`StudentCourseController@index`)
+    is contracted to pass:
+
+      - `$rows`: a Collection of per-card view-models for the ACTIVE tab
+        only, each exposing `course`, `organization`, `displayStatus`
+        (nao_iniciado|em_andamento|concluido|expirado), `progressPercentage`
+        (already clamped to a 2% visual minimum), `ctaLabel`, `ctaHref`
+        (nullable — see `x-course.card-footer`), `lessonsCount`,
+        `workloadHours`, `deadlineLabel` (nullable) — rendered by
+        `<x-course.card>`.
+      - `$activeTab`: one of 'em_andamento'|'concluidos'|'todos' (default
+        'em_andamento').
+      - `$tabCounts`: `['em_andamento' => int, 'concluidos' => int, 'todos' => int]`,
+        used only to decide whether the "Em andamento" tab shows a count
+        badge — a zero count renders no badge at all (SPEC-26 edge case).
+
+    Tabs are plain `?status=` GET links, NOT `<x-ui.tabs>`: that component
+    swaps panels client-side via `data-bs-toggle="pill"` with no server
+    round-trip, which cannot filter server-rendered rows. The design
+    reference's own annotation calls for a stateless GET reload ("sem JS,
+    sem estado no cliente"), so this view builds its own `.nav-pills`
+    strip out of anchors instead, reusing the same `.ds-tabs` look.
 --}}
 
 @section('content')
@@ -17,38 +34,57 @@
         subtitle="Suas matrículas em todas as organizações, com progresso em tempo real."
     />
 
-    @forelse($courses as $orgId => $orgCourses)
-        <div class="mb-8x" dusk="org-group-{{ $orgId }}">
-            <h2 class="h5 mb-3x">
-                {{ optional($orgCourses->first()->organization)->name ?? 'Organização' }}
-            </h2>
+    @php
+        $activeTab = $activeTab ?? 'em_andamento';
+        $tabCounts = $tabCounts ?? [];
+        $emAndamentoCount = (int) ($tabCounts['em_andamento'] ?? 0);
 
-            <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4x">
-                @foreach($orgCourses as $course)
-                    <div class="col">
-                        <x-ui.card :title="$course->title" class="h-100" dusk="student-course-{{ $course->id }}">
-                            <p class="text-body-secondary mb-3x">{{ Str::limit($course->description, 80) }}</p>
+        $tabs = [
+            'em_andamento' => 'Em andamento',
+            'concluidos' => 'Concluídos',
+            'todos' => 'Todos',
+        ];
 
-                            <x-ui.progress
-                                :value="(int) ($course->pivot->progress_percentage ?? 0)"
-                                height="8"
-                                label="Progresso do curso"
-                                class="mb-3x"
-                                dusk="progress-bar-{{ $course->id }}"
-                            />
+        $emptyStateCopy = match ($activeTab) {
+            'concluidos' => 'Você ainda não concluiu nenhum curso.',
+            'todos' => 'Nenhuma matrícula encontrada.',
+            default => 'Você ainda não começou nenhum curso.',
+        };
+    @endphp
 
-                            <x-ui.button href="{{ route('classroom.show', $course) }}" dusk="open-classroom-{{ $course->id }}">Acessar Curso</x-ui.button>
-                        </x-ui.card>
-                    </div>
-                @endforeach
-            </div>
-        </div>
-    @empty
+    <ul class="nav nav-pills ds-tabs mb-4x" role="tablist">
+        @foreach ($tabs as $tabKey => $tabLabel)
+            <li class="nav-item" role="presentation">
+                <a
+                    href="{{ route('student.courses.index', ['status' => $tabKey]) }}"
+                    class="nav-link {{ $activeTab === $tabKey ? 'active' : '' }}"
+                    role="tab"
+                    aria-selected="{{ $activeTab === $tabKey ? 'true' : 'false' }}"
+                    dusk="tab-{{ Str::slug($tabKey, '-') }}"
+                >
+                    {{ $tabLabel }}
+                    @if ($tabKey === 'em_andamento' && $emAndamentoCount > 0)
+                        <x-ui.badge variant="info" :dot="false" size="sm" class="ms-2">
+                            {{ $emAndamentoCount }}
+                        </x-ui.badge>
+                    @endif
+                </a>
+            </li>
+        @endforeach
+    </ul>
+
+    @if ($rows->isEmpty())
         <x-ui.empty-state
             dusk="no-enrollments"
             icon="book-open"
             title="Nenhum curso por aqui."
-            description="Quando sua organização matricular você em um curso, ele aparece nesta lista."
+            :description="$emptyStateCopy"
         />
-    @endforelse
+    @else
+        <div class="ds-course-grid">
+            @foreach ($rows as $row)
+                <x-course.card :enrollment="$row" dusk="course-card-{{ optional(data_get($row, 'course'))->id }}" />
+            @endforeach
+        </div>
+    @endif
 @endsection

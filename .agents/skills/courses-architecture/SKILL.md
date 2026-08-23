@@ -13,6 +13,7 @@ metadata:
   specs:
     - spec/specs/05-courses-modules-and-content-management.md
     - spec/specs/23-trail-builder-modules-and-lessons.md
+    - spec/specs/26-student-course-catalog-meus-cursos.md
     - spec/specs/00-architecture-database-and-guardrails.md
 ---
 
@@ -31,7 +32,7 @@ section). Admin with no active impersonation manage nothing here. No fallback to
 | Table | Key columns | Tenancy |
 | --- | --- | --- |
 | `courses` | `org_id`, `title`, `description`, `workload_hours`, `is_published` | **Directly org-scoped** — `OrgScope` trait |
-| `course_user` (pivot) | `user_id`, `course_id`, `status` (`active`\|`cancelled`\|`completed`), `progress_percentage`, `enrolled_at`, `completed_at` | Not org-scoped — enrollment cross orgs (see `tenancy-architecture`) |
+| `course_user` (pivot) | `user_id`, `course_id`, `status` (`active`\|`cancelled`\|`completed`), `progress_percentage`, `enrolled_at`, `completed_at`, `expires_at` nullable | Not org-scoped — enrollment cross orgs (see `tenancy-architecture`). `expires_at` backs `Course::enrollmentDisplayStatusFor()`'s derived `expirado` chip on an `active` row past deadline — not a 4th pivot `status` value |
 | `modules` | `course_id`, `title`, `description`, `order_index` | **Cascade-inherited** via `courses.org_id` — no own `org_id`, no `OrgScope` |
 | `lessons` | `module_id`, `title`, `type` (`content`\|`quiz`), `content_text`, `youtube_url`, `pdf_path`, `image_path`, `order_index`, `is_published` | **Cascade-inherited** via `modules`, `courses.org_id` |
 | `lesson_media` | `lesson_id` FK `cascadeOnDelete`, `kind` ENUM(`image`\|`pdf`), `path`, `original_name` nullable, `size_bytes` nullable unsignedBigInteger; INDEX(`lesson_id`,`kind`) | **Cascade-inherited** via `lesson -> module -> courses.org_id` — no own `org_id`, no `OrgScope` (same as `Module`/`Lesson`) |
@@ -171,3 +172,8 @@ in displayed total but cannot disable removal.
   course consumption, `lesson_progress`, publication visibility) and
   `spec/specs/08-quizzes-and-evaluations-engine.md` (quiz authoring) — both build
   on top of this feature's schema without modifying it.
+- `spec/specs/26-student-course-catalog-meus-cursos.md` — added
+  `course_user.expires_at` (documented above) and several student-facing
+  `Course` read helpers (`firstPublishedLessonFor()`/`resumeLessonFor()`/
+  `enrollmentDisplayStatusFor()`); see `learning-architecture` for those,
+  since they serve that module's read path, not this one's Gestor CRUD.

@@ -13,7 +13,7 @@
     guarantee while still telling the user something happened.
 --}}
 @php
-    $modalId = 'help-modal-'.str($key)->slug();
+    $modalId = 'help-modal-'.str($key)->replace('.', '-')->slug();
 @endphp
 
 @if($article)
