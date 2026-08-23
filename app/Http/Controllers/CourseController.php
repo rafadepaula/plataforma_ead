@@ -8,7 +8,9 @@ use App\Http\Requests\UpdateCourseRequest;
 use App\Models\Course;
 use App\Services\AuditService;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Throwable;
@@ -21,16 +23,46 @@ use Throwable;
  */
 class CourseController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
         Gate::authorize('viewAny', Course::class);
 
-        $courses = Course::query()
-            ->withCount(['modules', 'lessons', 'students'])
-            ->orderBy('title')
-            ->paginate(15);
+        $searchInput = $request->input('search');
+        $statusInput = $request->input('status');
+        $search = is_string($searchInput) ? trim($searchInput) : '';
+        $status = is_string($statusInput) && in_array($statusInput, ['all', 'published', 'draft'], true)
+            ? $statusInput
+            : 'all';
 
-        return view('courses.index', ['courses' => $courses]);
+        $courses = Course::query()
+            ->when(
+                $search !== '',
+                fn (Builder $query): Builder => $query->whereLike('title', "%{$search}%"),
+            )
+            ->when(
+                $status === 'published',
+                fn (Builder $query): Builder => $query->where('is_published', true),
+            )
+            ->when(
+                $status === 'draft',
+                fn (Builder $query): Builder => $query->where('is_published', false),
+            )
+            ->withCount([
+                'modules',
+                'lessons',
+                'students',
+                'students as active_students_count' => fn (Builder $query): Builder => $query
+                    ->where('course_user.status', 'active'),
+            ])
+            ->orderBy('title')
+            ->paginate(10)
+            ->withQueryString();
+
+        return view('courses.index', [
+            'courses' => $courses,
+            'search' => $search,
+            'status' => $status,
+        ]);
     }
 
     public function create(): View

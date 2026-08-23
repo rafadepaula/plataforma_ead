@@ -1,6 +1,6 @@
 {
-    "count": 400,
-    "generated_at": "2026-08-23T00:40:21+00:00",
+    "count": 405,
+    "generated_at": "2026-08-23T02:35:41+00:00",
     "entries": [
         {
             "file": "admin/users/edit.blade.php",
@@ -397,6 +397,26 @@
         {
             "file": "classroom/show.blade.php",
             "selector": "open-lesson-{{ $lesson->id }}"
+        },
+        {
+            "file": "components/course/row-actions.blade.php",
+            "selector": "$deleteCourseDusk"
+        },
+        {
+            "file": "components/course/row-actions.blade.php",
+            "selector": "$deleteCourseDusk"
+        },
+        {
+            "file": "components/course/row-actions.blade.php",
+            "selector": "$editCourseDusk"
+        },
+        {
+            "file": "components/course/row-actions.blade.php",
+            "selector": "$manageCompletionRulesDusk"
+        },
+        {
+            "file": "components/course/row-actions.blade.php",
+            "selector": "$manageModulesDusk"
         },
         {
             "file": "components/help-button.blade.php",
