@@ -3,7 +3,7 @@
 // =============================================================================
 
 // 1. Tokens do design system (custom properties, disponíveis em runtime)
-@import "../../_ds/plataforma-ead-design-system/styles.css";
+@import "../css/tokens/styles.css";
 
 // 2. Ponte: valores literais alimentam as variáveis Sass do Bootstrap
 @import "bridge";

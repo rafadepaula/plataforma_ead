@@ -1,0 +1,12 @@
+// =============================================================================
+// Componente: Notificações (Dropdown do sino na App bar)
+// =============================================================================
+
+.notifications-dropdown {
+    width: var(--dropdown-width, 380px);
+    max-width: 90vw;
+}
+
+.notifications-list {
+    max-height: 360px;
+}
