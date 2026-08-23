@@ -1,0 +1,30 @@
+.course-catalog-table {
+    .course-catalog-workload-column {
+        width: 150px;
+    }
+
+    .course-catalog-students-column {
+        width: 110px;
+        text-align: right;
+    }
+
+    .course-catalog-status-column {
+        width: 130px;
+    }
+
+    .course-catalog-actions-column {
+        width: 470px;
+        text-align: right;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .course-catalog-table {
+        .course-catalog-workload-column,
+        .course-catalog-students-column,
+        .course-catalog-status-column,
+        .course-catalog-actions-column {
+            width: 100%;
+        }
+    }
+}

@@ -23,12 +23,16 @@
     'cancelLabel' => 'Cancelar',
     'variant' => 'danger',
     'message' => null,
+    'formDusk' => null,
 ])
 
 @php
     $httpMethod = strtoupper($method);
     $spoofedMethod = $httpMethod === 'POST' ? null : $httpMethod;
     $bodyText = $message ?? 'Esta ação não poderá ser desfeita. Deseja continuar?';
+    $formAttributes = new \Illuminate\View\ComponentAttributeBag(
+        $formDusk ? ['dusk' => $formDusk] : [],
+    );
 @endphp
 
 <div {{ $attributes->merge(['class' => 'modal fade', 'dusk' => 'confirm-modal-'.$id]) }}
@@ -60,7 +64,7 @@
                              data-bs-dismiss="modal"
                              dusk="confirm-modal-{{ $id }}-cancel">{{ $cancelLabel }}</x-ui.button>
 
-                <form method="POST" action="{{ $action }}" class="d-inline">
+                <form method="POST" action="{{ $action }}" class="d-inline" {{ $formAttributes }}>
                     @csrf
                     @if ($spoofedMethod)
                         @method($spoofedMethod)

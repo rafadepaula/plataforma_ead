@@ -58,8 +58,14 @@
     --bs-pagination-focus-box-shadow: 0 0 0 var(--focus-ring-width) var(--focus-ring-alpha);
 
     .page-link {
-        border-radius: var(--bs-pagination-border-radius) !important;
-        margin-inline: 2px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        margin-inline: var(--space-1);
+        border-radius: var(--radius-pill);
     }
 }
 
