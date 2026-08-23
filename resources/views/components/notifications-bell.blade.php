@@ -1,18 +1,10 @@
 {{--
-    the topbar notification bell. Only visible to
-    `role:gestor`/`role:aluno` (Admin doesn't receive Org-specific business
-    notifications\). Renders the badge (server-side initial
-    unread count, kept fresh client-side by `NotificationBell.js`'s 30s
-    polling of `notifications.unread-count`) and a dropdown with the 10
-    most recent `notifications` rows (`ORDER BY created_at DESC`), a
-    ---
-    Abrir/fechar é 100% declarativo (`data-bs-toggle="dropdown"` +
-    `.dropdown-menu`): posicionamento (Popper), clique-fora, Escape e ARIA
-    são do `bootstrap.Dropdown`. `NotificationBell.js` não toca nisso.
-    ---
-    "marcar todas como lidas" link (`notifications.read-all`), and one
-    clickable item per notification that marks itself read
-    (`notifications.read`) before redirecting to `data.action_url`.
+    The topbar notification bell. Only visible to `role:gestor`/`role:aluno`
+    (Admin doesn't receive Org-specific business notifications).
+    Renders the badge (server-side initial unread count, kept fresh
+    client-side by `NotificationBell.js`'s 30s polling of
+    `notifications.unread-count`) and a dropdown with the 10 most recent
+    `notifications` rows (`ORDER BY created_at DESC`).
 --}}
 @php
     use App\Enums\Permissions\RolesEnum;
@@ -53,20 +45,14 @@
             <span
                 data-notifications-badge
                 dusk="notifications-badge"
-                class="badge rounded-pill bg-danger position-absolute top-0 start-100 translate-middle {{ $unreadCount > 0 ? 'd-flex' : 'd-none' }} align-items-center justify-content-center"
-            >{{ $unreadCount > 99 ? '99+' : $unreadCount }}</span>
+                class="badge rounded-pill bg-secondary position-absolute top-0 start-100 translate-middle {{ $unreadCount > 0 ? 'd-flex' : 'd-none' }} align-items-center justify-content-center"
+            >
+                <span dusk="notifications-count">{{ $unreadCount > 99 ? '99+' : $unreadCount }}</span>
+            </span>
         </button>
 
-        {{--
-            `--dropdown-width` (380px, `_ds/.../tokens/spacing.css`) ainda não
-            tem ponte para uma variável Sass do Bootstrap
-            (`resources/scss/_bridge.scss` está fora do escopo deste bucket),
-            então a largura fica no comportamento padrão do `.dropdown-menu`
-            (auto, respeitando `--bs-dropdown-min-width`) em vez de um valor
-            fixo — sem classe utilitária inventada.
-        --}}
         <div
-            class="dropdown-menu dropdown-menu-end shadow-lg p-0"
+            class="dropdown-menu dropdown-menu-end shadow-lg p-0 notifications-dropdown"
             data-notifications-dropdown
             dusk="notifications-dropdown"
         >
@@ -80,7 +66,7 @@
                 >marcar todas como lidas</a>
             </div>
 
-            <div class="overflow-y-auto" data-notifications-list>
+            <div class="overflow-y-auto notifications-list" data-notifications-list>
                 @forelse($recentNotifications as $notification)
                     <a
                         href="{{ $notification->data['action_url'] ?? '#' }}"

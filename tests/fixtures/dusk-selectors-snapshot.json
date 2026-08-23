@@ -1,5 +1,6 @@
 {
-    "count": 388,
+    "count": 397,
+    "generated_at": "2026-08-23T00:30:17+00:00",
     "entries": [
         {
             "file": "admin/users/edit.blade.php",
@@ -423,6 +424,18 @@
         },
         {
             "file": "components/layout/sidebar.blade.php",
+            "selector": "mobile-drawer"
+        },
+        {
+            "file": "components/layout/sidebar.blade.php",
+            "selector": "mobile-sidebar-nav"
+        },
+        {
+            "file": "components/layout/sidebar.blade.php",
+            "selector": "sidebar-nav"
+        },
+        {
+            "file": "components/layout/sidebar.blade.php",
             "selector": "sidebar-{{ $item['key'] }}-link"
         },
         {
@@ -431,11 +444,27 @@
         },
         {
             "file": "components/layout/topbar.blade.php",
+            "selector": "active-org-badge"
+        },
+        {
+            "file": "components/layout/topbar.blade.php",
+            "selector": "exit-impersonate"
+        },
+        {
+            "file": "components/layout/topbar.blade.php",
             "selector": "mobile-menu-button"
         },
         {
             "file": "components/layout/topbar.blade.php",
+            "selector": "mobile-menu-toggle"
+        },
+        {
+            "file": "components/layout/topbar.blade.php",
             "selector": "topbar-active-org-badge"
+        },
+        {
+            "file": "components/layout/topbar.blade.php",
+            "selector": "topbar-brand"
         },
         {
             "file": "components/layout/topbar.blade.php",
@@ -450,12 +479,20 @@
             "selector": "topbar-profile-link"
         },
         {
+            "file": "components/layout/topbar.blade.php",
+            "selector": "user-menu-button"
+        },
+        {
             "file": "components/notifications-bell.blade.php",
             "selector": "notifications-badge"
         },
         {
             "file": "components/notifications-bell.blade.php",
             "selector": "notifications-bell"
+        },
+        {
+            "file": "components/notifications-bell.blade.php",
+            "selector": "notifications-count"
         },
         {
             "file": "components/notifications-bell.blade.php",

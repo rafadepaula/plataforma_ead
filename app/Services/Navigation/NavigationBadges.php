@@ -59,7 +59,11 @@ final class NavigationBadges
         return (int) ForumReport::query()
             ->where('status', 'pending')
             ->get()
-            ->filter(fn (ForumReport $report) => $report->postable() !== null && $user->can('view', $report->postable()))
+            ->filter(function (ForumReport $report) use ($user): bool {
+                $postable = $report->postable();
+
+                return $postable !== null && $user->can('view', $postable);
+            })
             ->count();
     }
 }
