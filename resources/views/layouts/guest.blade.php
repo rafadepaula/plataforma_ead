@@ -7,14 +7,16 @@
 
     <title>{{ $title ?? config('app.name', 'Plataforma EAD') }}</title>
 
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:opsz,wght@6..12,400;6..12,500;6..12,600;6..12,700;6..12,800&display=swap" rel="stylesheet">
+
     @vite(['resources/scss/app.scss', 'resources/js/app.js'])
     @stack('styles')
 </head>
 <body class="bg-body text-body m-0 p-0 min-vh-100 antialiased">
     <div class="row g-0 mx-0 min-vh-100 w-100">
-        {{-- Left Institutional Panel (Desktop). Coluna `col-lg-5` é a fração
-             de grade mais próxima dos 46% pedidos pelo design (ver
-             `components/layout/guest-panel.blade.php`). --}}
+        {{-- Left Institutional Panel (Desktop) --}}
         <x-layout.guest-panel class="col-lg-5" />
 
         {{-- Right Form Area --}}
@@ -23,8 +25,6 @@
                 <x-help-button :key="Route::currentRouteName() ?? 'unknown'" />
             </div>
 
-            {{-- Coluna de conteúdo de 440px (`--form-max`), largura fixa via
-                 `.guest-form` (`resources/scss/components/_guest-panel.scss`). --}}
             <div class="guest-form">
                 <x-layout.alerts />
                 {{ $slot ?? '' }}

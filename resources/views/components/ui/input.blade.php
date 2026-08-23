@@ -13,7 +13,7 @@
 
 @php
     $id = $attributes->get('id', $name);
-    $hasError = $error || ($name && $errors->has($name));
+    $hasError = $error || ($name && isset($errors) && $errors->has($name));
     $describedBy = collect([
         $hint ? "{$id}-help" : null,
         $hasError ? "{$id}-error" : null,
@@ -69,7 +69,7 @@
         @if($hasError)
             <div @if($id) id="{{ $id }}-error" @endif class="invalid-feedback d-flex align-items-center gap-1" @if($name) dusk="error-{{ $name }}" @endif>
                 <x-ui.icon name="info" size="14" class="flex-shrink-0" aria-hidden="true" />
-                <span>{{ $error ?? ($name ? $errors->first($name) : '') }}</span>
+                <span>{{ $error ?? ($name && isset($errors) ? $errors->first($name) : '') }}</span>
             </div>
         @endif
     </div>

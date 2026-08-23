@@ -22,7 +22,7 @@
     $id = $attributes->get('id', $name);
     $oldValue = old($name, $checked);
     $isChecked = $oldValue === true || (string) $oldValue === (string) $value;
-    $hasError = $errors->has($name);
+    $hasError = isset($errors) && $errors->has($name);
     $errorId = $hasError ? "{$id}-error" : null;
     $describedBy = collect([$help ? "{$id}-help" : null, $errorId])->filter()->implode(' ') ?: null;
 @endphp
@@ -45,6 +45,6 @@
     @endif
 
     @if($hasError)
-        <div id="{{ $errorId }}" class="invalid-feedback d-block">{{ $errors->first($name) }}</div>
+        <div id="{{ $errorId }}" class="invalid-feedback d-block">{{ isset($errors) ? $errors->first($name) : '' }}</div>
     @endif
 </div>

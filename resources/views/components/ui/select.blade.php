@@ -11,7 +11,7 @@
 
 @php
     $id = $attributes->get('id', $name);
-    $hasError = $error || ($name && $errors->has($name));
+    $hasError = $error || ($name && isset($errors) && $errors->has($name));
     $describedBy = collect([
         $hasError ? "{$id}-error" : null,
     ])->filter()->implode(' ');
@@ -25,7 +25,8 @@
 --}}
 <div class="ds-field mb-3">
     <div class="form-floating">
-        <select @if($name) id="{{ $id }}" name="{{ $name }}" @endif
+        <select @if($id) id="{{ $id }}" @endif
+                @if($name) name="{{ $name }}" @endif
                 @if($describedBy) aria-describedby="{{ $describedBy }}" @endif
                 @if($hasError) aria-invalid="true" @endif
                 @required($required)
@@ -45,7 +46,7 @@
         </select>
 
         @if($label)
-            <label @if($name) for="{{ $id }}" @endif>
+            <label @if($id) for="{{ $id }}" @endif>
                 {{ $label }}
                 @if($required) <span class="text-primary" aria-hidden="true">*</span>@endif
             </label>
@@ -56,7 +57,7 @@
                 <x-ui.icon name="info" size="14" class="flex-shrink-0" aria-hidden="true" />
                 <span>{{ $error }}</span>
             </div>
-        @elseif($name && $errors->has($name))
+        @elseif($name && isset($errors) && $errors->has($name))
             <div id="{{ $id }}-error" class="invalid-feedback d-flex align-items-center gap-1" dusk="error-{{ $name }}">
                 <x-ui.icon name="info" size="14" class="flex-shrink-0" aria-hidden="true" />
                 <span>{{ $errors->first($name) }}</span>

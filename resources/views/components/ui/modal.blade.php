@@ -24,13 +24,12 @@
     };
 @endphp
 
-<div class="modal fade"
+<div {{ $attributes->merge(['class' => 'modal fade', 'dusk' => 'modal-'.$modalId]) }}
      id="{{ $modalId }}"
      tabindex="-1"
      aria-labelledby="{{ $modalId }}-label"
      aria-hidden="true"
-     @if ($static) data-bs-backdrop="static" data-bs-keyboard="false" @endif
-     {{ $attributes->merge(['dusk' => 'modal-'.$modalId]) }}>
+     @if ($static) data-bs-backdrop="static" data-bs-keyboard="false" @endif>
     <div class="modal-dialog modal-dialog-centered {{ $sizeClass }}">
         <div class="modal-content">
             <div class="modal-header">

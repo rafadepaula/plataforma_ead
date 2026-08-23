@@ -39,7 +39,9 @@
 @endphp
 
 @if ($href)
-    <a href="{{ $href }}" @if ($disabled) class="disabled" aria-disabled="true" tabindex="-1" @endif {{ $attributes->merge(['class' => $classes]) }}>
+    <a href="{{ $href }}"
+       @if ($disabled) aria-disabled="true" tabindex="-1" @endif
+       {{ $attributes->merge(['class' => $classes . ($disabled ? ' disabled' : '')]) }}>
         @if ($iconName) <x-ui.icon :name="$iconName" size="18" /> @endif
         {{ $slot }}
     </a>

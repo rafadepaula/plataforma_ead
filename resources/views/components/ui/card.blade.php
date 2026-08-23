@@ -51,7 +51,7 @@
         </div>
 
         @if($meta || isset($metaSlot))
-            <div class="card-meta mt-auto pt-3 small text-body-secondary border-top border-secondary">
+            <div class="card-meta mt-auto pt-3 small text-body-secondary border-top">
                 {{ $meta ?? $metaSlot }}
             </div>
         @endif
