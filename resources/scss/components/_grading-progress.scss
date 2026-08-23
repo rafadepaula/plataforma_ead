@@ -1,0 +1,49 @@
+// =============================================================================
+// Componente: correção de dissertativas — coluna de leitura, GradingProgress
+// e AnswerSurface (`quizzes/attempts/show.blade.php`, SPEC-25/DESIGN.md §4.6).
+// Regra: qualquer declaração aqui só pode consumir var(--*), nunca literal de
+// cor/raio/sombra.
+// =============================================================================
+
+// Coluna de leitura única, centralizada, 760px — o mesmo tratamento que a
+// prova do aluno (`student/quizzes/show.blade.php`, DESIGN.md §4.10) recebe:
+// é trabalho de ler texto longo, largura de formulário não serve.
+.ds-grading-column {
+    max-width: 760px;
+}
+
+// Cartão com o resumo "N de M vereditos" + barra + chip de conclusão, acima
+// do formulário. `EssayGrading.js` (Bucket 3) atualiza o texto do label, o
+// valor da `x-ui.progress` e a visibilidade do chip a cada rádio marcado.
+.ds-grading-progress {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    flex-wrap: wrap;
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--elev-1);
+    padding: var(--space-4) var(--space-5);
+}
+
+// AnswerSurface — resposta do aluno, sempre escapada pelo Blade (`{{ }}`),
+// nunca `{!! !!}`. Sem sombra: é conteúdo recebido, não elemento ativo. Sem
+// `max-height`/rolagem interna — a página rola, o bloco não.
+.ds-answer-surface {
+    background: var(--surface-sunken);
+    border: 1px solid var(--divider);
+    border-radius: var(--radius-lg);
+    padding: 28px;
+    font-size: var(--font-size-body);
+    line-height: var(--line-height-relaxed);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+// Fallback "O aluno não respondeu esta questão." — itálico e acinzentado,
+// nunca some o veredito obrigatório: quem decide se resposta em branco vale
+// zero é o gestor, não a interface.
+.ds-answer-surface em {
+    color: var(--text-secondary);
+    font-style: italic;
+}

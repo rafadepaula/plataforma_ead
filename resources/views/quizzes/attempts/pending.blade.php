@@ -3,11 +3,19 @@
     `status = awaiting_manual_grading`, scoped to the Gestor's own Org (via
     `QuizAttemptPolicy`/the controller query — see `quizzes-conventions`).
 
-    Expected `EssayGradingController@pending` contract (Bucket 2):
+    `EssayGradingController@pending` contract:
       - `$attempts`  paginated, with `quiz.lesson.module.course` and `user`
                      eager-loaded, ordered oldest-first (`completed_at asc`)
                      so the queue is worked FIFO.
       - route: `GET route('quiz-attempts.pending')`.
+
+    Material Bootstrap refactor (spec/new_ds/DESIGN.md §4.6): header count
+    chip reuses `$attempts->total()` (the paginator's total, not a fresh
+    un-paginated count query), avatar keeps the shared `x-ui.avatar`
+    "sm" (32px) size — the design mock asks for 36px but the avatar
+    component only ships 3 documented sizes (sm/lg/xl) and widening it is a
+    cross-screen decision outside this bucket's file list, so "sm" stays as
+    the closest existing alias rather than inventing an ad-hoc class here.
 --}}
 @extends('layouts.app')
 
@@ -21,11 +29,17 @@
 
 @section('content')
     <x-layout.page-header
-        :breadcrumb="[['label' => 'Avaliações'], ['label' => 'Correções Pendentes']]"
+        :breadcrumb="[['label' => 'Avaliações', 'url' => route('quiz-attempts.pending')], ['label' => 'Correções Pendentes', 'url' => route('quiz-attempts.pending')]]"
         kicker="Avaliações"
         title="Correções Pendentes"
         subtitle="Tentativas com questões dissertativas aguardando correção manual, da mais antiga para a mais recente."
-    />
+    >
+        @if($attempts->total() > 0)
+            <x-slot:actions>
+                <x-ui.badge size="lg">{{ $attempts->total() }} na fila</x-ui.badge>
+            </x-slot:actions>
+        @endif
+    </x-layout.page-header>
 
     <x-ui.table :headers="['Aluno', 'Curso / Quiz', 'Enviado em', 'Ações']">
         @forelse($attempts as $attempt)
@@ -44,7 +58,10 @@
                     <br>
                     <span class="ds-caption text-body-secondary">{{ $attempt->quiz->title }}</span>
                 </td>
-                <td class="ds-tabular-nums" data-label="Enviado em">{{ optional($attempt->completed_at)->format('d/m/Y H:i') }}</td>
+                <td class="ds-tabular-nums" data-label="Enviado em">
+                    {{ optional($attempt->completed_at)->format('d/m/Y H:i') }}
+                    <div class="ds-caption text-body-secondary">{{ optional($attempt->completed_at)->diffForHumans() }}</div>
+                </td>
                 <td data-label="Ações">
                     <x-ui.button variant="secondary" size="sm" href="{{ route('quiz-attempts.show', $attempt) }}" dusk="grade-attempt-{{ $attempt->id }}">
                         Corrigir
@@ -52,9 +69,13 @@
                 </td>
             </tr>
         @empty
-            <x-ui.empty-state :colspan="4" dusk="pending-attempts-empty">
-                Nenhuma correção pendente.
-            </x-ui.empty-state>
+            <x-ui.empty-state
+                :colspan="4"
+                dusk="pending-attempts-empty"
+                icon="check"
+                tone="success"
+                title="Nenhuma correção pendente"
+                description="Quando um aluno enviar uma prova com questão dissertativa, ela aparece aqui." />
         @endforelse
     </x-ui.table>
 

@@ -260,3 +260,32 @@ finalizeGrading()` only recomputes attempt once **every** essay answer
 has non-null `is_correct`, so partial submission that silently skipped
 question would leave attempt stuck in `awaiting_manual_grading` forever.
 Never make `grades[]` radio group optional on this screen.
+
+## `EssayGrading.js`: Live Progress + Submit Guard on `[dusk="grade-attempt-form"]`, Never Relaxes `required`
+
+`resources/js/modules/EssayGrading.js` (registered in
+`resources/js/modules/index.js` alongside `QuizBuilder`/`QuizTimer`)
+drives the Material Bootstrap grading screen's dynamic behavior — Blade
+renders only static structure plus hooks, this module makes it live:
+
+- `[data-verdict-question]` wraps each essay question's `.ds-verdict`
+  radiogroup; the **count of these blocks is the denominator** — never
+  add this attribute to an objective question's markup.
+- `[data-grading-progress]`/`[data-grading-progress-label]`/
+  `[data-progress-bar]`/`[data-grading-ready-chip]` — recomputed on every
+  `change` of a `[data-verdict-input]` radio ("X de Y vereditos" text,
+  `<x-ui.progress>` bar width/`aria-valuenow`, and the "Pronto para
+  salvar" chip toggled via Bootstrap's `d-none`, not `hidden`).
+- `.ds-verdict-option.is-selected` is kept in sync with the checked radio
+  (server sets it once from a persisted verdict on first render).
+- `guardSubmit()` blocks submit on the first unset verdict, unhides
+  `[data-grading-alert]` (naming the question via
+  `[data-grading-alert-question]`), adds `.has-error` to that question's
+  `.ds-verdict`, and scrolls/focuses its first radio. This
+  **supplements, never relaxes**, the native `required` attribute already
+  on every radio — the module sets `form.noValidate = true` on bind
+  specifically so the browser's own constraint-validation UI doesn't
+  swallow the `submit` event before this guard runs; do not remove
+  `required` from the Blade radios under the assumption the JS guard
+  makes it redundant (JS-disabled/failed-load must still block bad
+  submits via native validation).

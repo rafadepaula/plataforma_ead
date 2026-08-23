@@ -1,0 +1,61 @@
+// =============================================================================
+// Componente: VerdictChoice (par de vereditos da correção de dissertativas)
+// -----------------------------------------------------------------------------
+// `quizzes/attempts/show.blade.php` — dois cartões rádio lado a lado
+// ("Correta"/"Incorreta") para cada questão dissertativa de uma tentativa.
+// Mesmo padrão de `.quiz-option-row.is-correct` em `_quiz-builder.scss`: o
+// servidor já marca `.is-selected` no primeiro render a partir de
+// `$answer->is_correct`; `EssayGrading.js` mantém a classe em sincronia no
+// evento `change` do rádio.
+// Regra: qualquer declaração aqui só pode consumir var(--*), nunca literal de
+// cor/raio/sombra (spec/new_ds/DESIGN.md §4.6 — "Incorreta" nunca é vermelho).
+// =============================================================================
+
+.ds-verdict {
+    display: flex;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+}
+
+.ds-verdict-option {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    flex: 1 1 200px;
+    min-height: 56px;
+    padding: var(--space-3) var(--space-4);
+    background: var(--surface);
+    border: 1.5px solid var(--border-color);
+    border-radius: var(--radius-md);
+    font-weight: var(--font-weight-semibold);
+    cursor: pointer;
+    transition: var(--transition-base);
+}
+
+.ds-verdict-option-input {
+    flex: none;
+    cursor: pointer;
+}
+
+// "Correta" selecionada: menta, nunca a mesma cor de "Incorreta" selecionada.
+.ds-verdict-option--correct.is-selected {
+    background: var(--mint-100);
+    border-color: var(--secondary);
+    box-shadow: var(--elev-1);
+}
+
+// "Incorreta" selecionada: cinza-azulado neutro — veredito negativo é um fato
+// registrado, não um alerta. Nunca `--critical`/vermelho.
+.ds-verdict-option--incorrect.is-selected {
+    background: var(--surface-alt);
+    border-color: var(--grey-500);
+    box-shadow: var(--elev-1);
+}
+
+// Aplicado pelo `EssayGrading.js` (Bucket 3) na questão pendente quando o
+// gestor tenta salvar sem dar todos os vereditos. `--critical` aqui é erro de
+// formulário, não veredito — nunca reaproveitar esta cor no estado
+// "Incorreta" acima.
+.ds-verdict.has-error .ds-verdict-option {
+    border-color: var(--critical);
+}

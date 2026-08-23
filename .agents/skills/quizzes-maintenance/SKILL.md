@@ -39,6 +39,17 @@ These tests guard SPEC-08 contract, must stay green (PHPUnit, no Pest):
   grading one answer at a time, `finalizeGrading()` firing only once
   every essay answer on attempt graded, using exact same score formula as
   auto-grading (unanswered questions count wrong, still in denominator).
+- `tests/Feature/EssayGradingTest.php` — `EssayGradingController`
+  HTTP-layer contract: `pending()` queue FIFO-ordered by `completed_at`;
+  Admin can view the queue, Aluno gets 403; cross-org Gestor gets 403 on
+  both `quiz-attempts.show` and `quiz-attempts.grade` (answer stays
+  ungraded); owning-org Gestor's full submission recomputes
+  `score_percentage`/`is_passed` and transitions to `graded`; Admin can
+  grade any org's attempt; an incomplete `grades[]` payload (bypassing
+  client-side `required`) never finalizes the attempt
+  (`score_percentage`/`is_passed`/the ungraded answer's `is_correct`
+  all stay `null`); empty `grades` array fails validation with no state
+  change; essay answer text is HTML-escaped on the grading screen.
 - `tests/Feature/QuizManagementTest.php` (Bucket 2) — Gestor CRUD of
   Quiz/QuizQuestion/QuizOption, `quizzes.lesson_id` UNIQUE
   redirect-with-error guard, cross-tenant isolation.
@@ -66,6 +77,7 @@ Run narrowest of these first after touching this module:
 vendor/bin/sail artisan test --filter=SubmitQuizAttemptTest
 vendor/bin/sail artisan test --filter=QuizAttemptLimitsTest
 vendor/bin/sail artisan test --filter=EssayManualGradingTest
+vendor/bin/sail artisan test --filter=EssayGradingTest
 vendor/bin/sail artisan test --filter=QuizManagementTest
 vendor/bin/sail artisan test --filter=MultiTenantQuizManagementTest
 vendor/bin/sail dusk --filter=StudentQuizAttemptTest
