@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <meta name="design_doc_mode" content="canvas">
+  <link rel="stylesheet" href="_ds/plataforma-ead-design-system-618bb28f-056b-421b-b1d4-d0fef3cd30e2/styles.css">
+  <script src="_ds/plataforma-ead-design-system-618bb28f-056b-421b-b1d4-d0fef3cd30e2/_ds_bundle.js"></script>
+  <style>
+    a{color:var(--primary);text-decoration:none}
+    a:hover{color:var(--primary-hover)}
+    pre{margin:0;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;line-height:1.65;white-space:pre-wrap;color:var(--grey-800)}
+    code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.92em;background:var(--surface-alt);border-radius:6px;padding:1px 6px}
+  </style>
+</helmet>
+
+<section style="display:flex;flex-direction:column;gap:32px;padding:64px;background:var(--surface-body);font-family:var(--font-sans);color:var(--text-primary);line-height:1.6">
+
+  <div id="1a" style="display:flex;flex-direction:column;gap:32px;max-width:1912px">
+
+    <header style="display:flex;align-items:flex-start;justify-content:space-between;gap:40px;background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:40px 44px">
+      <div style="max-width:1000px;display:flex;flex-direction:column;gap:12px">
+        <div class="ds-overline" style="color:var(--primary)">Especificação de montagem · tela 09</div>
+        <h1 style="font-size:44px;line-height:1.1;margin:0;letter-spacing:-.02em">Painel do gestor — anatomia completa</h1>
+        <p style="font-size:19px;color:var(--text-secondary);margin:0;text-wrap:pretty">Tudo o que compõe a tela do slide 4 da apresentação, componente por componente: marcação exata, classes do design system, tokens, estados e regras de conteúdo. View de origem: <code>resources/views/dashboard/index.blade.php</code>.</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;align-items:flex-end;flex:none">
+        <span class="ds-chip ds-chip-primary ds-chip-plain ds-chip-lg">1a</span>
+        <span class="ds-caption">10 blocos · 14 componentes</span>
+      </div>
+    </header>
+
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:20px">
+      <div class="ds-card"><div class="ds-card-body" style="gap:6px"><div class="ds-overline">Largura de conteúdo</div><div style="font-size:28px;font-weight:800">1240px</div><div class="ds-caption"><code>--content-max</code>, centralizado</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:6px"><div class="ds-overline">Respiro do main</div><div style="font-size:28px;font-weight:800">40px</div><div class="ds-caption"><code>--main-pad</code> em <code>.ds-app-main</code></div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:6px"><div class="ds-overline">Entre seções</div><div style="font-size:28px;font-weight:800">32 / 40px</div><div class="ds-caption"><code>--space-7</code> · <code>--gap-section</code></div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:6px"><div class="ds-overline">Grade da tela</div><div style="font-size:28px;font-weight:800">4 + 2fr/1fr</div><div class="ds-caption">métricas, depois tabela + coluna lateral</div></div></div>
+    </div>
+
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:36px 44px;display:flex;flex-direction:column;gap:20px">
+      <h2 style="font-size:24px;margin:0">Mapa da tela</h2>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:900px">A tela é uma pilha vertical de quatro faixas dentro do shell autenticado. Nenhuma delas usa borda: a separação vem de elevação e de espaço.</p>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;align-items:center;gap:16px;height:76px;background:var(--surface-alt);border-radius:14px;padding:0 20px;font-weight:700"><span style="width:32px;height:32px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px">1</span>App bar — 76px, marca, busca, contexto, notificações, conta</div>
+        <div style="display:flex;gap:12px">
+          <div style="width:280px;flex:none;background:var(--surface-alt);border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:8px;font-weight:700"><span style="width:32px;height:32px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px">2</span>Drawer 280px<span class="ds-caption" style="font-weight:400">Navegação do perfil Gestor. Fora do escopo desta tela.</span></div>
+          <div style="flex:1;display:flex;flex-direction:column;gap:12px">
+            <div style="background:var(--blue-50);border-radius:14px;padding:20px;font-weight:700;display:flex;align-items:center;gap:12px"><span style="width:32px;height:32px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px">3</span>Cabeçalho da página — kicker, saudação, subtítulo, ações</div>
+            <div style="background:var(--blue-50);border-radius:14px;padding:20px;font-weight:700;display:flex;align-items:center;gap:12px"><span style="width:32px;height:32px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px">4</span>Quatro stat cards — grade de 4 colunas, gap 20px</div>
+            <div style="display:flex;gap:12px">
+              <div style="flex:2;background:var(--blue-50);border-radius:14px;padding:20px;font-weight:700;display:flex;align-items:center;gap:12px"><span style="width:32px;height:32px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px">5</span>Matrículas recentes</div>
+              <div style="flex:1;background:var(--mint-100);border-radius:14px;padding:20px;font-weight:700;display:flex;flex-direction:column;gap:8px"><span style="width:32px;height:32px;border-radius:50%;background:var(--secondary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px">6</span>Atenção + Cursos mais concluídos</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 1 · APP BAR -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:40px 44px;display:flex;flex-direction:column;gap:24px">
+      <div style="display:flex;align-items:baseline;gap:16px"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">01</span><h2 style="font-size:30px;margin:0">App bar</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">Topbar</span></div>
+
+      <div style="border-radius:20px;overflow:hidden;box-shadow:var(--elev-2)">
+        <header class="ds-appbar">
+          <a href="#1a" class="ds-brand"><span class="ds-brand-mark">CR</span>Conselho Regional</a>
+          <label class="ds-search"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg><input type="search" placeholder="Buscar cursos, alunos, certificados…"></label>
+          <div style="display:flex;align-items:center;gap:16px">
+            <span class="ds-chip ds-chip-info">Conselho Regional</span>
+            <div style="position:relative"><button class="ds-btn ds-btn-ghost ds-btn-icon-only" aria-label="Notificações"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg></button><span class="ds-count-badge">3</span></div>
+            <div style="display:flex;align-items:center;gap:12px;padding-left:16px;border-left:1px solid var(--divider)"><span class="ds-avatar">JP</span><div><div style="font-weight:700;line-height:1.3">Joana Prado</div><div class="ds-caption">Gestora</div></div></div>
+          </div>
+        </header>
+      </div>
+
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) 520px;gap:32px;align-items:start">
+        <div style="display:flex;flex-direction:column">
+          <div style="display:grid;grid-template-columns:210px 1fr;gap:16px;padding:12px 0;border-bottom:1px solid var(--divider)"><strong style="font-size:14px">Contêiner</strong><span style="font-size:15px"><code>.ds-appbar</code> — altura fixa <code>--appbar-height</code> 76px, fundo <code>--surface</code>, <code>--elev-1</code>, padding lateral 32px, <code>justify-content:space-between</code>, gap 24px, <code>z-index:20</code>. Sem borda inferior: a sombra faz a separação.</span></div>
+          <div style="display:grid;grid-template-columns:210px 1fr;gap:16px;padding:12px 0;border-bottom:1px solid var(--divider)"><strong style="font-size:14px">Marca</strong><span style="font-size:15px"><code>.ds-brand</code> (18px/800, tracking -.02em) com <code>.ds-brand-mark</code>: quadrado 44px, raio 14px, fundo <code>--primary</code>, texto branco 16px/800, <code>--elev-primary</code>. Duas ou três letras da Organização. Não existe logotipo no produto — não invente um.</span></div>
+          <div style="display:grid;grid-template-columns:210px 1fr;gap:16px;padding:12px 0;border-bottom:1px solid var(--divider)"><strong style="font-size:14px">Busca</strong><span style="font-size:15px"><code>.ds-search</code> — pílula 48px, fundo <code>--surface-alt</code>, ícone <em>search</em> 20px em <code>--text-secondary</code>, <code>flex:1</code> com <code>max-width:420px</code>. Placeholder: “Buscar cursos, alunos, certificados…”.</span></div>
+          <div style="display:grid;grid-template-columns:210px 1fr;gap:16px;padding:12px 0;border-bottom:1px solid var(--divider)"><strong style="font-size:14px">Contexto</strong><span style="font-size:15px"><code>.ds-chip.ds-chip-info</code> com o nome da Organização ativa. Em impersonação, o chip vira <code>.ds-chip-primary</code> e ganha ao lado um <code>.ds-btn.ds-btn-ghost.ds-btn-sm</code> “Sair do contexto”.</span></div>
+          <div style="display:grid;grid-template-columns:210px 1fr;gap:16px;padding:12px 0;border-bottom:1px solid var(--divider)"><strong style="font-size:14px">Notificações</strong><span style="font-size:15px">Botão <code>.ds-btn.ds-btn-ghost.ds-btn-icon-only</code> 48px com <code>aria-label="Notificações"</code>, ícone <em>bell</em> 22px, dentro de um wrapper <code>position:relative</code>. <code>.ds-count-badge</code>: 22px mínimo, fundo <code>--secondary</code>, anel branco de 3px. Some quando zero — nunca mostre “0”.</span></div>
+          <div style="display:grid;grid-template-columns:210px 1fr;gap:16px;padding:12px 0;border-bottom:1px solid var(--divider)"><strong style="font-size:14px">Conta</strong><span style="font-size:15px"><code>.ds-avatar</code> 44px (iniciais, menta) + nome 16px/700 e papel em <code>.ds-caption</code>, separados por <code>border-left:1px solid var(--divider)</code> e 16px de recuo. Abre <code>.ds-dropdown</code> de 380px, <code>--elev-4</code>.</span></div>
+          <div style="display:grid;grid-template-columns:210px 1fr;gap:16px;padding:12px 0"><strong style="font-size:14px">Não faça</strong><span style="font-size:15px">Sem borda inferior escura, sem app bar colorida, sem ícone solto sem <code>aria-label</code>, sem contador em vermelho.</span></div>
+        </div>
+        <div style="background:var(--surface-sunken);border-radius:20px;padding:24px;box-shadow:inset 0 0 0 1px var(--divider)">
+          <div class="ds-overline" style="margin-bottom:12px;color:var(--text-secondary)">Marcação</div>
+          <pre>&lt;header class="ds-appbar"&gt;
+  &lt;a href="/" class="ds-brand"&gt;
+    &lt;span class="ds-brand-mark"&gt;CR&lt;/span&gt;Conselho Regional
+  &lt;/a&gt;
+  &lt;label class="ds-search"&gt;
+    &lt;x-ui.icon name="search" size="20" /&gt;
+    &lt;input type="search" placeholder="Buscar cursos, alunos, certificados…"&gt;
+  &lt;/label&gt;
+  &lt;div class="ds-appbar-actions"&gt;
+    &lt;span class="ds-chip ds-chip-info"&gt;{​{ $org-&gt;nome }​}&lt;/span&gt;
+    &lt;div class="ds-bell"&gt;
+      &lt;button class="ds-btn ds-btn-ghost ds-btn-icon-only"
+              aria-label="Notificações"&gt;…&lt;/button&gt;
+      &lt;span class="ds-count-badge"&gt;{​{ $naoLidas }​}&lt;/span&gt;
+    &lt;/div&gt;
+    &lt;div class="ds-account"&gt;
+      &lt;span class="ds-avatar"&gt;JP&lt;/span&gt;
+      &lt;div&gt;&lt;div&gt;Joana Prado&lt;/div&gt;
+      &lt;div class="ds-caption"&gt;Gestora&lt;/div&gt;&lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/header&gt;</pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2 · PAGE HEADER -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:40px 44px;display:flex;flex-direction:column;gap:24px">
+      <div style="display:flex;align-items:baseline;gap:16px"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">02</span><h2 style="font-size:30px;margin:0">Cabeçalho da página</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">PageHeader</span></div>
+
+      <div style="background:var(--surface-body);border-radius:20px;padding:40px">
+        <div class="ds-page-header" style="margin-bottom:0">
+          <div>
+            <div class="ds-overline" style="color:var(--primary);margin-bottom:8px">Painel</div>
+            <h1 class="ds-page-title">Bom dia, Joana</h1>
+            <p class="ds-lead" style="margin:12px 0 0">Um panorama da sua organização nos últimos 30 dias.</p>
+          </div>
+          <div style="display:flex;gap:12px">
+            <button class="ds-btn ds-btn-tonal">Exportar CSV</button>
+            <button class="ds-btn ds-btn-primary"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>Novo curso</button>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) 520px;gap:32px;align-items:start">
+        <div>
+          <div style="display:grid;grid-template-columns:210px 1fr;gap:16px;padding:12px 0;border-bottom:1px solid var(--divider)"><strong style="font-size:14px">Contêiner</strong><span style="font-size:15px"><code>.ds-page-header</code> — flex com <code>align-items:flex-end</code>, <code>justify-content:space-between</code>, gap 20px, <code>margin-bottom:32px</code>, <code>flex-wrap:wrap</code>.</span></div>
+          <div style="display:grid;grid-template-columns:210px 1fr;gap:16px;padding:12px 0;border-bottom:1px solid var(--divider)"><strong style="font-size:14px">Kicker</strong><span style="font-size:15px"><code>.ds-overline</code> 13px/800, tracking .08em, caixa-alta, cor <code>--primary</code>, 8px abaixo. Texto: “Painel”. É o único lugar da tela com caixa-alta.</span></div>
+          <div style="display:grid;grid-template-columns:210px 1fr;gap:16px;padding:12px 0;border-bottom:1px solid var(--divider)"><strong style="font-size:14px">Título</strong><span style="font-size:15px"><code>h1.ds-page-title</code> 36px/700, tracking -.02em. Saudação por faixa horária: “Bom dia / Boa tarde / Boa noite, {primeiro nome}”.</span></div>
+          <div style="display:grid;grid-template-columns:210px 1fr;gap:16px;padding:12px 0;border-bottom:1px solid var(--divider)"><strong style="font-size:14px">Subtítulo</strong><span style="font-size:15px"><code>p.ds-lead</code> 19px em <code>--text-secondary</code>, 12px abaixo do título, uma frase. “Um panorama da sua organização nos últimos 30 dias.”</span></div>
+          <div style="display:grid;grid-template-columns:210px 1fr;gap:16px;padding:12px 0;border-bottom:1px solid var(--divider)"><strong style="font-size:14px">Ações</strong><span style="font-size:15px">Flex gap 12px, ancoradas na base. Secundária <code>.ds-btn.ds-btn-tonal</code> “Exportar CSV”; primária <code>.ds-btn.ds-btn-primary</code> com ícone <em>plus</em> 18px, “Novo curso”. Uma primária por tela. Altura 48px, pílula, <code>--elev-primary</code>.</span></div>
+          <div style="display:grid;grid-template-columns:210px 1fr;gap:16px;padding:12px 0"><strong style="font-size:14px">Estados</strong><span style="font-size:15px">Hover da primária: <code>--primary-hover</code>, sobe 1px, sombra <code>0 10px 24px rgba(76,111,231,.34)</code>. Press: <code>--primary-pressed</code>, volta a <code>--elev-1</code>. Foco: anel sólido 3px <code>--focus-ring</code> com 2px de offset. Sem permissão de criação, a primária não é renderizada — nunca desabilitada em silêncio.</span></div>
+        </div>
+        <div style="background:var(--surface-sunken);border-radius:20px;padding:24px;box-shadow:inset 0 0 0 1px var(--divider)">
+          <div class="ds-overline" style="margin-bottom:12px;color:var(--text-secondary)">Marcação</div>
+          <pre>&lt;div class="ds-page-header"&gt;
+  &lt;div&gt;
+    &lt;div class="ds-overline ds-overline-primary"&gt;Painel&lt;/div&gt;
+    &lt;h1 class="ds-page-title"&gt;Bom dia, {​{ $nome }​}&lt;/h1&gt;
+    &lt;p class="ds-lead"&gt;Um panorama da sua organização
+       nos últimos 30 dias.&lt;/p&gt;
+  &lt;/div&gt;
+  &lt;div class="ds-page-actions"&gt;
+    &lt;a class="ds-btn ds-btn-tonal"&gt;Exportar CSV&lt;/a&gt;
+    &lt;a class="ds-btn ds-btn-primary"&gt;
+      &lt;x-ui.icon name="plus" size="18" /&gt;Novo curso&lt;/a&gt;
+  &lt;/div&gt;
+&lt;/div&gt;</pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3 · STAT CARDS -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:40px 44px;display:flex;flex-direction:column;gap:24px">
+      <div style="display:flex;align-items:baseline;gap:16px"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">03</span><h2 style="font-size:30px;margin:0">Faixa de métricas</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">StatCard × 4</span></div>
+
+      <div style="background:var(--surface-body);border-radius:20px;padding:32px;display:grid;grid-template-columns:repeat(4,1fr);gap:20px">
+        <div class="ds-stat-card"><div class="ds-stat-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></div><div class="ds-overline">Alunos ativos</div><div class="ds-stat-value">248</div><div style="display:flex;align-items:center;gap:10px;margin-top:4px"><span class="ds-chip ds-chip-success ds-chip-plain">+4,2%</span><span class="ds-caption">vs. anterior</span></div></div>
+        <div class="ds-stat-card"><div class="ds-stat-icon" style="background:var(--secondary-container);color:var(--on-secondary-container)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"></circle><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"></path></svg></div><div class="ds-overline">Certificados emitidos</div><div class="ds-stat-value">112</div><div style="display:flex;align-items:center;gap:10px;margin-top:4px"><span class="ds-chip ds-chip-success ds-chip-plain">+12%</span><span class="ds-caption">no período</span></div></div>
+        <div class="ds-stat-card"><div class="ds-stat-icon" style="background:var(--tertiary-container);color:var(--on-tertiary-container)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></div><div class="ds-overline">Taxa de conclusão</div><div class="ds-stat-value">63%</div><div style="display:flex;align-items:center;gap:10px;margin-top:4px"><span class="ds-caption">média dos cursos</span></div></div>
+        <div class="ds-stat-card"><div class="ds-stat-icon" style="background:var(--surface-alt);color:var(--grey-700)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg></div><div class="ds-overline">Cursos publicados</div><div class="ds-stat-value">9</div><div style="display:flex;align-items:center;gap:10px;margin-top:4px"><span class="ds-caption">2 em rascunho</span></div></div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) 520px;gap:32px;align-items:start">
+        <div>
+          <div style="display:grid;grid-template-columns:210px 1fr;gap:16px;padding:12px 0;border-bottom:1px solid var(--divider)"><strong style="font-size:14px">Grade</strong><span style="font-size:15px"><code>grid-template-columns:repeat(4,1fr)</code>, gap 20px, <code>margin-bottom:32px</code>. Sempre quatro cartões — se uma métrica não existir para o perfil, remova a coluna e reequilibre para três, nunca deixe um cartão vazio.</span></div>
+          <div style="display:grid;grid-template-columns:210px 1fr;gap:16px;padding:12px 0;border-bottom:1px solid var(--divider)"><strong style="font-size:14px">Cartão</strong><span style="font-size:15px"><code>.ds-stat-card</code> — <code>--surface</code>, raio 20px, <code>--elev-1</code>, padding <code>--pad-card</code> 28px (24px na versão comprimida do slide), coluna com gap 8px. Sem borda, sem hover: é leitura, não é alvo.</span></div>
+          <div style="display:grid;grid-template-columns:210px 1fr;gap:16px;padding:12px 0;border-bottom:1px solid var(--divider)"><strong style="font-size:14px">Ícone</strong><span style="font-size:15px"><code>.ds-stat-icon</code> — 52×52, raio 14px, ícone Lucide 24px, 8px de folga abaixo. Um par container/on-container por cartão, nesta ordem: <code>--primary-container</code> (<em>users</em>), <code>--secondary-container</code> (<em>award</em>), <code>--tertiary-container</code> (<em>check</em>), <code>--surface-alt</code> + <code>--grey-700</code> (<em>book</em>).</span></div>
+          <div style="display:grid;grid-template-columns:210px 1fr;gap:16px;padding:12px 0;border-bottom:1px solid var(--divider)"><strong style="font-size:14px">Rótulo e valor</strong><span style="font-size:15px"><code>.ds-overline</code> 13px caixa-alta em <code>--text-secondary</code>; <code>.ds-stat-value</code> 40px/800, <code>line-height:1.15</code>, tracking -.02em. Número puro, sem sufixo decorativo.</span></div>
+          <div style="display:grid;grid-template-columns:210px 1fr;gap:16px;padding:12px 0;border-bottom:1px solid var(--divider)"><strong style="font-size:14px">Rodapé</strong><span style="font-size:15px">Linha flex gap 10px, 4px acima. Variação em <code>.ds-chip.ds-chip-success.ds-chip-plain</code> (“+4,2%”, vírgula decimal) e contexto em <code>.ds-caption</code>. Queda usa <code>.ds-chip-neutral</code> com sinal “−” — nunca vermelho. Sem comparativo, só a caption.</span></div>
+          <div style="display:grid;grid-template-columns:210px 1fr;gap:16px;padding:12px 0"><strong style="font-size:14px">Sem dados</strong><span style="font-size:15px">Valor “—” em <code>--text-disabled</code> e caption “Sem dados no período”. O cartão permanece na grade.</span></div>
+        </div>
+        <div style="background:var(--surface-sunken);border-radius:20px;padding:24px;box-shadow:inset 0 0 0 1px var(--divider)">
+          <div class="ds-overline" style="margin-bottom:12px;color:var(--text-secondary)">Marcação</div>
+          <pre>&lt;div class="ds-stat-grid"&gt;
+  &lt;x-ui.stat-card
+     icon="users" tone="primary"
+     label="Alunos ativos" :value="$alunosAtivos"
+     delta="+4,2%" delta-tone="success"
+     caption="vs. anterior" /&gt;
+  …
+&lt;/div&gt;
+
+&lt;!-- render --&gt;
+&lt;div class="ds-stat-card"&gt;
+  &lt;div class="ds-stat-icon"&gt;&lt;x-ui.icon name="users" size="24"/&gt;&lt;/div&gt;
+  &lt;div class="ds-overline"&gt;Alunos ativos&lt;/div&gt;
+  &lt;div class="ds-stat-value"&gt;248&lt;/div&gt;
+  &lt;div class="ds-stat-foot"&gt;
+    &lt;span class="ds-chip ds-chip-success ds-chip-plain"&gt;+4,2%&lt;/span&gt;
+    &lt;span class="ds-caption"&gt;vs. anterior&lt;/span&gt;
+  &lt;/div&gt;
+&lt;/div&gt;</pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4 · TABELA -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:40px 44px;display:flex;flex-direction:column;gap:24px">
+      <div style="display:flex;align-items:baseline;gap:16px"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">04</span><h2 style="font-size:30px;margin:0">Matrículas recentes</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">Table + Progress + Avatar + Chip</span></div>
+
+      <div style="background:var(--surface-body);border-radius:20px;padding:32px">
+        <div class="ds-table-wrap">
+          <div class="ds-table-toolbar">
+            <div><h3 style="font-size:20px;margin:0">Matrículas recentes</h3><p class="ds-caption" style="margin:4px 0 0">Atualizado há 5 minutos</p></div>
+            <button class="ds-btn ds-btn-ghost">Ver todas<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></button>
+          </div>
+          <table class="ds-table ds-table-hover">
+            <thead><tr><th>Aluno</th><th>Curso</th><th>Progresso</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td><div style="display:flex;align-items:center;gap:12px"><span class="ds-avatar ds-avatar-sm" style="background:var(--blue-100);color:var(--blue-800)">AL</span><div><div style="font-weight:600">Ana Beatriz Lima</div><div class="ds-caption">ana.lima@conselho.br</div></div></div></td><td class="ds-muted">Fundamentos de Segurança</td><td style="min-width:160px"><div class="ds-progress" style="height:8px"><div class="ds-progress-bar" style="width:62%"></div></div></td><td><span class="ds-chip ds-chip-info">Em andamento</span></td></tr>
+              <tr><td><div style="display:flex;align-items:center;gap:12px"><span class="ds-avatar ds-avatar-sm">MD</span><div><div style="font-weight:600">Marina Duarte</div><div class="ds-caption">marina.duarte@conselho.br</div></div></div></td><td class="ds-muted">Fundamentos de Segurança</td><td><div class="ds-progress" style="height:8px"><div class="ds-progress-bar" style="width:100%;background:var(--secondary)"></div></div></td><td><span class="ds-chip ds-chip-success">Concluída</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) 520px;gap:32px;align-items:start">
+        <div>
+          <div style="display:grid;grid-template-columns:210px 1fr;gap:16px;padding:12px 0;border-bottom:1px solid var(--divider)"><strong style="font-size:14px">Envoltório</strong><span style="font-size:15px"><code>.ds-table-wrap</code> — <code>--surface</code>, raio 20px, <code>--elev-1</code>, <code>overflow:hidden</code> (é o que arredonda o cabeçalho da tabela). Ocupa <code>minmax(0,2fr)</code> da grade inferior; gap de 24px para a coluna lateral; <code>align-items:start</code>.</span></div>
+          <div style="display:grid;grid-template-columns:210px 1fr;gap:16px;padding:12px 0;border-bottom:1px solid var(--divider)"><strong style="font-size:14px">Barra de título</strong><span style="font-size:15px"><code>.ds-table-toolbar</code> — padding 20px 24px, <code>space-between</code>. À esquerda <code>h2</code> 20px e <code>.ds-caption</code> “Atualizado há 5 minutos”; à direita <code>.ds-btn.ds-btn-ghost</code> “Ver todas” com <em>chevron-right</em> 18px.</span></div>
+          <div style="display:grid;grid-template-columns:210px 1fr;gap:16px;padding:12px 0;border-bottom:1px solid var(--divider)"><strong style="font-size:14px">Cabeçalho</strong><span style="font-size:15px"><code>thead th</code> — 13px/700 caixa-alta, tracking .08em, <code>--text-secondary</code> sobre <code>--surface-sunken</code>, <code>white-space:nowrap</code>. Quatro colunas: Aluno · Curso · Progresso · Status.</span></div>
+          <div style="display:grid;grid-template-columns:210px 1fr;gap:16px;padding:12px 0;border-bottom:1px solid var(--divider)"><strong style="font-size:14px">Células</strong><span style="font-size:15px">Padding <code>18px 20px</code>, <code>vertical-align:middle</code>, 16px. Linhas separadas por <code>border-top:1px solid var(--divider)</code>; <code>.ds-table-hover</code> aplica tint <code>--state-hover</code> (azul a 6%) em 120ms.</span></div>
+          <div style="display:grid;grid-template-columns:210px 1fr;gap:16px;padding:12px 0;border-bottom:1px solid var(--divider)"><strong style="font-size:14px">Coluna Aluno</strong><span style="font-size:15px">Flex gap 12px: <code>.ds-avatar.ds-avatar-sm</code> 36px com iniciais, depois nome 16px/600 e e-mail em <code>.ds-caption</code>. Cor do avatar rotaciona entre <code>--blue-100/800</code>, <code>--sky-100/800</code>, menta padrão e <code>--surface-alt/--grey-700</code> — decorativa, nunca semântica.</span></div>
+          <div style="display:grid;grid-template-columns:210px 1fr;gap:16px;padding:12px 0;border-bottom:1px solid var(--divider)"><strong style="font-size:14px">Coluna Curso</strong><span style="font-size:15px"><code>td.ds-muted</code> — <code>--text-secondary</code>. Nome do Curso com inicial maiúscula, sem truncar antes de 40 caracteres.</span></div>
+          <div style="display:grid;grid-template-columns:210px 1fr;gap:16px;padding:12px 0;border-bottom:1px solid var(--divider)"><strong style="font-size:14px">Coluna Progresso</strong><span style="font-size:15px"><code>.ds-progress</code> com <code>height:8px</code> (a densidade de tabela; o padrão do componente é 10px), trilha <code>--surface-alt</code>, pílula, <code>min-width:160px</code> na célula. Barra <code>--primary</code> em andamento e <code>--secondary</code> em 100%. Transição de largura em 320ms <code>--ease-emphasized</code>. Acrescente <code>role="progressbar"</code> com <code>aria-valuenow</code>.</span></div>
+          <div style="display:grid;grid-template-columns:210px 1fr;gap:16px;padding:12px 0;border-bottom:1px solid var(--divider)"><strong style="font-size:14px">Coluna Status</strong><span style="font-size:15px">Chips em sentence case: “Em andamento” <code>.ds-chip-info</code>, “Concluída” <code>.ds-chip-success</code>, “Não iniciada” <code>.ds-chip-neutral</code>, “Cancelada” <code>.ds-chip-critical</code>. Altura 32px, ponto de 8px do <code>::before</code> — só remova com <code>.ds-chip-plain</code> em contadores.</span></div>
+          <div style="display:grid;grid-template-columns:210px 1fr;gap:16px;padding:12px 0"><strong style="font-size:14px">Vazio</strong><span style="font-size:15px">Dentro do wrapper, <code>.ds-empty-state</code> tracejado 1,5px: ícone <em>users</em> 32px em círculo pastel, “Nenhuma matrícula ainda”, “Convide alunos por link e as matrículas aparecem aqui.” e <code>.ds-btn.ds-btn-tonal</code> “Convidar alunos”.</span></div>
+        </div>
+        <div style="background:var(--surface-sunken);border-radius:20px;padding:24px;box-shadow:inset 0 0 0 1px var(--divider)">
+          <div class="ds-overline" style="margin-bottom:12px;color:var(--text-secondary)">Marcação</div>
+          <pre>&lt;div class="ds-table-wrap"&gt;
+  &lt;div class="ds-table-toolbar"&gt;
+    &lt;div&gt;
+      &lt;h2&gt;Matrículas recentes&lt;/h2&gt;
+      &lt;p class="ds-caption"&gt;Atualizado há 5 minutos&lt;/p&gt;
+    &lt;/div&gt;
+    &lt;a class="ds-btn ds-btn-ghost"&gt;Ver todas
+      &lt;x-ui.icon name="chevron-right" size="18"/&gt;&lt;/a&gt;
+  &lt;/div&gt;
+  &lt;table class="ds-table ds-table-hover"&gt;
+    &lt;thead&gt;&lt;tr&gt;
+      &lt;th&gt;Aluno&lt;/th&gt;&lt;th&gt;Curso&lt;/th&gt;
+      &lt;th&gt;Progresso&lt;/th&gt;&lt;th&gt;Status&lt;/th&gt;
+    &lt;/tr&gt;&lt;/thead&gt;
+    &lt;tbody&gt;
+    @forelse ($matriculas as $m)
+      &lt;tr&gt;
+        &lt;td&gt;&lt;div class="ds-user-cell"&gt;
+          &lt;span class="ds-avatar ds-avatar-sm"&gt;{​{ $m-&gt;iniciais }​}&lt;/span&gt;
+          &lt;div&gt;&lt;div class="ds-user-name"&gt;{​{ $m-&gt;aluno }​}&lt;/div&gt;
+          &lt;div class="ds-caption"&gt;{​{ $m-&gt;email }​}&lt;/div&gt;&lt;/div&gt;
+        &lt;/div&gt;&lt;/td&gt;
+        &lt;td class="ds-muted"&gt;{​{ $m-&gt;curso }​}&lt;/td&gt;
+        &lt;td&gt;&lt;x-ui.progress :value="$m-&gt;progresso" size="sm" /&gt;&lt;/td&gt;
+        &lt;td&gt;&lt;x-ui.chip :tone="$m-&gt;tom"&gt;{​{ $m-&gt;status }​}&lt;/x-ui.chip&gt;&lt;/td&gt;
+      &lt;/tr&gt;
+    @empty
+      &lt;tr&gt;&lt;td colspan="4"&gt;&lt;x-ui.empty-state … /&gt;&lt;/td&gt;&lt;/tr&gt;
+    @endforelse
+    &lt;/tbody&gt;
+  &lt;/table&gt;
+&lt;/div&gt;</pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5 · COLUNA LATERAL -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:40px 44px;display:flex;flex-direction:column;gap:24px">
+      <div style="display:flex;align-items:baseline;gap:16px"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">05</span><h2 style="font-size:30px;margin:0">Coluna lateral</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">Card · lista de pendências · Progress</span></div>
+
+      <div style="background:var(--surface-body);border-radius:20px;padding:32px;display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start">
+        <div class="ds-card"><div class="ds-card-body">
+          <h3 class="ds-card-title">Precisa da sua atenção</h3>
+          <a href="#1a" style="display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--divider);color:var(--text-primary)"><span style="width:40px;height:40px;border-radius:12px;background:var(--tertiary-container);color:var(--on-tertiary-container);display:flex;align-items:center;justify-content:center;flex:none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2h6a1 1 0 0 1 1 1v2H8V3a1 1 0 0 1 1-1z"></path><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><path d="M9 12h6"></path><path d="M9 16h6"></path></svg></span><span style="flex:1">Redações aguardando correção</span><span class="ds-chip ds-chip-info ds-chip-plain">4</span></a>
+          <a href="#1a" style="display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--divider);color:var(--text-primary)"><span style="width:40px;height:40px;border-radius:12px;background:var(--tertiary-container);color:var(--on-tertiary-container);display:flex;align-items:center;justify-content:center;flex:none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><path d="M9 12h6"></path></svg></span><span style="flex:1">Denúncias no fórum</span><span class="ds-chip ds-chip-info ds-chip-plain">2</span></a>
+        </div></div>
+        <div class="ds-card ds-card-outlined"><div class="ds-card-body">
+          <h3 class="ds-card-title">Cursos mais concluídos</h3>
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <div><div style="display:flex;justify-content:space-between;margin-bottom:8px"><span class="ds-caption">Boas Práticas de Atendimento</span><span class="ds-caption" style="font-weight:700;color:var(--text-primary)">88%</span></div><div class="ds-progress"><div class="ds-progress-bar" style="width:88%;background:var(--secondary)"></div></div></div>
+            <div><div style="display:flex;justify-content:space-between;margin-bottom:8px"><span class="ds-caption">Fundamentos de Segurança</span><span class="ds-caption" style="font-weight:700;color:var(--text-primary)">63%</span></div><div class="ds-progress"><div class="ds-progress-bar" style="width:63%;background:var(--secondary)"></div></div></div>
+          </div>
+        </div></div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) 520px;gap:32px;align-items:start">
+        <div>
+          <div style="display:grid;grid-template-columns:210px 1fr;gap:16px;padding:12px 0;border-bottom:1px solid var(--divider)"><strong style="font-size:14px">Coluna</strong><span style="font-size:15px"><code>minmax(0,1fr)</code> da grade inferior, pilha flex com gap 20px, alinhada ao topo da tabela.</span></div>
+          <div style="display:grid;grid-template-columns:210px 1fr;gap:16px;padding:12px 0;border-bottom:1px solid var(--divider)"><strong style="font-size:14px">Card de pendências</strong><span style="font-size:15px"><code>.ds-card</code> + <code>.ds-card-body</code> (padding 28px, gap 12px), título <code>h3.ds-card-title</code> 20px “Precisa da sua atenção”. Elevação 1, sem borda.</span></div>
+          <div style="display:grid;grid-template-columns:210px 1fr;gap:16px;padding:12px 0;border-bottom:1px solid var(--divider)"><strong style="font-size:14px">Linha de pendência</strong><span style="font-size:15px"><code>&lt;a&gt;</code> flex gap 12px, padding vertical 12px, <code>border-top:1px solid var(--divider)</code> (inclusive na primeira, que separa do título). Ícone em quadrado 40px raio 12px com <code>--tertiary-container</code>; rótulo <code>flex:1</code> em <code>--text-primary</code>; contador <code>.ds-chip.ds-chip-info.ds-chip-plain</code>. Alvo de 48px por causa do padding — mantenha. Hover: <code>--state-hover</code> em toda a linha, sem sublinhado.</span></div>
+          <div style="display:grid;grid-template-columns:210px 1fr;gap:16px;padding:12px 0;border-bottom:1px solid var(--divider)"><strong style="font-size:14px">Conteúdo</strong><span style="font-size:15px">Três linhas fixas: redações aguardando correção, denúncias no fórum, certificados prontos para emissão. Rótulo é substantivo, o número mora no chip. Nada de “urgente” ou “pendência crítica”. Linha com zero desaparece; com as três em zero, o card inteiro é substituído por “Nada aguardando você” + “Você está em dia com as filas desta organização.”</span></div>
+          <div style="display:grid;grid-template-columns:210px 1fr;gap:16px;padding:12px 0;border-bottom:1px solid var(--divider)"><strong style="font-size:14px">Cursos mais concluídos</strong><span style="font-size:15px"><code>.ds-card.ds-card-outlined</code> — troca sombra por <code>1px solid var(--border-color)</code>, para não competir com o card acima. Três linhas: nome em <code>.ds-caption</code> e percentual 13px/700 em <code>--text-primary</code>, 8px acima de <code>.ds-progress</code> de 10px com barra <code>--secondary</code>. Ordem decrescente, no máximo três.</span></div>
+          <div style="display:grid;grid-template-columns:210px 1fr;gap:16px;padding:12px 0"><strong style="font-size:14px">Não faça</strong><span style="font-size:15px">Nada de gráfico de rosca ou sparkline: o sistema não tem biblioteca de gráficos e a barra já responde à pergunta.</span></div>
+        </div>
+        <div style="background:var(--surface-sunken);border-radius:20px;padding:24px;box-shadow:inset 0 0 0 1px var(--divider)">
+          <div class="ds-overline" style="margin-bottom:12px;color:var(--text-secondary)">Marcação</div>
+          <pre>&lt;div class="ds-card"&gt;&lt;div class="ds-card-body"&gt;
+  &lt;h3 class="ds-card-title"&gt;Precisa da sua atenção&lt;/h3&gt;
+  @foreach ($filas as $f)
+    &lt;a href="{​{ $f-&gt;url }​}" class="ds-attn-row"&gt;
+      &lt;span class="ds-attn-icon"&gt;
+        &lt;x-ui.icon :name="$f-&gt;icon" size="20" /&gt;&lt;/span&gt;
+      &lt;span class="ds-attn-label"&gt;{​{ $f-&gt;titulo }​}&lt;/span&gt;
+      &lt;span class="ds-chip ds-chip-info ds-chip-plain"&gt;
+        {​{ $f-&gt;total }​}&lt;/span&gt;
+    &lt;/a&gt;
+  @endforeach
+&lt;/div&gt;&lt;/div&gt;
+
+&lt;div class="ds-card ds-card-outlined"&gt;&lt;div class="ds-card-body"&gt;
+  &lt;h3 class="ds-card-title"&gt;Cursos mais concluídos&lt;/h3&gt;
+  &lt;div class="ds-rank-list"&gt;
+    &lt;div class="ds-rank"&gt;
+      &lt;div class="ds-rank-head"&gt;
+        &lt;span class="ds-caption"&gt;{​{ $c-&gt;nome }​}&lt;/span&gt;
+        &lt;span class="ds-rank-pct"&gt;{​{ $c-&gt;pct }​}%&lt;/span&gt;&lt;/div&gt;
+      &lt;x-ui.progress :value="$c-&gt;pct" tone="success" /&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;&lt;/div&gt;</pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6 · TOKENS -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:40px 44px;display:flex;flex-direction:column;gap:24px">
+      <div style="display:flex;align-items:baseline;gap:16px"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">06</span><h2 style="font-size:30px;margin:0">Tokens usados nesta tela</h2></div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:32px">
+        <div>
+          <div class="ds-overline" style="color:var(--primary);margin-bottom:12px">Cor</div>
+          <div style="display:flex;flex-direction:column;gap:8px;font-size:14px">
+            <div style="display:flex;align-items:center;gap:12px"><span style="width:28px;height:28px;border-radius:8px;background:var(--primary);flex:none"></span><code>--primary</code> #4c6fe7 · CTA, kicker, barra</div>
+            <div style="display:flex;align-items:center;gap:12px"><span style="width:28px;height:28px;border-radius:8px;background:var(--primary-container);flex:none"></span><code>--primary-container</code> · botão tonal, ícone</div>
+            <div style="display:flex;align-items:center;gap:12px"><span style="width:28px;height:28px;border-radius:8px;background:var(--secondary);flex:none"></span><code>--secondary</code> #2e9e6b · conclusão, contador</div>
+            <div style="display:flex;align-items:center;gap:12px"><span style="width:28px;height:28px;border-radius:8px;background:var(--secondary-container);flex:none"></span><code>--secondary-container</code> · ícone de certificados</div>
+            <div style="display:flex;align-items:center;gap:12px"><span style="width:28px;height:28px;border-radius:8px;background:var(--tertiary-container);flex:none"></span><code>--tertiary-container</code> · pendências, taxa</div>
+            <div style="display:flex;align-items:center;gap:12px"><span style="width:28px;height:28px;border-radius:8px;background:var(--surface-body);box-shadow:inset 0 0 0 1px var(--divider);flex:none"></span><code>--surface-body</code> #f6f8fc · fundo do main</div>
+            <div style="display:flex;align-items:center;gap:12px"><span style="width:28px;height:28px;border-radius:8px;background:var(--surface-sunken);box-shadow:inset 0 0 0 1px var(--divider);flex:none"></span><code>--surface-sunken</code> · cabeçalho da tabela</div>
+            <div style="display:flex;align-items:center;gap:12px"><span style="width:28px;height:28px;border-radius:8px;background:var(--divider);flex:none"></span><code>--divider</code> · linhas de tabela e de lista</div>
+          </div>
+          <p style="font-size:14px;color:var(--text-secondary);margin:16px 0 0">Vermelho, laranja e amarelo não aparecem em lugar nenhum. Esta tela não tem ação destrutiva; se ganhar uma, ela usa <code>--critical</code> com ícone e texto explícito.</p>
+        </div>
+        <div>
+          <div class="ds-overline" style="color:var(--primary);margin-bottom:12px">Tipografia</div>
+          <div style="display:flex;flex-direction:column;gap:10px;font-size:14px">
+            <div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--divider);padding-bottom:8px"><span>Título da página</span><code>--font-size-h1 · 36/700</code></div>
+            <div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--divider);padding-bottom:8px"><span>Métrica</span><code>--font-size-metric · 40/800</code></div>
+            <div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--divider);padding-bottom:8px"><span>Subtítulo</span><code>--font-size-lead · 19/400</code></div>
+            <div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--divider);padding-bottom:8px"><span>Título de card</span><code>--font-size-h4 · 20/700</code></div>
+            <div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--divider);padding-bottom:8px"><span>Célula de tabela</span><code>--font-size-body · 16/400</code></div>
+            <div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--divider);padding-bottom:8px"><span>Botão e nome</span><code>--font-size-label · 14/700</code></div>
+            <div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--divider);padding-bottom:8px"><span>Overline, chip, caption</span><code>13px · .08em só no overline</code></div>
+          </div>
+          <p style="font-size:14px;color:var(--text-secondary);margin:16px 0 0">Nunito Sans em 400/600/700/800, entrelinha 1,6. Nada abaixo de 13px.</p>
+        </div>
+        <div>
+          <div class="ds-overline" style="color:var(--primary);margin-bottom:12px">Forma, sombra e ritmo</div>
+          <div style="display:flex;flex-direction:column;gap:10px;font-size:14px">
+            <div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--divider);padding-bottom:8px"><span>Cards, tabela</span><code>--radius-lg 20px · --elev-1</code></div>
+            <div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--divider);padding-bottom:8px"><span>Ícone de métrica</span><code>--radius-md 14px</code></div>
+            <div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--divider);padding-bottom:8px"><span>Botões, chips, avatar</span><code>--radius-pill</code></div>
+            <div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--divider);padding-bottom:8px"><span>Padding de card</span><code>--pad-card 28px</code></div>
+            <div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--divider);padding-bottom:8px"><span>Célula</span><code>18px 20px</code></div>
+            <div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--divider);padding-bottom:8px"><span>Gap da grade</span><code>20px métricas · 24px inferior</code></div>
+            <div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--divider);padding-bottom:8px"><span>Hover de linha</span><code>--state-hover 6% · 120ms</code></div>
+            <div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--divider);padding-bottom:8px"><span>Barra de progresso</span><code>320ms --ease-emphasized</code></div>
+          </div>
+          <p style="font-size:14px;color:var(--text-secondary);margin:16px 0 0">Profundidade vem de sombra azulada, não de borda. Nenhum <code>box-shadow</code> preto neutro.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 7 · ESTADOS -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:40px 44px;display:flex;flex-direction:column;gap:24px">
+      <div style="display:flex;align-items:baseline;gap:16px"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">07</span><h2 style="font-size:30px;margin:0">Estados da tela</h2></div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:20px">
+        <div class="ds-card ds-card-outlined"><div class="ds-card-body"><h3 class="ds-card-title">Primeiro acesso</h3><p style="margin:0;font-size:15px;color:var(--text-secondary)">Métricas em zero com caption “Sem dados no período”. A tabela mostra o estado vazio com “Convidar alunos”. O card de pendências não aparece.</p></div></div>
+        <div class="ds-card ds-card-outlined"><div class="ds-card-body"><h3 class="ds-card-title">Carregando</h3><p style="margin:0;font-size:15px;color:var(--text-secondary)">Blocos <code>--surface-alt</code> com o mesmo raio e altura do conteúdo final. Sem spinner central, sem animação de pulso forte — no máximo fade de 200ms.</p></div></div>
+        <div class="ds-card ds-card-outlined"><div class="ds-card-body"><h3 class="ds-card-title">Métrica indisponível</h3><p style="margin:0;font-size:15px;color:var(--text-secondary)">Valor “—” em <code>--text-disabled</code> e <code>.ds-alert.ds-alert-info</code> no topo do main: “Estamos recalculando os números deste período.”</p></div></div>
+        <div class="ds-card ds-card-outlined"><div class="ds-card-body"><h3 class="ds-card-title">Tudo em dia</h3><p style="margin:0;font-size:15px;color:var(--text-secondary)">Card de atenção substituído por “Nada aguardando você” + uma frase. A coluna mantém a largura; nada de colapsar o layout.</p></div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px">
+        <div style="background:var(--surface-sunken);border-radius:20px;padding:24px"><div class="ds-overline" style="margin-bottom:8px;color:var(--text-secondary)">Foco</div><p style="margin:0;font-size:15px">Anel sólido 3px <code>--focus-ring</code>, offset 2px, em botões, linhas de pendência, “Ver todas” e busca. Ordem de tabulação: marca → busca → notificações → conta → ações do cabeçalho → tabela → coluna lateral.</p></div>
+        <div style="background:var(--surface-sunken);border-radius:20px;padding:24px"><div class="ds-overline" style="margin-bottom:8px;color:var(--text-secondary)">Leitores de tela</div><p style="margin:0;font-size:15px">Um <code>h1</code> por tela. <code>&lt;table&gt;</code> com <code>&lt;caption class="sr-only"&gt;Matrículas recentes&lt;/caption&gt;</code>. Progresso com <code>role="progressbar"</code>, <code>aria-valuenow/min/max</code>. Chip de status é texto real, não cor sozinha.</p></div>
+        <div style="background:var(--surface-sunken);border-radius:20px;padding:24px"><div class="ds-overline" style="margin-bottom:8px;color:var(--text-secondary)">Responsivo</div><p style="margin:0;font-size:15px">≥1280px: 4 métricas + 2fr/1fr. 960–1279px: métricas em 2 colunas, coluna lateral desce para baixo da tabela. &lt;960px: tudo em coluna única, <code>--main-pad</code> cai para 20px, tabela em <code>.ds-table-scroll</code>, drawer vira overlay.</p></div>
+      </div>
+    </div>
+
+    <!-- 8 · MIGRAÇÃO -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:40px 44px;display:flex;flex-direction:column;gap:24px">
+      <div style="display:flex;align-items:baseline;gap:16px"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">08</span><h2 style="font-size:30px;margin:0">Execução e critérios de aceite</h2></div>
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:40px">
+        <div>
+          <div class="ds-overline" style="color:var(--primary);margin-bottom:12px">Ordem de trabalho</div>
+          <ol style="margin:0;padding-left:22px;font-size:16px;display:flex;flex-direction:column;gap:10px">
+            <li>Ler <code>resources/views/dashboard/index.blade.php</code> e listar todos os <code>dusk="…"</code> existentes antes de tocar na marcação.</li>
+            <li>Trocar o shell (app bar e drawer) — ele é compartilhado e destrava as demais telas.</li>
+            <li>Extrair <code>x-ui.stat-card</code> a partir das quatro métricas (4 ocorrências = componente).</li>
+            <li>Migrar a tabela para <code>.ds-table-wrap</code> + <code>.ds-table.ds-table-hover</code>, com <code>x-ui.progress</code> e <code>x-ui.chip</code> nas células.</li>
+            <li>Montar o card de pendências e o outlined de ranking.</li>
+            <li>Remover todo <code>style=</code> inline e todo JS artesanal remanescente.</li>
+            <li>Rodar <code>artisan dusk</code> filtrado no dashboard e no shell.</li>
+          </ol>
+        </div>
+        <div>
+          <div class="ds-overline" style="color:var(--primary);margin-bottom:12px">Aceite</div>
+          <div style="display:flex;flex-direction:column;gap:10px;font-size:16px">
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Todos os <code>dusk</code> da view original sobrevivem verbatim, no mesmo nó semântico. Wrappers novos (<code>.ds-table-wrap</code>, <code>.ds-field-shell</code>) não recebem <code>dusk</code>.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Zero <code>style=</code> inline e zero cor fora dos tokens no HTML entregue.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Nenhum pixel vermelho, laranja ou amarelo na tela renderizada.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Sentence case em chips, botões e títulos; caixa-alta só no <code>.ds-overline</code>.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Números em pt-BR (vírgula decimal) e datas <code>dd/mm/aaaa</code>.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Estado vazio da tabela com próximo passo acionável.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Alvos de toque ≥48px; foco visível em todos os interativos.</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:2040,&quot;height&quot;:1400}​}"></script>
+</body>
+</html>

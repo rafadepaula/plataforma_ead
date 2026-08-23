@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <meta name="design_doc_mode" content="canvas">
+  <link rel="stylesheet" href="_ds/plataforma-ead-design-system-618bb28f-056b-421b-b1d4-d0fef3cd30e2/styles.css">
+  <script src="_ds/plataforma-ead-design-system-618bb28f-056b-421b-b1d4-d0fef3cd30e2/_ds_bundle.js"></script>
+  <style>
+    a{color:var(--primary);text-decoration:none}
+    a:hover{color:var(--primary-hover)}
+    pre{margin:0;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;line-height:1.7;white-space:pre-wrap;color:var(--grey-800)}
+    code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.92em;background:var(--surface-alt);border-radius:6px;padding:1px 6px}
+  </style>
+</helmet>
+
+<section style="display:flex;flex-direction:column;gap:28px;padding:64px;background:var(--surface-body);font-family:var(--font-sans);color:var(--text-primary);line-height:1.6;width:2040px;box-sizing:border-box">
+
+  <div id="1a" style="display:flex;flex-direction:column;gap:28px">
+
+    <header style="display:flex;align-items:flex-start;justify-content:space-between;gap:48px;background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px">
+      <div style="max-width:1180px;display:flex;flex-direction:column;gap:14px">
+        <div class="ds-overline" style="color:var(--primary)">Especificação de componentes · tela 12 · slide 12</div>
+        <h1 style="font-size:46px;line-height:1.08;margin:0;letter-spacing:-.02em">Fazer a prova — a tela do aluno</h1>
+        <p style="font-size:19px;color:var(--text-secondary);margin:0;text-wrap:pretty">Coluna única de leitura, sem barra lateral e sem distração: cabeçalho com cronômetro, faixa de avisos, uma questão após a outra e um único envio no fim. Especificação componente por componente, com comportamento e vocabulário lidos do código de origem — <code>student/quizzes/show.blade.php</code> e <code>resources/js/modules/QuizTimer.js</code>.</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;align-items:flex-end;flex:none">
+        <span class="ds-chip ds-chip-primary ds-chip-plain ds-chip-lg">1a</span>
+        <span class="ds-caption">8 componentes · 9 blocos</span>
+      </div>
+    </header>
+
+    <div class="ds-alert ds-alert-attention"><div><strong>Duas coisas do slide que o código não faz.</strong> Não existe "Salvar e sair": a prova é <em>uma única submissão</em> — todas as questões vão juntas num POST, e nada é gravado antes disso. E o cronômetro não persiste: ele começa a contar do <em>render desta página</em>, não de um <code>started_at</code> salvo. A frase "você pode salvar e voltar depois" no slide vem do texto de instruções escrito pelo gestor, não de um recurso. Se o cliente quiser salvamento parcial, é trabalho de servidor e precisa de decisão antes do desenho.</div></div>
+
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px">
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">01</div><div style="font-size:17px;font-weight:800">AttemptHeader</div><div class="ds-caption">breadcrumb + cronômetro</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">02</div><div style="font-size:17px;font-weight:800">QuizTimer</div><div class="ds-caption">contrato rígido de nó</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">03</div><div style="font-size:17px;font-weight:800">AttemptNotices</div><div class="ds-caption">4 avisos, ordem fixa</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">04</div><div style="font-size:17px;font-weight:800">QuestionBlock</div><div class="ds-caption">contador + tipo + enunciado</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">05</div><div style="font-size:17px;font-weight:800">OptionChoice</div><div class="ds-caption">alvo grande, radio/checkbox</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">06</div><div style="font-size:17px;font-weight:800">EssayAnswer</div><div class="ds-caption">resposta em texto</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">07</div><div style="font-size:17px;font-weight:800">SubmitBar</div><div class="ds-caption">envio único</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">08</div><div style="font-size:17px;font-weight:800">AnswerKey</div><div class="ds-caption">gabarito depois da nota</div></div></div>
+    </div>
+
+    <!-- 00 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:24px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">00</span><h2 style="font-size:30px;margin:0">O que a tela faz</h2></div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px">
+        <div style="background:var(--blue-50);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">Responder</div><div style="font-size:15px">Todas as questões da prova numa página, na ordem definida pelo gestor. Objetivas por seleção, dissertativas por texto.</div></div>
+        <div style="background:var(--blue-50);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">Enviar</div><div style="font-size:15px">Um botão, uma submissão. A tentativa só passa a existir no servidor depois do envio.</div></div>
+        <div style="background:var(--blue-50);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">Saber onde está</div><div style="font-size:15px">Melhor nota até agora, tentativas já enviadas, tentativa aguardando correção e tempo restante.</div></div>
+        <div style="background:var(--mint-100);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">Cronômetro é aviso</div><div style="font-size:15px">Chegar a zero não envia nem bloqueia nada. O servidor aceita o envio atrasado e o marca como reprovado.</div></div>
+        <div style="background:var(--mint-100);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">Sem tentativa disponível</div><div style="font-size:15px">Se o aluno esgotou as tentativas, o formulário não é renderizado: sobra o aviso e o caminho de volta para a aula.</div></div>
+        <div style="background:var(--mint-100);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">Gabarito</div><div style="font-size:15px">Aparece só quando o gestor habilitou e o aluno já tem uma tentativa corrigida.</div></div>
+      </div>
+
+      <div style="background:var(--surface-sunken);border-radius:20px;padding:28px;box-shadow:inset 0 0 0 1px var(--divider)"><pre>student/quizzes/show.blade.php        — rota aninhada em {lesson}, não em {quiz}
+└── coluna centrada, máx. 640px
+    ├── x-layout.page-header                                  ← 01
+    │   └── slot actions: span[data-quiz-timer]               ← 02
+    ├── alert  melhor nota          (se $bestScore)           ← 03
+    ├── alert  aguardando correção  (se $pendingAttempt)      ← 03
+    ├── card   gabarito             (se $showAnswerKey)       ← 08
+    │
+    ├── SE NÃO pode tentar:
+    │   ├── alert  motivo                                     ← 03
+    │   └── botão  voltar para a lição
+    │
+    └── SE pode tentar:
+        ├── alert  instruções do gestor                       ← 03
+        └── form POST student.quizzes.submit
+            ├── @foreach questão                              ← 04
+            │   ├── "Questão N de M" + chip de tipo
+            │   ├── enunciado
+            │   └── objetiva: labels de opção                 ← 05
+            │       dissertativa: textarea                    ← 06
+            └── Finalizar prova                               ← 07</pre></div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
+        <div style="background:var(--surface-alt);border-radius:16px;padding:20px"><div class="ds-overline" style="margin-bottom:6px">Regra 1</div><div style="font-size:15px">Uma coluna de 640px, centrada, sem drawer e sem cards decorativos. Prova é leitura: a largura de linha manda.</div></div>
+        <div style="background:var(--surface-alt);border-radius:16px;padding:20px"><div class="ds-overline" style="margin-bottom:6px">Regra 2</div><div style="font-size:15px">Nenhum JS novo. <code>QuizTimer.js</code> escreve no <code>textContent</code> do cronômetro — nada além disso roda nesta tela.</div></div>
+        <div style="background:var(--surface-alt);border-radius:16px;padding:20px"><div class="ds-overline" style="margin-bottom:6px">Regra 3</div><div style="font-size:15px">Tempo esgotado usa <code>--attention</code> (cinza), não alerta quente. Nada aqui é urgente nem culpa o aluno.</div></div>
+      </div>
+    </div>
+
+    <!-- 01 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">01</span><h2 style="font-size:30px;margin:0">Cabeçalho da tentativa</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">x-layout.page-header</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">Mesmo componente de cabeçalho do resto do produto, com breadcrumb de quatro níveis — <em>Meus cursos → curso → aula → prova</em> — kicker com o nome do curso, título com o nome da prova e o cronômetro no slot de ações. É o único cabeçalho do produto em que o slot de ações não tem botão.</p>
+
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) 600px;gap:36px;align-items:start">
+        <div style="background:var(--surface-body);border-radius:20px;padding:36px">
+          <div style="max-width:640px;margin:0 auto">
+            <div class="ds-page-header" style="margin:0">
+              <div>
+                <div class="ds-caption" style="margin-bottom:12px"><a href="#1a">Meus cursos</a> / <a href="#1a">Fundamentos de Segurança do Trabalho</a> / <a href="#1a">Prova do módulo 2</a> / Segurança em trabalho em altura</div>
+                <div class="ds-overline" style="color:var(--primary);margin-bottom:8px">Fundamentos de Segurança do Trabalho</div>
+                <h1 class="ds-page-title">Segurança em trabalho em altura</h1>
+                <p class="ds-lead" style="margin:12px 0 0">Responda todas as questões e envie a prova em uma única submissão.</p>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;flex:none"><span style="color:var(--text-secondary)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></span><span style="font-size:20px;font-weight:800;font-variant-numeric:tabular-nums;padding:6px 14px;border-radius:var(--radius-pill);box-shadow:inset 0 0 0 1.5px var(--border-color)" dusk="quiz-timer">19:42</span></div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Conteúdo de cada parte</div>
+            <div style="display:grid;grid-template-columns:150px 1fr;gap:12px 16px;font-size:15px">
+              <code>:breadcrumb</code><span>Meus cursos → curso → aula → prova. Os três primeiros são links; o último, texto.</span>
+              <code>kicker</code><span>Nome do curso. Não repete o módulo — a prova já está no contexto da aula.</span>
+              <code>title</code><span>Título da prova, verbatim do banco. <code>h1</code> único da página.</span>
+              <code>subtitle</code><span>"Responda todas as questões e envie a prova em uma única submissão." — a frase do código, com "quiz" trocado por "prova".</span>
+              <code>actions</code><span>Só o cronômetro, e só quando a prova tem limite de tempo.</span>
+              <span style="font-weight:700">largura</span><span>640px, centrada. A coluna de leitura é a mesma da aula em texto.</span>
+            </div>
+          </div>
+          <div class="ds-alert ds-alert-info"><div><strong>Sem barra lateral.</strong> O drawer do shell fica recolhido nesta tela e a app bar mantém só a marca e o avatar. Nada de busca, nada de notificações durante a prova.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 02 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">02</span><h2 style="font-size:30px;margin:0">Cronômetro</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">data-quiz-timer</span><span class="ds-chip ds-chip-critical">contrato rígido</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">O componente mais restrito da tela. O <code>QuizTimer.js</code> escreve em <code>container.textContent</code> a cada segundo — então o elemento do cronômetro <strong>não pode ter nenhum filho estrutural</strong>. Sem ícone dentro, sem <code>&lt;span&gt;</code> aninhado, sem badge. Um ícone ao lado é permitido desde que seja <em>irmão</em>, fora do nó marcado.</p>
+
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) 620px;gap:36px;align-items:start">
+        <div style="background:var(--surface-body);border-radius:20px;padding:36px;display:flex;flex-direction:column;gap:26px">
+          <div><div class="ds-overline" style="margin-bottom:10px">Contando</div><div style="display:flex;align-items:center;gap:10px"><span style="color:var(--text-secondary)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></span><span style="font-size:20px;font-weight:800;font-variant-numeric:tabular-nums;padding:6px 14px;border-radius:var(--radius-pill);box-shadow:inset 0 0 0 1.5px var(--border-color)">19:42</span></div><div class="ds-caption" style="margin-top:8px">Formato <code>mm:ss</code> com zero à esquerda. Números tabulares para a largura não oscilar.</div></div>
+          <div><div class="ds-overline" style="margin-bottom:10px">Antes do primeiro tique</div><div style="display:flex;align-items:center;gap:10px"><span style="color:var(--text-secondary)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></span><span style="font-size:20px;font-weight:800;font-variant-numeric:tabular-nums;padding:6px 14px;border-radius:var(--radius-pill);box-shadow:inset 0 0 0 1.5px var(--border-color);color:var(--text-secondary)">--:--</span></div><div class="ds-caption" style="margin-top:8px">Conteúdo inicial do servidor, verbatim. Substituído em menos de um segundo.</div></div>
+          <div><div class="ds-overline" style="margin-bottom:10px">Tempo esgotado</div><div style="display:flex;align-items:center;gap:10px"><span style="color:var(--on-attention-container)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></span><span style="font-size:20px;font-weight:800;padding:6px 14px;border-radius:var(--radius-pill);background:var(--attention-container);color:var(--on-attention-container)">Tempo esgotado</span></div><div class="ds-caption" style="margin-top:8px">Pintado por <code>classList.add('ds-tone-attention')</code>. Cinza, nunca vermelho. O texto renderizado é <strong>exatamente</strong> "Tempo esgotado" — um teste espera por ele.</div></div>
+          <div class="ds-alert ds-alert-info" style="max-width:520px"><div>O formulário continua ativo depois de zerar. O aluno ainda pode responder e enviar; o servidor aceita e marca como reprovado.</div></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">O que não pode mudar</div>
+            <div style="display:flex;flex-direction:column;gap:10px;font-size:15px">
+              <div><strong>Um só elemento.</strong> <code>[data-quiz-timer]</code>, <code>data-started-at</code>, <code>data-time-limit-minutes</code> e <code>dusk="quiz-timer"</code> ficam todos no <em>mesmo</em> <code>&lt;span&gt;</code>.</div>
+              <div><strong>Sem filhos.</strong> O módulo sobrescreve <code>textContent</code>: qualquer ícone ou <code>&lt;span&gt;</code> dentro é apagado no primeiro tique.</div>
+              <div><strong>Não é badge nem chip.</strong> Essas classes trazem <code>text-transform: uppercase</code>, e o teste leria "TEMPO ESGOTADO". Use as mesmas bordas do chip <code>outline</code>, sem a classe do chip.</div>
+              <div><strong>Sem <code>style</code> inline no estado expirado.</strong> A cor vem de <code>ds-tone-attention</code> — <code>--attention-container</code> / <code>--on-attention-container</code>.</div>
+              <div><strong>Só quando há limite.</strong> Sem <code>time_limit_minutes</code>, o slot de ações não existe.</div>
+            </div>
+          </div>
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Tokens e medidas</div>
+            <div style="display:grid;grid-template-columns:190px 1fr;gap:10px 16px;font-size:15px">
+              <span style="font-weight:700">tipografia</span><span>20px, peso 800, <code>font-variant-numeric: tabular-nums</code></span>
+              <code>--radius-pill</code><span>forma da cápsula</span>
+              <code>--border-color</code><span>contorno 1,5px no estado normal</span>
+              <code>--attention-container</code><span>fundo no estado expirado</span>
+              <span style="font-weight:700">ícone</span><span><code>clock</code> 20px, <strong>fora</strong> do nó do cronômetro, 10px de distância</span>
+              <span style="font-weight:700">posição</span><span>Slot de ações do cabeçalho. Em telas estreitas, colado ao topo da coluna, sem fixar na rolagem.</span>
+            </div>
+          </div>
+          <div style="background:var(--surface-sunken);border-radius:16px;padding:22px;box-shadow:inset 0 0 0 1px var(--divider)"><pre>{{ bladeTimer }}</pre></div>
+          <div class="ds-alert ds-alert-attention"><div><strong>O slide viola este contrato.</strong> Na apresentação o cronômetro é um chip com ícone dentro. Na implementação, o ícone sai para fora do <code>&lt;span&gt;</code> e a classe de chip não é usada. É correção obrigatória, não escolha estética.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 03 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">03</span><h2 style="font-size:30px;margin:0">Faixa de avisos</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">x-ui.alert</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">Até quatro alertas tonais entre o cabeçalho e o formulário, sempre nesta ordem: melhor nota, tentativa aguardando correção, motivo de não poder tentar, instruções do gestor. Nenhum é dispensável pelo aluno e nenhum usa matiz de alerta — a hierarquia é dada pela ordem e pelo tom, não pela cor quente.</p>
+
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) 600px;gap:36px;align-items:start">
+        <div style="background:var(--surface-body);border-radius:20px;padding:36px;display:flex;flex-direction:column;gap:14px">
+          <div class="ds-alert ds-alert-success" dusk="quiz-best-score"><div>Sua melhor nota até agora: <strong>80%</strong> (2 tentativas enviadas).</div></div>
+          <div class="ds-alert ds-alert-attention" dusk="quiz-pending-grading"><div>Você tem uma tentativa aguardando correção manual de questões dissertativas.</div></div>
+          <div class="ds-alert ds-alert-info"><div><div style="font-weight:700;margin-bottom:4px">Antes de começar</div>São 3 questões e 20 minutos. Tentativa 1 de 3.</div></div>
+          <div class="ds-alert ds-alert-danger" dusk="quiz-cannot-attempt"><div>Você atingiu o número máximo de tentativas (3) para esta prova.</div></div>
+          <a class="ds-btn ds-btn-tonal" href="#1a" dusk="back-to-lesson" style="align-self:flex-start">Voltar para a aula</a>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Os quatro avisos</div>
+            <div style="display:grid;grid-template-columns:200px 1fr;gap:12px 16px;font-size:15px">
+              <code>quiz-best-score</code><span>Só com nota anterior. Tom <code>success</code>. "Sua melhor nota até agora: <strong>X%</strong> (N tentativas enviadas)." Singular quando N é 1.</span>
+              <code>quiz-pending-grading</code><span>Tom <code>attention</code>. Texto verbatim: "Você tem uma tentativa aguardando correção manual de questões dissertativas."</span>
+              <code>quiz-cannot-attempt</code><span>Tom <code>danger</code> (<code>--critical</code>). Dois textos: sem novas tentativas permitidas, ou máximo atingido com o número.</span>
+              <span style="font-weight:700">instruções</span><span>Tom <code>info</code>, com título "Antes de começar". Texto do gestor, verbatim, sem reescrever.</span>
+            </div>
+          </div>
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Textos — verbatim</div>
+            <div style="display:flex;flex-direction:column;gap:8px;font-size:15px">
+              <div>"Você tem uma tentativa aguardando correção manual de questões dissertativas."</div>
+              <div>"Este questionário não permite novas tentativas." → nesta interface, "Esta prova não permite novas tentativas."</div>
+              <div>"Você atingiu o número máximo de tentativas (N) para este questionário." → "…para esta prova."</div>
+              <div class="ds-caption">A troca de "questionário" por "prova" é a mesma decisão de vocabulário do canvas de autoria — precisa da confirmação do cliente antes de valer.</div>
+            </div>
+          </div>
+          <div style="background:var(--surface-sunken);border-radius:16px;padding:22px;box-shadow:inset 0 0 0 1px var(--divider)"><pre>{{ bladeNotices }}</pre></div>
+          <div class="ds-alert ds-alert-info"><div><strong>Sem tentativa disponível.</strong> O formulário inteiro deixa de ser renderizado — não é um formulário desabilitado. Fica o aviso e o botão "Voltar para a aula" (<code>dusk="back-to-lesson"</code>).</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 04 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">04</span><h2 style="font-size:30px;margin:0">Bloco de questão</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">quiz-question-{id}</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">Uma questão por bloco, empilhadas com 48px entre elas — separação por espaço, não por card nem por borda. Cada bloco abre com a linha de contexto (<em>Questão N de M</em> à esquerda, chip do tipo à direita), depois o enunciado, depois as respostas. O número é posicional, calculado no render.</p>
+
+      <div style="display:grid;grid-template-columns:660px minmax(0,1fr);gap:40px;align-items:start">
+        <div style="background:var(--surface-body);border-radius:20px;padding:36px;display:flex;flex-direction:column;gap:48px">
+          <div dusk="quiz-question-12">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px"><span class="ds-overline">Questão 1 de 3</span><span class="ds-chip ds-chip-outline ds-chip-plain">Única escolha</span></div>
+            <h3 style="font-size:20px;margin:0 0 16px">Qual equipamento é obrigatório em trabalho em altura?</h3>
+            <div style="display:flex;flex-direction:column;gap:12px">
+              <label style="display:flex;align-items:center;gap:16px;padding:16px 20px;background:var(--surface);border:1.5px solid var(--primary);border-radius:14px;cursor:pointer;box-shadow:var(--elev-1)"><input type="radio" name="d-q1" class="ds-check-input" checked=""><span>Cinto de segurança tipo paraquedista</span></label>
+              <label style="display:flex;align-items:center;gap:16px;padding:16px 20px;background:var(--surface);border:1.5px solid var(--border-color);border-radius:14px;cursor:pointer"><input type="radio" name="d-q1" class="ds-check-input"><span>Óculos de proteção</span></label>
+              <label style="display:flex;align-items:center;gap:16px;padding:16px 20px;background:var(--surface);border:1.5px solid var(--border-color);border-radius:14px;cursor:pointer"><input type="radio" name="d-q1" class="ds-check-input"><span>Protetor auricular</span></label>
+            </div>
+          </div>
+          <div dusk="quiz-question-13">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px"><span class="ds-overline">Questão 2 de 3</span><span class="ds-chip ds-chip-outline ds-chip-plain">Múltipla escolha</span></div>
+            <h3 style="font-size:20px;margin:0 0 8px">Quais itens compõem a análise preliminar de risco?</h3>
+            <div class="ds-form-text" style="margin:0 0 16px">Selecione todas as respostas que se aplicam.</div>
+            <div style="display:flex;flex-direction:column;gap:12px">
+              <label style="display:flex;align-items:center;gap:16px;padding:16px 20px;background:var(--surface);border:1.5px solid var(--primary);border-radius:14px;cursor:pointer;box-shadow:var(--elev-1)"><input type="checkbox" class="ds-check-input" checked=""><span>Identificação dos perigos da atividade</span></label>
+              <label style="display:flex;align-items:center;gap:16px;padding:16px 20px;background:var(--surface);border:1.5px solid var(--primary);border-radius:14px;cursor:pointer;box-shadow:var(--elev-1)"><input type="checkbox" class="ds-check-input" checked=""><span>Medidas de controle antes do início</span></label>
+              <label style="display:flex;align-items:center;gap:16px;padding:16px 20px;background:var(--surface);border:1.5px solid var(--border-color);border-radius:14px;cursor:pointer"><input type="checkbox" class="ds-check-input"><span>Ordem de serviço assinada pelo cliente</span></label>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Partes do bloco</div>
+            <div style="display:grid;grid-template-columns:170px 1fr;gap:12px 16px;font-size:15px">
+              <span style="font-weight:700">Contador</span><span>"Questão N de M", <code>.ds-overline</code>. Diz ao aluno quanto falta sem barra de progresso.</span>
+              <span style="font-weight:700">Chip de tipo</span><span><code>outline plain</code>, à direita, na mesma linha do contador. Rótulos: Única escolha · Múltipla escolha · Verdadeiro ou Falso · Dissertativa.</span>
+              <span style="font-weight:700">Enunciado</span><span><code>h3</code>, 20px, peso 700, <code>text-wrap: pretty</code>. Sem limite de linhas: enunciado nunca é truncado.</span>
+              <span style="font-weight:700">Ajuda</span><span>Só em múltipla escolha: "Selecione todas as respostas que se aplicam." Adição desta especificação — o código não distingue os dois tipos na interface.</span>
+              <span style="font-weight:700">Respostas</span><span>Opções (bloco 05) ou textarea (bloco 06).</span>
+              <span style="font-weight:700">Separação</span><span>48px entre blocos. Sem divisor, sem card por questão.</span>
+            </div>
+          </div>
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Contrato técnico</div>
+            <div style="display:grid;grid-template-columns:210px 1fr;gap:10px 16px;font-size:15px">
+              <code>quiz-question-{id}</code><span><code>dusk</code> no bloco da questão</span>
+              <span style="font-weight:700">ordem</span><span><code>order_index</code>, definido pelo gestor. A tela não reordena nada.</span>
+              <span style="font-weight:700">todas juntas</span><span>Não há paginação nem "próxima questão": a prova inteira está na página.</span>
+            </div>
+          </div>
+          <div style="background:var(--surface-sunken);border-radius:16px;padding:22px;box-shadow:inset 0 0 0 1px var(--divider)"><pre>{{ bladeQuestion }}</pre></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 05 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">05</span><h2 style="font-size:30px;margin:0">Opção de resposta</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">quiz-option-{q}-{o}</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">Cada opção é um <code>&lt;label&gt;</code> inteiro clicável — 56px de altura, controle à esquerda, texto ocupando o resto. O controle é <code>radio</code> em única escolha e verdadeiro ou falso, <code>checkbox</code> em múltipla escolha; o <code>name</code> enviado é o mesmo nos dois casos. Selecionada, a opção ganha borda <code>--primary</code> e elevação 1: destaque por contorno, não por preenchimento colorido.</p>
+
+      <div style="display:grid;grid-template-columns:660px minmax(0,1fr);gap:40px;align-items:start">
+        <div style="background:var(--surface-body);border-radius:20px;padding:36px;display:flex;flex-direction:column;gap:20px">
+          <div><div class="ds-overline" style="margin-bottom:10px">Repouso</div><label style="display:flex;align-items:center;gap:16px;padding:16px 20px;background:var(--surface);border:1.5px solid var(--border-color);border-radius:14px;cursor:pointer"><input type="radio" name="d-s" class="ds-check-input"><span>Óculos de proteção</span></label></div>
+          <div><div class="ds-overline" style="margin-bottom:10px">Hover</div><label style="display:flex;align-items:center;gap:16px;padding:16px 20px;background:var(--blue-50);border:1.5px solid var(--border-strong);border-radius:14px;cursor:pointer"><input type="radio" name="d-s" class="ds-check-input"><span>Protetor auricular</span></label></div>
+          <div><div class="ds-overline" style="margin-bottom:10px">Selecionada</div><label style="display:flex;align-items:center;gap:16px;padding:16px 20px;background:var(--surface);border:1.5px solid var(--primary);border-radius:14px;cursor:pointer;box-shadow:var(--elev-1)"><input type="radio" name="d-s" class="ds-check-input" checked=""><span style="font-weight:600">Cinto de segurança tipo paraquedista</span></label></div>
+          <div><div class="ds-overline" style="margin-bottom:10px">Foco por teclado</div><label style="display:flex;align-items:center;gap:16px;padding:16px 20px;background:var(--surface);border:1.5px solid var(--primary);border-radius:14px;cursor:pointer;box-shadow:0 0 0 4px var(--focus-ring-alpha)"><input type="radio" name="d-s2" class="ds-check-input"><span>Cinto de segurança tipo paraquedista</span></label></div>
+          <div><div class="ds-overline" style="margin-bottom:10px">Texto longo</div><label style="display:flex;align-items:flex-start;gap:16px;padding:16px 20px;background:var(--surface);border:1.5px solid var(--border-color);border-radius:14px;cursor:pointer"><input type="checkbox" class="ds-check-input" style="margin-top:2px"><span style="text-wrap:pretty">Verificar as condições do ponto de ancoragem, a validade do talabarte e o registro da permissão de trabalho antes de iniciar a atividade em altura.</span></label><div class="ds-caption" style="margin-top:8px">Alinhamento passa a <code>flex-start</code> e o controle ganha 2px de recuo no topo.</div></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Especificação</div>
+            <div style="display:grid;grid-template-columns:170px 1fr;gap:12px 16px;font-size:15px">
+              <span style="font-weight:700">alvo</span><span>O <code>&lt;label&gt;</code> inteiro. Altura mínima 56px, padding 16px/20px, gap 16px, raio 14px.</span>
+              <span style="font-weight:700">controle</span><span><code>.ds-check-input</code> 22px. <code>radio</code> em única escolha e verdadeiro ou falso; <code>checkbox</code> em múltipla escolha.</span>
+              <span style="font-weight:700">repouso</span><span>Fundo <code>--surface</code>, borda 1,5px <code>--border-color</code>.</span>
+              <span style="font-weight:700">hover</span><span>Fundo <code>--blue-50</code>, borda <code>--border-strong</code>, 120ms.</span>
+              <span style="font-weight:700">selecionada</span><span>Borda <code>--primary</code>, <code>--elev-1</code>, texto peso 600. Sem preenchimento azul.</span>
+              <span style="font-weight:700">foco</span><span>Anel de 4px <code>--focus-ring-alpha</code> no label, não só no controle.</span>
+              <span style="font-weight:700">espaço</span><span>12px entre opções.</span>
+            </div>
+          </div>
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Contrato técnico</div>
+            <div style="display:grid;grid-template-columns:230px 1fr;gap:10px 16px;font-size:15px">
+              <span style="font-weight:700">name</span><span><code>answers[{questão}][selected_option_ids][]</code> — igual para radio e checkbox</span>
+              <span style="font-weight:700">value</span><span>Id da opção</span>
+              <code>quiz-option-{q}-{o}</code><span><code>dusk</code> no <code>&lt;input&gt;</code>, nunca no label</span>
+              <span style="font-weight:700">reenvio</span><span>Após erro de validação, <code>old('answers')</code> remarca o que o aluno havia escolhido</span>
+              <span style="font-weight:700">sem gabarito</span><span>Nada aqui indica certo ou errado durante a prova</span>
+            </div>
+          </div>
+          <div style="background:var(--surface-sunken);border-radius:16px;padding:22px;box-shadow:inset 0 0 0 1px var(--divider)"><pre>{{ bladeOption }}</pre></div>
+          <div class="ds-alert ds-alert-info"><div><strong>Verdadeiro ou Falso.</strong> São duas opções como quaisquer outras, com os textos gravados pelo gestor. A tela não trata esse tipo de forma especial.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 06 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">06</span><h2 style="font-size:30px;margin:0">Resposta dissertativa</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">quiz-essay-{id}</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">Um único <code>textarea</code> com rótulo flutuante "Sua resposta", quatro linhas iniciais, redimensionável na vertical. Vem acompanhado de uma linha dizendo que a correção é do gestor — o aluno precisa saber que essa questão não entra na nota imediata.</p>
+
+      <div style="display:grid;grid-template-columns:660px minmax(0,1fr);gap:40px;align-items:start">
+        <div style="background:var(--surface-body);border-radius:20px;padding:36px">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px"><span class="ds-overline">Questão 3 de 3</span><span class="ds-chip ds-chip-outline ds-chip-plain">Dissertativa</span></div>
+          <h3 style="font-size:20px;margin:0 0 16px">Descreva o procedimento de bloqueio e etiquetagem antes de uma manutenção.</h3>
+          <div class="ds-field" style="margin-bottom:0"><div class="ds-field-shell"><textarea class="ds-control" rows="5"></textarea><label class="ds-float-label">Sua resposta</label></div><div class="ds-form-text">Esta questão é corrigida pelo responsável do curso, depois do envio.</div></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Especificação</div>
+            <div style="display:grid;grid-template-columns:170px 1fr;gap:12px 16px;font-size:15px">
+              <span style="font-weight:700">rótulo</span><span>"Sua resposta", flutuante. Verbatim do código.</span>
+              <span style="font-weight:700">altura</span><span>5 linhas iniciais, <code>resize: vertical</code>. Não cresce sozinho.</span>
+              <span style="font-weight:700">ajuda</span><span>"Esta questão é corrigida pelo responsável do curso, depois do envio." Adição desta especificação, para explicar por que a nota sai incompleta.</span>
+              <span style="font-weight:700">name</span><span><code>answers[{questão}][essay_answer]</code></span>
+              <code>quiz-essay-{id}</code><span><code>dusk</code> no <code>textarea</code></span>
+              <span style="font-weight:700">contador</span><span>Não existe limite de caracteres no servidor. Não invente "mínimo de 200 caracteres" — o slide mostra isso, o código não tem.</span>
+            </div>
+          </div>
+          <div style="background:var(--surface-sunken);border-radius:16px;padding:22px;box-shadow:inset 0 0 0 1px var(--divider)"><pre>{{ bladeEssay }}</pre></div>
+          <div class="ds-alert ds-alert-attention"><div><strong>Se o cliente quiser mínimo de caracteres</strong>, é regra nova de validação no servidor mais contador na interface. Não implemente só o texto de ajuda: um aviso sem regra é pior que nenhum.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 07 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">07</span><h2 style="font-size:30px;margin:0">Envio</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">quiz-attempt-submit</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">Uma ação, no fim da coluna: <strong>Finalizar prova</strong>. Não há rascunho, não há "salvar e sair", não há botão secundário competindo. Como o envio é irreversível e consome uma tentativa, ele passa por uma confirmação que diz quantas questões ficaram sem resposta.</p>
+
+      <div style="display:grid;grid-template-columns:660px minmax(0,1fr);gap:40px;align-items:start">
+        <div style="background:var(--surface-body);border-radius:20px;padding:36px;display:flex;flex-direction:column;gap:24px">
+          <div class="ds-form-actions" style="margin-top:0;justify-content:flex-end"><button class="ds-btn ds-btn-primary" dusk="quiz-attempt-submit"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>Finalizar prova</button></div>
+          <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-5);padding:32px;max-width:520px;display:flex;flex-direction:column;gap:16px">
+            <span style="width:52px;height:52px;border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;background:var(--primary-container);color:var(--on-primary-container)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></span>
+            <h3 style="font-size:24px;margin:0">Enviar esta tentativa?</h3>
+            <p class="ds-muted" style="margin:0">Uma questão ficou sem resposta. Depois do envio você não poderá alterar as respostas. Esta é a tentativa 1 de 3.</p>
+            <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:8px"><button class="ds-btn ds-btn-ghost">Voltar e revisar</button><button class="ds-btn ds-btn-primary">Enviar tentativa</button></div>
+          </div>
+          <div style="display:flex;gap:14px;flex-wrap:wrap"><span class="ds-chip ds-chip-neutral">Enviando…</span><span class="ds-caption">Botão desabilitado e com rótulo "Enviando…" até a resposta. Nada de duplo envio.</span></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Especificação</div>
+            <div style="display:grid;grid-template-columns:180px 1fr;gap:12px 16px;font-size:15px">
+              <span style="font-weight:700">rótulo</span><span>"Finalizar prova". No código é "Finalizar Quiz" — mesma ação, caixa e vocabulário ajustados.</span>
+              <span style="font-weight:700">posição</span><span>Fim da coluna, alinhado à direita, acima de 32px de respiro. Não é fixo na tela.</span>
+              <span style="font-weight:700">confirmação</span><span>Diálogo que informa questões sem resposta e a tentativa em curso. Tom <code>primary</code>, não destrutivo — enviar é o objetivo do aluno.</span>
+              <span style="font-weight:700">em andamento</span><span>Botão desabilitado, rótulo "Enviando…", formulário inerte.</span>
+              <span style="font-weight:700">depois do envio</span><span>Redireciona para o resultado: nota preliminar das objetivas e aviso de dissertativas em correção.</span>
+              <code>quiz-attempt-form</code><span><code>dusk</code> no <code>&lt;form&gt;</code></span>
+              <code>quiz-attempt-submit</code><span><code>dusk</code> no botão de envio</span>
+            </div>
+          </div>
+          <div style="background:var(--surface-sunken);border-radius:16px;padding:22px;box-shadow:inset 0 0 0 1px var(--divider)"><pre>{{ bladeSubmit }}</pre></div>
+          <div class="ds-alert ds-alert-attention"><div><strong>A confirmação é adição.</strong> Hoje o clique envia direto. Se um teste clica em <code>quiz-attempt-submit</code> e espera o resultado, ele passa a precisar de um segundo clique — ajuste o teste na mesma tarefa, nunca o seletor.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 08 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">08</span><h2 style="font-size:30px;margin:0">Gabarito</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">quiz-answer-key</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">Um card acima do formulário, mostrado só quando o gestor marcou "Exibir gabarito ao aluno após envio" <em>e</em> o aluno já tem uma tentativa corrigida. Cada questão aparece numerada, com as opções listadas e a correta marcada; em dissertativa, o resultado da correção manual. A opção correta é menta, o mesmo verde da autoria — coerência entre as duas telas.</p>
+
+      <div style="display:grid;grid-template-columns:660px minmax(0,1fr);gap:40px;align-items:start">
+        <div style="background:var(--surface-body);border-radius:20px;padding:36px">
+          <div class="ds-card" dusk="quiz-answer-key"><div class="ds-card-body">
+            <h3 class="ds-card-title">Gabarito</h3>
+            <p class="ds-muted" style="margin:0">Referente à sua tentativa corrigida em 12/07/2026.</p>
+            <div style="display:flex;flex-direction:column;gap:20px;margin-top:8px">
+              <div dusk="answer-key-question-12">
+                <div style="font-weight:700;margin-bottom:8px">1. Qual equipamento é obrigatório em trabalho em altura?</div>
+                <div style="display:flex;flex-direction:column;gap:6px">
+                  <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--mint-100);border-radius:10px"><span style="color:var(--secondary)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></span><span style="font-weight:600">Cinto de segurança tipo paraquedista</span><span class="ds-caption" style="margin-left:auto">resposta correta</span></div>
+                  <div style="display:flex;align-items:center;gap:10px;padding:8px 12px"><span style="width:16px"></span><span style="color:var(--text-secondary)">Óculos de proteção</span></div>
+                  <div style="display:flex;align-items:center;gap:10px;padding:8px 12px"><span style="width:16px"></span><span style="color:var(--text-secondary)">Protetor auricular</span></div>
+                </div>
+              </div>
+              <div dusk="answer-key-question-14">
+                <div style="font-weight:700;margin-bottom:8px">3. Descreva o procedimento de bloqueio e etiquetagem.</div>
+                <span class="ds-chip ds-chip-success">Correta</span>
+              </div>
+            </div>
+          </div></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Especificação</div>
+            <div style="display:grid;grid-template-columns:230px 1fr;gap:12px 16px;font-size:15px">
+              <span style="font-weight:700">quando aparece</span><span><code>show_correct_answers</code> ligado <strong>e</strong> tentativa com <code>status = graded</code>. Faltando um dos dois, o card não existe.</span>
+              <span style="font-weight:700">numeração</span><span>Posicional, "N. enunciado", peso 700.</span>
+              <span style="font-weight:700">opção correta</span><span>Fundo <code>--mint-100</code>, ícone <code>check</code> em <code>--secondary</code>, texto peso 600 e o rótulo "resposta correta" à direita.</span>
+              <span style="font-weight:700">demais opções</span><span><code>--text-secondary</code>, sem ícone, sem tachado.</span>
+              <span style="font-weight:700">dissertativa</span><span>Chip <code>success</code> "Correta" ou <code>neutral</code> "Incorreta", conforme a correção do gestor. Não mostra a resposta esperada.</span>
+              <code>quiz-answer-key</code><span><code>dusk</code> no card</span>
+              <code>answer-key-question-{id}</code><span><code>dusk</code> por questão</span>
+              <code>answer-key-option-{id}</code><span><code>dusk</code> por opção</span>
+            </div>
+          </div>
+          <div style="background:var(--surface-sunken);border-radius:16px;padding:22px;box-shadow:inset 0 0 0 1px var(--divider)"><pre>{{ bladeAnswerKey }}</pre></div>
+          <div class="ds-alert ds-alert-info"><div><strong>Incorreta não é vermelho.</strong> Dissertativa incorreta usa chip neutro. A informação está no texto, não na cor.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 09 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">09</span><h2 style="font-size:30px;margin:0">Estados, contrato e aceite</h2></div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:32px">
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="ds-overline">Erro de validação</div>
+          <div class="ds-alert ds-alert-danger"><div><div style="font-weight:700;margin-bottom:4px">Faltou responder</div>Responda a questão 2 para enviar a prova.</div></div>
+          <div class="ds-caption">Alerta no topo da coluna com o número da questão, e a questão em falta recebe borda <code>--critical</code>. As respostas já dadas voltam marcadas por <code>old('answers')</code>.</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="ds-overline">Prova sem questões</div>
+          <div class="ds-empty" style="padding:32px 24px">
+            <div class="ds-empty-icon"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11h6"></path><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6"></path></svg></div>
+            <div style="font-size:18px;font-weight:700">Esta prova ainda não tem questões</div>
+            <p class="ds-muted" style="margin:0;font-size:15px">Avise o responsável pelo curso. Você poderá fazer a prova assim que ela for publicada.</p>
+          </div>
+          <div class="ds-caption">Estado não coberto pelo código atual. Sem ele, o aluno veria um formulário vazio com um botão de enviar.</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="ds-overline">Responsivo</div>
+          <div style="display:grid;grid-template-columns:130px 1fr;gap:10px 16px;font-size:15px">
+            <span style="font-weight:700">≥ 840px</span><span>coluna de 640px centrada; cronômetro no slot de ações</span>
+            <span style="font-weight:700">&lt; 840px</span><span>coluna com 20px de margem; cronômetro abaixo do título, alinhado à esquerda</span>
+            <span style="font-weight:700">opções</span><span>altura mínima 56px em qualquer largura; texto quebra em várias linhas</span>
+            <span style="font-weight:700">envio</span><span>botão em 100% da largura abaixo de 840px</span>
+          </div>
+          <div class="ds-caption">Nenhum elemento fixo na rolagem: barra fixa em tela pequena come a área de leitura.</div>
+        </div>
+      </div>
+
+      <div style="height:1px;background:var(--divider)"></div>
+
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:36px">
+        <div>
+          <div class="ds-overline" style="margin-bottom:12px">Contrato dusk e data-* — nenhum destes muda</div>
+          <div style="display:grid;grid-template-columns:270px 1fr;gap:10px 16px;font-size:15px">
+            <code>quiz-timer</code><span>cronômetro; mesmo nó dos <code>data-*</code></span>
+            <code>quiz-best-score</code><span>alerta de melhor nota</span>
+            <code>quiz-pending-grading</code><span>alerta de correção pendente</span>
+            <code>quiz-cannot-attempt</code><span>alerta de tentativas esgotadas</span>
+            <code>back-to-lesson</code><span>voltar para a aula</span>
+            <code>quiz-attempt-form</code><span>o <code>&lt;form&gt;</code> da tentativa</span>
+            <code>quiz-question-{id}</code><span>bloco da questão</span>
+            <code>quiz-option-{q}-{o}</code><span><code>&lt;input&gt;</code> da opção</span>
+            <code>quiz-essay-{id}</code><span><code>textarea</code> da dissertativa</span>
+            <code>quiz-attempt-submit</code><span>botão de envio</span>
+            <code>quiz-answer-key</code><span>card do gabarito</span>
+            <code>answer-key-question-{id}</code><span>questão no gabarito</span>
+            <code>answer-key-option-{id}</code><span>opção no gabarito</span>
+            <span><code>data-quiz-timer</code> / <code>data-started-at</code> / <code>data-time-limit-minutes</code></span><span>no mesmo <code>&lt;span&gt;</code> do cronômetro</span>
+            <span style="font-weight:700">answers[…]</span><span><code>[selected_option_ids][]</code> e <code>[essay_answer]</code>, por id de questão</span>
+          </div>
+        </div>
+        <div>
+          <div class="ds-overline" style="margin-bottom:12px">Critérios de aceite</div>
+          <div style="display:flex;flex-direction:column;gap:10px;font-size:15px">
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>O cronômetro é um único <code>&lt;span&gt;</code> sem filhos, com os três <code>data-*</code> e o <code>dusk</code>, e sem classe de badge ou chip.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Ao zerar, o texto renderizado é exatamente "Tempo esgotado", pintado por <code>ds-tone-attention</code>, e o formulário continua enviável.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Nenhum <code>style</code> inline em estado de cronômetro; nenhum caixa-alta que altere o texto lido pelo teste.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Textos dos quatro avisos preservados, com a única troca de "questionário" por "prova" — se confirmada.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Sem tentativa disponível, o formulário não é renderizado; sobra o aviso e o botão de voltar.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Um envio para toda a prova, com todos os <code>answers[…]</code> na mesma requisição.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span><code>radio</code> em única escolha e verdadeiro ou falso, <code>checkbox</code> em múltipla escolha, com o mesmo <code>name</code>.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Após erro, as respostas do aluno voltam marcadas e preenchidas.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Gabarito só com <code>show_correct_answers</code> e tentativa corrigida; correta em menta, incorreta em neutro.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Zero vermelho, laranja ou amarelo. Zero caixa-alta fora do overline. Todo texto em pt-BR, segunda pessoa.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Toda opção é alcançável e selecionável por teclado, com foco visível no label.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span><code>artisan dusk</code> filtrado em <code>StudentQuizAttemptTest</code> passa sem alteração de seletor.</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const Z = "\u200B";
+const b = (s) => s.split("{{").join("{" + Z + "{").split("}}").join("}" + Z + "}");
+
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      bladeTimer: b(`{{-- student/quizzes/show.blade.php — slot de ações --}}
+{{-- CONTRATO COM QuizTimer.js: um único nó, sem filhos. O módulo
+     sobrescreve textContent a cada segundo. O ícone é IRMÃO, fora
+     do span. Não use classe de badge/chip: elas aplicam
+     text-transform:uppercase e o teste lê o texto renderizado. --}}
+@if($canAttempt && $quiz->time_limit_minutes)
+  <x-slot:actions>
+    <span class="ds-timer-wrap">
+      <x-ui.icon name="clock" size="20" aria-hidden="true" />
+
+      <span class="ds-timer"
+            data-quiz-timer
+            data-started-at="{{ now()->toIso8601String() }}"
+            data-time-limit-minutes="{{ $quiz->time_limit_minutes }}"
+            dusk="quiz-timer">--:--</span>
+    </span>
+  </x-slot:actions>
+@endif`),
+
+      bladeNotices: b(`{{-- faixa de avisos, nesta ordem --}}
+@if($bestScore !== null)
+  <x-ui.alert variant="success" dusk="quiz-best-score">
+    Sua melhor nota até agora: <strong>{{ $bestScore }}%</strong>
+    ({{ $completedAttempts }}
+     {{ $completedAttempts === 1 ? 'tentativa enviada' : 'tentativas enviadas' }}).
+  </x-ui.alert>
+@endif
+
+@if($pendingAttempt)
+  <x-ui.alert variant="attention" dusk="quiz-pending-grading">
+    Você tem uma tentativa aguardando correção manual de questões dissertativas.
+  </x-ui.alert>
+@endif
+
+@if(! $canAttempt)
+  <x-ui.alert variant="danger" dusk="quiz-cannot-attempt">
+    @if(! $quiz->allow_retries)
+      Esta prova não permite novas tentativas.
+    @else
+      Você atingiu o número máximo de tentativas ({{ $quiz->max_attempts }}) para esta prova.
+    @endif
+  </x-ui.alert>
+
+  <x-ui.button variant="tonal"
+               :href="route('classroom.lesson', $lesson)"
+               dusk="back-to-lesson">Voltar para a aula</x-ui.button>
+@else
+  @if($quiz->instructions)
+    <x-ui.alert variant="info" title="Antes de começar">
+      {{ $quiz->instructions }}
+    </x-ui.alert>
+  @endif
+@endif`),
+
+      bladeQuestion: b(`{{-- um bloco por questão, dentro do form --}}
+@foreach($quiz->questions as $index => $question)
+  @php
+    $number   = $index + 1;
+    $selected = $oldAnswers[$question->id]['selected_option_ids'] ?? [];
+    $essay    = $oldAnswers[$question->id]['essay_answer'] ?? '';
+  @endphp
+
+  <div class="ds-question" dusk="quiz-question-{{ $question->id }}">
+    <div class="ds-question-meta">
+      <span class="ds-overline">
+        Questão {{ $number }} de {{ $quiz->questions->count() }}
+      </span>
+      <span class="ds-chip ds-chip-outline ds-chip-plain">
+        {{ $typeLabels[$question->type] }}
+      </span>
+    </div>
+
+    <h3 class="ds-question-text">{{ $question->question_text }}</h3>
+
+    @if($question->type === 'multiple_choice')
+      <p class="ds-form-text">Selecione todas as respostas que se aplicam.</p>
+    @endif
+
+    @if($question->type === 'essay')
+      @include('student.quizzes._essay', compact('question', 'essay'))
+    @else
+      <div class="ds-options-group">
+        @foreach($question->options as $option)
+          @include('student.quizzes._option',
+                   compact('question', 'option', 'selected'))
+        @endforeach
+      </div>
+    @endif
+  </div>
+@endforeach`),
+
+      bladeOption: b(`{{-- student/quizzes/_option.blade.php --}}
+@php $isSelected = in_array($option->id, $selected); @endphp
+
+<label @class(['ds-option', 'is-selected' => $isSelected])>
+  <input
+      type="{{ $question->type === 'multiple_choice' ? 'checkbox' : 'radio' }}"
+      name="answers[{{ $question->id }}][selected_option_ids][]"
+      value="{{ $option->id }}"
+      class="ds-check-input"
+      @checked($isSelected)
+      dusk="quiz-option-{{ $question->id }}-{{ $option->id }}" />
+
+  <span>{{ $option->option_text }}</span>
+</label>`),
+
+      bladeEssay: b(`{{-- student/quizzes/_essay.blade.php --}}
+<x-ui.input
+    type="textarea"
+    name="answers[{{ $question->id }}][essay_answer]"
+    label="Sua resposta"
+    rows="5"
+    :value="$essay"
+    hint="Esta questão é corrigida pelo responsável do curso, depois do envio."
+    dusk="quiz-essay-{{ $question->id }}" />`),
+
+      bladeSubmit: b(`{{-- envio único de toda a prova --}}
+<form method="POST"
+      action="{{ route('student.quizzes.submit', $lesson) }}"
+      dusk="quiz-attempt-form">
+  @csrf
+
+  {{-- … blocos de questão … --}}
+
+  <x-ui.form-actions align="end">
+    <x-ui.confirm-modal
+        id="submit-attempt-modal"
+        tone="primary"
+        icon="check"
+        title="Enviar esta tentativa?"
+        :body="$unanswered.' Depois do envio você não poderá alterar as respostas. Esta é a tentativa '.($completedAttempts + 1).' de '.$quiz->max_attempts.'.'"
+        confirm-label="Enviar tentativa"
+        cancel-label="Voltar e revisar">
+
+      <x-slot:trigger>
+        <x-ui.button type="button" variant="primary" icon="check"
+                     dusk="quiz-attempt-submit">Finalizar prova</x-ui.button>
+      </x-slot:trigger>
+    </x-ui.confirm-modal>
+  </x-ui.form-actions>
+</form>`),
+
+      bladeAnswerKey: b(`{{-- gabarito: show_correct_answers E tentativa corrigida --}}
+@if($showAnswerKey)
+  <x-ui.card title="Gabarito"
+             :subtitle="'Referente à sua tentativa corrigida em '.$latestGradedAttempt->completed_at->format('d/m/Y').'.'"
+             dusk="quiz-answer-key">
+
+    @foreach($quiz->questions as $index => $question)
+      @php $answer = $answersByQuestionId->get($question->id); @endphp
+
+      <div class="ds-answer-key-question"
+           dusk="answer-key-question-{{ $question->id }}">
+        <p class="ds-answer-key-text">
+          {{ $index + 1 }}. {{ $question->question_text }}
+        </p>
+
+        @if($question->type === 'essay')
+          <span class="ds-chip ds-chip-{{ $answer?->is_correct ? 'success' : 'neutral' }}">
+            {{ $answer?->is_correct ? 'Correta' : 'Incorreta' }}
+          </span>
+        @else
+          @foreach($question->options as $option)
+            <div @class(['ds-answer-key-option', 'is-correct' => $option->is_correct])
+                 dusk="answer-key-option-{{ $option->id }}">
+              @if($option->is_correct)
+                <x-ui.icon name="check" size="16" aria-hidden="true" />
+              @endif
+              <span>{{ $option->option_text }}</span>
+              @if($option->is_correct)
+                <span class="ds-caption">resposta correta</span>
+              @endif
+            </div>
+          @endforeach
+        @endif
+      </div>
+    @endforeach
+  </x-ui.card>
+@endif`),
+    };
+  }
+}
+</script>
+</body>
+</html>

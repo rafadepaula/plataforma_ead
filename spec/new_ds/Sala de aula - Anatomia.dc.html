@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <meta name="design_doc_mode" content="canvas">
+  <link rel="stylesheet" href="_ds/plataforma-ead-design-system-618bb28f-056b-421b-b1d4-d0fef3cd30e2/styles.css">
+  <script src="_ds/plataforma-ead-design-system-618bb28f-056b-421b-b1d4-d0fef3cd30e2/_ds_bundle.js"></script>
+  <style>
+    a{color:var(--primary);text-decoration:none}
+    a:hover{color:var(--primary-hover)}
+    pre{margin:0;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;line-height:1.7;white-space:pre-wrap;color:var(--grey-800)}
+    code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.92em;background:var(--surface-alt);border-radius:6px;padding:1px 6px}
+  </style>
+</helmet>
+
+<section style="display:flex;flex-direction:column;gap:28px;padding:64px;background:var(--surface-body);font-family:var(--font-sans);color:var(--text-primary);line-height:1.6;width:2040px;box-sizing:border-box">
+
+  <div id="1a" style="display:flex;flex-direction:column;gap:28px">
+
+    <header style="display:flex;align-items:flex-start;justify-content:space-between;gap:48px;background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px">
+      <div style="max-width:1180px;display:flex;flex-direction:column;gap:14px">
+        <div class="ds-overline" style="color:var(--primary)">Especificação de componentes · tela 15 · slide 15</div>
+        <h1 style="font-size:46px;line-height:1.08;margin:0;letter-spacing:-.02em">Sala de aula — a trilha do curso</h1>
+        <p style="font-size:19px;color:var(--text-secondary);margin:0;text-wrap:pretty">Onde o aluno vê o curso inteiro: módulos empilhados, cada aula como uma linha com estado de conclusão, e uma coluna lateral com progresso, certificado e próxima aula. Especificação componente por componente, lida de <code>resources/views/classroom/show.blade.php</code>.</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;align-items:flex-end;flex:none">
+        <span class="ds-chip ds-chip-primary ds-chip-plain ds-chip-lg">1a</span>
+        <span class="ds-caption">8 componentes · 9 blocos</span>
+      </div>
+    </header>
+
+    <div class="ds-alert ds-alert-attention"><div><strong>O slide promete mais do que a tela tem.</strong> O slide mostra duração por aula ("Vídeo · 14 min") e o instrutor com avatar. Nenhum dos dois existe no Blade: a linha de aula tem ícone, título e chip de tipo, e não há bloco de instrutor. Especifiquei a tela real e marquei as duas coisas como propostas no bloco 08 — duração por aula depende de campo novo no banco.</div></div>
+
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px">
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">01</div><div style="font-size:17px;font-weight:800">ClassroomHeader</div><div class="ds-caption">breadcrumb + volta</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">02</div><div style="font-size:17px;font-weight:800">Layout 8/4</div><div class="ds-caption">ordem de DOM manda</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">03</div><div style="font-size:17px;font-weight:800">ModuleGroup</div><div class="ds-caption">título + lista</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">04</div><div style="font-size:17px;font-weight:800">LessonRow</div><div class="ds-caption">ícone 44px + chip</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">05</div><div style="font-size:17px;font-weight:800">ProgressCard</div><div class="ds-caption">porcentagem + barra</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">06</div><div style="font-size:17px;font-weight:800">CertificateCard</div><div class="ds-caption">dois estados</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">07</div><div style="font-size:17px;font-weight:800">NextLessonCard</div><div class="ds-caption">primeira não concluída</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">08</div><div style="font-size:17px;font-weight:800">Estados</div><div class="ds-caption">vazio, propostas, aceite</div></div></div>
+    </div>
+
+    <!-- 00 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:24px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">00</span><h2 style="font-size:30px;margin:0">O que a tela faz</h2></div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px">
+        <div style="background:var(--blue-50);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">Ver a estrutura</div><div style="font-size:15px">Módulos na ordem definida pelo gestor, e dentro de cada um as aulas <strong>publicadas</strong> — aula oculta não aparece aqui.</div></div>
+        <div style="background:var(--blue-50);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">Saber o que já fez</div><div style="font-size:15px">Cada aula concluída ganha ícone de check. A lista é o histórico do aluno, não só um índice.</div></div>
+        <div style="background:var(--blue-50);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">Continuar</div><div style="font-size:15px">O card "Próxima aula" aponta a primeira aula não concluída, na ordem do curso. É o atalho para retomar.</div></div>
+        <div style="background:var(--mint-100);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">Acompanhar o progresso</div><div style="font-size:15px">Porcentagem vinda de <code>course_user.progress_percentage</code> — calculada no servidor, nunca somada na tela.</div></div>
+        <div style="background:var(--mint-100);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">Baixar o certificado</div><div style="font-size:15px">Quando emitido. Antes disso, o card explica o que falta em vez de esconder a seção.</div></div>
+        <div style="background:var(--mint-100);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">Abrir uma aula</div><div style="font-size:15px">Cada linha leva à tela da aula, especificada no canvas <a href="#1a">Aula</a>.</div></div>
+      </div>
+
+      <div style="background:var(--surface-sunken);border-radius:20px;padding:28px;box-shadow:inset 0 0 0 1px var(--divider)"><pre>classroom/show.blade.php        — GET classroom.show
+├── x-layout.page-header                                        ← 01
+│   └── slot actions: Meus cursos
+│
+└── grid 8 / 4                                                   ← 02
+    ├── coluna principal  (col-12 col-lg-8) — PRIMEIRA no DOM
+    │   └── @forelse módulo   dusk="module-{id}"                 ← 03
+    │       ├── h2  título do módulo
+    │       └── ul
+    │           ├── li  dusk="lesson-{id}"                       ← 04
+    │           │   ├── a   dusk="open-lesson-{id}"
+    │           │   │   ├── ícone check | play
+    │           │   │   │        dusk="lesson-completed-{id}"
+    │           │   │   └── título da aula
+    │           │   └── badge  Quiz | Conteúdo
+    │           └── (módulo sem aula publicada)                  ← 08
+    │       @empty  dusk="no-modules"                            ← 08
+    │
+    └── coluna lateral  (col-12 col-lg-4) — SEGUNDA no DOM
+        ├── card  Progresso do curso                             ← 05
+        │   └── dusk="course-progress-label" / "course-progress-bar"
+        ├── card  Certificado                                    ← 06
+        │   └── dusk="download-certificate" | "certificate-unavailable"
+        └── card  Próxima aula  (se houver)                      ← 07</pre></div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
+        <div style="background:var(--surface-alt);border-radius:16px;padding:20px"><div class="ds-overline" style="margin-bottom:6px">Regra 1</div><div style="font-size:15px">A coluna principal vem <strong>antes</strong> da lateral no DOM. É assim que a lateral desce para o fim ao empilhar, sem <code>order</code> e sem CSS extra. Não inverta.</div></div>
+        <div style="background:var(--surface-alt);border-radius:16px;padding:20px"><div class="ds-overline" style="margin-bottom:6px">Regra 2</div><div style="font-size:15px">A lateral nunca desaparece em tela pequena. Progresso e certificado são a razão de o aluno estar aqui.</div></div>
+        <div style="background:var(--surface-alt);border-radius:16px;padding:20px"><div class="ds-overline" style="margin-bottom:6px">Regra 3</div><div style="font-size:15px">Certificado indisponível não é erro. Cinza informativo com o que falta — nunca <code>--critical</code>, nunca "atenção".</div></div>
+      </div>
+    </div>
+
+    <!-- 01 + 02 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">01</span><h2 style="font-size:30px;margin:0">Cabeçalho e grade</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">x-layout.page-header</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">Breadcrumb de dois níveis, kicker "Sala de aula", título com o nome do curso e o subtítulo verbatim. A ação é um único botão de volta a Meus cursos. Abaixo, a grade de duas colunas — 8/4 em <code>lg</code>, empilhada abaixo disso.</p>
+
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) 600px;gap:36px;align-items:start">
+        <div style="background:var(--surface-body);border-radius:20px;padding:36px;display:flex;flex-direction:column;gap:24px">
+          <div class="ds-page-header" style="margin:0">
+            <div>
+              <div class="ds-caption" style="margin-bottom:12px"><a href="#1a">Meus cursos</a> / Fundamentos de Segurança do Trabalho</div>
+              <div class="ds-overline" style="color:var(--primary);margin-bottom:8px">Sala de aula</div>
+              <h1 class="ds-page-title">Fundamentos de Segurança do Trabalho</h1>
+              <p class="ds-lead" style="margin:12px 0 0">Acompanhe os módulos e as lições deste curso e continue de onde parou.</p>
+            </div>
+            <div style="flex:none"><a class="ds-btn ds-btn-tonal" href="#1a">Meus cursos</a></div>
+          </div>
+          <div style="display:grid;grid-template-columns:2fr 1fr;gap:24px">
+            <div style="background:var(--blue-50);border-radius:16px;padding:24px;font-weight:700;min-height:120px">Coluna principal — módulos e aulas<div class="ds-caption" style="font-weight:400;margin-top:6px">Primeira no DOM. 8 de 12 colunas em <code>lg</code>.</div></div>
+            <div style="background:var(--mint-100);border-radius:16px;padding:24px;font-weight:700">Lateral<div class="ds-caption" style="font-weight:400;margin-top:6px">Segunda no DOM. Progresso, certificado, próxima aula.</div></div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Cabeçalho</div>
+            <div style="display:grid;grid-template-columns:160px 1fr;gap:12px 16px;font-size:15px">
+              <code>:breadcrumb</code><span>Meus cursos (link) → título do curso (texto).</span>
+              <code>kicker</code><span>"Sala de aula". O código escreve "Sala de Aula"; passa a sentence case.</span>
+              <code>title</code><span>Título do curso, verbatim do banco.</span>
+              <code>subtitle</code><span>"Acompanhe os módulos e as lições deste curso e continue de onde parou." — verbatim.</span>
+              <code>actions</code><span>Botão tonal "Meus cursos". No código não tem <code>dusk</code>; mantenha sem, para não inventar contrato.</span>
+            </div>
+          </div>
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Grade</div>
+            <div style="display:grid;grid-template-columns:160px 1fr;gap:10px 16px;font-size:15px">
+              <span style="font-weight:700">≥ 1024px</span><span>8/4, gap 24px, conteúdo máx. 1240px</span>
+              <span style="font-weight:700">&lt; 1024px</span><span>Uma coluna; a lateral cai para o fim por ordem de DOM</span>
+              <span style="font-weight:700">lateral</span><span>Coluna em <code>flex</code>, gap 24px entre cards</span>
+              <span style="font-weight:700">módulos</span><span>32px entre grupos de módulo</span>
+              <span style="font-weight:700">sem sticky</span><span>A lateral não acompanha a rolagem: em curso longo, ela ficaria pendurada num espaço vazio</span>
+            </div>
+          </div>
+          <div class="ds-alert ds-alert-info"><div><strong>Mesma convenção do dashboard.</strong> A grade 8/4 com a lateral depois no DOM é a que o produto já usa em <code>dashboard/index.blade.php</code>. Repita, não invente uma nova.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 03 + 04 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">03</span><h2 style="font-size:30px;margin:0">Módulo e linha de aula</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">x-classroom.module</span><span class="ds-chip ds-chip-neutral ds-chip-plain">x-classroom.lesson-row</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">Cada módulo é um card branco: título do módulo no topo, lista de aulas dentro, separadas por divisor. Cada aula é uma linha de 72px com quatro zonas: <strong>ícone de estado</strong> em círculo de 44px, <strong>título</strong>, <strong>chip de tipo</strong> e <strong>chevron</strong>. A linha inteira é o link — diferente das listas do gestor, aqui há um destino só.</p>
+
+      <div style="display:grid;grid-template-columns:760px minmax(0,1fr);gap:40px;align-items:start">
+        <div style="background:var(--surface-body);border-radius:20px;padding:36px;display:flex;flex-direction:column;gap:24px">
+          <div class="ds-card" dusk="module-3"><div class="ds-card-body" style="padding:0">
+            <div style="padding:24px 28px 16px"><div class="ds-overline" style="margin-bottom:4px">Módulo 1</div><h2 style="font-size:20px;margin:0">Conceitos gerais</h2><div class="ds-caption" style="margin-top:4px">3 de 4 aulas concluídas</div></div>
+            <div style="display:flex;flex-direction:column">
+              <a href="#1a" style="display:flex;align-items:center;gap:16px;padding:14px 28px;border-top:1px solid var(--divider);color:inherit" dusk="lesson-21"><span style="width:44px;height:44px;flex:none;border-radius:50%;background:var(--mint-100);color:var(--secondary);display:flex;align-items:center;justify-content:center" dusk="lesson-completed-21"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></span><span style="flex:1;min-width:0;font-weight:600;color:var(--text-secondary)">Apresentação do curso</span><span class="ds-chip ds-chip-outline ds-chip-plain">Conteúdo</span><span style="color:var(--text-disabled)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></span></a>
+              <a href="#1a" style="display:flex;align-items:center;gap:16px;padding:14px 28px;border-top:1px solid var(--divider);color:inherit"><span style="width:44px;height:44px;flex:none;border-radius:50%;background:var(--mint-100);color:var(--secondary);display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></span><span style="flex:1;min-width:0;font-weight:600;color:var(--text-secondary)">Normas regulamentadoras</span><span class="ds-chip ds-chip-outline ds-chip-plain">Conteúdo</span><span style="color:var(--text-disabled)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></span></a>
+              <a href="#1a" style="display:flex;align-items:center;gap:16px;padding:14px 28px;border-top:1px solid var(--divider);color:inherit;background:var(--blue-50)"><span style="width:44px;height:44px;flex:none;border-radius:50%;background:var(--primary-container);color:var(--on-primary-container);display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3"></polygon></svg></span><span style="flex:1;min-width:0;font-weight:600">Equipamentos de proteção individual</span><span class="ds-chip ds-chip-outline ds-chip-plain">Conteúdo</span><span style="color:var(--primary)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></span></a>
+              <a href="#1a" style="display:flex;align-items:center;gap:16px;padding:14px 28px;border-top:1px solid var(--divider);color:inherit"><span style="width:44px;height:44px;flex:none;border-radius:50%;background:var(--primary-container);color:var(--on-primary-container);display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11h6"></path><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6"></path></svg></span><span style="flex:1;min-width:0;font-weight:600">Avaliação do módulo 1</span><span class="ds-chip ds-chip-primary ds-chip-plain">Prova</span><span style="color:var(--text-disabled)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></span></a>
+            </div>
+          </div></div>
+          <div class="ds-card"><div class="ds-card-body" style="padding:0">
+            <div style="padding:24px 28px 16px"><div class="ds-overline" style="margin-bottom:4px">Módulo 2</div><h2 style="font-size:20px;margin:0">Prática e avaliação</h2><div class="ds-caption" style="margin-top:4px">Nenhuma aula concluída</div></div>
+            <div style="padding:0 28px 24px"><div class="ds-empty" style="padding:24px 20px"><div style="font-size:15px;color:var(--text-secondary)">Nenhuma lição publicada neste módulo.</div></div></div>
+          </div></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Grupo de módulo</div>
+            <div style="display:grid;grid-template-columns:160px 1fr;gap:12px 16px;font-size:15px">
+              <span style="font-weight:700">card</span><span>Branco, raio 20px, <code>--elev-1</code>. Cabeçalho com padding 24px/28px, lista com padding lateral igual.</span>
+              <span style="font-weight:700">overline</span><span>"Módulo N", posicional. Adição desta especificação — o código não numera.</span>
+              <span style="font-weight:700">título</span><span><code>h2</code>, 20px, peso 700. É a hierarquia do código (<code>h2.h6</code>), com o tamanho da nova escala.</span>
+              <span style="font-weight:700">contagem</span><span>"N de M aulas concluídas" em caption; sem nenhuma, "Nenhuma aula concluída". Adição desta especificação.</span>
+              <code>dusk</code><span><code>module-{id}</code> no card do módulo.</span>
+            </div>
+          </div>
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Linha de aula</div>
+            <div style="display:grid;grid-template-columns:160px 1fr;gap:12px 16px;font-size:15px">
+              <span style="font-weight:700">altura</span><span>72px (padding 14px/28px + ícone de 44px). Alvo de toque de sobra.</span>
+              <span style="font-weight:700">ícone concluída</span><span>Círculo 44px <code>--mint-100</code>, glifo <code>check</code> em <code>--secondary</code>. O código usa 16px em azul; cresce e passa a menta, que é a cor de conclusão do sistema.</span>
+              <span style="font-weight:700">ícone pendente</span><span>Círculo 44px <code>--primary-container</code>, glifo por tipo: <code>play</code> em conteúdo, <code>file-text</code> em PDF, <code>clipboard</code> em prova.</span>
+              <span style="font-weight:700">título</span><span><code>flex:1</code>, peso 600. Aula concluída fica em <code>--text-secondary</code> — feito é menos urgente que por fazer.</span>
+              <span style="font-weight:700">chip</span><span><code>outline plain</code> "Conteúdo"; <code>primary plain</code> "Prova" (no código, "Quiz").</span>
+              <span style="font-weight:700">chevron</span><span><code>chevron-right</code> 18px, <code>--text-disabled</code>; passa a <code>--primary</code> no hover.</span>
+              <span style="font-weight:700">hover</span><span>Linha inteira em <code>--blue-50</code>, 120ms. Sem elevação, sem deslocamento.</span>
+              <code>dusk</code><span><code>lesson-{id}</code> na linha, <code>open-lesson-{id}</code> no link, <code>lesson-completed-{id}</code> no ícone de check.</span>
+            </div>
+          </div>
+          <div style="background:var(--surface-sunken);border-radius:16px;padding:22px;box-shadow:inset 0 0 0 1px var(--divider)"><pre>{{ bladeLessonRow }}</pre></div>
+          <div class="ds-alert ds-alert-attention"><div><strong>Um link, não dois.</strong> No código o <code>&lt;a&gt;</code> envolve só o ícone e o título, e o badge fica fora. Se a linha inteira virar link, o <code>dusk="open-lesson-{id}"</code> tem que ficar <em>nesse</em> <code>&lt;a&gt;</code> — que agora é o <code>&lt;li&gt;</code> inteiro. Dois <code>dusk</code> no mesmo nó (<code>lesson-{id}</code> e <code>open-lesson-{id}</code>) não é permitido: mantenha o <code>&lt;li&gt;</code> com <code>lesson-{id}</code> e o <code>&lt;a&gt;</code> interno em <code>display:flex</code> ocupando 100% da linha.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 05 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">05</span><h2 style="font-size:30px;margin:0">Progresso do curso</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">course-progress-bar</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">Card com título "Progresso do curso", a linha de rótulo com a porcentagem à direita e a barra de 8px abaixo. O valor é <code>course_user.progress_percentage</code> — a tela não conta aulas para chegar nele. Atenção ao contrato: o <code>dusk="course-progress-bar"</code> fica no <strong>wrapper</strong> da barra, e o preenchimento interno recebe <code>course-progress-bar-bar</code> do próprio componente.</p>
+
+      <div style="display:grid;grid-template-columns:420px minmax(0,1fr);gap:40px;align-items:start">
+        <div style="background:var(--surface-body);border-radius:20px;padding:32px;display:flex;flex-direction:column;gap:16px">
+          <div class="ds-card"><div class="ds-card-body"><h3 class="ds-card-title" style="font-size:18px">Progresso do curso</h3><div><div style="display:flex;justify-content:space-between;margin-bottom:8px"><span class="ds-caption">8 de 13 aulas concluídas</span><span class="ds-caption" style="font-weight:700;color:var(--text-primary)" dusk="course-progress-label">62%</span></div><div class="ds-progress" style="height:8px" dusk="course-progress-bar"><div class="ds-progress-bar" style="width:62%"></div></div></div></div></div>
+          <div class="ds-card"><div class="ds-card-body"><h3 class="ds-card-title" style="font-size:18px">Progresso do curso</h3><div><div style="display:flex;justify-content:space-between;margin-bottom:8px"><span class="ds-caption">13 de 13 aulas concluídas</span><span class="ds-caption" style="font-weight:700;color:var(--text-primary)">100%</span></div><div class="ds-progress" style="height:8px"><div class="ds-progress-bar" style="width:100%;background:var(--secondary)"></div></div></div><div class="ds-caption">Curso concluído. O certificado fica disponível abaixo.</div></div></div>
+          <div class="ds-card"><div class="ds-card-body"><h3 class="ds-card-title" style="font-size:18px">Progresso do curso</h3><div><div style="display:flex;justify-content:space-between;margin-bottom:8px"><span class="ds-caption">Nenhuma aula concluída</span><span class="ds-caption" style="font-weight:700;color:var(--text-primary)">0%</span></div><div class="ds-progress" style="height:8px"><div class="ds-progress-bar" style="width:2%"></div></div></div></div></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Especificação</div>
+            <div style="display:grid;grid-template-columns:190px 1fr;gap:12px 16px;font-size:15px">
+              <span style="font-weight:700">título do card</span><span>"Progresso do curso", <code>h3</code> 18px.</span>
+              <span style="font-weight:700">rótulo esquerdo</span><span>"N de M aulas concluídas". O código repete "Progresso do Curso" ali — redundante com o título do card; a contagem é informação nova.</span>
+              <span style="font-weight:700">porcentagem</span><span>À direita, peso 700, <code>--text-primary</code>. <code>dusk="course-progress-label"</code>.</span>
+              <span style="font-weight:700">barra</span><span>8px, como no código. <code>--primary</code> em andamento, <code>--secondary</code> em 100%. Mínimo visual de 2% em zero.</span>
+              <span style="font-weight:700">100%</span><span>Ganha a linha "Curso concluído. O certificado fica disponível abaixo."</span>
+              <span style="font-weight:700">a11y</span><span><code>role="progressbar"</code> com <code>aria-valuenow</code> e <code>aria-label="Progresso do curso"</code> no wrapper.</span>
+            </div>
+          </div>
+          <div style="background:var(--surface-sunken);border-radius:16px;padding:22px;box-shadow:inset 0 0 0 1px var(--divider)"><pre>{{ bladeProgress }}</pre></div>
+          <div class="ds-alert ds-alert-info"><div><strong>Nunca recalcule na tela.</strong> Se a contagem "8 de 13" divergir da porcentagem do servidor, quem está certo é o servidor. Exponha os dois valores pelo controlador, não derive um do outro no Blade.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 06 + 07 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">06</span><h2 style="font-size:30px;margin:0">Certificado e próxima aula</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">download-certificate</span><span class="ds-chip ds-chip-neutral ds-chip-plain">certificate-unavailable</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">Dois cards, cada um com dois estados. O <strong>certificado</strong> tem o botão de download quando existe, e um bloco informativo com o que falta quando não. A <strong>próxima aula</strong> aponta a primeira não concluída na ordem do curso — e simplesmente não é renderizada quando não há nenhuma pendente.</p>
+
+      <div style="display:grid;grid-template-columns:420px minmax(0,1fr);gap:40px;align-items:start">
+        <div style="background:var(--surface-body);border-radius:20px;padding:32px;display:flex;flex-direction:column;gap:16px">
+          <div class="ds-card"><div class="ds-card-body"><h3 class="ds-card-title" style="font-size:18px">Certificado</h3><div style="display:flex;align-items:center;gap:14px"><span style="width:44px;height:44px;flex:none;border-radius:var(--radius-md);background:var(--mint-100);color:var(--secondary);display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"></circle><path d="M15.5 13.5 17 22l-5-3-5 3 1.5-8.5"></path></svg></span><div><div style="font-weight:600">Emitido em 12/07/2026</div><div class="ds-caption">Certificado nº 9f2b7c41</div></div></div><button class="ds-btn ds-btn-primary" dusk="download-certificate">Baixar certificado</button></div></div>
+          <div class="ds-card"><div class="ds-card-body"><h3 class="ds-card-title" style="font-size:18px">Certificado</h3><div style="background:var(--surface-sunken);border-radius:14px;padding:18px;box-shadow:inset 0 0 0 1px var(--divider)" dusk="certificate-unavailable"><div style="font-weight:600;margin-bottom:4px">Certificado ainda não disponível</div><div class="ds-caption">Você concluiu 62% do curso. O certificado é emitido quando você cumpre as regras de conclusão.</div></div></div></div>
+          <div class="ds-card"><div class="ds-card-body"><h3 class="ds-card-title" style="font-size:18px">Próxima aula</h3><a href="#1a" style="display:flex;align-items:center;gap:14px;color:inherit"><span style="width:44px;height:44px;flex:none;border-radius:50%;background:var(--primary-container);color:var(--on-primary-container);display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3"></polygon></svg></span><span style="flex:1;min-width:0"><span style="display:block;font-weight:600">Equipamentos de proteção individual</span><span class="ds-caption">Módulo 1 · Conceitos gerais</span></span><span style="color:var(--primary)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></span></a><button class="ds-btn ds-btn-primary">Continuar</button></div></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Certificado — dois estados</div>
+            <div style="display:grid;grid-template-columns:190px 1fr;gap:12px 16px;font-size:15px">
+              <span style="font-weight:700">emitido</span><span>Ícone <code>award</code> em quadrado menta 44px, data de emissão e número do certificado, e o botão primário "Baixar certificado". Número e data são adição desta especificação — o código só mostra o botão.</span>
+              <span style="font-weight:700">indisponível</span><span>Bloco em <code>--surface-sunken</code>, título "Certificado ainda não disponível" e a explicação com a porcentagem. O código escreve "Certificado indisponível. 62%" — porcentagem solta não explica nada.</span>
+              <span style="font-weight:700">nunca oculto</span><span>O card aparece nos dois casos. Esconder a seção deixaria o aluno sem saber que existe certificado.</span>
+              <span style="font-weight:700">cor</span><span>Menta no emitido, cinza no indisponível. Nunca <code>--critical</code>: não ter certificado ainda não é falha.</span>
+              <code>dusk</code><span><code>download-certificate</code> no botão; <code>certificate-unavailable</code> no bloco informativo.</span>
+            </div>
+          </div>
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Próxima aula</div>
+            <div style="display:grid;grid-template-columns:190px 1fr;gap:12px 16px;font-size:15px">
+              <span style="font-weight:700">qual aula</span><span>A primeira aula não concluída percorrendo módulos e aulas na ordem — exatamente o <code>break 2</code> do código.</span>
+              <span style="font-weight:700">conteúdo</span><span>Ícone do tipo, título da aula, e "Módulo N · título do módulo" em caption. O contexto do módulo é adição desta especificação.</span>
+              <span style="font-weight:700">ação</span><span>Botão primário "Continuar", além da linha clicável. Dois caminhos para o mesmo destino é aceitável aqui: é a ação principal da tela.</span>
+              <span style="font-weight:700">ausente</span><span>Curso todo concluído ⇒ o card não é renderizado. Não há estado "nada a fazer".</span>
+            </div>
+          </div>
+          <div style="background:var(--surface-sunken);border-radius:16px;padding:22px;box-shadow:inset 0 0 0 1px var(--divider)"><pre>{{ bladeSide }}</pre></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 08 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">08</span><h2 style="font-size:30px;margin:0">Estados, propostas, contrato e aceite</h2></div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:32px">
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="ds-overline">Curso sem módulos publicados</div>
+          <div class="ds-empty" style="padding:32px 24px" dusk="no-modules">
+            <div class="ds-empty-icon"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.5A5.5 5.5 0 0 0 6.5 4H2v15h5a4 4 0 0 1 5 2 4 4 0 0 1 5-2h5V4h-4.5A5.5 5.5 0 0 0 12 6.5z"></path><path d="M12 6.5V21"></path></svg></div>
+            <div style="font-size:18px;font-weight:700">Este curso ainda não tem conteúdo publicado</div>
+            <p class="ds-muted" style="margin:0;font-size:15px">Avise o responsável pelo curso. Assim que os módulos forem publicados, eles aparecem aqui.</p>
+          </div>
+          <div class="ds-caption">O código mostra um parágrafo cinza solto: "Este curso ainda não possui módulos publicados." Passa a bloco de estado vazio com próximo passo. O <code>dusk="no-modules"</code> permanece.</div>
+          <div class="ds-overline" style="margin-top:8px">Módulo sem aula publicada</div>
+          <div class="ds-empty" style="padding:20px"><div style="font-size:15px;color:var(--text-secondary)">Nenhuma lição publicada neste módulo.</div></div>
+          <div class="ds-caption">Texto verbatim. Fica <em>dentro</em> do card do módulo — o módulo continua visível, porque a estrutura do curso é informação.</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="ds-overline">Propostas — não existem no código</div>
+          <div style="background:var(--surface-body);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;align-items:center;gap:14px"><span style="width:44px;height:44px;flex:none;border-radius:50%;background:var(--primary-container);color:var(--on-primary-container);display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3"></polygon></svg></span><span style="flex:1"><span style="display:block;font-weight:600">Equipamentos de proteção individual</span><span class="ds-caption">Vídeo · 14 min</span></span></div>
+            <div class="ds-caption">Duração por aula exige campo novo no banco (ou leitura da API do YouTube). Não é casca.</div>
+            <div style="height:1px;background:var(--divider)"></div>
+            <div style="display:flex;align-items:center;gap:14px"><span style="width:56px;height:56px;flex:none;border-radius:50%;background:var(--primary-container);color:var(--on-primary-container);display:flex;align-items:center;justify-content:center;font-weight:800">MV</span><div><div style="font-weight:600">Marcos Vieira</div><div class="ds-caption">Responsável pelo curso</div></div></div>
+            <div class="ds-caption">Bloco de instrutor: não há relação de responsável por curso no modelo hoje.</div>
+          </div>
+          <div class="ds-alert ds-alert-attention"><div>As duas coisas aparecem no slide. Nenhuma entra na implementação sem confirmação do cliente e trabalho de servidor.</div></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="ds-overline">Responsivo</div>
+          <div style="display:grid;grid-template-columns:130px 1fr;gap:10px 16px;font-size:15px">
+            <span style="font-weight:700">≥ 1024px</span><span>8/4; cards de módulo com 760px de largura útil</span>
+            <span style="font-weight:700">768–1023px</span><span>uma coluna; a lateral desce ao fim por ordem de DOM</span>
+            <span style="font-weight:700">&lt; 768px</span><span>linha de aula com padding 12px/16px; o chip de tipo desce para baixo do título; chevron mantido</span>
+          </div>
+          <div class="ds-caption">O ícone de 44px não encolhe em nenhuma largura: é o alvo de toque e o portador do estado de conclusão.</div>
+        </div>
+      </div>
+
+      <div style="height:1px;background:var(--divider)"></div>
+
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:36px">
+        <div>
+          <div class="ds-overline" style="margin-bottom:12px">Contrato dusk — nenhum destes muda</div>
+          <div style="display:grid;grid-template-columns:270px 1fr;gap:10px 16px;font-size:15px">
+            <code>module-{id}</code><span>bloco do módulo</span>
+            <code>lesson-{id}</code><span>o <code>&lt;li&gt;</code> da aula</span>
+            <code>open-lesson-{id}</code><span>o link da aula</span>
+            <code>lesson-completed-{id}</code><span>ícone de check da aula concluída</span>
+            <code>no-modules</code><span>estado sem módulos publicados</span>
+            <code>course-progress-label</code><span>a porcentagem em texto</span>
+            <code>course-progress-bar</code><span>o <strong>wrapper</strong> da barra</span>
+            <code>course-progress-bar-bar</code><span>o preenchimento interno, posto pelo componente</span>
+            <code>download-certificate</code><span>botão de download</span>
+            <code>certificate-unavailable</code><span>bloco de certificado indisponível</span>
+          </div>
+          <div class="ds-alert ds-alert-attention" style="margin-top:20px"><div>O par <code>course-progress-bar</code> / <code>course-progress-bar-bar</code> é o ponto mais fácil de quebrar: o primeiro é do wrapper, o segundo é gerado pelo componente de progresso. Se a barra virar dois <code>&lt;div&gt;</code> novos, os dois seletores precisam cair nos nós equivalentes.</div></div>
+        </div>
+        <div>
+          <div class="ds-overline" style="margin-bottom:12px">Critérios de aceite</div>
+          <div style="display:flex;flex-direction:column;gap:10px;font-size:15px">
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Coluna principal antes da lateral no DOM; abaixo de <code>lg</code> a lateral desce sem <code>order</code> nem CSS extra.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Só aulas publicadas na lista, na ordem de <code>order_index</code>.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Aula concluída com ícone <code>check</code> menta e título em <code>--text-secondary</code>; pendente com o glifo do tipo em azul.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Chip de tipo em toda linha: "Conteúdo" ou "Prova".</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Porcentagem vinda do servidor, nunca recalculada no Blade.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Card de certificado presente nos dois estados, com o motivo escrito quando indisponível.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>"Próxima aula" é a primeira não concluída na ordem do curso; ausente quando não há pendência.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Módulo sem aula publicada continua visível, com o texto verbatim dentro do card.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Nenhum <code>dusk</code> duplicado — em especial <code>lesson-{id}</code> e <code>open-lesson-{id}</code> em nós distintos.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Zero vermelho, laranja ou amarelo. Zero caixa-alta fora do overline. Zero <code>style=</code> inline.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Duração por aula e bloco de instrutor <strong>não</strong> implementados sem confirmação.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span><code>artisan dusk</code> filtrado em <code>classroom</code> passa sem alteração de seletor.</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const Z = "\u200B";
+const b = (s) => s.split("{{").join("{" + Z + "{").split("}}").join("}" + Z + "}");
+
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      bladeLessonRow: b(`{{-- components/classroom/lesson-row.blade.php --}}
+@props(['lesson', 'completed' => false])
+
+@php
+  $icon = $completed
+    ? 'check'
+    : match(true) {
+        $lesson->type === 'quiz'        => 'clipboard',
+        filled($lesson->youtube_url)    => 'play',
+        filled($lesson->pdf_path)       => 'file-text',
+        default                          => 'book-open',
+      };
+@endphp
+
+{{-- dusk lesson-{id} no <li>, open-lesson-{id} no <a>: nós distintos --}}
+<li class="ds-lesson-row" dusk="lesson-{{ $lesson->id }}">
+  <a href="{{ route('classroom.lesson', $lesson) }}"
+     @class(['ds-lesson-link', 'is-completed' => $completed])
+     dusk="open-lesson-{{ $lesson->id }}">
+
+    <span @class(['ds-lesson-icon', 'is-completed' => $completed])
+          @if($completed) dusk="lesson-completed-{{ $lesson->id }}" @endif>
+      <x-ui.icon :name="$icon" size="20" aria-hidden="true" />
+    </span>
+
+    <span class="ds-lesson-title">{{ $lesson->title }}</span>
+
+    <span class="ds-chip ds-chip-{{ $lesson->type === 'quiz' ? 'primary' : 'outline' }} ds-chip-plain">
+      {{ $lesson->type === 'quiz' ? 'Prova' : 'Conteúdo' }}
+    </span>
+
+    <x-ui.icon name="chevron-right" size="18" class="ds-lesson-chevron" aria-hidden="true" />
+  </a>
+</li>`),
+
+      bladeProgress: b(`{{-- lateral — card de progresso --}}
+<x-ui.card title="Progresso do curso">
+  <div class="ds-progress-labels">
+    <span class="ds-caption">
+      @if($completedCount === 0)
+        Nenhuma aula concluída
+      @else
+        {{ $completedCount }} de {{ $totalLessons }} aulas concluídas
+      @endif
+    </span>
+    <span class="ds-caption ds-progress-value" dusk="course-progress-label">
+      {{ (int) $progressPercentage }}%
+    </span>
+  </div>
+
+  {{-- dusk no WRAPPER; o componente põe course-progress-bar-bar
+       no preenchimento interno --}}
+  <x-ui.progress :value="(int) $progressPercentage"
+                 :height="8"
+                 :tone="$progressPercentage >= 100 ? 'secondary' : 'primary'"
+                 label="Progresso do curso"
+                 dusk="course-progress-bar" />
+
+  @if($progressPercentage >= 100)
+    <p class="ds-caption">Curso concluído. O certificado fica disponível abaixo.</p>
+  @endif
+</x-ui.card>`),
+
+      bladeSide: b(`{{-- lateral — certificado --}}
+<x-ui.card title="Certificado">
+  @if($certificate)
+    <div class="ds-cert-issued">
+      <span class="ds-cert-icon"><x-ui.icon name="award" size="22" /></span>
+      <div>
+        <div class="ds-cell-title">Emitido em {{ $certificate->issued_at->format('d/m/Y') }}</div>
+        <div class="ds-caption">Certificado nº {{ $certificate->code }}</div>
+      </div>
+    </div>
+
+    <x-ui.button variant="primary"
+                 :href="route('certificates.download', $certificate)"
+                 dusk="download-certificate">Baixar certificado</x-ui.button>
+  @else
+    <div class="ds-cert-pending" dusk="certificate-unavailable">
+      <div class="ds-cell-title">Certificado ainda não disponível</div>
+      <div class="ds-caption">
+        Você concluiu {{ (int) $progressPercentage }}% do curso.
+        O certificado é emitido quando você cumpre as regras de conclusão.
+      </div>
+    </div>
+  @endif
+</x-ui.card>
+
+{{-- lateral — próxima aula: primeira NÃO concluída, ordem do curso --}}
+@if($nextLesson)
+  <x-ui.card title="Próxima aula">
+    <a href="{{ route('classroom.lesson', $nextLesson) }}" class="ds-next-lesson">
+      <span class="ds-lesson-icon">
+        <x-ui.icon name="play" size="20" aria-hidden="true" />
+      </span>
+      <span>
+        <span class="ds-cell-title">{{ $nextLesson->title }}</span>
+        <span class="ds-caption">
+          Módulo {{ $nextLesson->module->position }} · {{ $nextLesson->module->title }}
+        </span>
+      </span>
+      <x-ui.icon name="chevron-right" size="18" aria-hidden="true" />
+    </a>
+
+    <x-ui.button variant="primary"
+                 :href="route('classroom.lesson', $nextLesson)">Continuar</x-ui.button>
+  </x-ui.card>
+@endif`),
+    };
+  }
+}
+</script>
+</body>
+</html>

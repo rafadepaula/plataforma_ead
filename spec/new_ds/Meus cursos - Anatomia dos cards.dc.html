@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <meta name="design_doc_mode" content="canvas">
+  <link rel="stylesheet" href="_ds/plataforma-ead-design-system-618bb28f-056b-421b-b1d4-d0fef3cd30e2/styles.css">
+  <script src="_ds/plataforma-ead-design-system-618bb28f-056b-421b-b1d4-d0fef3cd30e2/_ds_bundle.js"></script>
+  <style>
+    a{color:var(--primary);text-decoration:none}
+    a:hover{color:var(--primary-hover)}
+    pre{margin:0;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;line-height:1.7;white-space:pre-wrap;color:var(--grey-800)}
+    code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.92em;background:var(--surface-alt);border-radius:6px;padding:1px 6px}
+  </style>
+</helmet>
+
+<section style="display:flex;flex-direction:column;gap:28px;padding:64px;background:var(--surface-body);font-family:var(--font-sans);color:var(--text-primary);line-height:1.6;width:2040px;box-sizing:border-box">
+
+  <div id="1a" style="display:flex;flex-direction:column;gap:28px">
+
+    <header style="display:flex;align-items:flex-start;justify-content:space-between;gap:48px;background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px">
+      <div style="max-width:1180px;display:flex;flex-direction:column;gap:14px">
+        <div class="ds-overline" style="color:var(--primary)">Especificação de componentes · tela 09 · slide 9</div>
+        <h1 style="font-size:46px;line-height:1.08;margin:0;letter-spacing:-.02em">Meus cursos — cards de progresso</h1>
+        <p style="font-size:19px;color:var(--text-secondary);margin:0;text-wrap:pretty">Especificação de desenvolvimento, um componente por bloco: o <strong>filtro superior de abas</strong>, o <strong>card de matrícula</strong> com seus quatro slots (header, título, corpo, rodapé) e a <strong>barra de progresso</strong>. Cada bloco traz especimen ao vivo, contrato de props, tokens, estados e marcação Blade. View de origem: <code>resources/views/student/courses/index.blade.php</code>.</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;align-items:flex-end;flex:none">
+        <span class="ds-chip ds-chip-primary ds-chip-plain ds-chip-lg">1a</span>
+        <span class="ds-caption">6 componentes · 8 blocos</span>
+      </div>
+    </header>
+
+    <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:16px">
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">01</div><div style="font-size:17px;font-weight:800">CourseFilterTabs</div><div class="ds-caption">três abas, filtro único</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">02</div><div style="font-size:17px;font-weight:800">CourseCard</div><div class="ds-caption">casca de 4 slots</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">03</div><div style="font-size:17px;font-weight:800">CourseCardHeader</div><div class="ds-caption">imagem ou gradiente</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">04</div><div style="font-size:17px;font-weight:800">CourseCardBody</div><div class="ds-caption">overline, título, resumo</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">05</div><div style="font-size:17px;font-weight:800">ProgressMeter</div><div class="ds-caption">rótulo + barra 10px</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">06</div><div style="font-size:17px;font-weight:800">CourseCardFooter</div><div class="ds-caption">ação + metadados</div></div></div>
+    </div>
+
+    <!-- 00 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:24px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">00</span><h2 style="font-size:30px;margin:0">Árvore de composição</h2></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:920px">Cada nível é um arquivo Blade próprio em <code>resources/views/components/course/</code>. Nenhum componente conhece a tela que o usa: tudo entra por prop.</p>
+      <div style="background:var(--surface-sunken);border-radius:20px;padding:28px;box-shadow:inset 0 0 0 1px var(--divider)"><pre>MeusCursos (student/courses/index.blade.php)
+├── x-page-header            título "Meus cursos" + subtítulo
+├── x-tabs                   ← 01   único filtro da tela
+│                              em andamento / concluídos / todos
+├── grid (3 col · gap 24px)
+│   └── x-course.card         ← 02   (um por matrícula, em laço)
+│       ├── x-course.card-header   ← 03  imagem OU gradiente + chip de status
+│       ├── x-course.card-body     ← 04  overline · título · resumo
+│       │   └── x-progress-meter   ← 05  rótulo + valor + barra
+│       └── x-course.card-footer   ← 06  ação contextual + metadados
+└── x-empty-state            quando a aba não retorna matrícula</pre></div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
+        <div style="background:var(--blue-50);border-radius:16px;padding:20px"><div class="ds-overline" style="margin-bottom:6px">Regra 1</div><div style="font-size:15px">O card <strong>não</strong> faz consulta. Recebe um <code>Enrollment</code> já carregado com <code>course</code>, <code>organization</code> e o progresso calculado.</div></div>
+        <div style="background:var(--blue-50);border-radius:16px;padding:20px"><div class="ds-overline" style="margin-bottom:6px">Regra 2</div><div style="font-size:15px">Zero <code>style=</code> inline no estado final. A única exceção autorizada é a largura da barra de progresso, que é dado.</div></div>
+        <div style="background:var(--blue-50);border-radius:16px;padding:20px"><div class="ds-overline" style="margin-bottom:6px">Regra 3</div><div style="font-size:15px">Vermelho, laranja e amarelo são proibidos em qualquer slot, inclusive em curso vencido — use <code>--critical</code> com ícone e texto.</div></div>
+      </div>
+    </div>
+
+    <!-- 01 TABS -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">01</span><h2 style="font-size:30px;margin:0">Filtro superior — apenas as três abas</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">x-tabs</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:960px">A tela tem <strong>um único filtro</strong>: as abas <em>Em andamento</em>, <em>Concluídos</em> e <em>Todos</em>. Não existe select de organização, não existe ordenação, não existe busca — nada é acrescentado a esta faixa. As abas são pílulas segmentadas <code>.ds-tabs</code> com <code>&lt;button&gt;</code> nativos dentro de um <code>&lt;form&gt;</code> GET; cada clique submete e recarrega a lista.</p>
+
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) 620px;gap:36px;align-items:start">
+        <div style="background:var(--surface-body);border-radius:20px;padding:36px;display:flex;flex-direction:column;gap:32px">
+          <div class="ds-tabs" role="tablist" style="max-width:520px"><button class="ds-tab" role="tab" aria-selected="true" dusk="tab-em-andamento">Em andamento<span class="ds-chip ds-chip-primary ds-chip-plain" style="height:24px;padding:0 10px">2</span></button><button class="ds-tab" role="tab" aria-selected="false" dusk="tab-concluidos">Concluídos</button><button class="ds-tab" role="tab" aria-selected="false" dusk="tab-todos">Todos</button></div>
+          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:24px">
+            <div><div class="ds-overline" style="margin-bottom:10px">Aba ativa</div><div class="ds-tabs" style="max-width:340px"><button class="ds-tab" aria-selected="true">Concluídos<span class="ds-chip ds-chip-primary ds-chip-plain" style="height:24px;padding:0 10px">5</span></button><button class="ds-tab">Todos</button></div><div class="ds-caption" style="margin-top:10px">Superfície branca, <code>--primary</code>, <code>--elev-1</code>.</div></div>
+            <div><div class="ds-overline" style="margin-bottom:10px">Sem resultado na aba</div><div class="ds-tabs" style="max-width:340px"><button class="ds-tab" aria-selected="true">Concluídos</button><button class="ds-tab">Todos</button></div><div class="ds-caption" style="margin-top:10px">Contador de zero não é renderizado — a aba fica sem chip, nunca com "0".</div></div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Props</div>
+            <div style="display:grid;grid-template-columns:170px 1fr;gap:12px 16px;font-size:15px">
+              <code>name</code><span>Nome do parâmetro no query string. Nesta tela, <code>status</code>.</span>
+              <code>:items</code><span>Exatamente três: <code>em_andamento</code>, <code>concluido</code>, <code>todos</code>. A lista é fechada.</span>
+              <code>:current</code><span>Aba ativa, de <code>request('status')</code>. Padrão <code>em_andamento</code>.</span>
+              <code>:counts</code><span>Array opcional valor ⇒ inteiro. Zero ou ausente ⇒ sem chip.</span>
+              <code>dusk</code><span><code>tab-em-andamento</code>, <code>tab-concluidos</code>, <code>tab-todos</code>, no <code>&lt;button&gt;</code>.</span>
+            </div>
+          </div>
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Tokens e medidas</div>
+            <div style="display:grid;grid-template-columns:170px 1fr;gap:10px 16px;font-size:15px">
+              <code>--surface-alt</code><span>trilha das pílulas</span>
+              <code>--radius-pill</code><span>trilha e cada aba</span>
+              <code>--primary</code><span>texto da aba ativa; inativa em <code>--text-secondary</code></span>
+              <code>--elev-1</code><span>elevação da aba ativa sobre a trilha</span>
+              <span style="font-weight:700">altura</span><span>44px por aba, padding 6px na trilha</span>
+              <span style="font-weight:700">largura</span><span>máx. 520px, alinhada à esquerda; 32px abaixo do cabeçalho</span>
+            </div>
+          </div>
+          <div style="background:var(--surface-sunken);border-radius:16px;padding:22px;box-shadow:inset 0 0 0 1px var(--divider)"><pre>{{ bladeTabs }}</pre></div>
+          <div class="ds-alert ds-alert-attention"><div><strong>Nada além disto.</strong> A faixa não recebe <code>.ds-filter-bar</code>, select, chip de filtro nem campo de busca. Se aparecer necessidade de ordenar ou filtrar por organização, é decisão de produto — precisa de confirmação antes de ser desenhada.</div></div>
+          <div class="ds-alert ds-alert-info"><div><strong>Comportamento.</strong> Cada aba é <code>&lt;button type="submit" name="status" value="..."&gt;</code> num <code>&lt;form method="GET"&gt;</code>. Sem JS, sem estado no cliente. Teclado: Tab entra na faixa, ← e → trocam a aba ativa.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 02 CARD SHELL -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">02</span><h2 style="font-size:30px;margin:0">CourseCard — a casca de quatro slots</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">x-course.card</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:960px">O card é só estrutura: <code>.ds-card</code> + <code>.ds-card-interactive</code>, coluna, quatro slots na ordem fixa <em>header → título → corpo → rodapé</em>. Ele não decide cor, não formata número e não escolhe o texto do botão — isso é dos slots. Altura não é fixa: o rodapé desce com <code>margin-top:auto</code> para que cards da mesma linha terminem alinhados.</p>
+
+      <div style="display:grid;grid-template-columns:420px minmax(0,1fr);gap:40px;align-items:start">
+        <div style="background:var(--surface-body);border-radius:20px;padding:32px;display:flex;flex-direction:column;gap:14px">
+          <div class="ds-card ds-card-interactive" dusk="course-card-12">
+            <div class="ds-card-media" style="display:flex;align-items:flex-end;padding:20px"><span class="ds-chip ds-chip-info">Em andamento</span></div>
+            <div class="ds-card-body">
+              <div class="ds-overline">Conselho Regional</div>
+              <h3 class="ds-card-title">Fundamentos de Segurança do Trabalho</h3>
+              <p class="ds-muted" style="margin:0">Conteúdo introdutório obrigatório para toda a equipe técnica.</p>
+              <div><div style="display:flex;justify-content:space-between;margin-bottom:8px"><span class="ds-caption">Progresso</span><span class="ds-caption" style="font-weight:700;color:var(--text-primary)">62%</span></div><div class="ds-progress"><div class="ds-progress-bar" style="width:62%"></div></div></div>
+              <button class="ds-btn ds-btn-primary" dusk="course-continue-12">Continuar<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></button>
+              <div class="ds-card-meta"><span>13 aulas</span><span>4h</span><span>Prazo: 30/08/2026</span></div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;font-size:14px;color:var(--text-secondary)">
+            <div style="display:flex;gap:10px"><span style="font-weight:800;color:var(--primary)">03</span> header · 168px, imagem ou gradiente</div>
+            <div style="display:flex;gap:10px"><span style="font-weight:800;color:var(--primary)">04</span> corpo · padding 28px, gap 16px</div>
+            <div style="display:flex;gap:10px"><span style="font-weight:800;color:var(--primary)">05</span> progresso · rótulo + barra 10px</div>
+            <div style="display:flex;gap:10px"><span style="font-weight:800;color:var(--primary)">06</span> rodapé · ação + metadados</div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:22px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Props</div>
+            <div style="display:grid;grid-template-columns:190px 1fr;gap:12px 16px;font-size:15px">
+              <code>:enrollment</code><span>Model <code>Enrollment</code> com <code>course</code>, <code>organization</code> e <code>progress</code> pré-carregados. Única prop obrigatória.</span>
+              <code>:progress</code><span>Inteiro 0–100. Se ausente, o card lê <code>$enrollment-&gt;progress_percent</code>.</span>
+              <code>status</code><span><code>em_andamento</code> · <code>concluido</code> · <code>nao_iniciado</code> · <code>expirado</code>. Decide chip e ação.</span>
+              <code>interactive</code><span>Padrão <code>true</code>. O card inteiro é clicável e leva ao curso.</span>
+              <code>dusk</code><span><code>course-card-{id}</code>, no nó <code>.ds-card</code>.</span>
+            </div>
+          </div>
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Medidas fixas</div>
+            <div style="display:grid;grid-template-columns:190px 1fr;gap:10px 16px;font-size:15px">
+              <code>--radius-lg</code><span>raio do card; o header herda só os dois cantos de cima</span>
+              <code>--elev-1</code><span>repouso · <code>--elev-3</code> + <code>translateY(-3px)</code> no hover</span>
+              <code>--pad-card</code><span>padding do corpo</span>
+              <span style="font-weight:700">gap interno</span><span><code>--space-3</code> entre os elementos do corpo</span>
+              <span style="font-weight:700">largura mínima</span><span>300px — abaixo disso a grade quebra para 2 e depois 1 coluna</span>
+            </div>
+          </div>
+          <div style="background:var(--surface-sunken);border-radius:16px;padding:22px;box-shadow:inset 0 0 0 1px var(--divider)"><pre>{{ bladeCard }}</pre></div>
+          <div class="ds-alert ds-alert-attention"><div><strong>Um link, não dois.</strong> Com <code>interactive</code>, o card é envolvido por um único <code>&lt;a&gt;</code> e o botão do rodapé vira <code>&lt;span class="ds-btn"&gt;</code> — nunca link dentro de link. Se o rodapé tiver duas ações (Continuar + Baixar certificado), o card deixa de ser clicável.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 03 HEADER -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">03</span><h2 style="font-size:30px;margin:0">CourseCardHeader — imagem ou gradiente</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">x-course.card-header</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:960px">Faixa de 168px no topo do card, com dois modos e um só comportamento. <strong>Com capa</strong>: a imagem do curso preenche a faixa em <code>object-fit:cover</code>, e um véu escuro na base garante contraste do chip. <strong>Sem capa</strong>: a faixa recebe o gradiente canônico do design system — <code>linear-gradient(135deg, var(--blue-100), var(--mint-100))</code>, exatamente o que <code>.ds-card-media</code> já traz por padrão. Não existe terceiro modo, não existe cor por categoria, não se gera gradiente novo.</p>
+
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:24px">
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div class="ds-overline">Sem capa — padrão</div>
+          <div class="ds-card"><div class="ds-card-media" style="display:flex;align-items:flex-end;padding:20px"><span class="ds-chip ds-chip-info">Em andamento</span></div><div class="ds-card-body" style="padding:20px"><h3 class="ds-card-title" style="font-size:18px">Fundamentos de Segurança</h3></div></div>
+          <div class="ds-caption">O caso mais comum. O gradiente pastel é a identidade da plataforma, não um placeholder de imagem faltando.</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div class="ds-overline">Com capa</div>
+          <div class="ds-card"><div class="ds-card-media" style="position:relative;background:linear-gradient(135deg,var(--blue-200),var(--mint-200))"><div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(16,26,45,.55),transparent 62%)"></div><div style="position:absolute;inset:0;display:flex;align-items:flex-end;padding:20px"><span class="ds-chip ds-chip-info">Em andamento</span></div></div><div class="ds-card-body" style="padding:20px"><h3 class="ds-card-title" style="font-size:18px">Boas Práticas de Atendimento</h3></div></div>
+          <div class="ds-caption">Área da imagem apenas ilustrada aqui. A capa real vem de <code>course.cover_url</code>.</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div class="ds-overline">Concluído</div>
+          <div class="ds-card"><div class="ds-card-media" style="display:flex;align-items:flex-end;padding:20px"><span class="ds-chip ds-chip-success">Concluído</span></div><div class="ds-card-body" style="padding:20px"><h3 class="ds-card-title" style="font-size:18px">Ética Profissional</h3></div></div>
+          <div class="ds-caption">O gradiente não muda com o status. Só o chip muda.</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div class="ds-overline">Prazo encerrado</div>
+          <div class="ds-card"><div class="ds-card-media" style="display:flex;align-items:flex-end;padding:20px"><span class="ds-chip ds-chip-critical"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg>Prazo encerrado</span></div><div class="ds-card-body" style="padding:20px"><h3 class="ds-card-title" style="font-size:18px">Legislação Aplicada</h3></div></div>
+          <div class="ds-caption">Azul-slate <code>--critical</code> + ícone + texto explícito. Nunca vermelho, laranja ou amarelo.</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) 620px;gap:36px;align-items:start">
+        <div>
+          <div class="ds-overline" style="margin-bottom:12px">Props e regras</div>
+          <div style="display:grid;grid-template-columns:190px 1fr;gap:12px 16px;font-size:15px">
+            <code>image</code><span>URL da capa. Vazio ou nulo ⇒ modo gradiente, sem <code>&lt;img&gt;</code> no DOM.</span>
+            <code>alt</code><span>Obrigatório quando há <code>image</code>. Se a capa for decorativa, <code>alt=""</code> explícito.</span>
+            <code>status</code><span>Define o chip: <code>info</code> em andamento · <code>success</code> concluído · <code>neutral</code> não iniciado · <code>critical</code> prazo encerrado.</span>
+            <code>statusLabel</code><span>Texto do chip, sentence case, pt-BR.</span>
+            <span style="font-weight:700">altura</span><span>168px fixa nos dois modos — a linha de cards não pode desalinhar por causa da capa.</span>
+            <span style="font-weight:700">véu</span><span>Só no modo imagem: <code>linear-gradient(to top, rgba(16,26,45,.55), transparent 62%)</code>.</span>
+            <span style="font-weight:700">chip</span><span>Sempre no canto inferior esquerdo, 20px de recuo, em cima do véu.</span>
+          </div>
+          <div class="ds-alert ds-alert-info" style="margin-top:20px"><div><strong>Carregamento.</strong> <code>loading="lazy"</code> e <code>decoding="async"</code> em toda capa. Se a imagem falhar, o gradiente do <code>.ds-card-media</code> continua atrás — não há estado quebrado.</div></div>
+        </div>
+        <div style="background:var(--surface-sunken);border-radius:16px;padding:22px;box-shadow:inset 0 0 0 1px var(--divider)"><pre>{{ bladeHeader }}</pre></div>
+      </div>
+    </div>
+
+    <!-- 04 BODY -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">04</span><h2 style="font-size:30px;margin:0">Título e corpo</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">x-course.card-body</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:960px">Três elementos em coluna, nesta ordem e sem exceção: <strong>overline</strong> com o nome da organização, <strong>título</strong> do curso, <strong>resumo</strong> de uma a duas linhas. O overline é o único lugar da tela com caixa-alta. O título é <code>h3</code> — a hierarquia da página é <code>h1</code> "Meus cursos", os cards vêm abaixo.</p>
+
+      <div style="display:grid;grid-template-columns:380px minmax(0,1fr) 560px;gap:36px;align-items:start">
+        <div style="background:var(--surface-body);border-radius:20px;padding:28px;display:flex;flex-direction:column;gap:20px">
+          <div class="ds-card"><div class="ds-card-body"><div class="ds-overline">Conselho Regional</div><h3 class="ds-card-title">Fundamentos de Segurança do Trabalho</h3><p class="ds-muted" style="margin:0">Conteúdo introdutório obrigatório para toda a equipe técnica.</p></div></div>
+          <div class="ds-card"><div class="ds-card-body"><div class="ds-overline">Instituto Aprender</div><h3 class="ds-card-title">Gestão de Documentos e Protocolo Eletrônico em Órgãos Públicos</h3><p class="ds-muted" style="margin:0">Título longo em três linhas e resumo cortado no limite de duas linhas com reticências, para não desalinhar a grade.</p></div></div>
+        </div>
+        <div>
+          <div class="ds-overline" style="margin-bottom:12px">Especificação por elemento</div>
+          <div style="display:grid;grid-template-columns:150px 1fr;gap:14px 16px;font-size:15px;align-items:start">
+            <div><div style="font-weight:800">Overline</div><code>.ds-overline</code></div><span>Nome da organização. <code>--font-size-overline</code>, peso 800, <code>--tracking-overline</code>, <code>--text-secondary</code>. Caixa-alta. Uma linha, <code>text-overflow:ellipsis</code>.</span>
+            <div><div style="font-weight:800">Título</div><code>h3.ds-card-title</code></div><span><code>--font-size-h4</code>, peso 700, <code>--line-height-tight</code>, <code>text-wrap:balance</code>. Máximo 3 linhas (<code>-webkit-line-clamp:3</code>). Sentence case, nome do curso verbatim do banco.</span>
+            <div><div style="font-weight:800">Resumo</div><code>p.ds-muted</code></div><span><code>--font-size-body</code>, <code>--text-secondary</code>, <code>text-wrap:pretty</code>. Máximo 2 linhas. Se o curso não tem resumo, o <code>&lt;p&gt;</code> não é renderizado — não se inventa texto nem se deixa espaço vazio.</span>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div style="background:var(--surface-sunken);border-radius:16px;padding:22px;box-shadow:inset 0 0 0 1px var(--divider)"><pre>{{ bladeBody }}</pre></div>
+          <div class="ds-alert ds-alert-attention"><div><strong>Clamp obrigatório.</strong> Sem limite de linhas, um título longo empurra o progresso e o rodapé para baixo e a grade perde o alinhamento. Título 3 linhas, resumo 2 linhas, sempre.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 05 PROGRESS -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">05</span><h2 style="font-size:30px;margin:0">Barra de progresso</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">x-progress-meter</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:960px">Componente independente do card — a mesma barra serve o dashboard e a página do curso. São duas partes: a <strong>linha de rótulo</strong> ("Progresso" à esquerda, porcentagem à direita) e a <strong>trilha</strong> de 10px com raio pill. A porcentagem <em>sempre</em> aparece como texto; a barra nunca é a única portadora do valor.</p>
+
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) 620px;gap:36px;align-items:start">
+        <div style="background:var(--surface-body);border-radius:20px;padding:36px;display:flex;flex-direction:column;gap:26px">
+          <div style="max-width:520px"><div style="display:flex;justify-content:space-between;margin-bottom:8px"><span class="ds-caption">Progresso</span><span class="ds-caption" style="font-weight:700;color:var(--text-primary)">62%</span></div><div class="ds-progress" role="progressbar" aria-valuenow="62" aria-valuemin="0" aria-valuemax="100" aria-label="Progresso do curso" dusk="course-progress-12"><div class="ds-progress-bar" style="width:62%"></div></div><div class="ds-caption" style="margin-top:8px">Em andamento — <code>--primary</code></div></div>
+          <div style="max-width:520px"><div style="display:flex;justify-content:space-between;margin-bottom:8px"><span class="ds-caption">Progresso</span><span class="ds-caption" style="font-weight:700;color:var(--text-primary)">100%</span></div><div class="ds-progress"><div class="ds-progress-bar" style="width:100%;background:var(--secondary)"></div></div><div class="ds-caption" style="margin-top:8px">Concluído — <code>--secondary</code>, a única troca de cor permitida</div></div>
+          <div style="max-width:520px"><div style="display:flex;justify-content:space-between;margin-bottom:8px"><span class="ds-caption">Progresso</span><span class="ds-caption" style="font-weight:700;color:var(--text-primary)">0%</span></div><div class="ds-progress"><div class="ds-progress-bar" style="width:2%"></div></div><div class="ds-caption" style="margin-top:8px">Não iniciado — mínimo visual de 2% para a trilha não parecer defeito</div></div>
+          <div style="max-width:520px"><div style="display:flex;justify-content:space-between;margin-bottom:8px"><span class="ds-caption">Progresso</span><span class="ds-caption">—</span></div><div class="ds-progress"><div class="ds-progress-bar" style="width:34%;background:var(--grey-300)"></div></div><div class="ds-caption" style="margin-top:8px">Indisponível — dado de progresso não carregou. Cinza, sem número, sem culpar o usuário.</div></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Props</div>
+            <div style="display:grid;grid-template-columns:170px 1fr;gap:12px 16px;font-size:15px">
+              <code>:value</code><span>Inteiro 0–100. Nulo ⇒ estado indisponível.</span>
+              <code>label</code><span>Padrão "Progresso". Sentence case.</span>
+              <code>tone</code><span><code>primary</code> (padrão) · <code>secondary</code> (100%) · <code>muted</code> (indisponível).</span>
+              <code>showValue</code><span>Padrão <code>true</code>. Só desligue em barra decorativa dentro de tabela.</span>
+              <code>dusk</code><span><code>course-progress-{id}</code>, no nó <code>.ds-progress</code>.</span>
+            </div>
+          </div>
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Tokens e medidas</div>
+            <div style="display:grid;grid-template-columns:170px 1fr;gap:10px 16px;font-size:15px">
+              <span style="font-weight:700">altura</span><span>10px, fixa</span>
+              <code>--radius-pill</code><span>trilha e preenchimento</span>
+              <code>--surface-alt</code><span>fundo da trilha</span>
+              <code>--primary</code><span>preenchimento em andamento</span>
+              <code>--secondary</code><span>preenchimento em 100%</span>
+              <code>--duration-slow</code><span>transição de largura, com <code>--ease-emphasized</code></span>
+              <span style="font-weight:700">rótulo</span><span><code>--font-size-caption</code>; a porcentagem em peso 700 e <code>--text-primary</code></span>
+            </div>
+          </div>
+          <div style="background:var(--surface-sunken);border-radius:16px;padding:22px;box-shadow:inset 0 0 0 1px var(--divider)"><pre>{{ bladeProgress }}</pre></div>
+          <div class="ds-alert ds-alert-info"><div><strong>Acessibilidade.</strong> <code>role="progressbar"</code> com <code>aria-valuenow/min/max</code> e <code>aria-label</code> nomeando o curso. Sem <code>aria-hidden</code> na porcentagem — leitor de tela e olho leem o mesmo número. Cálculo do valor: aulas concluídas ÷ total, arredondado para inteiro, no servidor.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 06 FOOTER -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">06</span><h2 style="font-size:30px;margin:0">Rodapé — ação contextual e metadados</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">x-course.card-footer</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:960px">O rodapé tem uma ação primária e uma linha de metadados, nesta ordem. A ação é derivada do <code>status</code> — a view não escolhe o texto, o componente escolhe. Os metadados são separados por espaço, nunca por barra ou ponto, e são no máximo três.</p>
+
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:20px">
+        <div style="display:flex;flex-direction:column;gap:12px"><div class="ds-overline">Não iniciado</div><div class="ds-card"><div class="ds-card-body" style="padding:24px"><button class="ds-btn ds-btn-primary">Começar curso</button><div class="ds-card-meta"><span>13 aulas</span><span>4h</span></div></div></div></div>
+        <div style="display:flex;flex-direction:column;gap:12px"><div class="ds-overline">Em andamento</div><div class="ds-card"><div class="ds-card-body" style="padding:24px"><button class="ds-btn ds-btn-primary">Continuar<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></button><div class="ds-card-meta"><span>13 aulas</span><span>4h</span><span>Prazo: 30/08/2026</span></div></div></div></div>
+        <div style="display:flex;flex-direction:column;gap:12px"><div class="ds-overline">Concluído</div><div class="ds-card"><div class="ds-card-body" style="padding:24px"><button class="ds-btn ds-btn-secondary">Baixar certificado</button><div class="ds-card-meta"><span>13 aulas</span><span>Concluído em 12/07/2026</span></div></div></div></div>
+        <div style="display:flex;flex-direction:column;gap:12px"><div class="ds-overline">Prazo encerrado</div><div class="ds-card"><div class="ds-card-body" style="padding:24px"><button class="ds-btn ds-btn-tonal">Ver o que você fez</button><div class="ds-card-meta"><span>8 de 13 aulas</span><span>Encerrado em 30/06/2026</span></div></div></div></div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) 620px;gap:36px;align-items:start">
+        <div>
+          <div class="ds-overline" style="margin-bottom:12px">Tabela de decisão da ação</div>
+          <div style="display:grid;grid-template-columns:180px 220px 1fr;gap:12px 16px;font-size:15px">
+            <div style="font-weight:800">status</div><div style="font-weight:800">rótulo</div><div style="font-weight:800">variante e destino</div>
+            <code>nao_iniciado</code><span>Começar curso</span><span><code>.ds-btn-primary</code> → primeira aula</span>
+            <code>em_andamento</code><span>Continuar</span><span><code>.ds-btn-primary</code> + chevron → última aula vista</span>
+            <code>concluido</code><span>Baixar certificado</span><span><code>.ds-btn-secondary</code> → PDF do certificado</span>
+            <code>expirado</code><span>Ver o que você fez</span><span><code>.ds-btn-tonal</code> → curso em leitura</span>
+          </div>
+          <div style="margin-top:22px"><div class="ds-overline" style="margin-bottom:12px">Metadados</div>
+            <div style="display:grid;grid-template-columns:180px 1fr;gap:10px 16px;font-size:15px">
+              <code>.ds-card-meta</code><span><code>margin-top:auto</code>, borda superior <code>--divider</code>, <code>--font-size-caption</code>, gap <code>--space-4</code>, <code>flex-wrap</code>.</span>
+              <span style="font-weight:700">conteúdo</span><span>Aulas · carga horária · prazo. Máximo três. Datas <code>dd/mm/aaaa</code>, carga com vírgula decimal ("4,5h").</span>
+              <span style="font-weight:700">prazo</span><span>Só aparece quando existe. Nunca em vermelho, nunca com "urgente".</span>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div style="background:var(--surface-sunken);border-radius:16px;padding:22px;box-shadow:inset 0 0 0 1px var(--divider)"><pre>{{ bladeFooter }}</pre></div>
+          <div class="ds-alert ds-alert-info"><div><strong>Alvo de toque.</strong> Botão com <code>min-height</code> de <code>--touch-min</code> (44px) em todos os breakpoints. No mobile o botão ocupa 100% da largura do card.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 07 GRADE, ESTADOS, ACEITE -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">07</span><h2 style="font-size:30px;margin:0">Grade, estados da lista e aceite</h2></div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:32px">
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="ds-overline">Grade e responsivo</div>
+          <div style="display:grid;grid-template-columns:130px 1fr;gap:10px 16px;font-size:15px">
+            <span style="font-weight:700">≥ 1280px</span><span>3 colunas, gap 24px</span>
+            <span style="font-weight:700">840–1279px</span><span>2 colunas, gap 20px</span>
+            <span style="font-weight:700">&lt; 840px</span><span>1 coluna; as abas ocupam 100% da largura</span>
+            <span style="font-weight:700">tabs</span><span>abaixo de 840px rolam na horizontal, sem quebrar linha</span>
+          </div>
+          <div class="ds-caption">A grade é <code>repeat(auto-fill, minmax(300px, 1fr))</code> — sem media query para as colunas.</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="ds-overline">Lista vazia</div>
+          <div class="ds-empty" style="padding:32px 24px">
+            <div class="ds-empty-icon"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg></div>
+            <div style="font-size:18px;font-weight:700">Nenhum curso por aqui ainda</div>
+            <p class="ds-muted" style="margin:0;font-size:15px">Quando sua organização matricular você em um curso, ele aparece nesta lista.</p>
+          </div>
+          <div class="ds-caption">Nas abas Concluídos e Todos o texto muda para "Você ainda não concluiu nenhum curso" e a aba <em>Em andamento</em> continua acessível.</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="ds-overline">Carregando</div>
+          <div class="ds-card"><div class="ds-card-media" style="background:var(--surface-alt)"></div><div class="ds-card-body" style="padding:24px;gap:12px"><div style="height:12px;width:40%;background:var(--surface-alt);border-radius:6px"></div><div style="height:20px;width:85%;background:var(--surface-alt);border-radius:6px"></div><div style="height:10px;width:100%;background:var(--surface-alt);border-radius:6px"></div></div></div>
+          <div class="ds-caption">Três esqueletos com a mesma geometria do card. Sem <em>spinner</em>, sem salto de layout.</div>
+        </div>
+      </div>
+
+      <div style="height:1px;background:var(--divider)"></div>
+
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:36px">
+        <div>
+          <div class="ds-overline" style="margin-bottom:12px">Contrato dusk — nenhum destes muda</div>
+          <div style="display:grid;grid-template-columns:230px 1fr;gap:10px 16px;font-size:15px">
+            <code>tab-em-andamento</code><span><code>button.ds-tab</code>, com <code>aria-selected</code></span>
+            <code>tab-concluidos</code><span><code>button.ds-tab</code></span>
+            <code>tab-todos</code><span><code>button.ds-tab</code></span>
+            <code>course-card-{id}</code><span>no nó <code>.ds-card</code></span>
+            <code>course-progress-{id}</code><span>no nó <code>.ds-progress</code></span>
+            <code>course-continue-{id}</code><span>na ação primária, qualquer que seja o rótulo</span>
+          </div>
+          <div class="ds-alert ds-alert-attention" style="margin-top:20px"><div>Wrappers novos — <code>.ds-card-body</code>, <code>.ds-progress</code> quando só embala — não recebem <code>dusk</code>. A lista exata da tela está em <code>spec/front_migration/03-screen-inventory.md</code> no repositório de origem.</div></div>
+        </div>
+        <div>
+          <div class="ds-overline" style="margin-bottom:12px">Critérios de aceite</div>
+          <div style="display:flex;flex-direction:column;gap:10px;font-size:15px">
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Os arquivos Blade criados em <code>components/course/</code> e <code>components/</code>; a view da tela só compõe, não estiliza.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Zero <code>style=</code> inline, exceto a largura da <code>.ds-progress-bar</code>.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Zero vermelho, laranja ou amarelo, inclusive em prazo encerrado.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Caixa-alta só no overline. Todo o resto em sentence case, pt-BR, segunda pessoa.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Título com clamp de 3 linhas e resumo com 2: cards de uma linha terminam alinhados.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Porcentagem legível como texto em todo card com progresso conhecido.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Nenhum link dentro de link quando o card é interativo.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Navegação por teclado percorre abas → cards em ordem visual, com foco visível.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span><code>artisan dusk</code> filtrado em <code>student/courses</code> passa sem alteração de teste.</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const Z = "\u200B";
+const b = (s) => s.split("{{").join("{" + Z + "{").split("}}").join("}" + Z + "}");
+
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      bladeTabs: b(`{{-- components/tabs.blade.php --}}
+@props(['name'=>'status','items'=>[],'current'=>null,'counts'=>[]])
+
+<form method="GET" class="ds-tabs" role="tablist">
+  @foreach($items as $value => $label)
+    <button type="submit" name="{{ $name }}" value="{{ $value }}"
+            class="ds-tab" role="tab"
+            aria-selected="{{ $current === $value ? 'true' : 'false' }}"
+            dusk="tab-{{ Str::slug($label) }}">
+      {{ $label }}
+      @if(($counts[$value] ?? 0) > 0)
+        <span class="ds-chip ds-chip-primary ds-chip-plain">{{ $counts[$value] }}</span>
+      @endif
+    </button>
+  @endforeach
+</form>
+
+{{-- uso na tela: este e o unico filtro de Meus cursos --}}
+<x-tabs name="status"
+        :items="['em_andamento' => 'Em andamento',
+                 'concluido'    => 'Concluídos',
+                 'todos'        => 'Todos']"
+        :current="request('status', 'em_andamento')"
+        :counts="$counts" />`),
+
+      bladeCard: b(`{{-- components/course/card.blade.php --}}
+@props(['enrollment','progress'=>null,'status'=>null,'interactive'=>true])
+
+@php
+  $status = $status ?? $enrollment->status;
+  $progress = $progress ?? $enrollment->progress_percent;
+  $tag = $interactive ? 'a' : 'div';
+@endphp
+
+<{{ $tag }}
+  @if($interactive) href="{{ route('courses.show', $enrollment->course) }}" @endif
+  class="ds-card @if($interactive) ds-card-interactive @endif"
+  dusk="course-card-{{ $enrollment->id }}">
+
+  <x-course.card-header :image="$enrollment->course->cover_url"
+                        :alt="$enrollment->course->title"
+                        :status="$status" />
+
+  <div class="ds-card-body">
+    <x-course.card-body :enrollment="$enrollment" />
+    <x-progress-meter :value="$progress"
+                      :label="__('Progresso')"
+                      dusk="course-progress-{{ $enrollment->id }}" />
+    <x-course.card-footer :enrollment="$enrollment" :status="$status" />
+  </div>
+</{{ $tag }}>`),
+
+      bladeHeader: b(`{{-- components/course/card-header.blade.php --}}
+@props(['image'=>null,'alt'=>'','status'=>'em_andamento'])
+
+@php
+  $chip = [
+    'nao_iniciado' => ['neutral',  'Não iniciado'],
+    'em_andamento' => ['info',     'Em andamento'],
+    'concluido'    => ['success',  'Concluído'],
+    'expirado'     => ['critical', 'Prazo encerrado'],
+  ][$status];
+@endphp
+
+{{-- sem imagem: .ds-card-media já traz
+     linear-gradient(135deg, var(--blue-100), var(--mint-100)) --}}
+<div class="ds-card-media @if($image) ds-card-media-image @endif">
+  @if($image)
+    <img src="{{ $image }}" alt="{{ $alt }}" loading="lazy" decoding="async">
+    <span class="ds-card-media-scrim" aria-hidden="true"></span>
+  @endif
+  <span class="ds-card-media-chip">
+    <span class="ds-chip ds-chip-{{ $chip[0] }}">
+      @if($status === 'expirado')
+        <x-icon name="alert-circle" />
+      @endif
+      {{ $chip[1] }}
+    </span>
+  </span>
+</div>`),
+
+      bladeBody: b(`{{-- components/course/card-body.blade.php --}}
+@props(['enrollment'])
+
+<div class="ds-overline ds-truncate">{{ $enrollment->organization->name }}</div>
+
+<h3 class="ds-card-title ds-clamp-3">{{ $enrollment->course->title }}</h3>
+
+@if($enrollment->course->summary)
+  <p class="ds-muted ds-clamp-2">{{ $enrollment->course->summary }}</p>
+@endif`),
+
+      bladeProgress: b(`{{-- components/progress-meter.blade.php --}}
+@props(['value'=>null,'label'=>'Progresso','tone'=>null,'showValue'=>true])
+
+@php
+  $known = ! is_null($value);
+  $tone  = $tone ?? (! $known ? 'muted' : ($value >= 100 ? 'secondary' : 'primary'));
+  $width = $known ? max($value, 2) : 34;
+@endphp
+
+<div class="ds-progress-field">
+  @if($showValue)
+    <div class="ds-progress-labels">
+      <span class="ds-caption">{{ $label }}</span>
+      <span class="ds-caption ds-progress-value">{{ $known ? $value.'%' : '—' }}</span>
+    </div>
+  @endif
+
+  <div class="ds-progress"
+       role="progressbar"
+       aria-label="{{ $label }}"
+       @if($known)
+         aria-valuenow="{{ $value }}" aria-valuemin="0" aria-valuemax="100"
+       @endif
+       {{ $attributes }}>
+    <div class="ds-progress-bar ds-progress-bar-{{ $tone }}"
+         style="width: {{ $width }}%"></div>
+  </div>
+</div>`),
+
+      bladeFooter: b(`{{-- components/course/card-footer.blade.php --}}
+@props(['enrollment','status'])
+
+@php
+  $action = [
+    'nao_iniciado' => ['Começar curso',      'primary',   'lesson.first'],
+    'em_andamento' => ['Continuar',          'primary',   'lesson.resume'],
+    'concluido'    => ['Baixar certificado', 'secondary', 'certificate'],
+    'expirado'     => ['Ver o que você fez', 'tonal',     'course.readonly'],
+  ][$status];
+@endphp
+
+<a href="{{ route($action[2], $enrollment) }}"
+   class="ds-btn ds-btn-{{ $action[1] }} ds-btn-block"
+   dusk="course-continue-{{ $enrollment->id }}">
+  {{ $action[0] }}
+  @if($status === 'em_andamento')
+    <x-icon name="chevron-right" />
+  @endif
+</a>
+
+<div class="ds-card-meta">
+  <span>{{ $enrollment->course->lessons_count }} aulas</span>
+  <span>{{ $enrollment->course->duration_label }}</span>
+  @if($enrollment->due_at)
+    <span>Prazo: {{ $enrollment->due_at->format('d/m/Y') }}</span>
+  @endif
+</div>`),
+    };
+  }
+}
+</script>
+</body>
+</html>

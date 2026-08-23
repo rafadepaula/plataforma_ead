@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <meta name="design_doc_mode" content="canvas">
+  <link rel="stylesheet" href="_ds/plataforma-ead-design-system-618bb28f-056b-421b-b1d4-d0fef3cd30e2/styles.css">
+  <script src="_ds/plataforma-ead-design-system-618bb28f-056b-421b-b1d4-d0fef3cd30e2/_ds_bundle.js"></script>
+  <style>
+    a{color:var(--primary);text-decoration:none}
+    a:hover{color:var(--primary-hover)}
+    pre{margin:0;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;line-height:1.7;white-space:pre-wrap;color:var(--grey-800)}
+    code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.92em;background:var(--surface-alt);border-radius:6px;padding:1px 6px}
+  </style>
+</helmet>
+
+<section style="display:flex;flex-direction:column;gap:28px;padding:64px;background:var(--surface-body);font-family:var(--font-sans);color:var(--text-primary);line-height:1.6;width:2040px;box-sizing:border-box">
+
+  <div id="1a" style="display:flex;flex-direction:column;gap:28px">
+
+    <header style="display:flex;align-items:flex-start;justify-content:space-between;gap:48px;background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px">
+      <div style="max-width:1180px;display:flex;flex-direction:column;gap:14px">
+        <div class="ds-overline" style="color:var(--primary)">Especificação de comportamento · tela 21 · slide 21</div>
+        <h1 style="font-size:46px;line-height:1.08;margin:0;letter-spacing:-.02em">No celular — as regras que valem em toda tela</h1>
+        <p style="font-size:19px;color:var(--text-secondary);margin:0;text-wrap:pretty">Este canvas não especifica uma tela: especifica <strong>como todas as outras se comportam</strong> abaixo de 768px. Pontos de quebra, o drawer que vira gaveta, tabela que vira card, formulário, alvos de toque e a lista das transformações tela por tela. Lido de <code>components/layout/sidebar.blade.php</code>, <code>topbar.blade.php</code> e das views já especificadas nos outros canvases.</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;align-items:flex-end;flex:none">
+        <span class="ds-chip ds-chip-primary ds-chip-plain ds-chip-lg">1a</span>
+        <span class="ds-caption">7 regras · 8 blocos</span>
+      </div>
+    </header>
+
+    <div class="ds-alert ds-alert-attention"><div><strong>Não existe versão móvel do produto.</strong> Existe uma marcação só, que se reorganiza. Nenhuma tela tem view separada para celular, nenhum <code>dusk</code> é duplicado entre layouts, e nada é escondido por largura — se a informação importa no desktop, ela importa no celular. O que muda é forma, nunca conteúdo. A única exceção documentada são os cards de <a href="#1a">Cursos</a>, que substituem a tabela e por isso <strong>não repetem</strong> os <code>dusk</code> dela.</div></div>
+
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px">
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">01</div><div style="font-size:17px;font-weight:800">Pontos de quebra</div><div class="ds-caption">três, herdados</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">02</div><div style="font-size:17px;font-weight:800">Shell</div><div class="ds-caption">drawer, app bar, gaveta</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">03</div><div style="font-size:17px;font-weight:800">Tabela → card</div><div class="ds-caption">data-label</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">04</div><div style="font-size:17px;font-weight:800">Formulário</div><div class="ds-caption">uma coluna, botão em bloco</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">05</div><div style="font-size:17px;font-weight:800">Toque</div><div class="ds-caption">44px, sempre</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">06</div><div style="font-size:17px;font-weight:800">Diálogo e FAB</div><div class="ds-caption">folha, área segura</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">07</div><div style="font-size:17px;font-weight:800">Tela por tela</div><div class="ds-caption">a matriz completa</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">08</div><div style="font-size:17px;font-weight:800">Aceite</div><div class="ds-caption">o que se testa</div></div></div>
+    </div>
+
+    <!-- 00 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:24px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">00</span><h2 style="font-size:30px;margin:0">Os seis princípios</h2></div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px">
+        <div style="background:var(--blue-50);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">Uma marcação</div><div style="font-size:15px">Nenhuma view duplicada, nenhum <code>dusk</code> repetido entre layouts. Onde há duas formas, só uma carrega os seletores.</div></div>
+        <div style="background:var(--blue-50);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">Nada some</div><div style="font-size:15px">Coluna que desaparece na tabela reaparece como linha no card. Esconder informação por largura é perder informação.</div></div>
+        <div style="background:var(--blue-50);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">A ordem do DOM manda</div><div style="font-size:15px">Colunas laterais vêm depois da principal no DOM e descem sozinhas. Zero <code>order</code>, zero reposicionamento por CSS.</div></div>
+        <div style="background:var(--mint-100);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">44px é o piso</div><div style="font-size:15px">Todo alvo tocável tem no mínimo 44×44px, em qualquer largura. Inclusive ícones de ação em lista.</div></div>
+        <div style="background:var(--mint-100);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">Nada fixo na rolagem</div><div style="font-size:15px">Só a app bar e o FAB do fórum. Barra de ação fixa come a área de leitura em tela pequena.</div></div>
+        <div style="background:var(--mint-100);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">Uma coluna</div><div style="font-size:15px">Abaixo de 768px tudo é uma coluna, com 20px de margem lateral. Sem exceções.</div></div>
+      </div>
+    </div>
+
+    <!-- 01 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">01</span><h2 style="font-size:30px;margin:0">Pontos de quebra</h2></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">Três, e são os do Bootstrap que o produto já usa — <code>md</code> em 768px, <code>lg</code> em 992px, <code>xl</code> em 1200px. Não invente valores novos: as classes utilitárias existentes (<code>d-none d-md-block</code>, <code>col-lg-8</code>) dependem deles, e mudar os limites quebraria telas que ninguém tocou nesta tarefa.</p>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="display:grid;grid-template-columns:180px 1fr;gap:16px;align-items:center;background:var(--surface-alt);border-radius:14px;padding:18px 22px"><span style="font-weight:800">&lt; 768px</span><span style="font-size:15px">Celular. Uma coluna, drawer em gaveta, tabelas em card, botões em bloco. É o escopo deste canvas.</span></div>
+        <div style="display:grid;grid-template-columns:180px 1fr;gap:16px;align-items:center;background:var(--blue-50);border-radius:14px;padding:18px 22px"><span style="font-weight:800">768 – 991px</span><span style="font-size:15px">Tablet em pé. Tabelas voltam; grades de 3 e 4 colunas viram 2; o drawer continua em gaveta e as laterais continuam embaixo.</span></div>
+        <div style="display:grid;grid-template-columns:180px 1fr;gap:16px;align-items:center;background:var(--mint-100);border-radius:14px;padding:18px 22px"><span style="font-weight:800">992 – 1199px</span><span style="font-size:15px">Tablet deitado e notebook pequeno. Drawer fixo, grade 8/4 ativa, rótulos longos podem encurtar.</span></div>
+        <div style="display:grid;grid-template-columns:180px 1fr;gap:16px;align-items:center;background:var(--surface-alt);border-radius:14px;padding:18px 22px"><span style="font-weight:800">≥ 1200px</span><span style="font-size:15px">Desktop. Layout completo, conteúdo limitado a 1240px e centrado.</span></div>
+      </div>
+      <div style="display:grid;grid-template-columns:170px 1fr;gap:10px 16px;font-size:15px;max-width:1000px">
+        <span style="font-weight:700">margem lateral</span><span>20px abaixo de <code>md</code>; 32px entre <code>md</code> e <code>lg</code>; 48px acima</span>
+        <span style="font-weight:700">largura máxima</span><span>1240px de conteúdo, centrado — igual em todas as telas autenticadas</span>
+        <span style="font-weight:700">quem decide</span><span>A tela mais restritiva de cada componente. Se a tabela de <a href="#1a">Cursos</a> troca em <code>md</code>, todas as tabelas trocam em <code>md</code>.</span>
+        <span style="font-weight:700">sem breakpoint próprio</span><span>Nenhum componente cria um limite só dele. Um valor solto no CSS é dívida garantida.</span>
+      </div>
+    </div>
+
+    <!-- 02 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">02</span><h2 style="font-size:30px;margin:0">Shell — app bar e gaveta</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">x-layout.sidebar</span><span class="ds-chip ds-chip-neutral ds-chip-plain">x-layout.topbar</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">O drawer de 264px que fica fixo à esquerda no desktop vira uma <strong>gaveta sobreposta</strong> abaixo de <code>lg</code>, aberta pelo botão de menu na app bar. Mesmo <code>&lt;nav&gt;</code>, mesmos itens, mesmos <code>dusk</code> — muda a posição, não a marcação.</p>
+
+      <div style="display:grid;grid-template-columns:760px minmax(0,1fr);gap:40px;align-items:start">
+        <div style="background:var(--surface-body);border-radius:20px;padding:36px;display:flex;gap:24px">
+          <div style="width:300px;flex:none">
+            <div class="ds-overline" style="margin-bottom:10px">Fechada</div>
+            <div style="border-radius:20px;overflow:hidden;box-shadow:var(--elev-1);background:var(--surface)">
+              <div style="height:60px;display:flex;align-items:center;gap:14px;padding:0 16px;border-bottom:1px solid var(--divider)"><button class="ds-btn ds-btn-ghost ds-btn-sm ds-btn-icon-only" aria-label="Abrir menu"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18"></path><path d="M3 12h18"></path><path d="M3 18h18"></path></svg></button><span style="width:32px;height:32px;border-radius:8px;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px">PE</span><span style="font-weight:800;flex:1">Plataforma EAD</span><span style="width:34px;height:34px;border-radius:50%;background:var(--primary-container);color:var(--on-primary-container);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800">JM</span></div>
+              <div style="padding:20px 16px;display:flex;flex-direction:column;gap:12px"><div style="height:12px;width:60%;background:var(--surface-alt);border-radius:6px"></div><div style="height:120px;background:var(--surface-alt);border-radius:14px"></div><div style="height:120px;background:var(--surface-alt);border-radius:14px"></div></div>
+            </div>
+          </div>
+          <div style="width:300px;flex:none">
+            <div class="ds-overline" style="margin-bottom:10px">Aberta</div>
+            <div style="border-radius:20px;overflow:hidden;box-shadow:var(--elev-1);background:var(--surface);position:relative">
+              <div style="height:60px;display:flex;align-items:center;gap:14px;padding:0 16px;border-bottom:1px solid var(--divider);opacity:.4"><span style="width:32px;height:32px;border-radius:8px;background:var(--primary)"></span><span style="font-weight:800;flex:1">Plataforma EAD</span></div>
+              <div style="padding:20px 16px;display:flex;flex-direction:column;gap:12px;opacity:.4"><div style="height:120px;background:var(--surface-alt);border-radius:14px"></div><div style="height:120px;background:var(--surface-alt);border-radius:14px"></div></div>
+              <div style="position:absolute;inset:0;background:rgba(15,23,42,.42)"></div>
+              <div style="position:absolute;top:0;left:0;bottom:0;width:238px;background:var(--surface);box-shadow:var(--elev-5);padding:20px 12px;display:flex;flex-direction:column;gap:6px">
+                <div style="display:flex;align-items:center;gap:12px;padding:0 10px 16px"><span style="width:32px;height:32px;border-radius:8px;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px">PE</span><span style="font-weight:800;font-size:15px">Plataforma EAD</span></div>
+                <a href="#1a" style="display:flex;align-items:center;gap:12px;padding:12px;border-radius:12px;background:var(--primary-container);color:var(--on-primary-container);font-weight:700;font-size:15px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg>Painel</a>
+                <a href="#1a" style="display:flex;align-items:center;gap:12px;padding:12px;border-radius:12px;color:var(--text-secondary);font-size:15px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.5A5.5 5.5 0 0 0 6.5 4H2v15h5a4 4 0 0 1 5 2 4 4 0 0 1 5-2h5V4h-4.5A5.5 5.5 0 0 0 12 6.5z"></path></svg>Meus cursos</a>
+                <a href="#1a" style="display:flex;align-items:center;gap:12px;padding:12px;border-radius:12px;color:var(--text-secondary);font-size:15px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"></circle><path d="M15.5 13.5 17 22l-5-3-5 3 1.5-8.5"></path></svg>Certificados</a>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">App bar</div>
+            <div style="display:grid;grid-template-columns:170px 1fr;gap:12px 16px;font-size:15px">
+              <span style="font-weight:700">altura</span><span>60px abaixo de <code>lg</code> (76px acima). Fixa no topo — é o único elemento fixo do produto além do FAB.</span>
+              <span style="font-weight:700">conteúdo</span><span>Botão de menu, marca reduzida (32px), título da tela quando cabe, avatar. Busca e notificações saem: não há espaço e nenhuma das duas é caminho crítico.</span>
+              <span style="font-weight:700">botão de menu</span><span>44×44px, <code>aria-expanded</code> alternado, <code>aria-controls</code> apontando para o <code>&lt;nav&gt;</code>. Só existe abaixo de <code>lg</code>.</span>
+              <span style="font-weight:700">avatar</span><span>34px, abre o mesmo menu de conta do desktop, ancorado à direita.</span>
+            </div>
+          </div>
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Gaveta</div>
+            <div style="display:grid;grid-template-columns:170px 1fr;gap:10px 16px;font-size:15px">
+              <span style="font-weight:700">largura</span><span>264px ou 82% da tela, o que for menor.</span>
+              <span style="font-weight:700">entrada</span><span>Desliza da esquerda, 220ms, curva padrão. Scrim <code>rgba(15,23,42,.42)</code>.</span>
+              <span style="font-weight:700">fechar</span><span>Tocar no scrim, <code>Esc</code>, ou navegar. Sem botão de fechar dentro da gaveta — o scrim é maior e mais fácil de acertar.</span>
+              <span style="font-weight:700">itens</span><span>Os mesmos do drawer, com 48px de altura (12px de padding), ícone 18px, rótulo 15px. Item ativo em <code>--primary-container</code>.</span>
+              <span style="font-weight:700">foco</span><span>Preso na gaveta enquanto aberta; volta ao botão de menu ao fechar.</span>
+              <span style="font-weight:700">rolagem</span><span>Travada no corpo enquanto a gaveta está aberta.</span>
+              <span style="font-weight:700">mesmos dusk</span><span>Um <code>&lt;nav&gt;</code> só, reposicionado. Nunca dois navs com os mesmos seletores.</span>
+            </div>
+          </div>
+          <div class="ds-alert ds-alert-info"><div><strong>A gaveta não é componente novo.</strong> É o mesmo <code>x-layout.sidebar</code> com uma classe de estado. Se a implementação precisar duplicar a lista de itens, algo saiu errado.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 03 + 04 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">03</span><h2 style="font-size:30px;margin:0">Tabela vira card</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">data-label</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">Há <strong>dois</strong> caminhos, e escolher o certo importa. Quando existe uma versão em card escrita à mão — como em <a href="#1a">Cursos</a> —, use-a. Quando não existe, a tabela se transforma sozinha: cada <code>&lt;td&gt;</code> carrega <code>data-label</code> com o nome da coluna, e abaixo de <code>md</code> o CSS empilha as células mostrando o rótulo à esquerda e o valor à direita. Nenhum JS, nenhum <code>dusk</code> movido.</p>
+
+      <div style="display:grid;grid-template-columns:520px minmax(0,1fr);gap:40px;align-items:start">
+        <div style="background:var(--surface-body);border-radius:20px;padding:36px;display:flex;flex-direction:column;gap:16px">
+          <div class="ds-overline">Linha empilhada — transformação automática</div>
+          <div style="background:var(--surface);border-radius:16px;box-shadow:var(--elev-1);padding:16px 20px;display:flex;flex-direction:column;gap:2px">
+            <div style="display:flex;justify-content:space-between;gap:16px;padding:8px 0;border-bottom:1px solid var(--divider)"><span class="ds-caption" style="font-weight:700">Aluno</span><span style="font-size:15px;text-align:right">Joana Martins</span></div>
+            <div style="display:flex;justify-content:space-between;gap:16px;padding:8px 0;border-bottom:1px solid var(--divider)"><span class="ds-caption" style="font-weight:700">Curso / prova</span><span style="font-size:15px;text-align:right">Segurança em trabalho em altura</span></div>
+            <div style="display:flex;justify-content:space-between;gap:16px;padding:8px 0;border-bottom:1px solid var(--divider)"><span class="ds-caption" style="font-weight:700">Enviado em</span><span style="font-size:15px;text-align:right;font-variant-numeric:tabular-nums">12/07/2026 14:38</span></div>
+            <div style="display:flex;justify-content:flex-end;padding:12px 0 0"><a class="ds-btn ds-btn-tonal ds-btn-sm" href="#1a" style="width:100%;justify-content:center">Corrigir</a></div>
+          </div>
+          <div class="ds-caption">O <code>&lt;thead&gt;</code> some; cada linha vira um card. A célula de ações perde o rótulo e ganha a largura toda.</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Regras</div>
+            <div style="display:grid;grid-template-columns:180px 1fr;gap:12px 16px;font-size:15px">
+              <code>data-label</code><span>Em <strong>todo</strong> <code>&lt;td&gt;</code>, com o texto exato do <code>&lt;th&gt;</code>. É o que substitui o cabeçalho.</span>
+              <span style="font-weight:700">cabeçalho</span><span><code>&lt;thead&gt;</code> escondido com técnica acessível (não <code>display:none</code>), para o leitor de tela manter a associação.</span>
+              <span style="font-weight:700">linha</span><span>Vira card branco de raio 16px, <code>--elev-1</code>, 16px/20px de padding, 12px entre cards.</span>
+              <span style="font-weight:700">célula</span><span>Rótulo em caption peso 700 à esquerda, valor à direita, divisor de 1px entre células.</span>
+              <span style="font-weight:700">ações</span><span>Sem rótulo; ocupam a largura toda no fim do card, botões em bloco.</span>
+              <span style="font-weight:700">striped</span><span>Desativado no modo card — a separação já vem da elevação.</span>
+              <span style="font-weight:700">dusk</span><span>Ficam onde estão. O <code>&lt;tr&gt;</code> continua sendo o <code>&lt;tr&gt;</code>.</span>
+            </div>
+          </div>
+          <div style="background:var(--surface-sunken);border-radius:16px;padding:22px;box-shadow:inset 0 0 0 1px var(--divider)"><pre>{{ bladeTable }}</pre></div>
+          <div class="ds-alert ds-alert-attention"><div><strong>Rolagem horizontal é o último recurso.</strong> Só para tabela numérica de mais de seis colunas, e sempre com sombra na borda indicando que há mais. Nenhuma tabela do produto está nessa situação hoje.</div></div>
+        </div>
+      </div>
+
+      <div style="height:1px;background:var(--divider)"></div>
+
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">04</span><h2 style="font-size:30px;margin:0">Formulário</h2></div>
+      <div style="display:grid;grid-template-columns:420px minmax(0,1fr);gap:40px;align-items:start">
+        <div style="background:var(--surface-body);border-radius:20px;padding:32px;display:flex;flex-direction:column;gap:4px">
+          <div class="ds-field"><div class="ds-field-shell"><input class="ds-control"><label class="ds-float-label">Título da aula <span class="ds-required">*</span></label></div></div>
+          <div class="ds-field"><div class="ds-field-shell"><input class="ds-control"><label class="ds-float-label">Carga horária <span class="ds-required">*</span></label></div></div>
+          <div class="ds-field"><div class="ds-field-shell"><textarea class="ds-control" rows="4"></textarea><label class="ds-float-label">Descrição</label></div></div>
+          <div style="display:flex;flex-direction:column;gap:12px;margin-top:12px"><button class="ds-btn ds-btn-primary" style="width:100%">Salvar</button><button class="ds-btn ds-btn-ghost" style="width:100%">Cancelar</button></div>
+        </div>
+        <div style="display:grid;grid-template-columns:180px 1fr;gap:12px 16px;font-size:15px">
+          <span style="font-weight:700">colunas</span><span>Uma. Pares de campos lado a lado (carga + status, data + hora) empilham na ordem de leitura.</span>
+          <span style="font-weight:700">campo</span><span>52px de altura, 100% da largura, rótulo flutuante mantido — ele economiza a linha do rótulo acima.</span>
+          <span style="font-weight:700">tipo de teclado</span><span><code>inputmode</code> correto em cada campo: <code>numeric</code> em carga horária, <code>email</code> em e-mail. Detalhe pequeno, ganho grande.</span>
+          <span style="font-weight:700">ações</span><span>Empilhadas, em bloco, primária <strong>em cima</strong>. No desktop ficam lado a lado com a primária à direita.</span>
+          <span style="font-weight:700">não fixas</span><span>As ações rolam com o formulário. Barra fixa no rodapé cobre campo e teclado.</span>
+          <span style="font-weight:700">erro</span><span>Mesma marcação do desktop; ao enviar, a página rola até o primeiro campo inválido e foca nele.</span>
+          <span style="font-weight:700">zoom no iOS</span><span>Fonte de campo nunca abaixo de 16px — abaixo disso o Safari dá zoom automático ao focar.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 05 + 06 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">05</span><h2 style="font-size:30px;margin:0">Alvos de toque</h2></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">44×44px é o piso, e vale para o <strong>alvo</strong>, não para o desenho: um ícone de 18px pode ter área de toque de 44px sem parecer maior. Onde o desenho é menor, o alvo cresce por padding ou por pseudoelemento.</p>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:36px;align-items:start">
+        <div style="display:grid;grid-template-columns:230px 1fr;gap:12px 16px;font-size:15px">
+          <div style="font-weight:800">elemento</div><div style="font-weight:800">alvo mínimo</div>
+          <span>Botão de menu da app bar</span><span>44 × 44</span>
+          <span>Item da gaveta</span><span>48 de altura, largura toda</span>
+          <span>Linha de aula (sala de aula)</span><span>72 de altura</span>
+          <span>Opção de prova</span><span>56 de altura, largura toda</span>
+          <span>Veredito de correção</span><span>56 de altura, metade da largura</span>
+          <span>Botão de lixeira em lista</span><span>44 × 44 (ícone 16px)</span>
+          <span>Chip clicável / aba</span><span>44 de altura</span>
+          <span>Interruptor</span><span>44 de altura, o <code>&lt;label&gt;</code> inteiro</span>
+          <span>Link em texto corrido</span><span>sem mínimo — não é alvo de UI</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div style="background:var(--surface-body);border-radius:16px;padding:24px;display:flex;align-items:center;gap:20px">
+            <span style="width:44px;height:44px;border-radius:12px;background:var(--blue-50);display:flex;align-items:center;justify-content:center;color:var(--primary);position:relative"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"></path></svg></span>
+            <span style="font-size:15px">Ícone de 18px, alvo de 44px. O contorno azul mostra a área de toque — invisível na interface real.</span>
+          </div>
+          <div style="display:grid;grid-template-columns:170px 1fr;gap:10px 16px;font-size:15px">
+            <span style="font-weight:700">espaço entre</span><span>Mínimo de 8px entre dois alvos vizinhos. Dois botões colados geram toque errado.</span>
+            <span style="font-weight:700">sem hover</span><span>Todo estado que só existe no hover precisa de equivalente visível. Nada de ação revelada ao passar o mouse.</span>
+            <span style="font-weight:700">foco</span><span>O anel de foco permanece: teclado externo em tablet é caso real.</span>
+            <span style="font-weight:700">ativo</span><span>Estado <code>:active</code> com escurecimento imediato — no toque não há hover para antecipar o clique.</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="height:1px;background:var(--divider)"></div>
+
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">06</span><h2 style="font-size:30px;margin:0">Diálogo, FAB e toast</h2></div>
+      <div style="display:grid;grid-template-columns:420px minmax(0,1fr);gap:40px;align-items:start">
+        <div style="background:var(--surface-body);border-radius:20px;padding:32px">
+          <div style="border-radius:20px;overflow:hidden;box-shadow:var(--elev-1);background:var(--surface);position:relative;min-height:400px">
+            <div style="height:60px;border-bottom:1px solid var(--divider);opacity:.35"></div>
+            <div style="position:absolute;inset:0;background:rgba(15,23,42,.42)"></div>
+            <div style="position:absolute;left:0;right:0;bottom:0;background:var(--surface);border-radius:24px 24px 0 0;box-shadow:var(--elev-5);padding:12px 20px 24px;display:flex;flex-direction:column;gap:16px">
+              <div style="width:44px;height:4px;border-radius:2px;background:var(--grey-300);margin:0 auto 4px"></div>
+              <h3 style="font-size:20px;margin:0">Remover aula</h3>
+              <p class="ds-muted" style="margin:0;font-size:15px">Remover “Equipamentos de proteção individual” é uma ação permanente.</p>
+              <div style="display:flex;flex-direction:column;gap:10px"><button class="ds-btn ds-btn-danger" style="width:100%">Remover</button><button class="ds-btn ds-btn-ghost" style="width:100%">Cancelar</button></div>
+            </div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:180px 1fr;gap:12px 16px;font-size:15px">
+          <span style="font-weight:700">diálogo</span><span>Vira folha ancorada embaixo: largura total, raio 24px só no topo, alça de 44×4px, subindo em 240ms.</span>
+          <span style="font-weight:700">ações do diálogo</span><span>Empilhadas em bloco, a de confirmação em cima.</span>
+          <span style="font-weight:700">diálogo longo</span><span>Rola dentro da folha, até 90% da altura da tela; o cabeçalho fica preso no topo dela.</span>
+          <span style="font-weight:700">FAB</span><span>Só no fórum. 24px das bordas, respeitando <code>env(safe-area-inset-bottom)</code>, com 96px de respiro no fim da lista.</span>
+          <span style="font-weight:700">toast</span><span>Sobe do rodapé, largura total menos 20px de cada lado, acima do FAB. Nunca cobre a ação que o gerou.</span>
+          <span style="font-weight:700">menu de conta</span><span>Também vira folha, não menu ancorado — menu flutuante de 200px numa tela de 360px fica preso na borda.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 07 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">07</span><h2 style="font-size:30px;margin:0">Tela por tela</h2></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">A transformação de cada tela já especificada, e o ponto em que ela acontece. Esta matriz é o resumo executável: se uma implementação diverge dela, o canvas da tela é quem manda.</p>
+      <div style="display:grid;grid-template-columns:210px 110px 1fr;gap:14px 20px;font-size:15px">
+        <div style="font-weight:800">tela</div><div style="font-weight:800">troca em</div><div style="font-weight:800">o que muda abaixo do limite</div>
+        <div style="grid-column:1/-1;height:1px;background:var(--divider)"></div>
+        <span style="font-weight:600"><a href="#1a">Dashboard</a></span><span><code>lg</code></span><span>Grade 8/4 empilha, lateral desce por ordem de DOM. Cards de estatística de 4 para 2 colunas em <code>md</code>, 1 abaixo.</span>
+        <span style="font-weight:600"><a href="#1a">Meus cursos</a></span><span><code>md</code></span><span>Grade de 3 para 1 coluna. Abas de estado roláveis na horizontal, sem quebrar linha. Card de curso mantém header e barra.</span>
+        <span style="font-weight:600"><a href="#1a">Cursos</a></span><span><code>md</code></span><span>Tabela dá lugar à lista de cards escrita à mão — <strong>sem</strong> repetir os <code>dusk</code>. "Regras de conclusão" encurta para "Regras".</span>
+        <span style="font-weight:600"><a href="#1a">Montar a trilha</a></span><span><code>lg</code></span><span>Colunas de módulo empilham; arrastar continua funcionando por toque, com alça de 44px. Painel lateral vira folha.</span>
+        <span style="font-weight:600"><a href="#1a">Criar a prova</a></span><span><code>lg</code></span><span>Editor e pré-visualização deixam de ser lado a lado; a lista de questões ocupa a coluna, com as ações de cada questão em bloco.</span>
+        <span style="font-weight:600"><a href="#1a">Fazer a prova</a></span><span>840px</span><span>Coluna de 640px vira 100% com 20px de margem. Cronômetro sai do slot de ações e vai para baixo do título, à esquerda. Envio em bloco.</span>
+        <span style="font-weight:600"><a href="#1a">Correção</a></span><span><code>md</code></span><span>Fila em cards; cartões de veredito empilham em duas linhas de largura cheia, 56px cada.</span>
+        <span style="font-weight:600"><a href="#1a">Sala de aula</a></span><span><code>lg</code></span><span>Lateral (progresso, certificado, próxima aula) desce ao fim. Linha de aula com padding 12px/16px; chip de tipo desce para baixo do título.</span>
+        <span style="font-weight:600"><a href="#1a">Aula</a></span><span>768px</span><span>Player colado nas bordas do card, proporção 16:9 mantida. "Baixar PDF" e conclusão empilham; botão de concluir em bloco.</span>
+        <span style="font-weight:600"><a href="#1a">Fórum</a></span><span><code>lg</code> / <code>md</code></span><span>Em <code>lg</code>, o botão do cabeçalho vira FAB. Em <code>md</code>, a ação de fixar desce para baixo do miolo do card e o diálogo vira folha.</span>
+        <span style="font-weight:600"><a href="#1a">Página pública</a></span><span><code>md</code></span><span>Faixas em uma coluna, headline de 44 para 34px, CTA em bloco, rodapé empilhado e centrado. A barra de marca não vira hambúrguer.</span>
+        <span style="font-weight:600"><a href="#1a">Login e convite</a></span><span><code>lg</code></span><span>Painel institucional não é renderizado; a marca do tenant sobe para o topo da coluna de formulário. Botões já eram em bloco.</span>
+      </div>
+      <div class="ds-alert ds-alert-info"><div><strong>Três telas trocam fora dos limites nomeados</strong> — Fazer a prova (840px), Aula (768px) e a Página pública. As duas primeiras usam a largura da própria coluna de leitura, não a do layout; a terceira não tem shell autenticado. São exceções conscientes, e as únicas.</div></div>
+    </div>
+
+    <!-- 08 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">08</span><h2 style="font-size:30px;margin:0">Como se testa, e o aceite</h2></div>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:36px">
+        <div>
+          <div class="ds-overline" style="margin-bottom:12px">Larguras de verificação</div>
+          <div style="display:grid;grid-template-columns:150px 1fr;gap:10px 16px;font-size:15px">
+            <span style="font-weight:700">360 × 800</span><span>Android comum. É a largura em que tudo tem que caber — o piso do projeto.</span>
+            <span style="font-weight:700">390 × 844</span><span>iPhone recente. Confere a área segura inferior no FAB e nas folhas.</span>
+            <span style="font-weight:700">768 × 1024</span><span>Tablet em pé. Confere o limite <code>md</code> nos dois sentidos.</span>
+            <span style="font-weight:700">1024 × 768</span><span>Tablet deitado. Confere o limite <code>lg</code> e o drawer voltando a fixo.</span>
+          </div>
+          <div class="ds-overline" style="margin:22px 0 12px">O que verificar em cada uma</div>
+          <div style="display:flex;flex-direction:column;gap:8px;font-size:15px">
+            <div>Nenhuma rolagem horizontal na página — em nenhuma tela, em nenhuma largura.</div>
+            <div>Nenhum texto cortado, nenhum botão com rótulo truncado.</div>
+            <div>Nenhum elemento sobrepondo outro depois do empilhamento.</div>
+            <div>Nenhum alvo abaixo de 44px.</div>
+            <div>Nenhum <code>dusk</code> duplicado — <code>document.querySelectorAll('[dusk]')</code> sem repetição.</div>
+          </div>
+        </div>
+        <div>
+          <div class="ds-overline" style="margin-bottom:12px">Critérios de aceite</div>
+          <div style="display:flex;flex-direction:column;gap:10px;font-size:15px">
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Uma marcação por tela; nenhuma view separada para celular.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Nenhum <code>dusk</code> duplicado entre formas de layout; onde há duas, só uma os carrega.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Nenhuma informação escondida por largura — o que sai da tabela reaparece no card.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Os três pontos de quebra do Bootstrap preservados; nenhum valor novo inventado por componente.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Colunas laterais descem por ordem de DOM, sem <code>order</code> e sem reposicionamento por CSS.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Gaveta com foco preso, rolagem travada, <code>aria-expanded</code> alternado e fechamento pelo scrim e por <code>Esc</code>.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Todo <code>&lt;td&gt;</code> com <code>data-label</code>; <code>&lt;thead&gt;</code> escondido de forma acessível.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Todo alvo tocável com no mínimo 44×44px e 8px de separação.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Fonte de campo nunca abaixo de 16px; <code>inputmode</code> correto em cada tipo.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Ações de formulário rolam com o conteúdo; nada fixo além da app bar e do FAB.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Diálogos viram folha ancorada embaixo, com ações empilhadas em bloco.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Zero rolagem horizontal em 360px, em qualquer tela do produto.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span><code>artisan dusk</code> passa em todas as telas tocadas, sem alteração de seletor.</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const Z = "\u200B";
+const b = (s) => s.split("{{").join("{" + Z + "{").split("}}").join("}" + Z + "}");
+
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      bladeTable: b(`{{-- x-ui.data-table — transformação automática em card.
+     Só para tabelas SEM versão em card escrita à mão.
+     Cursos tem a sua própria; não aplique as duas. --}}
+@props(['headers' => [], 'striped' => false, 'hover' => false])
+
+<div class="ds-table-wrap">
+  <table @class(['ds-table', 'is-striped' => $striped, 'is-hover' => $hover])>
+    {{-- escondido de forma ACESSÍVEL: o leitor de tela mantém a
+         associação célula ↔ coluna. Nunca display:none. --}}
+    <thead class="ds-visually-hidden-below-md">
+      <tr>
+        @foreach($headers as $header)
+          <th @class(['ds-num' => ($header['align'] ?? null) === 'end'])>
+            {{ is_array($header) ? $header['label'] : $header }}
+          </th>
+        @endforeach
+      </tr>
+    </thead>
+
+    <tbody>{{ $slot }}</tbody>
+  </table>
+</div>
+
+{{-- Cada <td> repete o rótulo da coluna. Abaixo de md o CSS empilha
+     as células e mostra data-label à esquerda, valor à direita.
+     Os dusk NÃO se movem: o <tr> continua sendo o <tr>. --}}
+<tr dusk="pending-attempt-row-{{ $attempt->id }}">
+  <td data-label="Aluno">Joana Martins</td>
+  <td data-label="Curso / prova">Segurança em trabalho em altura</td>
+  <td data-label="Enviado em" class="ds-num">12/07/2026 14:38</td>
+
+  {{-- ações: sem data-label, largura cheia no card --}}
+  <td class="ds-cell-actions">
+    <x-ui.button variant="tonal" size="sm"
+                 dusk="grade-attempt-{{ $attempt->id }}">Corrigir</x-ui.button>
+  </td>
+</tr>`),
+    };
+  }
+}
+</script>
+</body>
+</html>

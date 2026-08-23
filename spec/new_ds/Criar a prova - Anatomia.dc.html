@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <meta name="design_doc_mode" content="canvas">
+  <link rel="stylesheet" href="_ds/plataforma-ead-design-system-618bb28f-056b-421b-b1d4-d0fef3cd30e2/styles.css">
+  <script src="_ds/plataforma-ead-design-system-618bb28f-056b-421b-b1d4-d0fef3cd30e2/_ds_bundle.js"></script>
+  <style>
+    a{color:var(--primary);text-decoration:none}
+    a:hover{color:var(--primary-hover)}
+    pre{margin:0;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;line-height:1.7;white-space:pre-wrap;color:var(--grey-800)}
+    code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.92em;background:var(--surface-alt);border-radius:6px;padding:1px 6px}
+  </style>
+</helmet>
+
+<section style="display:flex;flex-direction:column;gap:28px;padding:64px;background:var(--surface-body);font-family:var(--font-sans);color:var(--text-primary);line-height:1.6;width:2040px;box-sizing:border-box">
+
+  <div id="1a" style="display:flex;flex-direction:column;gap:28px">
+
+    <header style="display:flex;align-items:flex-start;justify-content:space-between;gap:48px;background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px">
+      <div style="max-width:1180px;display:flex;flex-direction:column;gap:14px">
+        <div class="ds-overline" style="color:var(--primary)">Especificação de componentes · tela 07 · slide 7</div>
+        <h1 style="font-size:46px;line-height:1.08;margin:0;letter-spacing:-.02em">Criar a prova — regras, questões e opções</h1>
+        <p style="font-size:19px;color:var(--text-secondary);margin:0;text-wrap:pretty">Uma tela só: em cima, as regras da avaliação; embaixo, a lista de questões, arrastável; e um diálogo por questão para escrever enunciado, escolher o tipo e marcar o gabarito. Especificação componente por componente, com comportamento e vocabulário lidos do código de origem — <code>quizzes/edit.blade.php</code>, <code>quizzes/partials/_question-form.blade.php</code>, <code>_question-list.blade.php</code> e <code>resources/js/modules/QuizBuilder.js</code>.</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;align-items:flex-end;flex:none">
+        <span class="ds-chip ds-chip-primary ds-chip-plain ds-chip-lg">1a</span>
+        <span class="ds-caption">7 componentes · 9 blocos</span>
+      </div>
+    </header>
+
+    <div class="ds-alert ds-alert-attention"><div><strong>Uma decisão de vocabulário para confirmar.</strong> O código chama a entidade de <em>Quiz</em> ("Editar Quiz", "Nova Questão"); o deck de venda diz <em>prova</em>. Esta especificação usa <strong>prova</strong> na interface e mantém <code>quiz</code> nas rotas, nomes de campo e seletores. Se o cliente preferir manter "Quiz" visível, é troca de rótulo em nove lugares — decida antes de implementar.</div></div>
+
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px">
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">01</div><div style="font-size:17px;font-weight:800">PageHeader</div><div class="ds-caption">breadcrumb de 4 níveis</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">02</div><div style="font-size:17px;font-weight:800">QuizRulesForm</div><div class="ds-caption">7 campos, 3 grupos</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">03</div><div style="font-size:17px;font-weight:800">QuestionList</div><div class="ds-caption">arrastável, chip de tipo</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">04</div><div style="font-size:17px;font-weight:800">QuestionModal</div><div class="ds-caption">um por questão</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">05</div><div style="font-size:17px;font-weight:800">QuestionTypeSelect</div><div class="ds-caption">4 tipos + dissertativa</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">06</div><div style="font-size:17px;font-weight:800">OptionsList</div><div class="ds-caption">gabarito e linhas</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">07</div><div style="font-size:17px;font-weight:800">OptionRow</div><div class="ds-caption">correta · texto · remover</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">08</div><div style="font-size:17px;font-weight:800">Estados</div><div class="ds-caption">vazio, erro, toast</div></div></div>
+    </div>
+
+    <!-- 00 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:24px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">00</span><h2 style="font-size:30px;margin:0">O que a tela faz</h2></div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px">
+        <div style="background:var(--blue-50);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">Regras da prova</div><div style="font-size:15px">Título, instruções, tentativas permitidas, limite de tempo, nota mínima e exibição do gabarito. Um formulário, um botão de salvar.</div></div>
+        <div style="background:var(--blue-50);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">Questões</div><div style="font-size:15px">Criar, editar, remover e reordenar por arraste. Cada questão mostra enunciado e tipo na lista.</div></div>
+        <div style="background:var(--blue-50);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">Opções e gabarito</div><div style="font-size:15px">Linhas de opção com marcação de correta. Mínimo de duas. Dissertativa não tem opções.</div></div>
+        <div style="background:var(--mint-100);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">Uma tela, vários formulários</div><div style="font-size:15px">O formulário de regras é independente dos formulários de questão. Salvar uma questão não salva as regras, e vice-versa.</div></div>
+        <div style="background:var(--mint-100);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">Ordem</div><div style="font-size:15px">A lista de questões usa o mesmo <code>data-reorder-url</code> de módulos e lições: soltar grava e devolve toast.</div></div>
+        <div style="background:var(--mint-100);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">Servidor decide</div><div style="font-size:15px">O <code>order_index</code> é atribuído no servidor e a validação recusa opções enviadas junto com tipo dissertativa, independentemente do que a interface esconde.</div></div>
+      </div>
+
+      <div style="background:var(--surface-sunken);border-radius:20px;padding:28px;box-shadow:inset 0 0 0 1px var(--divider)"><pre>quizzes/edit.blade.php
+├── x-layout.page-header                            ← 01
+├── x-ui.card
+│   └── form PUT quizzes.update  dusk="quiz-form"    ← 02
+│       ├── título · instruções
+│       ├── permitir novas tentativas · máximo de tentativas
+│       ├── limite de tempo · exibir gabarito · nota mínima
+│       └── x-ui.form-actions
+├── "Questões" + Nova questão                       ← 03
+├── _question-list.blade.php                        ← 03
+│   └── li[data-id] · alça · enunciado · chip de tipo · Editar · Remover
+├── x-ui.modal #question-create-modal               ← 04
+│   └── _question-form.blade.php  formSuffix="create"
+└── @foreach x-ui.modal #question-edit-modal-{id}    ← 04
+    └── _question-form.blade.php  formSuffix="edit-{id}"
+        ├── enunciado
+        ├── x-ui.select tipo                        ← 05
+        ├── p[data-essay-hint]                      ← 05
+        ├── div[data-options-container]              ← 06
+        │   ├── div[data-options-list]
+        │   │   └── div[data-option-row] × n         ← 07
+        │   ├── + Adicionar opção
+        │   └── template[data-option-template]
+        └── Salvar questão · Cancelar</pre></div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
+        <div style="background:var(--surface-alt);border-radius:16px;padding:20px"><div class="ds-overline" style="margin-bottom:6px">Regra 1</div><div style="font-size:15px">Todo seletor de questão e de opção é sufixado por <code>formSuffix</code> (<code>create</code> ou <code>edit-{id}</code>). A página tem N formulários iguais; nada pode ser consultado sem escopo.</div></div>
+        <div style="background:var(--surface-alt);border-radius:16px;padding:20px"><div class="ds-overline" style="margin-bottom:6px">Regra 2</div><div style="font-size:15px">Nenhum JS novo. <code>QuizBuilder.js</code> já faz alternância por tipo, gabarito exclusivo, adicionar e remover opção. Os ganchos <code>data-*</code> ficam nos mesmos nós.</div></div>
+        <div style="background:var(--surface-alt);border-radius:16px;padding:20px"><div class="ds-overline" style="margin-bottom:6px">Regra 3</div><div style="font-size:15px">Gabarito não é alerta. Opção correta é menta (<code>--secondary</code>); erro de validação é <code>--critical</code>. Nunca vermelho, laranja ou amarelo.</div></div>
+      </div>
+    </div>
+
+    <!-- 01 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">01</span><h2 style="font-size:30px;margin:0">Cabeçalho da página</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">x-layout.page-header</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">É o cabeçalho mais fundo do produto: a prova mora dentro de uma aula, que mora num módulo, que mora num curso. O breadcrumb tem quatro níveis e o kicker repete o caminho <em>curso / módulo / aula</em> — redundância intencional, porque o gestor chega aqui de vários lugares. As ações do formulário de regras ficam no rodapé do card, não no cabeçalho.</p>
+
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) 600px;gap:36px;align-items:start">
+        <div style="background:var(--surface-body);border-radius:20px;padding:36px">
+          <div class="ds-page-header" style="margin:0">
+            <div>
+              <div class="ds-caption" style="margin-bottom:12px"><a href="#1a">Cursos</a> / <a href="#1a">Fundamentos de Segurança do Trabalho</a> / <a href="#1a">Prática e avaliação</a> / Editar prova</div>
+              <div class="ds-overline" style="color:var(--primary);margin-bottom:8px">Fundamentos de Segurança do Trabalho / Prática e avaliação / Prova do módulo 2</div>
+              <h1 class="ds-page-title">Editar prova</h1>
+              <p class="ds-lead" style="margin:12px 0 0">Atualize as regras da avaliação e gerencie as questões abaixo.</p>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Conteúdo de cada parte</div>
+            <div style="display:grid;grid-template-columns:150px 1fr;gap:12px 16px;font-size:15px">
+              <code>:breadcrumb</code><span>Cursos → curso → módulo → "Editar prova". Os três primeiros são links; o último, texto.</span>
+              <code>kicker</code><span><code>curso / módulo / aula</code>, concatenado. Pode passar de uma linha; não truncar.</span>
+              <code>title</code><span>"Editar prova". Um <code>h1</code> por página.</span>
+              <code>subtitle</code><span>"Atualize as regras da avaliação e gerencie as questões abaixo." — verbatim.</span>
+              <span style="font-weight:700">ações</span><span>Nenhuma. Salvar e Cancelar pertencem ao card de regras (bloco 02); "Nova questão" pertence ao cabeçalho da lista (bloco 03).</span>
+            </div>
+          </div>
+          <div class="ds-alert ds-alert-info"><div><strong>Por que sem ações aqui.</strong> A tela tem dois destinos de salvamento diferentes. Um botão "Salvar" no topo da página sugeriria que ele grava tudo — inclusive as questões, que já são salvas uma a uma.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 02 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">02</span><h2 style="font-size:30px;margin:0">Regras da prova</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">quiz-form</span><span class="ds-chip ds-chip-neutral ds-chip-plain">x-ui.field-stack</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">Um card, um <code>&lt;form&gt;</code> PUT, sete campos em coluna de 640px. A ordem no código é plana; aqui os campos ganham <strong>três grupos com subtítulo</strong> — identidade, tentativas e tempo, resultado — porque os dois interruptores dependem dos números que estão ao lado deles. Os dois textos de ajuda são preservados verbatim: são eles que explicam o comportamento de campo em branco.</p>
+
+      <div style="display:grid;grid-template-columns:620px minmax(0,1fr);gap:40px;align-items:start">
+        <div style="background:var(--surface-body);border-radius:20px;padding:36px;display:flex;flex-direction:column;gap:28px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:14px">Identificação</div>
+            <div class="ds-field"><div class="ds-field-shell filled"><input class="ds-control" id="cp-title" value="Segurança em trabalho em altura" dusk="quiz-title-input"><label class="ds-float-label" for="cp-title">Título <span class="ds-required">*</span></label></div></div>
+            <div class="ds-field" style="margin-bottom:0"><div class="ds-field-shell filled"><textarea class="ds-control" rows="3">São 3 questões e 20 minutos. Você pode salvar e voltar depois; o tempo continua contando.</textarea><label class="ds-float-label">Instruções</label></div><div class="ds-form-text">O aluno lê este texto antes de começar.</div></div>
+          </div>
+          <div>
+            <div class="ds-overline" style="margin-bottom:14px">Tentativas e tempo</div>
+            <div style="margin-bottom:16px"><label class="ds-switch"><input type="checkbox" checked="" dusk="quiz-allow-retries"><span class="ds-switch-track"><span class="ds-switch-thumb"></span></span><span style="font-weight:600">Permitir novas tentativas</span></label></div>
+            <div class="ds-field"><div class="ds-field-shell filled"><input class="ds-control" type="number" value="3" dusk="quiz-max-attempts"><label class="ds-float-label">Máximo de tentativas</label></div><div class="ds-form-text">Deixe em branco para tentativas ilimitadas (conta apenas tentativas enviadas, não em andamento).</div></div>
+            <div class="ds-field" style="margin-bottom:0"><div class="ds-field-shell filled"><input class="ds-control" type="number" value="20" dusk="quiz-time-limit"><label class="ds-float-label">Limite de tempo (minutos)</label></div><div class="ds-form-text">Deixe em branco para sem limite. Envios após o limite são aceitos, mas marcados como reprovados.</div></div>
+          </div>
+          <div>
+            <div class="ds-overline" style="margin-bottom:14px">Resultado</div>
+            <div class="ds-field" style="max-width:280px"><div class="ds-field-shell filled"><input class="ds-control" type="number" value="70" dusk="quiz-min-score"><label class="ds-float-label">Nota mínima para aprovação (%) <span class="ds-required">*</span></label></div></div>
+            <label class="ds-switch"><input type="checkbox" dusk="quiz-show-correct-answers"><span class="ds-switch-track"><span class="ds-switch-thumb"></span></span><span style="font-weight:600">Exibir gabarito ao aluno após envio</span></label>
+            <div class="ds-form-text">Desligado, o aluno vê apenas a nota. Ligado, vê quais questões acertou.</div>
+          </div>
+          <div class="ds-form-actions" style="margin-top:0"><button class="ds-btn ds-btn-primary" dusk="quiz-submit"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>Salvar alterações</button><a class="ds-btn ds-btn-ghost" href="#1a">Cancelar</a></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Campos, na ordem</div>
+            <div style="display:grid;grid-template-columns:210px 1fr;gap:12px 16px;font-size:15px">
+              <code>title</code><span>Texto, obrigatório. <code>dusk="quiz-title-input"</code>.</span>
+              <code>instructions</code><span>Textarea, 3 linhas. Opcional.</span>
+              <code>allow_retries</code><span>Era <code>x-ui.checkbox</code>; passa a <code>x-ui.switch</code> — é configuração de efeito imediato ao salvar. Trilha ligada em <code>--secondary</code>.</span>
+              <code>max_attempts</code><span>Número. Em branco ⇒ ilimitado. Hint verbatim.</span>
+              <code>time_limit_minutes</code><span>Número. Em branco ⇒ sem limite. Hint verbatim.</span>
+              <code>show_correct_answers</code><span><code>x-ui.switch</code>.</span>
+              <code>min_score_percentage</code><span>Número, obrigatório, largura máx. 280px — campo curto não ocupa a coluna inteira.</span>
+            </div>
+          </div>
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Medidas e estados</div>
+            <div style="display:grid;grid-template-columns:210px 1fr;gap:10px 16px;font-size:15px">
+              <span style="font-weight:700">largura</span><span>máx. 640px, coluna única</span>
+              <span style="font-weight:700">grupos</span><span>Overline + 28px entre grupos, 16px entre campos do mesmo grupo</span>
+              <span style="font-weight:700">obrigatório</span><span>Asterisco em <code>--primary</code> dentro do rótulo flutuante</span>
+              <span style="font-weight:700">erro</span><span><code>.is-invalid</code> + <code>.ds-invalid-feedback</code>, mensagem do servidor, cor <code>--critical</code></span>
+              <span style="font-weight:700">salvo</span><span>Toast de sucesso; a página recarrega com os valores gravados</span>
+            </div>
+          </div>
+          <div style="background:var(--surface-sunken);border-radius:16px;padding:22px;box-shadow:inset 0 0 0 1px var(--divider)"><pre>{{ bladeRules }}</pre></div>
+          <div class="ds-alert ds-alert-attention"><div><strong>Sem dependência escondida.</strong> Desligar "Permitir novas tentativas" não desabilita "Máximo de tentativas" na interface — o servidor não tem essa regra hoje. Se quiserem esse acoplamento, é mudança de comportamento e precisa de confirmação.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 03 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">03</span><h2 style="font-size:30px;margin:0">Lista de questões</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">question-list</span><span class="ds-chip ds-chip-neutral ds-chip-plain">x-sortable-list</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">É o mesmo componente de lista arrastável de módulos e lições, com outra <code>data-reorder-url</code> — <code>quiz-questions.reorder</code>, mesma carga <code>{ordered_ids: [...]}</code>, mesmo <code>ModuleReorder.js</code>. Cada linha traz alça, enunciado truncado, chip do tipo e as ações Editar e Remover. Editar abre o diálogo do bloco 04; não é uma página.</p>
+
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) 600px;gap:36px;align-items:start">
+        <div style="background:var(--surface-body);border-radius:20px;padding:36px;display:flex;flex-direction:column;gap:20px">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:16px"><h3 style="font-size:24px;margin:0">Questões</h3><button class="ds-btn ds-btn-primary ds-btn-sm" dusk="new-question"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>Nova questão</button></div>
+          <p class="ds-caption" style="margin:0">Arraste as questões para reordená-las. A nova ordem é salva automaticamente.</p>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;align-items:center;gap:14px;padding:14px 18px;background:var(--surface);border-radius:14px;box-shadow:var(--elev-1)"><span style="color:var(--text-disabled)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"></circle><circle cx="9" cy="5" r="1"></circle><circle cx="9" cy="19" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="15" cy="5" r="1"></circle><circle cx="15" cy="19" r="1"></circle></svg></span><span class="ds-caption" style="width:24px;flex:none;font-weight:700">1</span><span style="flex:1;min-width:0;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Qual equipamento é obrigatório em trabalho em altura?</span><span class="ds-chip ds-chip-outline ds-chip-plain">Única escolha</span><a class="ds-btn ds-btn-ghost ds-btn-sm" href="#1a">Editar</a><button class="ds-btn ds-btn-ghost ds-btn-sm ds-btn-icon-only" aria-label="Remover questão 1"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"></path></svg></button></div>
+            <div style="display:flex;align-items:center;gap:14px;padding:14px 18px;background:var(--surface);border-radius:14px;box-shadow:var(--elev-1)"><span style="color:var(--text-disabled)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"></circle><circle cx="9" cy="5" r="1"></circle><circle cx="9" cy="19" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="15" cy="5" r="1"></circle><circle cx="15" cy="19" r="1"></circle></svg></span><span class="ds-caption" style="width:24px;flex:none;font-weight:700">2</span><span style="flex:1;min-width:0;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Quais itens compõem a análise preliminar de risco?</span><span class="ds-chip ds-chip-outline ds-chip-plain">Múltipla escolha</span><a class="ds-btn ds-btn-ghost ds-btn-sm" href="#1a">Editar</a><button class="ds-btn ds-btn-ghost ds-btn-sm ds-btn-icon-only" aria-label="Remover questão 2"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"></path></svg></button></div>
+            <div style="display:flex;align-items:center;gap:14px;padding:14px 18px;background:var(--surface);border-radius:14px;box-shadow:var(--elev-1)"><span style="color:var(--text-disabled)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"></circle><circle cx="9" cy="5" r="1"></circle><circle cx="9" cy="19" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="15" cy="5" r="1"></circle><circle cx="15" cy="19" r="1"></circle></svg></span><span class="ds-caption" style="width:24px;flex:none;font-weight:700">3</span><span style="flex:1;min-width:0;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Descreva o procedimento de bloqueio e etiquetagem.</span><span class="ds-chip ds-chip-primary ds-chip-plain">Dissertativa</span><a class="ds-btn ds-btn-ghost ds-btn-sm" href="#1a">Editar</a><button class="ds-btn ds-btn-ghost ds-btn-sm ds-btn-icon-only" aria-label="Remover questão 3"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"></path></svg></button></div>
+          </div>
+          <div class="ds-caption">O número da questão é posicional, calculado no render — não é dado do banco e não entra em nenhum campo.</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Zonas da linha</div>
+            <div style="display:grid;grid-template-columns:150px 1fr;gap:12px 16px;font-size:15px">
+              <span style="font-weight:700">Alça</span><span>Ícone <code>grip-vertical</code>, 20px, <code>aria-hidden="true"</code>, classe <code>drag-handle</code>.</span>
+              <span style="font-weight:700">Número</span><span>Posição na prova, <code>.ds-caption</code> peso 700, largura fixa de 24px.</span>
+              <span style="font-weight:700">Enunciado</span><span><code>flex:1</code>, peso 600, uma linha com <code>ellipsis</code>. Texto verbatim.</span>
+              <span style="font-weight:700">Chip de tipo</span><span><code>outline</code> para as três de escolha; <code>primary plain</code> para Dissertativa, porque ela muda o fluxo de correção.</span>
+              <span style="font-weight:700">Ações</span><span>Editar (abre o diálogo) · Remover (lixeira com confirmação).</span>
+            </div>
+          </div>
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Rótulos de tipo — verbatim</div>
+            <div style="display:grid;grid-template-columns:190px 1fr;gap:8px 16px;font-size:15px">
+              <code>single_choice</code><span>Única escolha</span>
+              <code>multiple_choice</code><span>Múltipla escolha</span>
+              <code>true_false</code><span>Verdadeiro ou Falso</span>
+              <code>essay</code><span>Dissertativa <span class="ds-caption">(na lista; no select, "Dissertativa (correção manual)")</span></span>
+            </div>
+          </div>
+          <div style="background:var(--surface-sunken);border-radius:16px;padding:22px;box-shadow:inset 0 0 0 1px var(--divider)"><pre>{{ bladeList }}</pre></div>
+          <div class="ds-alert ds-alert-info"><div><strong>Remover questão.</strong> Mesmo componente do canvas de módulos e lições: <code>&lt;form&gt;</code> DELETE dentro de um diálogo de confirmação que nomeia a questão e avisa que as opções vão com ela. Cor <code>--critical</code>, com ícone.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 04 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">04</span><h2 style="font-size:30px;margin:0">Diálogo da questão</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">x-ui.modal</span><span class="ds-chip ds-chip-neutral ds-chip-plain">question-form-{suffix}</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">A página renderiza <strong>um diálogo por questão existente, mais um em branco</strong>, todos já preenchidos pelo servidor. Não há requisição ao abrir. Cada diálogo carrega um <code>&lt;form&gt;</code> próprio identificado por <code>formSuffix</code> — <code>create</code> ou <code>edit-{id}</code> — e cada <code>id</code>, <code>name</code> e <code>dusk</code> lá dentro leva esse sufixo. É o que impede um seletor de acertar o formulário errado.</p>
+
+      <div style="display:grid;grid-template-columns:620px minmax(0,1fr);gap:40px;align-items:start">
+        <div style="background:var(--surface-body);border-radius:20px;padding:36px">
+          <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-5);padding:32px;display:flex;flex-direction:column;gap:20px">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px"><div><div class="ds-overline" style="color:var(--primary);margin-bottom:6px">Questão 1 de 3</div><h3 style="font-size:24px;margin:0">Editar questão</h3></div><button class="ds-btn-close" aria-label="Fechar">✕</button></div>
+            <div class="ds-field" style="margin-bottom:0"><div class="ds-field-shell filled"><textarea class="ds-control" rows="3">Qual equipamento é obrigatório em trabalho em altura?</textarea><label class="ds-float-label">Enunciado <span class="ds-required">*</span></label></div></div>
+            <div class="ds-field" style="margin-bottom:0"><div class="ds-field-shell filled"><select class="ds-select"><option>Única escolha</option><option>Múltipla escolha</option><option>Verdadeiro ou Falso</option><option>Dissertativa (correção manual)</option></select><label class="ds-float-label">Tipo de questão <span class="ds-required">*</span></label></div></div>
+            <div>
+              <span class="ds-label">Opções</span>
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <div style="display:flex;align-items:center;gap:12px;padding:8px 12px;background:var(--mint-100);border-radius:14px"><input type="checkbox" class="ds-check-input" checked=""><input class="ds-control" style="min-height:44px;padding:10px 16px" value="Cinto de segurança tipo paraquedista"><button class="ds-btn ds-btn-ghost ds-btn-sm ds-btn-icon-only" aria-label="Remover opção 1"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button></div>
+                <div style="display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:14px"><input type="checkbox" class="ds-check-input"><input class="ds-control" style="min-height:44px;padding:10px 16px" value="Óculos de proteção"><button class="ds-btn ds-btn-ghost ds-btn-sm ds-btn-icon-only" aria-label="Remover opção 2"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button></div>
+              </div>
+              <button class="ds-btn ds-btn-tonal ds-btn-sm" style="margin-top:12px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>Adicionar opção</button>
+            </div>
+            <div class="ds-form-actions" style="margin-top:0;justify-content:flex-end"><button class="ds-btn ds-btn-ghost">Cancelar</button><button class="ds-btn ds-btn-primary">Salvar questão</button></div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Especificação do diálogo</div>
+            <div style="display:grid;grid-template-columns:180px 1fr;gap:12px 16px;font-size:15px">
+              <span style="font-weight:700">tamanho</span><span><code>lg</code> — largura máx. 720px, raio 28px, <code>--elev-5</code>, scrim a 42%.</span>
+              <span style="font-weight:700">entrada</span><span>Sobe 16px com leve escala, 320ms, <code>--ease-emphasized</code>. Saída em fade.</span>
+              <span style="font-weight:700">título</span><span>"Nova questão" ou "Editar questão", com overline "Questão N de M" quando existe posição.</span>
+              <span style="font-weight:700">foco</span><span>Ao abrir, foco no enunciado. <code>Esc</code> fecha. O foco fica preso no diálogo.</span>
+              <span style="font-weight:700">ações</span><span>"Salvar questão" primária à direita, "Cancelar" fantasma ao lado. O botão de fechar no topo é redundante e permanece.</span>
+              <span style="font-weight:700">altura</span><span>Corpo rola internamente quando passar de 70% da janela; as ações ficam sempre visíveis.</span>
+            </div>
+          </div>
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Sufixo dos formulários</div>
+            <div style="display:grid;grid-template-columns:180px 1fr;gap:10px 16px;font-size:15px">
+              <code>create</code><span>Diálogo em branco, tipo inicial <code>single_choice</code>, duas linhas de opção vazias.</span>
+              <code>edit-{id}</code><span>Um por questão existente, já preenchido no servidor.</span>
+              <span style="font-weight:700">alcance</span><span>Todo <code>data-*</code> e <code>dusk</code> do formulário termina no sufixo. Nada de <code>querySelector</code> sem escopo.</span>
+            </div>
+          </div>
+          <div style="background:var(--surface-sunken);border-radius:16px;padding:22px;box-shadow:inset 0 0 0 1px var(--divider)"><pre>{{ bladeModal }}</pre></div>
+          <div class="ds-alert ds-alert-attention"><div><strong>Custo do modelo atual.</strong> Com 40 questões, a página renderiza 41 formulários completos. É o comportamento existente e esta especificação o mantém. Se a prova crescer, o caminho é carregar o diálogo por requisição — mudança de arquitetura, fora do escopo da recasca.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 05 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">05</span><h2 style="font-size:30px;margin:0">Tipo de questão</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">data-question-type-select</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">Um <code>&lt;select&gt;</code> nativo com quatro opções. É o campo que mais muda a tela: ele decide se há opções, quantas respostas corretas são possíveis, se o texto da opção é editável e se o botão de adicionar aparece. Toda essa alternância já está no <code>QuizBuilder.js</code> — a especificação aqui é o que o gestor vê em cada tipo.</p>
+
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:20px">
+        <div style="display:flex;flex-direction:column;gap:12px"><div class="ds-overline">Única escolha</div><div style="background:var(--surface-body);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:8px"><div style="display:flex;gap:10px;align-items:center"><input type="radio" class="ds-check-input" checked=""><span style="font-size:15px">Cinto tipo paraquedista</span></div><div style="display:flex;gap:10px;align-items:center"><input type="radio" class="ds-check-input"><span style="font-size:15px">Óculos de proteção</span></div><div style="display:flex;gap:10px;align-items:center"><input type="radio" class="ds-check-input"><span style="font-size:15px">Protetor auricular</span></div></div><div class="ds-caption">Exatamente uma correta. Marcar uma desmarca as outras. Adicionar e remover liberados.</div></div>
+        <div style="display:flex;flex-direction:column;gap:12px"><div class="ds-overline">Múltipla escolha</div><div style="background:var(--surface-body);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:8px"><div style="display:flex;gap:10px;align-items:center"><input type="checkbox" class="ds-check-input" checked=""><span style="font-size:15px">Análise de risco</span></div><div style="display:flex;gap:10px;align-items:center"><input type="checkbox" class="ds-check-input" checked=""><span style="font-size:15px">Permissão de trabalho</span></div><div style="display:flex;gap:10px;align-items:center"><input type="checkbox" class="ds-check-input"><span style="font-size:15px">Ordem de serviço</span></div></div><div class="ds-caption">Uma ou mais corretas, independentes. Adicionar e remover liberados.</div></div>
+        <div style="display:flex;flex-direction:column;gap:12px"><div class="ds-overline">Verdadeiro ou Falso</div><div style="background:var(--surface-body);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:8px"><div style="display:flex;gap:10px;align-items:center"><input type="radio" class="ds-check-input" checked=""><span style="font-size:15px;color:var(--text-secondary)">Verdadeiro</span></div><div style="display:flex;gap:10px;align-items:center"><input type="radio" class="ds-check-input"><span style="font-size:15px;color:var(--text-secondary)">Falso</span></div></div><div class="ds-caption">Duas linhas fixas, texto somente leitura. "Adicionar opção" e as lixeiras desaparecem.</div></div>
+        <div style="display:flex;flex-direction:column;gap:12px"><div class="ds-overline">Dissertativa</div><div style="background:var(--surface-body);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:10px"><div class="ds-alert ds-alert-info" style="margin:0"><div style="font-size:14px">Questões dissertativas não têm opções — a resposta do aluno é um texto livre corrigido manualmente pelo Gestor.</div></div></div><div class="ds-caption">Bloco de opções desaparece inteiro; os campos ficam <code>disabled</code> para não enviar carga.</div></div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) 600px;gap:36px;align-items:start">
+        <div>
+          <div class="ds-overline" style="margin-bottom:12px">Matriz de comportamento por tipo</div>
+          <div style="display:grid;grid-template-columns:190px 130px 150px 150px 1fr;gap:12px 16px;font-size:15px">
+            <div style="font-weight:800">tipo</div><div style="font-weight:800">corretas</div><div style="font-weight:800">texto</div><div style="font-weight:800">adicionar</div><div style="font-weight:800">controle visual</div>
+            <code>single_choice</code><span>exatamente 1</span><span>editável</span><span>visível</span><span>radio (é exclusivo)</span>
+            <code>multiple_choice</code><span>1 ou mais</span><span>editável</span><span>visível</span><span>checkbox</span>
+            <code>true_false</code><span>exatamente 1</span><span>somente leitura</span><span>escondido</span><span>radio, 2 linhas fixas</span>
+            <code>essay</code><span>não se aplica</span><span>—</span><span>escondido</span><span>bloco de opções oculto</span>
+          </div>
+          <div class="ds-alert ds-alert-attention" style="margin-top:20px"><div><strong>Uma mudança de casca com consequência.</strong> O código usa <code>checkbox</code> em todos os tipos e força a exclusividade por JS. A nova linguagem mostra <code>radio</code> onde só uma resposta é possível — o <code>name</code> e o valor enviados continuam idênticos (<code>options[i][is_correct]</code>), muda o controle exibido. Confirme com quem mantém os testes antes de trocar o elemento.</div></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Contrato técnico</div>
+            <div style="display:grid;grid-template-columns:230px 1fr;gap:10px 16px;font-size:15px">
+              <code>data-question-type-select</code><span>no <code>&lt;select&gt;</code>, valor = <code>formSuffix</code></span>
+              <code>data-essay-hint</code><span>parágrafo do aviso de dissertativa</span>
+              <code>data-options-container</code><span>bloco escondido quando é dissertativa</span>
+              <code>question-type-{suffix}</code><span><code>dusk</code> do select</span>
+              <span style="font-weight:700">hint</span><span>"Questões dissertativas não têm opções — a resposta do aluno é um texto livre corrigido manualmente pelo Gestor." — verbatim</span>
+            </div>
+          </div>
+          <div style="background:var(--surface-sunken);border-radius:16px;padding:22px;box-shadow:inset 0 0 0 1px var(--divider)"><pre>{{ bladeType }}</pre></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 06 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">06</span><h2 style="font-size:30px;margin:0">Lista de opções</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">data-options-list</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">Rótulo "Opções", as linhas em coluna com 8px, e o botão "Adicionar opção" abaixo. A lista sempre tem no mínimo duas linhas: tentar remover a segunda devolve o toast "Uma questão precisa de ao menos 2 opções." e a linha permanece. Remover linha é só tirá-la do DOM — o servidor apaga as opções persistidas que não voltarem no envio.</p>
+
+      <div style="display:grid;grid-template-columns:620px minmax(0,1fr);gap:40px;align-items:start">
+        <div style="background:var(--surface-body);border-radius:20px;padding:36px;display:flex;flex-direction:column;gap:20px">
+          <div>
+            <span class="ds-label">Opções</span>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="display:flex;align-items:center;gap:12px;padding:8px 12px;background:var(--mint-100);border-radius:14px"><input type="checkbox" class="ds-check-input" checked=""><input class="ds-control" style="min-height:44px;padding:10px 16px" value="Cinto de segurança tipo paraquedista"><button class="ds-btn ds-btn-ghost ds-btn-sm ds-btn-icon-only" aria-label="Remover opção 1"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button></div>
+              <div style="display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:14px"><input type="checkbox" class="ds-check-input"><input class="ds-control" style="min-height:44px;padding:10px 16px" value="Óculos de proteção"><button class="ds-btn ds-btn-ghost ds-btn-sm ds-btn-icon-only" aria-label="Remover opção 2"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button></div>
+              <div style="display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:14px"><input type="checkbox" class="ds-check-input"><input class="ds-control" style="min-height:44px;padding:10px 16px" placeholder="Texto da opção" value=""><button class="ds-btn ds-btn-ghost ds-btn-sm ds-btn-icon-only" aria-label="Remover opção 3"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button></div>
+            </div>
+            <button class="ds-btn ds-btn-tonal ds-btn-sm" style="margin-top:12px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>Adicionar opção</button>
+          </div>
+          <div class="ds-alert ds-alert-attention" style="max-width:420px"><div>Uma questão precisa de ao menos 2 opções.</div></div>
+          <div class="ds-caption">Toast do <code>QuizBuilder.js</code>, texto verbatim. Aparece ao tentar remover abaixo do mínimo.</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Regras da lista</div>
+            <div style="display:grid;grid-template-columns:180px 1fr;gap:12px 16px;font-size:15px">
+              <span style="font-weight:700">mínimo</span><span>Duas linhas. Formulário em branco já nasce com duas.</span>
+              <span style="font-weight:700">índice</span><span><code>options[{i}][...]</code> reindexado ao adicionar, a partir da contagem de linhas no DOM.</span>
+              <span style="font-weight:700">remover</span><span>Tira a linha do DOM. Opção persistida some do <code>options[]</code> e o servidor a apaga — não existe campo de "removidos".</span>
+              <span style="font-weight:700">adicionar</span><span>Clona o <code>&lt;template data-option-template&gt;</code> do próprio formulário e troca <code>__INDEX__</code>.</span>
+              <span style="font-weight:700">botão adicionar</span><span><code>.ds-btn-tonal ds-btn-sm</code> com ícone <code>plus</code>. Rótulo "Adicionar opção", sentence case, sem o "+" no texto.</span>
+              <span style="font-weight:700">gabarito vazio</span><span>Nenhuma opção marcada é erro do servidor; a mensagem aparece acima da lista, em <code>--critical</code>.</span>
+            </div>
+          </div>
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Contrato técnico</div>
+            <div style="display:grid;grid-template-columns:230px 1fr;gap:10px 16px;font-size:15px">
+              <code>data-options-list</code><span>contêiner das linhas, sufixado</span>
+              <code>data-option-template</code><span><code>&lt;template&gt;</code> inerte, nunca enviado</span>
+              <code>data-add-option-btn</code><span>botão de adicionar, valor = sufixo</span>
+              <code>add-option-{suffix}</code><span><code>dusk</code> do botão</span>
+              <span style="font-weight:700">payload</span><span><code>options[i][id]</code>, <code>[option_text]</code>, <code>[is_correct]</code> — este último só vai quando marcado</span>
+            </div>
+          </div>
+          <div style="background:var(--surface-sunken);border-radius:16px;padding:22px;box-shadow:inset 0 0 0 1px var(--divider)"><pre>{{ bladeOptions }}</pre></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 07 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">07</span><h2 style="font-size:30px;margin:0">Linha de opção</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">data-option-row</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">Três elementos numa linha: <strong>marcador de correta</strong>, <strong>campo de texto</strong> e <strong>remover</strong>. A opção marcada como correta ganha fundo menta <code>--mint-100</code> e raio 14px — o gabarito precisa ser legível de relance, sem contar caixas marcadas. É a única cor de estado na linha.</p>
+
+      <div style="display:grid;grid-template-columns:620px minmax(0,1fr);gap:40px;align-items:start">
+        <div style="background:var(--surface-body);border-radius:20px;padding:36px;display:flex;flex-direction:column;gap:18px">
+          <div><div class="ds-overline" style="margin-bottom:8px">Correta</div><div style="display:flex;align-items:center;gap:12px;padding:8px 12px;background:var(--mint-100);border-radius:14px"><input type="checkbox" class="ds-check-input" checked=""><input class="ds-control" style="min-height:44px;padding:10px 16px" value="Cinto de segurança tipo paraquedista"><button class="ds-btn ds-btn-ghost ds-btn-sm ds-btn-icon-only" aria-label="Remover opção"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button></div></div>
+          <div><div class="ds-overline" style="margin-bottom:8px">Incorreta</div><div style="display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:14px"><input type="checkbox" class="ds-check-input"><input class="ds-control" style="min-height:44px;padding:10px 16px" value="Óculos de proteção"><button class="ds-btn ds-btn-ghost ds-btn-sm ds-btn-icon-only" aria-label="Remover opção"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button></div></div>
+          <div><div class="ds-overline" style="margin-bottom:8px">Vazia, recém-adicionada</div><div style="display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:14px"><input type="checkbox" class="ds-check-input"><input class="ds-control" style="min-height:44px;padding:10px 16px;box-shadow:0 0 0 4px var(--focus-ring-alpha);border-color:var(--primary)" placeholder="Texto da opção" value=""><button class="ds-btn ds-btn-ghost ds-btn-sm ds-btn-icon-only" aria-label="Remover opção"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button></div><div class="ds-caption" style="margin-top:6px">A linha nova recebe o foco no campo de texto.</div></div>
+          <div><div class="ds-overline" style="margin-bottom:8px">Verdadeiro ou Falso — somente leitura</div><div style="display:flex;align-items:center;gap:12px;padding:8px 12px;background:var(--mint-100);border-radius:14px"><input type="radio" class="ds-check-input" checked=""><input class="ds-control" style="min-height:44px;padding:10px 16px;background:var(--surface-alt);color:var(--text-secondary)" value="Verdadeiro" readonly=""></div><div class="ds-caption" style="margin-top:6px">Sem lixeira: a linha não pode ser removida.</div></div>
+          <div><div class="ds-overline" style="margin-bottom:8px">Com erro de validação</div><div style="display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:14px"><input type="checkbox" class="ds-check-input"><input class="ds-control is-invalid" style="min-height:44px;padding:10px 16px" value=""><button class="ds-btn ds-btn-ghost ds-btn-sm ds-btn-icon-only" aria-label="Remover opção"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button></div><div class="ds-invalid-feedback"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg>Informe o texto da opção.</div></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Elementos</div>
+            <div style="display:grid;grid-template-columns:180px 1fr;gap:12px 16px;font-size:15px">
+              <span style="font-weight:700">Marcador</span><span>22px, <code>.ds-check-input</code>. <code>checkbox</code> em múltipla escolha, <code>radio</code> nos tipos de resposta única. Marcado: <code>--primary</code>.</span>
+              <span style="font-weight:700">Texto</span><span><code>.ds-control</code> compacto: altura mínima 44px, padding 10px/16px. <code>placeholder="Texto da opção"</code>, verbatim.</span>
+              <span style="font-weight:700">Remover</span><span>Botão ícone fantasma com <code>x</code>, 40px, <code>aria-label="Remover opção"</code>. Some em Verdadeiro ou Falso e em Dissertativa.</span>
+              <span style="font-weight:700">Fundo correta</span><span><code>--mint-100</code>, raio 14px, padding 8px/12px. Transição de 120ms na cor.</span>
+              <span style="font-weight:700">Campo oculto</span><span><code>options[i][id]</code> em linha já persistida. Fica <code>disabled</code> quando o tipo é dissertativa.</span>
+            </div>
+          </div>
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Contrato dusk</div>
+            <div style="display:grid;grid-template-columns:250px 1fr;gap:10px 16px;font-size:15px">
+              <code>option-correct-{suffix}-{i}</code><span>marcador de correta</span>
+              <code>option-text-{suffix}-{i}</code><span>campo de texto</span>
+              <code>remove-option-{suffix}-{i}</code><span>botão de remover</span>
+              <span><code>data-option-row</code> / <code>data-option-id</code></span><span>linha e id persistido</span>
+              <code>data-correct-checkbox</code><span>gancho da exclusividade</span>
+              <code>data-remove-option-btn</code><span>gancho da remoção</span>
+            </div>
+          </div>
+          <div style="background:var(--surface-sunken);border-radius:16px;padding:22px;box-shadow:inset 0 0 0 1px var(--divider)"><pre>{{ bladeRow }}</pre></div>
+          <div class="ds-alert ds-alert-info"><div><strong>Acessibilidade.</strong> O marcador tem <code>aria-label</code> "Marcar como resposta correta"; o fundo menta é reforço visual, não a única informação. Alvo de toque de 44px em marcador, campo e lixeira.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 08 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">08</span><h2 style="font-size:30px;margin:0">Estados, contrato e aceite</h2></div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:32px">
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="ds-overline">Nenhuma questão</div>
+          <div class="ds-empty" style="padding:32px 24px">
+            <div class="ds-empty-icon"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11h6"></path><path d="M9 15h4"></path><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6"></path></svg></div>
+            <div style="font-size:18px;font-weight:700">Nenhuma questão cadastrada</div>
+            <p class="ds-muted" style="margin:0;font-size:15px">Crie a primeira questão. Você pode escolher entre única escolha, múltipla escolha, verdadeiro ou falso e dissertativa.</p>
+            <button class="ds-btn ds-btn-primary ds-btn-sm" style="margin-top:8px">Nova questão</button>
+          </div>
+          <div class="ds-caption">O código atual mostra só "Nenhuma Questão cadastrada." O bloco ganha próximo passo e sentence case; o <code>dusk="question-list-empty"</code> permanece.</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="ds-overline">Mensagens do sistema</div>
+          <div class="ds-alert ds-alert-success"><div>Ordem atualizada com sucesso.</div></div>
+          <div class="ds-alert ds-alert-danger"><div>Falha ao reordenar: tempo de resposta excedido.</div></div>
+          <div class="ds-alert ds-alert-attention"><div>Uma questão precisa de ao menos 2 opções.</div></div>
+          <div class="ds-caption">Os três vêm do JS existente, verbatim. Toast no canto, 320ms de entrada, fecha em 5 segundos ou no clique.</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="ds-overline">Responsivo</div>
+          <div style="display:grid;grid-template-columns:130px 1fr;gap:10px 16px;font-size:15px">
+            <span style="font-weight:700">≥ 1240px</span><span>conteúdo máx. 1240px; card de regras 640px; diálogo 720px</span>
+            <span style="font-weight:700">840–1239px</span><span>mesma estrutura; diálogo com 32px de folga lateral</span>
+            <span style="font-weight:700">&lt; 840px</span><span>diálogo em tela cheia; ações da linha na segunda linha; enunciado em duas linhas</span>
+          </div>
+          <div class="ds-caption">A linha de opção nunca quebra: marcador, campo e lixeira ficam sempre na mesma linha, o campo encolhe.</div>
+        </div>
+      </div>
+
+      <div style="height:1px;background:var(--divider)"></div>
+
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:36px">
+        <div>
+          <div class="ds-overline" style="margin-bottom:12px">Contrato dusk e data-* — nenhum destes muda</div>
+          <div style="display:grid;grid-template-columns:270px 1fr;gap:10px 16px;font-size:15px">
+            <code>quiz-form</code><span>formulário de regras</span>
+            <code>quiz-title-input</code><span>título</span>
+            <code>quiz-allow-retries</code><span>permitir novas tentativas</span>
+            <code>quiz-max-attempts</code><span>máximo de tentativas</span>
+            <code>quiz-time-limit</code><span>limite de tempo</span>
+            <code>quiz-show-correct-answers</code><span>exibir gabarito</span>
+            <code>quiz-min-score</code><span>nota mínima</span>
+            <code>quiz-submit</code><span>salvar regras</span>
+            <code>new-question</code><span>abre o diálogo em branco</span>
+            <code>question-list</code><span>o <code>&lt;ul&gt;</code> de questões</span>
+            <code>question-list-empty</code><span>estado vazio da lista</span>
+            <code>question-row-{id}</code><span>o <code>&lt;li&gt;</code> da questão</span>
+            <code>edit-question-{id}</code><span>abre o diálogo da questão</span>
+            <span><code>delete-question-{id}</code> / <code>delete-question-form-{id}</code></span><span>ação de remover</span>
+            <code>question-form-{suffix}</code><span>formulário da questão</span>
+            <code>question-text-{suffix}</code><span>enunciado</span>
+            <code>question-type-{suffix}</code><span>select de tipo</span>
+            <code>question-submit-{suffix}</code><span>salvar questão</span>
+            <code>add-option-{suffix}</code><span>adicionar opção</span>
+            <span><code>option-correct-{suffix}-{i}</code> / <code>option-text-{suffix}-{i}</code> / <code>remove-option-{suffix}-{i}</code></span><span>linha de opção</span>
+            <span><code>data-reorder-url</code> / <code>data-id</code></span><span>contrato do arraste</span>
+            <span><code>data-question-form</code> / <code>data-question-type-select</code> / <code>data-essay-hint</code></span><span>ganchos do tipo</span>
+            <span><code>data-options-container</code> / <code>data-options-list</code> / <code>data-option-template</code></span><span>ganchos das opções</span>
+            <span><code>data-option-row</code> / <code>data-option-id</code> / <code>data-correct-checkbox</code> / <code>data-remove-option-btn</code> / <code>data-add-option-btn</code></span><span>ganchos da linha</span>
+          </div>
+        </div>
+        <div>
+          <div class="ds-overline" style="margin-bottom:12px">Critérios de aceite</div>
+          <div style="display:flex;flex-direction:column;gap:10px;font-size:15px">
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Os dois hints de tentativas e de tempo, o aviso de dissertativa, o placeholder da opção e os textos de toast preservados verbatim.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Todo <code>id</code>, <code>name</code> e <code>dusk</code> dos formulários de questão continua sufixado por <code>create</code> ou <code>edit-{id}</code>.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Trocar o tipo para dissertativa esconde o bloco de opções e desabilita seus campos, inclusive o <code>options[i][id]</code> oculto.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Única escolha e Verdadeiro ou Falso admitem uma correta; múltipla escolha admite várias.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Verdadeiro ou Falso mantém duas linhas fixas, texto somente leitura, sem adicionar e sem remover.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Remover abaixo de duas opções é bloqueado e avisado pelo toast.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Adicionar opção clona o <code>&lt;template&gt;</code> do próprio formulário e reindexa <code>__INDEX__</code>.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Arrastar questões continua salvando a ordem em <code>quiz-questions.reorder</code>.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Opção correta é menta; erro é <code>--critical</code>. Zero vermelho, laranja ou amarelo.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Zero <code>style=</code> inline, zero caixa-alta fora do overline, todo texto em pt-BR e sentence case.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Diálogo navegável por teclado: foco no enunciado ao abrir, preso dentro, <code>Esc</code> fecha.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span><code>artisan dusk</code> filtrado nas telas de prova passa sem alteração de seletor.</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const Z = "\u200B";
+const b = (s) => s.split("{{").join("{" + Z + "{").split("}}").join("}" + Z + "}");
+
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      bladeRules: b(`{{-- quizzes/edit.blade.php — card de regras --}}
+<x-ui.card>
+  <form method="POST" action="{{ route('quizzes.update', $quiz) }}" dusk="quiz-form">
+    @csrf
+    @method('PUT')
+
+    <x-ui.field-stack class="ds-form-narrow">
+
+      <x-ui.field-group label="Identificação">
+        <x-ui.input name="title" label="Título" required
+                    :value="$quiz->title" dusk="quiz-title-input" />
+        <x-ui.input type="textarea" name="instructions" label="Instruções"
+                    :value="$quiz->instructions" rows="3"
+                    hint="O aluno lê este texto antes de começar." />
+      </x-ui.field-group>
+
+      <x-ui.field-group label="Tentativas e tempo">
+        <x-ui.switch name="allow_retries" label="Permitir novas tentativas"
+                     :checked="$quiz->allow_retries" dusk="quiz-allow-retries" />
+
+        <x-ui.input type="number" name="max_attempts"
+                    label="Máximo de tentativas"
+                    hint="Deixe em branco para tentativas ilimitadas (conta apenas tentativas enviadas, não em andamento)."
+                    :value="$quiz->max_attempts" dusk="quiz-max-attempts" />
+
+        <x-ui.input type="number" name="time_limit_minutes"
+                    label="Limite de tempo (minutos)"
+                    hint="Deixe em branco para sem limite. Envios após o limite são aceitos, mas marcados como reprovados."
+                    :value="$quiz->time_limit_minutes" dusk="quiz-time-limit" />
+      </x-ui.field-group>
+
+      <x-ui.field-group label="Resultado">
+        <x-ui.input type="number" name="min_score_percentage"
+                    label="Nota mínima para aprovação (%)" required
+                    class="ds-field-short"
+                    :value="$quiz->min_score_percentage" dusk="quiz-min-score" />
+
+        <x-ui.switch name="show_correct_answers"
+                     label="Exibir gabarito ao aluno após envio"
+                     :checked="$quiz->show_correct_answers"
+                     dusk="quiz-show-correct-answers" />
+      </x-ui.field-group>
+
+    </x-ui.field-stack>
+
+    <x-ui.form-actions>
+      <x-ui.button type="submit" variant="primary" icon="check"
+                   dusk="quiz-submit">Salvar alterações</x-ui.button>
+      <x-ui.button variant="ghost"
+                   :href="route('modules.lessons.index', $quiz->lesson->module)">Cancelar</x-ui.button>
+    </x-ui.form-actions>
+  </form>
+</x-ui.card>`),
+
+      bladeList: b(`{{-- quizzes/partials/_question-list.blade.php --}}
+@php
+  $typeLabels = [
+    'single_choice'   => 'Única escolha',
+    'multiple_choice' => 'Múltipla escolha',
+    'true_false'      => 'Verdadeiro ou Falso',
+    'essay'           => 'Dissertativa',
+  ];
+@endphp
+
+<x-sortable-list :reorder-url="route('quiz-questions.reorder', $quiz)"
+                 dusk="question-list">
+  @forelse($questions as $i => $question)
+    <x-sortable-row :id="$question->id"
+                    :position="$i + 1"
+                    :title="$question->question_text"
+                    :chips="[[$typeLabels[$question->type], $question->type === 'essay' ? 'primary' : 'outline']]"
+                    dusk="question-row-{{ $question->id }}">
+
+      <x-ui.button variant="ghost" size="sm"
+                   data-modal-target="#question-edit-modal-{{ $question->id }}"
+                   dusk="edit-question-{{ $question->id }}">Editar</x-ui.button>
+
+      <x-delete-button :model="$question" kind="question"
+                       label="questão"
+                       consequence="As opções desta questão também serão removidas." />
+    </x-sortable-row>
+  @empty
+    <x-empty-state dusk="question-list-empty"
+        icon="file-text"
+        title="Nenhuma questão cadastrada"
+        body="Crie a primeira questão. Você pode escolher entre única escolha, múltipla escolha, verdadeiro ou falso e dissertativa."
+        action-label="Nova questão" />
+  @endforelse
+</x-sortable-list>`),
+
+      bladeModal: b(`{{-- quizzes/edit.blade.php — diálogos --}}
+
+{{-- um diálogo em branco --}}
+<x-ui.modal id="question-create-modal" title="Nova questão" size="lg">
+  @include('quizzes.partials._question-form', [
+    'quiz'       => $quiz,
+    'question'   => new \\App\\Models\\QuizQuestion(['type' => 'single_choice']),
+    'formSuffix' => 'create',
+    'action'     => route('quiz-questions.store', $quiz),
+    'method'     => 'POST',
+  ])
+</x-ui.modal>
+
+{{-- um diálogo por questão existente, preenchido no servidor --}}
+@foreach($questions as $i => $question)
+  <x-ui.modal id="question-edit-modal-{{ $question->id }}"
+              title="Editar questão"
+              :overline="'Questão '.($i + 1).' de '.$questions->count()"
+              size="lg">
+    @include('quizzes.partials._question-form', [
+      'quiz'       => $quiz,
+      'question'   => $question,
+      'formSuffix' => 'edit-'.$question->id,
+      'action'     => route('quiz-questions.update', $question),
+      'method'     => 'PUT',
+    ])
+  </x-ui.modal>
+@endforeach`),
+
+      bladeType: b(`{{-- _question-form.blade.php — enunciado e tipo --}}
+<form method="POST" action="{{ $action }}"
+      dusk="question-form-{{ $formSuffix }}"
+      data-question-form="{{ $formSuffix }}">
+  @csrf
+  @if($method === 'PUT') @method('PUT') @endif
+
+  <x-ui.input type="textarea" name="question_text" label="Enunciado" required
+              :value="$question->question_text" rows="3"
+              dusk="question-text-{{ $formSuffix }}" />
+
+  <x-ui.select
+      name="type" label="Tipo de questão" required
+      :options="[
+        'single_choice'   => 'Única escolha',
+        'multiple_choice' => 'Múltipla escolha',
+        'true_false'      => 'Verdadeiro ou Falso',
+        'essay'           => 'Dissertativa (correção manual)',
+      ]"
+      :selected="$question->type ?? 'single_choice'"
+      data-question-type-select="{{ $formSuffix }}"
+      dusk="question-type-{{ $formSuffix }}" />
+
+  <x-ui.alert variant="info" data-essay-hint="{{ $formSuffix }}" hidden>
+    Questões dissertativas não têm opções — a resposta do aluno é um texto
+    livre corrigido manualmente pelo Gestor.
+  </x-ui.alert>`),
+
+      bladeOptions: b(`{{-- _question-form.blade.php — lista de opções --}}
+<div data-options-container="{{ $formSuffix }}" class="ds-options">
+  <span class="ds-label">Opções</span>
+
+  <div data-options-list="{{ $formSuffix }}" class="ds-options-list">
+    @forelse($existingOptions as $i => $option)
+      @include('quizzes.partials._option-row', [
+        'i' => $i, 'option' => $option,
+        'formSuffix' => $formSuffix, 'isTrueFalse' => $isTrueFalse,
+      ])
+    @empty
+      {{-- formulário em branco nasce com as 2 linhas mínimas --}}
+      @for($i = 0; $i < 2; $i++)
+        @include('quizzes.partials._option-row', [
+          'i' => $i, 'option' => null,
+          'formSuffix' => $formSuffix, 'isTrueFalse' => $isTrueFalse,
+        ])
+      @endfor
+    @endforelse
+  </div>
+
+  <x-ui.button type="button" variant="tonal" size="sm" icon="plus"
+               data-add-option-btn="{{ $formSuffix }}"
+               dusk="add-option-{{ $formSuffix }}">Adicionar opção</x-ui.button>
+
+  {{-- clonado por QuizBuilder.addOption(); nunca é enviado --}}
+  <template data-option-template="{{ $formSuffix }}">
+    @include('quizzes.partials._option-row', [
+      'i' => '__INDEX__', 'option' => null,
+      'formSuffix' => null, 'isTrueFalse' => false,
+    ])
+  </template>
+</div>
+
+<x-ui.form-actions align="end">
+  <x-ui.button variant="ghost" data-modal-dismiss>Cancelar</x-ui.button>
+  <x-ui.button type="submit" variant="primary"
+               dusk="question-submit-{{ $formSuffix }}">Salvar questão</x-ui.button>
+</x-ui.form-actions>`),
+
+      bladeRow: b(`{{-- quizzes/partials/_option-row.blade.php --}}
+@php
+  $single = in_array($type ?? 'single_choice', ['single_choice', 'true_false'], true);
+@endphp
+
+<div class="ds-option-row @if($option?->is_correct) is-correct @endif"
+     data-option-row @if($option) data-option-id="{{ $option->id }}" @endif>
+
+  @if($option)
+    <input type="hidden" name="options[{{ $i }}][id]" value="{{ $option->id }}" />
+  @endif
+
+  <input type="{{ $single ? 'radio' : 'checkbox' }}"
+         name="options[{{ $i }}][is_correct]" value="1"
+         class="ds-check-input"
+         aria-label="Marcar como resposta correta"
+         @checked($option?->is_correct)
+         data-correct-checkbox
+         dusk="option-correct-{{ $formSuffix }}-{{ $i }}" />
+
+  <input type="text" name="options[{{ $i }}][option_text]"
+         value="{{ $option?->option_text }}"
+         placeholder="Texto da opção"
+         class="ds-control ds-control-compact"
+         @readonly($isTrueFalse)
+         dusk="option-text-{{ $formSuffix }}-{{ $i }}" />
+
+  @unless($isTrueFalse)
+    <x-ui.button type="button" variant="ghost" size="sm" icon-only icon="x"
+                 aria-label="Remover opção"
+                 data-remove-option-btn
+                 dusk="remove-option-{{ $formSuffix }}-{{ $i }}" />
+  @endunless
+</div>`),
+    };
+  }
+}
+</script>
+</body>
+</html>

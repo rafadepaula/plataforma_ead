@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <meta name="design_doc_mode" content="canvas">
+  <link rel="stylesheet" href="_ds/plataforma-ead-design-system-618bb28f-056b-421b-b1d4-d0fef3cd30e2/styles.css">
+  <script src="_ds/plataforma-ead-design-system-618bb28f-056b-421b-b1d4-d0fef3cd30e2/_ds_bundle.js"></script>
+  <style>
+    a{color:var(--primary);text-decoration:none}
+    a:hover{color:var(--primary-hover)}
+    pre{margin:0;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;line-height:1.7;white-space:pre-wrap;color:var(--grey-800)}
+    code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.92em;background:var(--surface-alt);border-radius:6px;padding:1px 6px}
+  </style>
+</helmet>
+
+<section style="display:flex;flex-direction:column;gap:28px;padding:64px;background:var(--surface-body);font-family:var(--font-sans);color:var(--text-primary);line-height:1.6;width:2040px;box-sizing:border-box">
+
+  <div id="1a" style="display:flex;flex-direction:column;gap:28px">
+
+    <header style="display:flex;align-items:flex-start;justify-content:space-between;gap:48px;background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px">
+      <div style="max-width:1180px;display:flex;flex-direction:column;gap:14px">
+        <div class="ds-overline" style="color:var(--primary)">Especificação de componentes · tela 19 · slide 19</div>
+        <h1 style="font-size:46px;line-height:1.08;margin:0;letter-spacing:-.02em">Página pública — a porta de entrada</h1>
+        <p style="font-size:19px;color:var(--text-secondary);margin:0;text-wrap:pretty">A única tela sem login: barra de marca, hero centrado, três capacidades, o percurso em quatro passos, e uma vitrine que mostra o produto usando <strong>os próprios componentes da plataforma</strong> — nunca captura de tela, nunca fotografia. Especificação faixa por faixa, lida de <code>resources/views/landing/show.blade.php</code>.</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;align-items:flex-end;flex:none">
+        <span class="ds-chip ds-chip-primary ds-chip-plain ds-chip-lg">1a</span>
+        <span class="ds-caption">7 faixas · 8 blocos</span>
+      </div>
+    </header>
+
+    <div class="ds-alert ds-alert-attention"><div><strong>O slide difere do código em dois pontos.</strong> O slide mostra <strong>dois</strong> CTAs no hero e uma faixa de <strong>três números</strong> ("provas em número"); o código tem <strong>um</strong> CTA — "Acessar plataforma" — e nenhuma faixa de números. Números inventados numa página pública são risco: ninguém pode conferi-los. Especifiquei a página real; a faixa de números está no bloco 07 como proposta, dependente de dados que o cliente precise fornecer.</div></div>
+
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px">
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">01</div><div style="font-size:17px;font-weight:800">PublicHeader</div><div class="ds-caption">marca + Entrar</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">02</div><div style="font-size:17px;font-weight:800">HeroBand</div><div class="ds-caption">badge, display, um CTA</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">03</div><div style="font-size:17px;font-weight:800">CapabilityCards</div><div class="ds-caption">três, sem ícone</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">04</div><div style="font-size:17px;font-weight:800">ProcessBand</div><div class="ds-caption">quatro passos numerados</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">05</div><div style="font-size:17px;font-weight:800">ShowcaseBand</div><div class="ds-caption">o produto como prova</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">06</div><div style="font-size:17px;font-weight:800">ContactBand + Footer</div><div class="ds-caption">fechamento</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">07</div><div style="font-size:17px;font-weight:800">Faixa de números</div><div class="ds-caption">proposta</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">08</div><div style="font-size:17px;font-weight:800">Ritmo e aceite</div><div class="ds-caption">faixas, tipos, contrato</div></div></div>
+    </div>
+
+    <!-- 00 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:24px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">00</span><h2 style="font-size:30px;margin:0">O que a página faz</h2></div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px">
+        <div style="background:var(--blue-50);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">Dizer o que é</div><div style="font-size:15px">Uma headline e um parágrafo. Nada de metáfora, nada de promessa vaga.</div></div>
+        <div style="background:var(--blue-50);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">Levar ao login</div><div style="font-size:15px">Duas portas para o mesmo lugar: "Entrar" na barra e "Acessar plataforma" no hero.</div></div>
+        <div style="background:var(--blue-50);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">Explicar o percurso</div><div style="font-size:15px">Do convite ao certificado, em quatro passos numerados.</div></div>
+        <div style="background:var(--mint-100);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">Mostrar o produto</div><div style="font-size:15px">Card de curso, certificado emitido e pergunta do fórum — construídos com os componentes reais. É a prova visual.</div></div>
+        <div style="background:var(--mint-100);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">Receber contato</div><div style="font-size:15px">Uma faixa no fim para organizações interessadas, e os links institucionais no rodapé.</div></div>
+        <div style="background:var(--mint-100);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">Validar certificado</div><div style="font-size:15px">Link no rodapé. É a razão de a página ser pública: qualquer pessoa confere um certificado pelo hash.</div></div>
+      </div>
+
+      <div style="background:var(--surface-sunken);border-radius:20px;padding:28px;box-shadow:inset 0 0 0 1px var(--divider)"><pre>landing/show.blade.php        — x-layout.public, sem container
+├── header  .landing-header                                     ← 01
+│   ├── brand-mark "PE" + nome do app
+│   └── x-help-button + Entrar   dusk="landing-login-link"
+│
+├── faixa  hero            (--blue-50)                          ← 02
+│   ├── badge lg  "Educação a Distância"
+│   ├── h1        dusk="landing-headline"
+│   ├── lead
+│   └── CTA lg    dusk="landing-cta-login"
+│
+├── faixa  capacidades     (branco)                             ← 03
+│   └── 3 cards: Cursos e trilhas · Provas interativas · Certificados
+│
+├── faixa  como funciona   (--blue-50)                          ← 04
+│   ├── overline "Do convite ao certificado" + h2
+│   └── 4 cards numerados
+│
+├── faixa  vitrine         (branco)                             ← 05
+│   ├── overline "Por dentro da plataforma" + h2 + lead
+│   └── 3 cards: curso com progresso · certificado · tópico do fórum
+│
+├── faixa  contato #contato (--blue-50)                         ← 06
+│   ├── h2 pergunta
+│   └── botão tonal "Fale conosco"
+│
+└── slot footer                                                 ← 06
+    └── copyright + 4 links institucionais</pre></div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
+        <div style="background:var(--surface-alt);border-radius:16px;padding:20px"><div class="ds-overline" style="margin-bottom:6px">Regra 1</div><div style="font-size:15px">Faixas alternam branco e <code>--blue-50</code>, começando pelo azul no hero. Duas cores de fundo em toda a página, nunca mais.</div></div>
+        <div style="background:var(--surface-alt);border-radius:16px;padding:20px"><div class="ds-overline" style="margin-bottom:6px">Regra 2</div><div style="font-size:15px">A prova do produto são os componentes reais. Sem captura de tela, sem mockup de aparelho, sem foto de pessoa em escritório.</div></div>
+        <div style="background:var(--surface-alt);border-radius:16px;padding:20px"><div class="ds-overline" style="margin-bottom:6px">Regra 3</div><div style="font-size:15px">Headline e lead são <strong>verbatim</strong>. Copy de página pública não se reescreve numa migração visual.</div></div>
+      </div>
+    </div>
+
+    <!-- 01 + 02 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">01</span><h2 style="font-size:30px;margin:0">Barra de marca e hero</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">landing-header</span><span class="ds-chip ds-chip-neutral ds-chip-plain">landing-hero-band</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">A barra tem a marca à esquerda — quadrado azul de 44px com as iniciais, ao lado do nome do app — e à direita o botão de ajuda e o "Entrar". Não há navegação: a página é curta e o único destino é o login. O hero é centrado, em faixa <code>--blue-50</code> com raio 36px, e tem um só CTA.</p>
+
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) 600px;gap:36px;align-items:start">
+        <div style="background:var(--surface-body);border-radius:20px;padding:36px;display:flex;flex-direction:column;gap:20px">
+          <div style="background:var(--surface);border-radius:20px 20px 0 0;box-shadow:var(--elev-1);padding:18px 32px;display:flex;align-items:center;justify-content:space-between;gap:24px">
+            <div style="display:flex;align-items:center;gap:16px"><span style="width:44px;height:44px;border-radius:var(--radius-md);background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px">PE</span><span style="font-weight:800;font-size:19px">Plataforma EAD</span></div>
+            <div style="display:flex;align-items:center;gap:18px"><button class="ds-btn ds-btn-ghost ds-btn-sm ds-btn-icon-only" aria-label="Ajuda"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 2.5-3 4"></path><path d="M12 17h.01"></path></svg></button><a class="ds-btn ds-btn-primary ds-btn-sm" href="#1a" dusk="landing-login-link">Entrar</a></div>
+          </div>
+          <div style="background:var(--blue-50);border-radius:36px;padding:72px 48px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:20px">
+            <span class="ds-chip ds-chip-primary ds-chip-plain ds-chip-lg">Educação a Distância</span>
+            <h1 style="font-size:44px;line-height:1.1;margin:0;letter-spacing:-.02em;max-width:760px;text-wrap:balance" dusk="landing-headline">Capacitação técnica continuada, do jeito certo</h1>
+            <p style="font-size:19px;color:var(--text-secondary);margin:0;max-width:640px;text-wrap:pretty">Cursos, provas interativas e certificados oficiais em uma única plataforma, pensada para organizações que levam a formação de suas equipes a sério.</p>
+            <a class="ds-btn ds-btn-primary ds-btn-lg" href="#1a" style="margin-top:12px" dusk="landing-cta-login">Acessar plataforma</a>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Barra</div>
+            <div style="display:grid;grid-template-columns:160px 1fr;gap:12px 16px;font-size:15px">
+              <span style="font-weight:700">marca</span><span>Quadrado 44px em <code>--primary</code>, raio <code>--radius-md</code>, iniciais em peso 800. Não existe logotipo no repositório — a marca <em>é</em> esse quadrado.</span>
+              <span style="font-weight:700">nome</span><span>19px peso 800, de <code>config('app.name')</code>. Nunca escreva o nome fixo na marcação.</span>
+              <span style="font-weight:700">ajuda</span><span><code>x-help-button</code> com <code>key="landing"</code>. Botão ícone fantasma.</span>
+              <span style="font-weight:700">entrar</span><span>Primário <code>sm</code>, <code>dusk="landing-login-link"</code>. Só existe se a rota <code>login</code> existir.</span>
+              <span style="font-weight:700">sem menu</span><span>Nenhum link de navegação. Não adicione âncoras para as faixas.</span>
+              <span style="font-weight:700">altura</span><span>76px, como a app bar do produto. Borda inferior <code>--divider</code>, sem sombra.</span>
+            </div>
+          </div>
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Hero</div>
+            <div style="display:grid;grid-template-columns:160px 1fr;gap:10px 16px;font-size:15px">
+              <span style="font-weight:700">faixa</span><span><code>--blue-50</code>, raio 36px, padding 72px/48px, centrada, largura máx. 1240px.</span>
+              <span style="font-weight:700">badge</span><span>"Educação a Distância" — o único lugar da página em que o texto conserva a caixa do código.</span>
+              <span style="font-weight:700">headline</span><span>Display 44px, peso 700, <code>--line-height-tight</code>, <code>text-wrap: balance</code>, máx. 760px. Texto verbatim. <code>dusk="landing-headline"</code>.</span>
+              <span style="font-weight:700">lead</span><span>19px <code>--text-secondary</code>, máx. 640px, <code>text-wrap: pretty</code>. Verbatim.</span>
+              <span style="font-weight:700">CTA</span><span><strong>Um só</strong>: "Acessar plataforma", primário <code>lg</code>, 28px acima. <code>dusk="landing-cta-login"</code>.</span>
+              <span style="font-weight:700">sem imagem</span><span>Nenhuma ilustração, nenhum <em>pastel wash</em> decorativo. O hero é tipografia sobre cor.</span>
+            </div>
+          </div>
+          <div class="ds-alert ds-alert-info"><div><strong>Dois CTAs seria redundante.</strong> "Entrar" e "Acessar plataforma" já são dois caminhos para o login. Um terceiro botão no hero — do tipo "Saiba mais" rolando a página — não acrescenta destino, só divide a atenção.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 03 + 04 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">03</span><h2 style="font-size:30px;margin:0">Capacidades e percurso</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">landing-grid-3</span><span class="ds-chip ds-chip-neutral ds-chip-plain">landing-grid-4</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">Duas faixas de cards, em ritmo diferente. As <strong>três capacidades</strong> vêm em faixa branca, sem ícone e sem numeração — título e uma frase, nada mais. O <strong>percurso</strong> vem em faixa azul, com um número grande por card, porque ali a ordem é a informação.</p>
+
+      <div style="display:flex;flex-direction:column;gap:28px">
+        <div>
+          <div class="ds-overline" style="margin-bottom:14px">Capacidades — faixa branca</div>
+          <div style="background:var(--surface-body);border-radius:20px;padding:36px;display:grid;grid-template-columns:repeat(3,1fr);gap:24px">
+            <div class="ds-card"><div class="ds-card-body"><h2 style="font-size:20px;margin:0">Cursos e trilhas</h2><p class="ds-muted" style="margin:0">Módulos, aulas em vídeo e materiais organizados por curso.</p></div></div>
+            <div class="ds-card"><div class="ds-card-body"><h2 style="font-size:20px;margin:0">Provas interativas</h2><p class="ds-muted" style="margin:0">Avaliações automáticas e correção manual de dissertativas.</p></div></div>
+            <div class="ds-card"><div class="ds-card-body"><h2 style="font-size:20px;margin:0">Certificados oficiais</h2><p class="ds-muted" style="margin:0">Emissão automática e validação pública por hash único.</p></div></div>
+          </div>
+        </div>
+        <div>
+          <div class="ds-overline" style="margin-bottom:14px">Como funciona — faixa azul</div>
+          <div style="background:var(--blue-50);border-radius:20px;padding:48px 36px;display:flex;flex-direction:column;gap:32px">
+            <div style="text-align:center"><div class="ds-overline" style="color:var(--primary);margin-bottom:6px">Do convite ao certificado</div><h2 style="font-size:30px;margin:0">Como funciona</h2></div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:20px">
+              <div class="ds-card"><div class="ds-card-body"><span style="width:44px;height:44px;border-radius:50%;background:var(--primary-container);color:var(--on-primary-container);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px">1</span><h3 style="font-size:18px;margin:0">A Organização publica</h3><p class="ds-muted" style="margin:0;font-size:15px">O Gestor cria os Cursos, organiza Módulos e Aulas e define as Provas.</p></div></div>
+              <div class="ds-card"><div class="ds-card-body"><span style="width:44px;height:44px;border-radius:50%;background:var(--primary-container);color:var(--on-primary-container);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px">2</span><h3 style="font-size:18px;margin:0">Você recebe o convite</h3><p class="ds-muted" style="margin:0;font-size:15px">O link enviado pela sua Organização confirma a Matrícula em poucos campos.</p></div></div>
+              <div class="ds-card"><div class="ds-card-body"><span style="width:44px;height:44px;border-radius:50%;background:var(--primary-container);color:var(--on-primary-container);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px">3</span><h3 style="font-size:18px;margin:0">Você estuda e é avaliado</h3><p class="ds-muted" style="margin:0;font-size:15px">Assista às Aulas na sala de aula, tire dúvidas no fórum e faça as Provas.</p></div></div>
+              <div class="ds-card"><div class="ds-card-body"><span style="width:44px;height:44px;border-radius:50%;background:var(--mint-100);color:var(--secondary);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px">4</span><h3 style="font-size:18px;margin:0">O Certificado sai na hora</h3><p class="ds-muted" style="margin:0;font-size:15px">Ao concluir, o Certificado é emitido e qualquer pessoa pode validá-lo pelo hash.</p></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) 620px;gap:36px;align-items:start">
+        <div>
+          <div class="ds-overline" style="margin-bottom:12px">Especificação</div>
+          <div style="display:grid;grid-template-columns:180px 1fr;gap:12px 16px;font-size:15px">
+            <span style="font-weight:700">card</span><span>Branco, raio 20px, <code>--elev-1</code>, sem borda, padding 28px, gap interno 12px. Altura igual entre irmãos (<code>align-items: stretch</code>).</span>
+            <span style="font-weight:700">título capacidade</span><span><code>h2</code> 20px peso 700 — é a hierarquia do código, mantida.</span>
+            <span style="font-weight:700">título passo</span><span><code>h3</code> 18px peso 700, abaixo do número.</span>
+            <span style="font-weight:700">número</span><span>Círculo 44px <code>--primary-container</code>, dígito peso 800. O quarto passo usa menta: é a conclusão do percurso.</span>
+            <span style="font-weight:700">copy</span><span>15px <code>--text-secondary</code>. Todas as frases verbatim, inclusive as maiúsculas de Organização, Gestor, Curso, Módulo, Aula, Prova, Matrícula, Certificado.</span>
+            <span style="font-weight:700">cabeçalho da faixa</span><span>Overline azul + <code>h2</code> 30px, centrados, 32px acima da grade.</span>
+            <span style="font-weight:700">sem ícone</span><span>As capacidades não recebem ícone. Três ícones genéricos aí em cima seriam decoração.</span>
+          </div>
+        </div>
+        <div style="background:var(--surface-sunken);border-radius:16px;padding:22px;box-shadow:inset 0 0 0 1px var(--divider)"><pre>{{ bladeBands }}</pre></div>
+      </div>
+    </div>
+
+    <!-- 05 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">05</span><h2 style="font-size:30px;margin:0">Vitrine — o produto como prova</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">landing-showcase-band</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">A faixa mais importante da página, e a que mais tenta ser desrespeitada. São três cards montados com os <strong>mesmos componentes</strong> que aparecem depois do login — card de curso com barra de progresso, certificado emitido com chips, e um tópico do fórum com avatar e contagem de respostas. O lead diz isso explicitamente: "Sem montagem: são os mesmos componentes que aparecem depois do login."</p>
+
+      <div style="background:var(--surface-body);border-radius:20px;padding:36px;display:flex;flex-direction:column;gap:28px">
+        <div style="text-align:center"><div class="ds-overline" style="color:var(--primary);margin-bottom:6px">Por dentro da plataforma</div><h2 style="font-size:30px;margin:0">As telas que você vai usar</h2><p style="font-size:19px;color:var(--text-secondary);margin:12px auto 0;max-width:640px">Sem montagem: são os mesmos componentes que aparecem depois do login.</p></div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:24px;align-items:start">
+          <div class="ds-card"><div class="ds-card-media" style="display:flex;align-items:flex-end;padding:20px"><span class="ds-chip ds-chip-success">Em andamento</span></div><div class="ds-card-body"><div class="ds-overline" style="color:var(--primary)">Curso</div><h3 class="ds-card-title">Segurança do trabalho — NR 35</h3><p class="ds-muted" style="margin:0">4 Módulos · 18 Aulas · 4 horas</p><div><div style="display:flex;justify-content:space-between;margin-bottom:8px"><span class="ds-caption">Progresso</span><span class="ds-caption" style="font-weight:700;color:var(--text-primary)">62%</span></div><div class="ds-progress" style="height:8px"><div class="ds-progress-bar" style="width:62%;background:var(--secondary)"></div></div></div></div><div class="ds-card-meta"><span>Continue de onde parou · Aula 12 de 18</span></div></div>
+          <div class="ds-card"><div class="ds-card-body"><div style="display:flex;align-items:center;gap:16px"><span style="width:52px;height:52px;flex:none;border-radius:var(--radius-md);background:var(--mint-100);color:var(--secondary);display:flex;align-items:center;justify-content:center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"></circle><path d="M15.5 13.5 17 22l-5-3-5 3 1.5-8.5"></path></svg></span><div><div class="ds-overline" style="color:var(--primary)">Certificado emitido</div><h3 class="ds-card-title">nº 9f2b7c41</h3></div></div><p class="ds-muted" style="margin:0">Emitido em 12/03/2026 · 4 horas · Segurança do trabalho — NR 35</p><div style="display:flex;gap:10px;flex-wrap:wrap"><span class="ds-chip ds-chip-success">Válido</span><span class="ds-chip ds-chip-neutral">Validação pública</span></div></div><div class="ds-card-meta"><a href="#1a" style="font-weight:700;display:inline-flex;align-items:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="m7 10 5 5 5-5"></path><path d="M12 15V3"></path></svg>Baixar certificado</a></div></div>
+          <div class="ds-card"><div class="ds-card-body"><div style="display:flex;align-items:center;gap:14px"><span style="width:52px;height:52px;flex:none;border-radius:50%;background:var(--primary-container);color:var(--on-primary-container);display:flex;align-items:center;justify-content:center;font-weight:800">JR</span><div><div style="font-weight:700;font-size:15px">Joana Ribeiro</div><div class="ds-caption">Fórum · há 2 horas</div></div></div><h3 class="ds-card-title">Como registrar o ponto de ancoragem na prática?</h3><p class="ds-muted" style="margin:0">Na Aula 9 o instrutor cita a inspeção prévia, mas queria entender o registro em campo.</p></div><div class="ds-card-meta"><span style="display:inline-flex;align-items:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>7 respostas</span></div></div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) 620px;gap:36px;align-items:start">
+        <div>
+          <div class="ds-overline" style="margin-bottom:12px">Os três cards</div>
+          <div style="display:grid;grid-template-columns:170px 1fr;gap:12px 16px;font-size:15px">
+            <span style="font-weight:700">Curso</span><span>Faixa de mídia com o <em>pastel wash</em> e o chip "Em andamento"; overline "Curso", título, composição, barra de progresso em menta e linha de meta "Continue de onde parou · Aula 12 de 18". É o card de <a href="#1a">Meus cursos</a>, sem alteração.</span>
+            <span style="font-weight:700">Certificado</span><span>Ícone <code>award</code> em quadrado menta 52px, overline, número do certificado como título, metadados, dois chips (<code>success</code> "Válido" e <code>neutral</code> "Validação pública") e o link de baixar no rodapé.</span>
+            <span style="font-weight:700">Fórum</span><span>Avatar de iniciais 52px, autor e "Fórum · há 2 horas", título da pergunta, trecho, e a contagem de respostas com ícone no rodapé. É o card de <a href="#1a">Fórum</a>.</span>
+            <span style="font-weight:700">dados</span><span>Fictícios, mas plausíveis e internamente coerentes: 18 aulas, aula 12, 62%. Se um número contradiz o outro, a vitrine mostra um produto quebrado.</span>
+            <span style="font-weight:700">links</span><span>"Baixar certificado" aponta para <code>#</code>. Não faça parecer funcional o que não é: sem hover de link ativo, sem cursor de download.</span>
+          </div>
+          <div class="ds-alert ds-alert-attention" style="margin-top:20px"><div><strong>Nunca substitua por captura de tela.</strong> Imagem estática desatualiza no primeiro deploy, não escala, não fica acessível e não prova nada. Se um card ficar difícil de montar com os componentes reais, o problema é do componente — conserte lá.</div></div>
+        </div>
+        <div style="background:var(--surface-sunken);border-radius:16px;padding:22px;box-shadow:inset 0 0 0 1px var(--divider)"><pre>{{ bladeShowcase }}</pre></div>
+      </div>
+    </div>
+
+    <!-- 06 + 07 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">06</span><h2 style="font-size:30px;margin:0">Contato e rodapé</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">#contato</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">A penúltima faixa é uma pergunta e um botão tonal — não um formulário. O rodapé tem o copyright com o ano corrente e quatro links institucionais, entre eles "Validar certificado", que é a função pública do produto.</p>
+
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) 600px;gap:36px;align-items:start">
+        <div style="background:var(--surface-body);border-radius:20px;padding:36px;display:flex;flex-direction:column;gap:20px">
+          <div style="background:var(--blue-50);border-radius:20px;padding:56px 32px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:24px"><h2 style="font-size:30px;margin:0;max-width:640px;text-wrap:balance">Deseja utilizar esta plataforma em sua organização?</h2><a class="ds-btn ds-btn-tonal" href="#1a">Fale conosco</a></div>
+          <div style="background:var(--surface);border-radius:0 0 20px 20px;box-shadow:var(--elev-1);padding:28px 32px;display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap"><span class="ds-caption">© 2026 <strong>Plataforma EAD</strong>. Todos os direitos reservados.</span><nav style="display:flex;gap:24px;flex-wrap:wrap" aria-label="Links institucionais"><a href="#1a" style="color:var(--text-secondary);font-size:15px">Validar certificado</a><a href="#1a" style="color:var(--text-secondary);font-size:15px">Termos de uso</a><a href="#1a" style="color:var(--text-secondary);font-size:15px">Privacidade</a><a href="#1a" style="color:var(--text-secondary);font-size:15px">Suporte</a></nav></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Especificação</div>
+            <div style="display:grid;grid-template-columns:170px 1fr;gap:12px 16px;font-size:15px">
+              <span style="font-weight:700">faixa contato</span><span><code>--blue-50</code>, centrada, largura de leitura. <code>id="contato"</code> preservado — o link "Suporte" do rodapé aponta para ele.</span>
+              <span style="font-weight:700">pergunta</span><span><code>h2</code> 30px, <code>text-wrap: balance</code>. Verbatim.</span>
+              <span style="font-weight:700">botão</span><span>Tonal, "Fale conosco". Tonal e não primário: o CTA primário da página é o login.</span>
+              <span style="font-weight:700">rodapé</span><span>Branco, 28px/32px, copyright à esquerda e <code>&lt;nav aria-label="Links institucionais"&gt;</code> à direita, <code>flex-wrap</code>.</span>
+              <span style="font-weight:700">ano</span><span><code>date('Y')</code>. Nunca fixo na marcação.</span>
+              <span style="font-weight:700">links</span><span>Validar certificado · Termos de uso · Privacidade · Suporte — nesta ordem, em <code>--text-secondary</code>, 15px.</span>
+            </div>
+          </div>
+          <div class="ds-alert ds-alert-attention"><div><strong>Três dos quatro links vão para <code>#</code>.</strong> Só "Suporte" tem destino real (a âncora <code>#contato</code>). Se o cliente não tiver páginas de termos, privacidade e validação pública, é melhor <strong>remover</strong> os links do que mantê-los mortos — link que não leva a nada é pior que ausência de link. Decisão do cliente.</div></div>
+        </div>
+      </div>
+
+      <div style="height:1px;background:var(--divider)"></div>
+
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">07</span><h2 style="font-size:30px;margin:0">Faixa de números</h2><span class="ds-chip ds-chip-attention">proposta — não existe hoje</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">O slide mostra três números como prova social. A página não tem. Desenhei a proposta para o cliente decidir — e a decisão é sobre o dado, não sobre o desenho: número em página pública tem que ser verdadeiro e atualizável.</p>
+      <div style="background:var(--blue-50);border-radius:20px;padding:48px 36px;display:grid;grid-template-columns:repeat(3,1fr);gap:32px;text-align:center">
+        <div><div style="font-size:40px;font-weight:800;letter-spacing:-.02em;color:var(--primary)">28</div><div class="ds-caption" style="margin-top:4px">organizações usando a plataforma</div></div>
+        <div><div style="font-size:40px;font-weight:800;letter-spacing:-.02em;color:var(--primary)">1.240</div><div class="ds-caption" style="margin-top:4px">certificados emitidos</div></div>
+        <div><div style="font-size:40px;font-weight:800;letter-spacing:-.02em;color:var(--primary)">96%</div><div class="ds-caption" style="margin-top:4px">das provas corrigidas em até 48 horas</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:170px 1fr;gap:10px 16px;font-size:15px;max-width:900px">
+        <span style="font-weight:700">tipografia</span><span>Métrica de 40px peso 800 em <code>--primary</code>, rótulo em caption abaixo. Mesma escala dos <em>stat cards</em> do dashboard.</span>
+        <span style="font-weight:700">faixa</span><span><code>--blue-50</code>, entre o percurso e a vitrine — para não romper a alternância de fundos, ela substitui a cor da faixa seguinte.</span>
+        <span style="font-weight:700">origem do dado</span><span>Consulta agregada real ou valor de configuração revisado. Nunca número escrito na marcação.</span>
+        <span style="font-weight:700">formato</span><span>Milhar com ponto, decimal com vírgula, pt-BR.</span>
+        <span style="font-weight:700">decisão</span><span>Precisa de confirmação do cliente <strong>e</strong> da fonte dos três números. Sem os dois, a faixa não entra.</span>
+      </div>
+    </div>
+
+    <!-- 08 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">08</span><h2 style="font-size:30px;margin:0">Ritmo, tipografia, contrato e aceite</h2></div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:32px">
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="ds-overline">Ritmo das faixas</div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <div style="background:var(--blue-50);border-radius:10px;padding:14px 18px;font-size:15px;font-weight:600">1 · Hero — azul</div>
+            <div style="background:var(--surface-alt);border-radius:10px;padding:14px 18px;font-size:15px;font-weight:600">2 · Capacidades — branco</div>
+            <div style="background:var(--blue-50);border-radius:10px;padding:14px 18px;font-size:15px;font-weight:600">3 · Como funciona — azul</div>
+            <div style="background:var(--surface-alt);border-radius:10px;padding:14px 18px;font-size:15px;font-weight:600">4 · Vitrine — branco</div>
+            <div style="background:var(--blue-50);border-radius:10px;padding:14px 18px;font-size:15px;font-weight:600">5 · Contato — azul</div>
+            <div style="background:var(--surface-alt);border-radius:10px;padding:14px 18px;font-size:15px;font-weight:600">6 · Rodapé — branco</div>
+          </div>
+          <div style="display:grid;grid-template-columns:130px 1fr;gap:10px 16px;font-size:15px;margin-top:6px">
+            <span style="font-weight:700">padding</span><span>80px na vertical por faixa; 48px abaixo de 768px</span>
+            <span style="font-weight:700">largura</span><span>Conteúdo máx. 1240px, centrado; leitura 760px nas faixas de texto</span>
+            <span style="font-weight:700">raio</span><span>36px no hero; 20px nas outras faixas com fundo</span>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="ds-overline">Escala tipográfica da página</div>
+          <div style="display:grid;grid-template-columns:150px 1fr;gap:10px 16px;font-size:15px">
+            <span style="font-weight:700">44 / 700</span><span>headline do hero — o único display da página</span>
+            <span style="font-weight:700">30 / 700</span><span>título de faixa</span>
+            <span style="font-weight:700">20 / 700</span><span>título de capacidade e de card da vitrine</span>
+            <span style="font-weight:700">18 / 700</span><span>título de passo</span>
+            <span style="font-weight:700">19 / 400</span><span>lead do hero e das faixas</span>
+            <span style="font-weight:700">15 / 400</span><span>copy de card</span>
+            <span style="font-weight:700">13 / 800</span><span>overline — a única caixa-alta</span>
+          </div>
+          <div class="ds-caption">Um <code>h1</code> só, na página inteira. Os títulos de faixa são <code>h2</code>; os de card, <code>h2</code> nas capacidades e <code>h3</code> nos passos e na vitrine — hierarquia do código, preservada.</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="ds-overline">Responsivo</div>
+          <div style="display:grid;grid-template-columns:130px 1fr;gap:10px 16px;font-size:15px">
+            <span style="font-weight:700">≥ 1024px</span><span>grades de 3 e de 4 colunas; hero com 72px de padding</span>
+            <span style="font-weight:700">768–1023px</span><span>capacidades e vitrine em 2 colunas; percurso em 2×2</span>
+            <span style="font-weight:700">&lt; 768px</span><span>tudo em uma coluna; headline em 34px; CTA em 100% da largura; rodapé empilhado e centrado</span>
+          </div>
+          <div class="ds-caption">A barra de marca não vira menu hambúrguer: com dois controles à direita, ela cabe em qualquer largura.</div>
+          <div class="ds-overline" style="margin-top:8px">Acessibilidade e SEO</div>
+          <div style="display:grid;grid-template-columns:130px 1fr;gap:10px 16px;font-size:15px">
+            <span style="font-weight:700">title</span><span>"{app} — Capacitação técnica continuada", verbatim</span>
+            <span style="font-weight:700">nav</span><span><code>aria-label="Links institucionais"</code> no rodapé</span>
+            <span style="font-weight:700">decorativo</span><span><code>aria-hidden="true"</code> na marca e nos números dos passos</span>
+            <span style="font-weight:700">contraste</span><span>Texto secundário sobre <code>--blue-50</code> conferido em AA</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="height:1px;background:var(--divider)"></div>
+
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:36px">
+        <div>
+          <div class="ds-overline" style="margin-bottom:12px">Contrato dusk — nenhum destes muda</div>
+          <div style="display:grid;grid-template-columns:250px 1fr;gap:10px 16px;font-size:15px">
+            <code>landing-login-link</code><span>botão "Entrar" da barra</span>
+            <code>landing-headline</code><span>o <code>h1</code> do hero</span>
+            <code>landing-cta-login</code><span>CTA "Acessar plataforma"</span>
+          </div>
+          <div class="ds-alert ds-alert-info" style="margin-top:20px"><div>São só três, e os dois de login dependem de <code>Route::has('login')</code>. Se a rota não existir, os dois nós não são renderizados — mantenha a condição, senão um ambiente sem login quebra na renderização.</div></div>
+          <div class="ds-alert ds-alert-attention" style="margin-top:16px"><div>As classes <code>landing-*</code> não são <code>dusk</code>, mas descrevem a estrutura da página no CSS atual. Ao migrar, mapeie uma a uma — não deixe classe órfã nem regra apontando para faixa que não existe mais.</div></div>
+        </div>
+        <div>
+          <div class="ds-overline" style="margin-bottom:12px">Critérios de aceite</div>
+          <div style="display:flex;flex-direction:column;gap:10px;font-size:15px">
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Headline, lead e todas as frases de card preservados verbatim, com as maiúsculas do domínio.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Um <code>h1</code> na página; hierarquia de <code>h2</code> e <code>h3</code> como no código.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Faixas alternando branco e <code>--blue-50</code>, sem terceira cor de fundo e sem gradiente decorativo.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Um único CTA no hero.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Vitrine montada com os componentes reais do produto — nenhuma captura de tela, nenhuma fotografia, nenhum mockup de aparelho.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Números da vitrine internamente coerentes entre si.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Nome do app de <code>config()</code> e ano de <code>date('Y')</code>, nunca fixos.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span><code>id="contato"</code> preservado, com o link "Suporte" apontando para ele.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Os dois nós de login condicionados a <code>Route::has('login')</code>.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Zero vermelho, laranja ou amarelo. Caixa-alta só no overline e no badge do hero.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Faixa de números <strong>não</strong> implementada sem confirmação e sem fonte de dado.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span><code>artisan dusk</code> filtrado na landing passa sem alteração de seletor.</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const Z = "\u200B";
+const b = (s) => s.split("{{").join("{" + Z + "{").split("}}").join("}" + Z + "}");
+
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      bladeBands: b(`{{-- landing/show.blade.php — barra, hero e faixas de card --}}
+<x-layout.public
+    :title="config('app.name', 'Plataforma EAD').' — Capacitação técnica continuada'"
+    :container="false" surface="white" class="landing-page">
+
+  <header class="landing-header">
+    <div class="landing-header-inner">
+      <div class="landing-brand">
+        <span class="brand-mark" aria-hidden="true">PE</span>
+        <span class="landing-brand-name">{{ config('app.name', 'Plataforma EAD') }}</span>
+      </div>
+
+      <div class="landing-header-actions">
+        <x-help-button key="landing" />
+
+        @if(Route::has('login'))
+          <x-ui.button variant="primary" size="sm"
+                       :href="route('login')"
+                       dusk="landing-login-link">Entrar</x-ui.button>
+        @endif
+      </div>
+    </div>
+  </header>
+
+  {{-- faixa 1 — azul --}}
+  <section class="landing-band landing-hero-band">
+    <div class="landing-hero">
+      <x-ui.badge size="lg">Educação a Distância</x-ui.badge>
+
+      <h1 class="landing-headline" dusk="landing-headline">
+        Capacitação técnica continuada, do jeito certo
+      </h1>
+
+      <p class="landing-lead">
+        Cursos, provas interativas e certificados oficiais em uma única plataforma,
+        pensada para organizações que levam a formação de suas equipes a sério.
+      </p>
+
+      @if(Route::has('login'))
+        {{-- UM CTA. "Entrar" na barra já é o segundo caminho. --}}
+        <x-ui.button variant="primary" size="lg"
+                     :href="route('login')"
+                     dusk="landing-cta-login">Acessar plataforma</x-ui.button>
+      @endif
+    </div>
+  </section>
+
+  {{-- faixa 2 — branca: capacidades, sem ícone --}}
+  <section class="landing-band">
+    <div class="landing-grid landing-grid-3">
+      @foreach([
+        ['Cursos e trilhas',      'Módulos, aulas em vídeo e materiais organizados por curso.'],
+        ['Provas interativas',    'Avaliações automáticas e correção manual de dissertativas.'],
+        ['Certificados oficiais', 'Emissão automática e validação pública por hash único.'],
+      ] as [$title, $copy])
+        <x-ui.card class="landing-card">
+          <h2 class="landing-card-title">{{ $title }}</h2>
+          <p class="landing-card-copy">{{ $copy }}</p>
+        </x-ui.card>
+      @endforeach
+    </div>
+  </section>
+
+  {{-- faixa 3 — azul: percurso numerado --}}
+  <section class="landing-band landing-process-band">
+    <div class="landing-section-heading">
+      <div class="ds-overline">Do convite ao certificado</div>
+      <h2>Como funciona</h2>
+    </div>
+
+    <div class="landing-grid landing-grid-4">
+      @foreach($steps as $i => $step)
+        <x-ui.card class="landing-card">
+          <span @class(['landing-step', 'is-last' => $loop->last])
+                aria-hidden="true">{{ $i + 1 }}</span>
+          <h3 class="landing-step-title">{{ $step['title'] }}</h3>
+          <p class="landing-card-copy">{{ $step['copy'] }}</p>
+        </x-ui.card>
+      @endforeach
+    </div>
+  </section>`),
+
+      bladeShowcase: b(`{{-- faixa 4 — vitrine: COMPONENTES REAIS, nunca screenshot --}}
+<section class="landing-band landing-showcase-band">
+  <div class="landing-section-heading">
+    <div class="ds-overline">Por dentro da plataforma</div>
+    <h2>As telas que você vai usar</h2>
+    <p class="landing-lead">
+      Sem montagem: são os mesmos componentes que aparecem depois do login.
+    </p>
+  </div>
+
+  <div class="landing-grid landing-grid-3">
+    {{-- 1. o card de Meus cursos, sem alteração --}}
+    <x-ui.card class="landing-card landing-showcase-card">
+      <x-slot:image>
+        <span class="ds-chip ds-chip-success">Em andamento</span>
+      </x-slot:image>
+
+      <div class="ds-overline">Curso</div>
+      <h3 class="landing-card-title">Segurança do trabalho — NR 35</h3>
+      <p class="landing-card-copy">4 Módulos · 18 Aulas · 4 horas</p>
+
+      <div class="ds-progress-field">
+        <div class="ds-progress-labels">
+          <span class="ds-caption">Progresso</span>
+          <span class="ds-caption ds-progress-value">62%</span>
+        </div>
+        <x-ui.progress :value="62" tone="secondary" :height="8"
+                       label="Progresso do curso" />
+      </div>
+
+      <x-slot:metaSlot>Continue de onde parou · Aula 12 de 18</x-slot:metaSlot>
+    </x-ui.card>
+
+    {{-- 2. certificado emitido --}}
+    <x-ui.card class="landing-card landing-showcase-card">
+      <div class="landing-cert-head">
+        <span class="landing-certificate-icon" aria-hidden="true">
+          <x-ui.icon name="award" size="24" />
+        </span>
+        <div>
+          <div class="ds-overline">Certificado emitido</div>
+          <h3 class="landing-card-title">nº 9f2b7c41</h3>
+        </div>
+      </div>
+
+      <p class="landing-card-copy">
+        Emitido em 12/03/2026 · 4 horas · Segurança do trabalho — NR 35
+      </p>
+
+      <div class="landing-chip-row">
+        <span class="ds-chip ds-chip-success">Válido</span>
+        <span class="ds-chip ds-chip-neutral">Validação pública</span>
+      </div>
+
+      <x-slot:metaSlot>
+        <x-ui.button variant="ghost" size="sm" icon="download" href="#">
+          Baixar certificado
+        </x-ui.button>
+      </x-slot:metaSlot>
+    </x-ui.card>
+
+    {{-- 3. o card do Fórum --}}
+    <x-ui.card class="landing-card landing-showcase-card">
+      <div class="landing-topic-head">
+        <x-ui.avatar size="52" initials="JR" />
+        <div>
+          <div class="landing-body-small">Joana Ribeiro</div>
+          <div class="ds-caption">Fórum · há 2 horas</div>
+        </div>
+      </div>
+
+      <h3 class="landing-card-title">Como registrar o ponto de ancoragem na prática?</h3>
+      <p class="landing-card-copy">
+        Na Aula 9 o instrutor cita a inspeção prévia, mas queria entender o
+        registro em campo.
+      </p>
+
+      <x-slot:metaSlot>
+        <span class="landing-replies">
+          <x-ui.icon name="message-square" size="16" aria-hidden="true" /> 7 respostas
+        </span>
+      </x-slot:metaSlot>
+    </x-ui.card>
+  </div>
+</section>
+
+{{-- faixa 5 — azul: contato --}}
+<section id="contato" class="landing-band landing-contact-band">
+  <div class="landing-reading-width">
+    <h2>Deseja utilizar esta plataforma em sua organização?</h2>
+    <x-ui.button variant="tonal" href="#">Fale conosco</x-ui.button>
+  </div>
+</section>
+
+<x-slot:footer>
+  <div class="landing-footer-inner">
+    <span>&copy; {{ date('Y') }}
+      <strong>{{ config('app.name', 'Plataforma EAD') }}</strong>.
+      Todos os direitos reservados.</span>
+
+    <nav aria-label="Links institucionais">
+      <a href="#">Validar certificado</a>
+      <a href="#">Termos de uso</a>
+      <a href="#">Privacidade</a>
+      <a href="#contato">Suporte</a>
+    </nav>
+  </div>
+</x-slot:footer>`),
+    };
+  }
+}
+</script>
+</body>
+</html>

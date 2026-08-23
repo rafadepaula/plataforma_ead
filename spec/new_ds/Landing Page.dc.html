@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="_ds/plataforma-ead-design-system-618bb28f-056b-421b-b1d4-d0fef3cd30e2/tokens/fonts.css">
+<link rel="stylesheet" href="_ds/plataforma-ead-design-system-618bb28f-056b-421b-b1d4-d0fef3cd30e2/tokens/colors.css">
+<link rel="stylesheet" href="_ds/plataforma-ead-design-system-618bb28f-056b-421b-b1d4-d0fef3cd30e2/tokens/typography.css">
+<link rel="stylesheet" href="_ds/plataforma-ead-design-system-618bb28f-056b-421b-b1d4-d0fef3cd30e2/tokens/spacing.css">
+<link rel="stylesheet" href="_ds/plataforma-ead-design-system-618bb28f-056b-421b-b1d4-d0fef3cd30e2/tokens/elevation.css">
+<link rel="stylesheet" href="_ds/plataforma-ead-design-system-618bb28f-056b-421b-b1d4-d0fef3cd30e2/tokens/motion.css">
+<link rel="stylesheet" href="_ds/plataforma-ead-design-system-618bb28f-056b-421b-b1d4-d0fef3cd30e2/tokens/primitives.css">
+<link rel="stylesheet" href="_ds/plataforma-ead-design-system-618bb28f-056b-421b-b1d4-d0fef3cd30e2/components/ui.css">
+<link rel="stylesheet" href="_ds/plataforma-ead-design-system-618bb28f-056b-421b-b1d4-d0fef3cd30e2/styles.css">
+<script src="_ds/plataforma-ead-design-system-618bb28f-056b-421b-b1d4-d0fef3cd30e2/_ds_bundle.js"></script>
+<style>
+body{margin:0;background:var(--grey-100,#eef1f7);font-family:var(--font-sans);color:var(--text-primary)}
+a{color:var(--primary);text-decoration:none}
+a:hover{color:var(--blue-700)}
+</style>
+</helmet>
+
+<section style="display:flex;align-items:flex-start;gap:80px;padding:64px">
+
+<div id="1a" style="display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;align-items:center;gap:12px">
+<span style="display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:26px;padding:0 10px;border-radius:var(--radius-pill);background:var(--primary);color:#fff;font-size:13px;font-weight:800;letter-spacing:.02em">1a</span>
+<span style="font-size:15px;font-weight:700;color:var(--text-secondary)">Landing pública — <code style="font-weight:600">GET /</code> · <code style="font-weight:600">landing/show.blade.php</code> · 1440 × auto</span>
+</div>
+
+<div style="width:1440px;background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--elev-2);overflow:hidden">
+
+<header style="height:76px;padding:0 40px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--divider);background:var(--surface);position:relative">
+<div style="display:flex;align-items:center;gap:14px">
+<div style="width:44px;height:44px;border-radius:var(--radius-md);background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;letter-spacing:.02em">PE</div>
+<span style="font-size:20px;font-weight:800;letter-spacing:var(--tracking-tight)">Plataforma EAD</span>
+</div>
+<div style="display:flex;align-items:center;gap:20px">
+<x-import component-from-global-scope="PlataformaEADDesignSystem_618bb2.HelpButton" screen-key="landing" hint-size="40px,40px"></x-import>
+<x-import component-from-global-scope="PlataformaEADDesignSystem_618bb2.Button" variant="primary" size="sm" href="#" dusk="landing-login-link" hint-size="96px,40px">Entrar</x-import>
+</div>
+<span style="position:absolute;top:10px;right:24px;font-size:12px;font-weight:800;color:var(--primary)">01</span>
+</header>
+
+<div style="padding:64px 100px 0">
+<div style="background:var(--blue-50);border-radius:var(--radius-2xl);padding:64px 48px;text-align:center;position:relative">
+<span style="position:absolute;top:20px;right:24px;font-size:12px;font-weight:800;color:var(--primary)">02</span>
+<div style="display:flex;justify-content:center;margin-bottom:20px">
+<x-import component-from-global-scope="PlataformaEADDesignSystem_618bb2.Badge" variant="primary" size="lg" hint-size="220px,32px">Educação a Distância</x-import>
+</div>
+<h1 dusk="landing-headline" style="margin:0 auto;max-width:900px;font-size:44px;line-height:1.15;font-weight:800;letter-spacing:var(--tracking-tight);color:var(--grey-900);text-wrap:pretty">Capacitação técnica continuada, do jeito certo</h1>
+<p style="margin:20px auto 0;max-width:760px;font-size:19px;line-height:1.6;color:var(--text-secondary);text-wrap:pretty">Cursos, provas interativas e certificados oficiais em uma única plataforma, pensada para organizações que levam a formação de suas equipes a sério.</p>
+<div style="display:flex;justify-content:center;gap:16px;margin-top:32px;flex-wrap:wrap">
+<x-import component-from-global-scope="PlataformaEADDesignSystem_618bb2.Button" variant="primary" size="lg" href="#" dusk="landing-cta-login" hint-size="220px,56px">Acessar plataforma</x-import>
+</div>
+</div>
+</div>
+
+<div style="padding:64px 100px;position:relative">
+<span style="position:absolute;top:64px;right:24px;font-size:12px;font-weight:800;color:var(--primary)">03</span>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:24px">
+<x-import component-from-global-scope="PlataformaEADDesignSystem_618bb2.Card" title="Cursos e Trilhas" hint-size="100%,180px">
+<p style="margin:0;font-size:16px;line-height:1.6;color:var(--text-secondary)">Módulos, aulas em vídeo e materiais organizados por curso.</p>
+</x-import>
+<x-import component-from-global-scope="PlataformaEADDesignSystem_618bb2.Card" title="Provas Interativas" hint-size="100%,180px">
+<p style="margin:0;font-size:16px;line-height:1.6;color:var(--text-secondary)">Avaliações automáticas e correção manual de dissertativas.</p>
+</x-import>
+<x-import component-from-global-scope="PlataformaEADDesignSystem_618bb2.Card" title="Certificados Oficiais" hint-size="100%,180px">
+<p style="margin:0;font-size:16px;line-height:1.6;color:var(--text-secondary)">Emissão automática e validação pública por hash único.</p>
+</x-import>
+</div>
+</div>
+
+<div style="padding:0 100px 64px;position:relative">
+<span style="position:absolute;top:0;right:24px;font-size:12px;font-weight:800;color:var(--primary)">04</span>
+<div style="text-align:center;margin-bottom:40px">
+<div class="ds-overline" style="color:var(--primary)">Do convite ao certificado</div>
+<h2 style="margin:8px 0 0;font-size:30px;font-weight:700;letter-spacing:var(--tracking-tight)">Como funciona</h2>
+</div>
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:24px">
+<div style="background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--elev-1);padding:28px;display:flex;flex-direction:column;gap:12px">
+<div style="width:44px;height:44px;border-radius:50%;background:var(--primary-container);color:var(--on-primary-container);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800">1</div>
+<h3 style="margin:0;font-size:18px;font-weight:700">A Organização publica</h3>
+<p style="margin:0;font-size:15px;line-height:1.6;color:var(--text-secondary)">O Gestor cria os Cursos, organiza Módulos e Aulas e define as Provas.</p>
+</div>
+<div style="background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--elev-1);padding:28px;display:flex;flex-direction:column;gap:12px">
+<div style="width:44px;height:44px;border-radius:50%;background:var(--primary-container);color:var(--on-primary-container);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800">2</div>
+<h3 style="margin:0;font-size:18px;font-weight:700">Você recebe o convite</h3>
+<p style="margin:0;font-size:15px;line-height:1.6;color:var(--text-secondary)">O link enviado pela sua Organização confirma a Matrícula em poucos campos.</p>
+</div>
+<div style="background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--elev-1);padding:28px;display:flex;flex-direction:column;gap:12px">
+<div style="width:44px;height:44px;border-radius:50%;background:var(--primary-container);color:var(--on-primary-container);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800">3</div>
+<h3 style="margin:0;font-size:18px;font-weight:700">Você estuda e é avaliado</h3>
+<p style="margin:0;font-size:15px;line-height:1.6;color:var(--text-secondary)">Assista às Aulas na sala de aula, tire dúvidas no fórum e faça as Provas.</p>
+</div>
+<div style="background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--elev-1);padding:28px;display:flex;flex-direction:column;gap:12px">
+<div style="width:44px;height:44px;border-radius:50%;background:var(--primary-container);color:var(--on-primary-container);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800">4</div>
+<h3 style="margin:0;font-size:18px;font-weight:700">O Certificado sai na hora</h3>
+<p style="margin:0;font-size:15px;line-height:1.6;color:var(--text-secondary)">Ao concluir, o Certificado é emitido e qualquer pessoa pode validá-lo pelo hash.</p>
+</div>
+</div>
+</div>
+
+<sc-if value="{{ mostrarVitrine }}" hint-placeholder-val="{{ true }}">
+<div style="padding:64px 100px;background:var(--surface-alt);position:relative">
+<span style="position:absolute;top:64px;right:24px;font-size:12px;font-weight:800;color:var(--primary)">05</span>
+<div style="text-align:center;margin-bottom:40px">
+<div class="ds-overline" style="color:var(--primary)">Por dentro da plataforma</div>
+<h2 style="margin:8px 0 0;font-size:30px;font-weight:700;letter-spacing:var(--tracking-tight)">As telas que você vai usar</h2>
+<p style="margin:12px auto 0;max-width:760px;font-size:19px;line-height:1.6;color:var(--text-secondary)">Sem montagem: são os mesmos componentes que aparecem depois do login.</p>
+</div>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:24px;align-items:stretch">
+
+<div style="background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--elev-1);overflow:hidden;display:flex;flex-direction:column">
+<div style="height:168px;background:linear-gradient(135deg,var(--blue-100),var(--mint-100));position:relative">
+<div style="position:absolute;left:16px;top:16px">
+<x-import component-from-global-scope="PlataformaEADDesignSystem_618bb2.Badge" variant="success" hint-size="120px,28px">Em andamento</x-import>
+</div>
+</div>
+<div style="padding:28px;display:flex;flex-direction:column;gap:12px;flex:1">
+<div class="ds-overline" style="color:var(--primary)">Curso</div>
+<h3 style="margin:0;font-size:20px;font-weight:700;letter-spacing:var(--tracking-tight)">Segurança do trabalho — NR 35</h3>
+<p style="margin:0;font-size:15px;line-height:1.6;color:var(--text-secondary)">4 Módulos · 18 Aulas · 4 horas</p>
+<x-import component-from-global-scope="PlataformaEADDesignSystem_618bb2.Progress" value="{{ 62 }}" variant="success" caption="Progresso" show-label="{{ true }}" hint-size="100%,34px"></x-import>
+<div style="margin-top:auto;padding-top:12px;border-top:1px solid var(--divider);font-size:13px;color:var(--text-secondary)">Continue de onde parou · Aula 12 de 18</div>
+</div>
+</div>
+
+<div style="background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--elev-1);padding:28px;display:flex;flex-direction:column;gap:12px;height:100%;box-sizing:border-box">
+<div style="display:flex;align-items:center;gap:16px">
+<div style="width:52px;height:52px;border-radius:var(--radius-md);background:var(--secondary-container);color:var(--on-secondary-container);display:flex;align-items:center;justify-content:center">
+<x-import component-from-global-scope="PlataformaEADDesignSystem_618bb2.Icon" name="award" size="{{ 24 }}" hint-size="24px,24px"></x-import>
+</div>
+<div>
+<div class="ds-overline" style="color:var(--primary)">Certificado emitido</div>
+<div style="font-size:20px;font-weight:700;letter-spacing:var(--tracking-tight)">nº 9f2b7c41</div>
+</div>
+</div>
+<p style="margin:0;font-size:15px;line-height:1.6;color:var(--text-secondary)">Emitido em 12/03/2026 · 4 horas · Segurança do trabalho — NR 35</p>
+<div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:4px">
+<x-import component-from-global-scope="PlataformaEADDesignSystem_618bb2.Badge" variant="success" hint-size="110px,28px">Válido</x-import>
+<x-import component-from-global-scope="PlataformaEADDesignSystem_618bb2.Badge" variant="neutral" dot="{{ false }}" hint-size="150px,28px">Validação pública</x-import>
+</div>
+<div style="margin-top:auto;padding-top:12px;border-top:1px solid var(--divider)">
+<x-import component-from-global-scope="PlataformaEADDesignSystem_618bb2.Button" variant="text" size="sm" icon="upload" href="#" hint-size="180px,40px">Baixar certificado</x-import>
+</div>
+</div>
+
+<div style="background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--elev-1);padding:28px;display:flex;flex-direction:column;gap:12px;height:100%;box-sizing:border-box">
+<div style="display:flex;align-items:center;gap:12px">
+<x-import component-from-global-scope="PlataformaEADDesignSystem_618bb2.Avatar" name="Joana Ribeiro" tone="mint" hint-size="44px,44px"></x-import>
+<div>
+<div style="font-size:15px;font-weight:700">Joana Ribeiro</div>
+<div style="font-size:13px;color:var(--text-secondary)">Fórum · há 2 horas</div>
+</div>
+</div>
+<h3 style="margin:4px 0 0;font-size:20px;font-weight:700;letter-spacing:var(--tracking-tight)">Como registrar o ponto de ancoragem na prática?</h3>
+<p style="margin:0;font-size:15px;line-height:1.6;color:var(--text-secondary)">Na Aula 9 o instrutor cita a inspeção prévia, mas queria entender o registro em campo.</p>
+<div style="display:flex;align-items:center;gap:8px;margin-top:auto;padding-top:12px;border-top:1px solid var(--divider);font-size:13px;color:var(--text-secondary)">
+<x-import component-from-global-scope="PlataformaEADDesignSystem_618bb2.Icon" name="message-square" size="{{ 16 }}" hint-size="16px,16px"></x-import>
+<span>7 respostas</span>
+</div>
+</div>
+
+</div>
+</div>
+</sc-if>
+
+<div id="contato" style="padding:64px 100px;text-align:center;position:relative">
+<span style="position:absolute;top:64px;right:24px;font-size:12px;font-weight:800;color:var(--primary)">07</span>
+<div style="max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:16px;align-items:center">
+<h2 style="margin:0;font-size:24px;font-weight:700;letter-spacing:var(--tracking-tight)">Deseja utilizar esta plataforma em sua organização?</h2>
+<x-import component-from-global-scope="PlataformaEADDesignSystem_618bb2.Button" variant="tonal" size="md" href="#" hint-size="160px,48px">Fale conosco</x-import>
+</div>
+</div>
+
+<div style="position:relative">
+<span style="position:absolute;top:20px;right:24px;font-size:12px;font-weight:800;color:var(--primary)">08</span>
+<x-import component-from-global-scope="PlataformaEADDesignSystem_618bb2.Footer" links="{{ linksRodape }}" hint-size="100%,96px"></x-import>
+</div>
+
+</div>
+</div>
+
+<sc-if value="{{ mostrarEspecificacao }}" hint-placeholder-val="{{ true }}">
+<div id="1b" style="display:flex;flex-direction:column;gap:16px;width:820px">
+<div style="display:flex;align-items:center;gap:12px">
+<span style="display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:26px;padding:0 10px;border-radius:var(--radius-pill);background:var(--grey-900);color:#fff;font-size:13px;font-weight:800">1b</span>
+<span style="font-size:15px;font-weight:700;color:var(--text-secondary)">Especificação da tela — conteúdo, tokens e espaçamentos</span>
+</div>
+
+<div style="background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--elev-1);padding:48px;display:flex;flex-direction:column;gap:40px">
+
+<div style="display:flex;flex-direction:column;gap:12px">
+<div class="ds-overline" style="color:var(--primary)">Metadados</div>
+<h2 style="margin:0;font-size:30px;font-weight:700;letter-spacing:var(--tracking-tight)">Landing pública</h2>
+<p style="margin:0;font-size:19px;line-height:1.6;color:var(--text-secondary)">Rota <code>GET /</code> (<code>landing.show</code>), view <code>resources/views/landing/show.blade.php</code>, shell <code>&lt;x-layout.public :container="false"&gt;</code>. Sem sessão, sem drawer. Cada faixa é full-bleed e declara o próprio contêiner de 1240px (<code>--content-max</code>); leitura limitada a 760px (<code>--reading-max</code>).</p>
+<div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:4px">
+<x-import component-from-global-scope="PlataformaEADDesignSystem_618bb2.Badge" variant="primary" dot="{{ false }}" hint-size="150px,28px">Fase F — esforço baixo</x-import>
+<x-import component-from-global-scope="PlataformaEADDesignSystem_618bb2.Badge" variant="neutral" dot="{{ false }}" hint-size="140px,28px">3 seletores dusk</x-import>
+<x-import component-from-global-scope="PlataformaEADDesignSystem_618bb2.Badge" variant="neutral" dot="{{ false }}" hint-size="150px,28px">7 faixas</x-import>
+</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:16px">
+<div class="ds-overline" style="color:var(--primary)">Conteúdo, faixa por faixa</div>
+<div style="display:flex;flex-direction:column;gap:16px">
+
+<div style="display:grid;grid-template-columns:44px 1fr;gap:16px;padding-bottom:16px;border-bottom:1px solid var(--divider)">
+<div style="font-size:16px;font-weight:800;color:var(--primary)">01</div>
+<div style="display:flex;flex-direction:column;gap:6px">
+<div style="font-size:18px;font-weight:700">Barra pública</div>
+<p style="margin:0;font-size:15px;line-height:1.6;color:var(--text-secondary)">Brand mark 44px (raio <code>--radius-md</code>, iniciais 2 letras) + nome em 20px/800. À direita: <strong>HelpButton</strong> (<code>key="landing"</code>, obrigatório em 100% das telas) e <strong>Button</strong> primary sm “Entrar”. Altura 76px (<code>--appbar-height</code>), padding lateral 40px, divisor 1px <code>--divider</code>.</p>
+</div>
+</div>
+
+<div style="display:grid;grid-template-columns:44px 1fr;gap:16px;padding-bottom:16px;border-bottom:1px solid var(--divider)">
+<div style="font-size:16px;font-weight:800;color:var(--primary)">02</div>
+<div style="display:flex;flex-direction:column;gap:6px">
+<div style="font-size:18px;font-weight:700">Hero</div>
+<p style="margin:0;font-size:15px;line-height:1.6;color:var(--text-secondary)">Bloco <code>.ds-hero</code>: fundo <code>--blue-50</code>, raio 36px (<code>--radius-2xl</code>), padding 64/48. Badge “Educação a Distância” (era o kicker do Blade). H1 verbatim em 44px/800/-.02em, máximo 900px. Lead verbatim em 19px <code>--text-secondary</code>, máximo 760px. Um único CTA: primary lg “Acessar plataforma”. Sem segundo botão e sem faixa de números — a tela explica o acesso, não argumenta venda.</p>
+</div>
+</div>
+
+<div style="display:grid;grid-template-columns:44px 1fr;gap:16px;padding-bottom:16px;border-bottom:1px solid var(--divider)">
+<div style="font-size:16px;font-weight:800;color:var(--primary)">03</div>
+<div style="display:flex;flex-direction:column;gap:6px">
+<div style="font-size:18px;font-weight:700">Três pilares</div>
+<p style="margin:0;font-size:15px;line-height:1.6;color:var(--text-secondary)">Os três <strong>Card</strong> do Blade, texto intacto: “Cursos e Trilhas”, “Provas Interativas”, “Certificados Oficiais”. Grade 3 × 1, gap 24px, card branco raio 20px, padding 28px, elev-1. Título vira <code>h2</code> visualmente em 20px — a hierarquia de heading do original é mantida.</p>
+</div>
+</div>
+
+<div style="display:grid;grid-template-columns:44px 1fr;gap:16px;padding-bottom:16px;border-bottom:1px solid var(--divider)">
+<div style="font-size:16px;font-weight:800;color:var(--primary)">04</div>
+<div style="display:flex;flex-direction:column;gap:6px">
+<div style="font-size:18px;font-weight:700">Como funciona — 4 passos</div>
+<p style="margin:0;font-size:15px;line-height:1.6;color:var(--text-secondary)">Seção nova (DESIGN.md §4.12). Overline + h2 30px centralizados; quatro cards com círculo pastel de 44px numerado (<code>--primary-container</code> / <code>--on-primary-container</code>), título 18px/700 e corpo 15px. Sequência: publicar → convite → estudar e ser avaliado → certificado. Nenhuma capacidade nova é prometida.</p>
+</div>
+</div>
+
+<div style="display:grid;grid-template-columns:44px 1fr;gap:16px;padding-bottom:16px;border-bottom:1px solid var(--divider)">
+<div style="font-size:16px;font-weight:800;color:var(--primary)">05</div>
+<div style="display:flex;flex-direction:column;gap:6px">
+<div style="font-size:18px;font-weight:700">Vitrine de componentes</div>
+<p style="margin:0;font-size:15px;line-height:1.6;color:var(--text-secondary)">Prova visual sem fotografia: card de Curso (faixa de mídia 168px em pastel wash — o único gradiente do sistema — badge “Em andamento”, Progress menta 62%), Certificado emitido (ícone <code>award</code> em quadrado 52px, hash, badges “Válido” e “Validação pública”) e tópico de fórum (Avatar por iniciais, contagem de respostas). Faixa em <code>--surface-alt</code>. Os três cards têm a mesma altura: grade <code>align-items:stretch</code> e última linha ancorada com <code>margin-top:auto</code> acima do divisor.</p>
+</div>
+</div>
+
+<div style="display:grid;grid-template-columns:44px 1fr;gap:16px;padding-bottom:16px;border-bottom:1px solid var(--divider)">
+<div style="font-size:16px;font-weight:800;color:var(--primary)">07</div>
+<div style="display:flex;flex-direction:column;gap:6px">
+<div style="font-size:18px;font-weight:700">Contato institucional</div>
+<p style="margin:0;font-size:15px;line-height:1.6;color:var(--text-secondary)">Seção centrada de 760px, id <code>contato</code>. H2 24px “Deseja utilizar esta plataforma em sua organização?” e um <strong>Button</strong> tonal “Fale conosco”. Única saída da página além do login — sem argumento comercial, sem formulário embutido.</p>
+</div>
+</div>
+
+<div style="display:grid;grid-template-columns:44px 1fr;gap:16px">
+<div style="font-size:16px;font-weight:800;color:var(--primary)">08</div>
+<div style="display:flex;flex-direction:column;gap:6px">
+<div style="font-size:18px;font-weight:700">Rodapé</div>
+<p style="margin:0;font-size:15px;line-height:1.6;color:var(--text-secondary)"><strong>Footer</strong> do sistema, com o texto de direitos e os links <em>Validar certificado</em> (validação pública por hash), termos, privacidade e suporte.</p>
+</div>
+</div>
+
+</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:16px">
+<div class="ds-overline" style="color:var(--primary)">Tokens em uso</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+<div style="display:flex;flex-direction:column;gap:8px">
+<div style="font-size:15px;font-weight:700">Cor</div>
+<div style="display:flex;flex-direction:column;gap:6px;font-size:14px;color:var(--text-secondary);line-height:1.6">
+<div><code>--primary</code> #4c6fe7 — CTA, overline, links, foco</div>
+<div><code>--blue-50</code> — hero e faixa de números</div>
+<div><code>--secondary</code> #2e9e6b — progresso e “Válido”</div>
+<div><code>--tertiary</code> #2c7bd1 — terceira prova em número</div>
+<div><code>--primary-container</code> / <code>--on-primary-container</code> — badges e círculos de passo</div>
+<div><code>--surface</code>, <code>--surface-alt</code>, <code>--divider</code>, <code>--border-color</code></div>
+<div><code>--text-primary</code>, <code>--text-secondary</code></div>
+<div style="color:var(--critical);font-weight:700">Nenhum vermelho, laranja ou amarelo. Nada destrutivo nesta tela.</div>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<div style="font-size:15px;font-weight:700">Tipografia</div>
+<div style="display:flex;flex-direction:column;gap:6px;font-size:14px;color:var(--text-secondary);line-height:1.6">
+<div>Nunito Sans 400 / 700 / 800</div>
+<div>display 44px/800/-.02em — H1 do hero</div>
+<div>h2 30px/700 — títulos de seção</div>
+<div>h3 24px — “Recebeu um convite?”</div>
+<div>h4 20px — títulos de card</div>
+<div>h5 18px — passos</div>
+<div>lead 19px/1.6 — subtítulos</div>
+<div>body 16px, body-sm 15px, caption 13px</div>
+<div>overline 13px/.08em, caixa-alta — o único uso de maiúsculas</div>
+<div>métrica 40px/800</div>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<div style="font-size:15px;font-weight:700">Raio e elevação</div>
+<div style="display:flex;flex-direction:column;gap:6px;font-size:14px;color:var(--text-secondary);line-height:1.6">
+<div><code>--radius-2xl</code> 36px — hero</div>
+<div><code>--radius-lg</code> 20px — cards e faixas</div>
+<div><code>--radius-md</code> 14px — brand mark, quadrado de ícone</div>
+<div><code>--radius-pill</code> — botões, badges</div>
+<div><code>--elev-1</code> cards · <code>--elev-2</code> moldura da página</div>
+<div><code>--elev-primary</code> glow do CTA primário</div>
+<div>Sem borda escura: profundidade é sombra azulada</div>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<div style="font-size:15px;font-weight:700">Espaçamento</div>
+<div style="display:flex;flex-direction:column;gap:6px;font-size:14px;color:var(--text-secondary);line-height:1.6">
+<div>Grade de 4px; faixas com 64px vertical (<code>--space-10</code>)</div>
+<div>Padding lateral da faixa 100px até o contêiner de 1240px</div>
+<div>Hero: 64px topo/base, 48px lateral</div>
+<div>Gap de grade 24px (<code>--space-6</code>)</div>
+<div>Card: padding 28px, gap interno 12px</div>
+<div>Título → subtítulo 20px; subtítulo → CTAs 32px</div>
+<div>Provas em número: 48px acima, 32px após o divisor</div>
+<div>Alvo de toque mínimo 48px; botão lg 56px</div>
+</div>
+</div>
+</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:12px">
+<div class="ds-overline" style="color:var(--primary)">Estados e movimento</div>
+<div style="display:flex;flex-direction:column;gap:6px;font-size:15px;color:var(--text-secondary);line-height:1.6">
+<div><strong style="color:var(--text-primary)">Hover</strong> — botão preenchido sobe 1px e aprofunda a sombra (200ms); camada de estado <code>currentColor</code> 6%.</div>
+<div><strong style="color:var(--text-primary)">Press</strong> — camada 12%, sombra menor, sem deslocamento.</div>
+<div><strong style="color:var(--text-primary)">Foco</strong> — anel azul sólido de 3px com 2px de offset, visível em todos os links da barra e do rodapé.</div>
+<div><strong style="color:var(--text-primary)">Sem conteúdo</strong> — se a faixa de números não tiver dados, ela é omitida; não existe estado vazio decorativo na landing.</div>
+<div><strong style="color:var(--text-primary)">Movimento</strong> — apenas 120/200ms em cor e elevação. Nenhuma animação de entrada, nenhum efeito de scroll.</div>
+</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:12px">
+<div class="ds-overline" style="color:var(--primary)">Responsivo</div>
+<div style="display:flex;flex-direction:column;gap:6px;font-size:15px;color:var(--text-secondary);line-height:1.6">
+<div>≥ 1240px: layout como desenhado.</div>
+<div>905–1239px: faixa lateral cai para 40px; grades 03/05 seguem em 3 colunas, 04 vai a 2 × 2.</div>
+<div>&lt; 905px: coluna única, todas as grades empilham, hero com padding 40/24 e H1 em 36px. Tamanho de corpo nunca reduz.</div>
+<div>Barra pública em 64px de altura no mobile, mantendo brand mark, ajuda e “Entrar”.</div>
+</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:12px">
+<div class="ds-overline" style="color:var(--primary)">Contrato dusk</div>
+<div style="display:flex;flex-direction:column;gap:6px;font-size:15px;color:var(--text-secondary);line-height:1.6">
+<div><code>landing-login-link</code> — botão “Entrar” da barra</div>
+<div><code>landing-cta-login</code> — CTA primário do hero</div>
+<div><code>landing-headline</code> — H1 do hero</div>
+<div>Os três permanecem no mesmo nó semântico (âncora, âncora, <code>h1</code>). O link “Fale conosco”, o “Validar certificado” do rodapé e todos os wrappers novos entram <strong>sem</strong> <code>dusk</code>.</div>
+</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:12px">
+<div class="ds-overline" style="color:var(--primary)">Acessibilidade</div>
+<div style="display:flex;flex-direction:column;gap:6px;font-size:15px;color:var(--text-secondary);line-height:1.6">
+<div>Um único <code>h1</code>; seções em <code>h2</code>; cards em <code>h3</code>.</div>
+<div>Contraste mínimo 4,5:1 — texto secundário sobre <code>--blue-50</code> verificado.</div>
+<div>Ordem de leitura igual à ordem visual; o único CTA do hero é uma âncora real para o login.</div>
+<div>Progress com <code>role="progressbar"</code> e rótulo; ícones decorativos escondidos do leitor de tela.</div>
+</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:12px;padding:24px;background:var(--surface-alt);border-radius:var(--radius-md)">
+<div class="ds-overline" style="color:var(--primary)">Pendente de confirmação do cliente</div>
+<div style="display:flex;flex-direction:column;gap:6px;font-size:15px;color:var(--text-secondary);line-height:1.6">
+<div>Os exemplos da vitrine (curso NR 35, certificado nº 9f2b7c41, tópico do fórum) precisam de conteúdo aprovado ou virar dados reais de demonstração.</div>
+<div>Destino do “Fale conosco”: e-mail, formulário ou página institucional — não existe rota para isso no código atual.</div>
+</div>
+</div>
+
+</div>
+</div>
+</sc-if>
+
+</section>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;mostrarVitrine&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Conteúdo&quot;},&quot;mostrarEspecificacao&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Conteúdo&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      linksRodape: ['Validar certificado', 'Termos de uso', 'Privacidade', 'Suporte'],
+      mostrarVitrine: this.props.mostrarVitrine ?? true,
+      mostrarEspecificacao: this.props.mostrarEspecificacao ?? true
+    };
+  }
+}
+</script>
+</body>
+</html>

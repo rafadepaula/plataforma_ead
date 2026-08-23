@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <meta name="design_doc_mode" content="canvas">
+  <link rel="stylesheet" href="_ds/plataforma-ead-design-system-618bb28f-056b-421b-b1d4-d0fef3cd30e2/styles.css">
+  <script src="_ds/plataforma-ead-design-system-618bb28f-056b-421b-b1d4-d0fef3cd30e2/_ds_bundle.js"></script>
+  <style>
+    a{color:var(--primary);text-decoration:none}
+    a:hover{color:var(--primary-hover)}
+    pre{margin:0;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;line-height:1.7;white-space:pre-wrap;color:var(--grey-800)}
+    code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.92em;background:var(--surface-alt);border-radius:6px;padding:1px 6px}
+  </style>
+</helmet>
+
+<section style="display:flex;flex-direction:column;gap:28px;padding:64px;background:var(--surface-body);font-family:var(--font-sans);color:var(--text-primary);line-height:1.6;width:2040px;box-sizing:border-box">
+
+  <div id="1a" style="display:flex;flex-direction:column;gap:28px">
+
+    <header style="display:flex;align-items:flex-start;justify-content:space-between;gap:48px;background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px">
+      <div style="max-width:1180px;display:flex;flex-direction:column;gap:14px">
+        <div class="ds-overline" style="color:var(--primary)">Especificação de componentes · tela 10 · slide 10</div>
+        <h1 style="font-size:46px;line-height:1.08;margin:0;letter-spacing:-.02em">Cursos — a lista do gestor</h1>
+        <p style="font-size:19px;color:var(--text-secondary);margin:0;text-wrap:pretty">O catálogo interno da organização: uma tabela em telas largas, a mesma informação em cards no celular, e quatro ações por curso. Especificação componente por componente, com comportamento e vocabulário lidos de <code>resources/views/courses/index.blade.php</code>.</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;align-items:flex-end;flex:none">
+        <span class="ds-chip ds-chip-primary ds-chip-plain ds-chip-lg">1a</span>
+        <span class="ds-caption">7 componentes · 8 blocos</span>
+      </div>
+    </header>
+
+    <div class="ds-alert ds-alert-attention"><div><strong>Duas divergências entre o slide e o código.</strong> O slide mostra uma barra de busca e filtro por status — <strong>ela não existe</strong> no Blade atual: a tela é cabeçalho, tabela e paginação. E o slide mostra três ações por linha; o código tem <strong>quatro</strong> (Módulos, Regras de conclusão, Editar, Remover). Especifiquei a tela real. O filtro está desenhado no bloco 07 como proposta separada, para o cliente decidir.</div></div>
+
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px">
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">01</div><div style="font-size:17px;font-weight:800">PageHeader</div><div class="ds-caption">título + Novo curso</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">02</div><div style="font-size:17px;font-weight:800">DataTable</div><div class="ds-caption">5 colunas, striped</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">03</div><div style="font-size:17px;font-weight:800">CourseTitleCell</div><div class="ds-caption">título + contagens</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">04</div><div style="font-size:17px;font-weight:800">RowActions</div><div class="ds-caption">4 ações, hierarquia</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">05</div><div style="font-size:17px;font-weight:800">CourseCardMobile</div><div class="ds-caption">mesma informação</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">06</div><div style="font-size:17px;font-weight:800">Pagination</div><div class="ds-caption">pílulas</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">07</div><div style="font-size:17px;font-weight:800">FilterBar</div><div class="ds-caption">proposta, não existe</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">08</div><div style="font-size:17px;font-weight:800">Estados</div><div class="ds-caption">vazio, remoção, aceite</div></div></div>
+    </div>
+
+    <!-- 00 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:24px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">00</span><h2 style="font-size:30px;margin:0">O que a tela faz</h2></div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px">
+        <div style="background:var(--blue-50);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">Ver o catálogo</div><div style="font-size:15px">Todos os cursos da organização do gestor, com módulos, aulas, carga horária, alunos matriculados e situação de publicação.</div></div>
+        <div style="background:var(--blue-50);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">Chegar ao conteúdo</div><div style="font-size:15px">Cada linha é a porta para os módulos do curso, para as regras de conclusão e para a edição dos dados.</div></div>
+        <div style="background:var(--blue-50);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">Criar e remover</div><div style="font-size:15px">"Novo curso" no cabeçalho; remoção por linha, sempre com confirmação nomeando o curso.</div></div>
+        <div style="background:var(--mint-100);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">Escopo automático</div><div style="font-size:15px">O <code>OrgScope</code> confina a listagem à organização do gestor. A tela não tem seletor de organização.</div></div>
+        <div style="background:var(--mint-100);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">Contagens sem N+1</div><div style="font-size:15px">Módulos, aulas e alunos vêm de <code>withCount()</code>. A tela nunca faz consulta por linha.</div></div>
+        <div style="background:var(--mint-100);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">Dois layouts, um conteúdo</div><div style="font-size:15px">Tabela a partir de <code>md</code>, cards abaixo disso. Os <code>dusk</code> vivem só na tabela — a lista de cards não os duplica.</div></div>
+      </div>
+
+      <div style="background:var(--surface-sunken);border-radius:20px;padding:28px;box-shadow:inset 0 0 0 1px var(--divider)"><pre>courses/index.blade.php          — rota courses.index, role:admin|gestor
+├── x-layout.page-header                                        ← 01
+│   └── slot actions: Novo curso        dusk="new-course"
+│
+├── .d-none.d-md-block          (tabela, a partir de md)
+│   └── x-ui.data-table  striped hover responsive               ← 02
+│       ├── thead: Título · Carga horária · Alunos · Status · Ações
+│       └── tr[dusk=course-row-{id}]
+│           ├── td  título + "N módulos · N aulas"              ← 03
+│           ├── td  carga horária
+│           ├── td  alunos
+│           ├── td  x-ui.badge  Publicado | Rascunho
+│           ├── td  4 ações                                     ← 04
+│           └── x-ui.confirm-modal  remoção                     ← 08
+│
+├── .d-md-none                  (cards, abaixo de md)
+│   └── x-ui.card por curso                                     ← 05
+│
+└── x-ui.pagination                                             ← 06</pre></div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
+        <div style="background:var(--surface-alt);border-radius:16px;padding:20px"><div class="ds-overline" style="margin-bottom:6px">Regra 1</div><div style="font-size:15px">Uma tabela, não cards em telas largas. Cinco colunas comparáveis pedem grade; card por curso aqui só desperdiça espaço.</div></div>
+        <div style="background:var(--surface-alt);border-radius:16px;padding:20px"><div class="ds-overline" style="margin-bottom:6px">Regra 2</div><div style="font-size:15px">Quatro ações por linha é o limite. Uma quinta obriga a virar menu — e menu esconde trabalho do gestor.</div></div>
+        <div style="background:var(--surface-alt);border-radius:16px;padding:20px"><div class="ds-overline" style="margin-bottom:6px">Regra 3</div><div style="font-size:15px">"Remover" é <code>--critical</code> com ícone. Rascunho é chip neutro, não aviso: não publicado não é problema.</div></div>
+      </div>
+    </div>
+
+    <!-- 01 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">01</span><h2 style="font-size:30px;margin:0">Cabeçalho da página</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">x-layout.page-header</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">Kicker "Gestão", título "Cursos", subtítulo explicando o escopo, e a ação primária à direita. O código atual não passa breadcrumb aqui: esta é a raiz da área de gestão, então o breadcrumb seria de um nível só — mantenha sem.</p>
+
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) 600px;gap:36px;align-items:start">
+        <div style="background:var(--surface-body);border-radius:20px;padding:36px">
+          <div class="ds-page-header" style="margin:0">
+            <div>
+              <div class="ds-overline" style="color:var(--primary);margin-bottom:8px">Gestão</div>
+              <h1 class="ds-page-title">Cursos</h1>
+              <p class="ds-lead" style="margin:12px 0 0">Gerencie os cursos da sua Organização, seus módulos e as regras de conclusão.</p>
+            </div>
+            <div style="display:flex;gap:12px;flex:none"><a class="ds-btn ds-btn-primary" href="#1a" dusk="new-course"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>Novo curso</a></div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Conteúdo</div>
+            <div style="display:grid;grid-template-columns:150px 1fr;gap:12px 16px;font-size:15px">
+              <code>kicker</code><span>"Gestão", overline azul.</span>
+              <code>title</code><span>"Cursos". <code>h1</code> único da página.</span>
+              <code>subtitle</code><span>"Gerencie os cursos da sua Organização, seus módulos e as regras de conclusão." — verbatim.</span>
+              <code>actions</code><span>Um botão: "Novo curso" com ícone <code>plus</code>. No código o rótulo é "Novo Curso"; a caixa passa a sentence case, mantendo Curso capitalizado só quando nomeia a entidade no meio de frase.</span>
+              <code>dusk</code><span><code>new-course</code>, no botão.</span>
+            </div>
+          </div>
+          <div class="ds-alert ds-alert-info"><div><strong>Caixa dos rótulos.</strong> "Novo curso" no botão, "Cursos" no título. O código escreve "Novo Curso" e "Nenhum Curso cadastrado." — a nova linguagem usa sentence case nos rótulos de interface e reserva a inicial maiúscula para quando a palavra nomeia a entidade dentro de uma frase corrida.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 02 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">02</span><h2 style="font-size:30px;margin:0">Tabela</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">x-ui.data-table</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">Cinco colunas, cabeçalho em superfície afundada, linhas separadas por divisor de 1px e sem borda externa — a tabela mora num contêiner branco com raio 20px e elevação 1. A largura das colunas é fixa exceto a primeira, que absorve a sobra. As especificações completas da tabela estão no canvas <a href="#1a">Tabelas</a>; aqui só o que é próprio desta tela.</p>
+
+      <div style="background:var(--surface-body);border-radius:20px;padding:36px">
+        <div class="ds-table-wrap" style="background:var(--surface);border-radius:20px;box-shadow:var(--elev-1);overflow:hidden">
+          <table class="ds-table" style="width:100%;border-collapse:collapse">
+            <thead><tr style="background:var(--surface-sunken)"><th style="text-align:left;padding:16px 20px;font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--text-secondary)">Título</th><th style="text-align:left;padding:16px 20px;font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--text-secondary);width:150px">Carga horária</th><th style="text-align:right;padding:16px 20px;font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--text-secondary);width:110px">Alunos</th><th style="text-align:left;padding:16px 20px;font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--text-secondary);width:130px">Status</th><th style="text-align:right;padding:16px 20px;font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--text-secondary);width:470px">Ações</th></tr></thead>
+            <tbody>
+              <tr style="border-top:1px solid var(--divider)" dusk="course-row-4"><td style="padding:16px 20px"><div style="font-weight:600">Fundamentos de Segurança do Trabalho</div><div class="ds-caption">3 módulos · 13 aulas</div></td><td style="padding:16px 20px">4 horas</td><td style="padding:16px 20px;text-align:right;font-variant-numeric:tabular-nums">128</td><td style="padding:16px 20px"><span class="ds-chip ds-chip-success">Publicado</span></td><td style="padding:16px 20px"><div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap"><a class="ds-btn ds-btn-tonal ds-btn-sm" href="#1a">Módulos</a><a class="ds-btn ds-btn-ghost ds-btn-sm" href="#1a">Regras de conclusão</a><a class="ds-btn ds-btn-ghost ds-btn-sm" href="#1a">Editar</a><button class="ds-btn ds-btn-ghost ds-btn-sm ds-btn-icon-only" aria-label="Remover curso"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"></path></svg></button></div></td></tr>
+              <tr style="border-top:1px solid var(--divider);background:var(--blue-50)"><td style="padding:16px 20px"><div style="font-weight:600">Boas Práticas de Atendimento ao Cidadão</div><div class="ds-caption">2 módulos · 9 aulas</div></td><td style="padding:16px 20px">3 horas</td><td style="padding:16px 20px;text-align:right;font-variant-numeric:tabular-nums">86</td><td style="padding:16px 20px"><span class="ds-chip ds-chip-success">Publicado</span></td><td style="padding:16px 20px"><div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap"><a class="ds-btn ds-btn-tonal ds-btn-sm" href="#1a">Módulos</a><a class="ds-btn ds-btn-ghost ds-btn-sm" href="#1a">Regras de conclusão</a><a class="ds-btn ds-btn-ghost ds-btn-sm" href="#1a">Editar</a><button class="ds-btn ds-btn-ghost ds-btn-sm ds-btn-icon-only" aria-label="Remover curso"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"></path></svg></button></div></td><td></td></tr>
+              <tr style="border-top:1px solid var(--divider)"><td style="padding:16px 20px"><div style="font-weight:600">Legislação Aplicada à Fiscalização</div><div class="ds-caption">1 módulo · 4 aulas</div></td><td style="padding:16px 20px">1 hora</td><td style="padding:16px 20px;text-align:right;font-variant-numeric:tabular-nums">0</td><td style="padding:16px 20px"><span class="ds-chip ds-chip-neutral">Rascunho</span></td><td style="padding:16px 20px"><div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap"><a class="ds-btn ds-btn-tonal ds-btn-sm" href="#1a">Módulos</a><a class="ds-btn ds-btn-ghost ds-btn-sm" href="#1a">Regras de conclusão</a><a class="ds-btn ds-btn-ghost ds-btn-sm" href="#1a">Editar</a><button class="ds-btn ds-btn-ghost ds-btn-sm ds-btn-icon-only" aria-label="Remover curso"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"></path></svg></button></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) 600px;gap:36px;align-items:start">
+        <div>
+          <div class="ds-overline" style="margin-bottom:12px">As cinco colunas</div>
+          <div style="display:grid;grid-template-columns:190px 110px 1fr;gap:12px 16px;font-size:15px">
+            <div style="font-weight:800">coluna</div><div style="font-weight:800">largura</div><div style="font-weight:800">conteúdo e alinhamento</div>
+            <span>Título</span><span>flexível</span><span>Título em peso 600 + caption "N módulos · N aulas". Esquerda. Bloco 03.</span>
+            <span>Carga horária</span><span>150px</span><span>"N horas", pluralizado no servidor. Esquerda.</span>
+            <span>Alunos</span><span>110px</span><span>Inteiro, <strong>à direita</strong>, <code>tabular-nums</code> — número compara com número.</span>
+            <span>Status</span><span>130px</span><span>Chip <code>success</code> "Publicado" ou <code>neutral</code> "Rascunho". Esquerda.</span>
+            <span>Ações</span><span>470px</span><span>Quatro ações alinhadas à direita, <code>flex-wrap</code>. Bloco 04.</span>
+          </div>
+          <div class="ds-alert ds-alert-info" style="margin-top:20px"><div><strong>Cabeçalho é a única caixa-alta.</strong> O <code>th</code> usa o tratamento de overline (13px, peso 800, .08em). O conteúdo das células nunca é caixa-alta — inclusive os chips.</div></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Tokens e medidas</div>
+            <div style="display:grid;grid-template-columns:170px 1fr;gap:10px 16px;font-size:15px">
+              <span style="font-weight:700">contêiner</span><span><code>--surface</code>, raio <code>--radius-lg</code>, <code>--elev-1</code>, <code>overflow:hidden</code></span>
+              <span style="font-weight:700">cabeçalho</span><span><code>--surface-sunken</code>, sem borda inferior escura</span>
+              <span style="font-weight:700">célula</span><span>padding 16px/20px, altura resultante 68px</span>
+              <code>--divider</code><span>1px entre linhas; sem linhas verticais</span>
+              <span style="font-weight:700">striped</span><span><code>--blue-50</code> nas pares, em vez do cinza do Bootstrap</span>
+              <span style="font-weight:700">hover</span><span>tint azul a 6%, 120ms; sem mudança de sombra</span>
+              <span style="font-weight:700">responsivo</span><span>A partir de <code>md</code>. Abaixo, o wrapper <code>.ds-table-wrap</code> some e entram os cards do bloco 05.</span>
+            </div>
+          </div>
+          <div style="background:var(--surface-sunken);border-radius:16px;padding:22px;box-shadow:inset 0 0 0 1px var(--divider)"><pre>{{ bladeTable }}</pre></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 03 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">03</span><h2 style="font-size:30px;margin:0">Célula de título</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">x-course.title-cell</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">Duas linhas: o título do curso em peso 600, e abaixo a composição do curso em caption — "N módulos · N aulas". A pluralização é do servidor (<code>Str::plural</code>) e o separador é o ponto médio com espaço de cada lado. É a única célula com duas linhas de informação.</p>
+
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) 620px;gap:36px;align-items:start">
+        <div style="background:var(--surface-body);border-radius:20px;padding:36px;display:flex;flex-direction:column;gap:20px">
+          <div><div class="ds-overline" style="margin-bottom:8px">Padrão</div><div style="background:var(--surface);border-radius:14px;padding:16px 20px;box-shadow:var(--elev-1);max-width:520px"><div style="font-weight:600">Fundamentos de Segurança do Trabalho</div><div class="ds-caption">3 módulos · 13 aulas</div></div></div>
+          <div><div class="ds-overline" style="margin-bottom:8px">Singular</div><div style="background:var(--surface);border-radius:14px;padding:16px 20px;box-shadow:var(--elev-1);max-width:520px"><div style="font-weight:600">Legislação Aplicada à Fiscalização</div><div class="ds-caption">1 módulo · 1 aula</div></div></div>
+          <div><div class="ds-overline" style="margin-bottom:8px">Curso ainda sem conteúdo</div><div style="background:var(--surface);border-radius:14px;padding:16px 20px;box-shadow:var(--elev-1);max-width:520px"><div style="font-weight:600">Ética e Conduta Profissional</div><div class="ds-caption">Sem módulos cadastrados</div></div><div class="ds-caption" style="margin-top:8px">Substitui "0 módulos · 0 aulas": zero não é informação, é convite para agir.</div></div>
+          <div><div class="ds-overline" style="margin-bottom:8px">Título longo</div><div style="background:var(--surface);border-radius:14px;padding:16px 20px;box-shadow:var(--elev-1);max-width:520px"><div style="font-weight:600;text-wrap:pretty">Gestão de Documentos e Protocolo Eletrônico em Órgãos Públicos Municipais</div><div class="ds-caption">4 módulos · 22 aulas</div></div><div class="ds-caption" style="margin-top:8px">O título quebra em até duas linhas com <code>text-wrap: pretty</code>; nunca é truncado — é a informação principal da linha.</div></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Especificação</div>
+            <div style="display:grid;grid-template-columns:170px 1fr;gap:12px 16px;font-size:15px">
+              <span style="font-weight:700">título</span><span>16px, peso 600, <code>--text-primary</code>, até 2 linhas, <code>text-wrap: pretty</code>. Texto verbatim do banco.</span>
+              <span style="font-weight:700">legenda</span><span><code>.ds-caption</code> (13px, <code>--text-secondary</code>). Módulos e aulas, nesta ordem, separados por " · ".</span>
+              <span style="font-weight:700">pluralização</span><span>Do servidor. "1 módulo", "3 módulos", "1 aula", "13 aulas".</span>
+              <span style="font-weight:700">sem conteúdo</span><span>Com zero módulos, a legenda vira "Sem módulos cadastrados". Adição desta especificação.</span>
+              <span style="font-weight:700">não é link</span><span>O título é texto. A navegação é pelas ações — a linha inteira não é clicável, porque tem quatro destinos diferentes.</span>
+            </div>
+          </div>
+          <div style="background:var(--surface-sunken);border-radius:16px;padding:22px;box-shadow:inset 0 0 0 1px var(--divider)"><pre>{{ bladeTitleCell }}</pre></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 04 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">04</span><h2 style="font-size:30px;margin:0">Ações da linha</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">x-course.row-actions</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">Quatro ações, em hierarquia decrescente da esquerda para a direita: <strong>Módulos</strong> é o destino frequente e ganha o tonal; <strong>Regras de conclusão</strong> e <strong>Editar</strong> são fantasmas; <strong>Remover</strong> é só o ícone de lixeira. No código todas as quatro são <code>variant="secondary"</code> exceto a última — a nova hierarquia é a mudança de casca desta tela.</p>
+
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) 600px;gap:36px;align-items:start">
+        <div style="background:var(--surface-body);border-radius:20px;padding:36px;display:flex;flex-direction:column;gap:22px">
+          <div><div class="ds-overline" style="margin-bottom:10px">Repouso</div><div style="display:flex;gap:8px;flex-wrap:wrap"><a class="ds-btn ds-btn-tonal ds-btn-sm" href="#1a">Módulos</a><a class="ds-btn ds-btn-ghost ds-btn-sm" href="#1a">Regras de conclusão</a><a class="ds-btn ds-btn-ghost ds-btn-sm" href="#1a">Editar</a><button class="ds-btn ds-btn-ghost ds-btn-sm ds-btn-icon-only" aria-label="Remover curso"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"></path></svg></button></div></div>
+          <div><div class="ds-overline" style="margin-bottom:10px">Curso protegido por matrícula ativa</div><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><a class="ds-btn ds-btn-tonal ds-btn-sm" href="#1a">Módulos</a><a class="ds-btn ds-btn-ghost ds-btn-sm" href="#1a">Regras de conclusão</a><a class="ds-btn ds-btn-ghost ds-btn-sm" href="#1a">Editar</a><button class="ds-btn ds-btn-ghost ds-btn-sm ds-btn-icon-only" disabled="" aria-label="Remover curso"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"></path></svg></button><span class="ds-caption">128 alunos matriculados</span></div><div class="ds-caption" style="margin-top:8px">A lixeira fica desabilitada <strong>com o motivo ao lado</strong>. Botão desabilitado sem explicação é a versão inaceitável.</div></div>
+          <div><div class="ds-overline" style="margin-bottom:10px">Estreito — abaixo de 1240px</div><div style="max-width:300px;display:flex;gap:8px;flex-wrap:wrap"><a class="ds-btn ds-btn-tonal ds-btn-sm" href="#1a">Módulos</a><a class="ds-btn ds-btn-ghost ds-btn-sm" href="#1a">Regras</a><a class="ds-btn ds-btn-ghost ds-btn-sm" href="#1a">Editar</a><button class="ds-btn ds-btn-ghost ds-btn-sm ds-btn-icon-only" aria-label="Remover curso"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"></path></svg></button></div><div class="ds-caption" style="margin-top:8px">"Regras de conclusão" encurta para "Regras" — é o rótulo que o próprio código usa na versão em card.</div></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">As quatro ações</div>
+            <div style="display:grid;grid-template-columns:180px 130px 1fr;gap:12px 16px;font-size:15px">
+              <div style="font-weight:800">rótulo</div><div style="font-weight:800">variante</div><div style="font-weight:800">destino e dusk</div>
+              <span>Módulos</span><span><code>tonal sm</code></span><span><code>courses.modules.index</code> · <code>manage-modules-{id}</code></span>
+              <span>Regras de conclusão</span><span><code>ghost sm</code></span><span><code>courses.completion-rules.index</code> · <code>manage-completion-rules-{id}</code></span>
+              <span>Editar</span><span><code>ghost sm</code></span><span><code>courses.edit</code> · <code>edit-course-{id}</code></span>
+              <span>Remover</span><span><code>ghost sm</code> ícone</span><span>abre o diálogo · <code>delete-course-{id}</code></span>
+            </div>
+          </div>
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Medidas</div>
+            <div style="display:grid;grid-template-columns:170px 1fr;gap:10px 16px;font-size:15px">
+              <span style="font-weight:700">alinhamento</span><span>À direita da célula, <code>flex-wrap</code>, gap 8px</span>
+              <span style="font-weight:700">altura</span><span>36px no <code>sm</code>; alvo de toque de 44px garantido pelo padding da célula</span>
+              <span style="font-weight:700">lixeira</span><span>36×36px, só ícone, <code>aria-label="Remover curso"</code>. Cor <code>--critical</code> no hover, não em repouso.</span>
+              <span style="font-weight:700">foco</span><span>Anel de 3px com 2px de offset em cada botão, na ordem visual</span>
+            </div>
+          </div>
+          <div style="background:var(--surface-sunken);border-radius:16px;padding:22px;box-shadow:inset 0 0 0 1px var(--divider)"><pre>{{ bladeActions }}</pre></div>
+          <div class="ds-alert ds-alert-attention"><div><strong>Lixeira em vez de "Remover".</strong> O código tem um botão com texto. Trocar por ícone economiza 90px na linha e é o padrão das outras listas do produto — mas o <code>dusk</code> continua no mesmo botão. Se um teste procura pelo <em>texto</em> "Remover", ajuste o teste, não o seletor.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 05 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">05</span><h2 style="font-size:30px;margin:0">Card no celular</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">x-course.card-row</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">Abaixo de <code>md</code>, cada curso é um card: chip de status no topo, título, uma linha com as quatro contagens separadas por " · ", e as ações no rodapé sobre a superfície afundada. É a mesma informação da tabela em outra forma — e, por decisão do código de origem, <strong>sem repetir os <code>dusk</code></strong>, para não haver dois nós com o mesmo seletor na página.</p>
+
+      <div style="display:grid;grid-template-columns:420px minmax(0,1fr);gap:40px;align-items:start">
+        <div style="background:var(--surface-body);border-radius:20px;padding:32px;display:flex;flex-direction:column;gap:16px">
+          <div class="ds-card"><div class="ds-card-body"><div><span class="ds-chip ds-chip-success">Publicado</span></div><h3 class="ds-card-title">Fundamentos de Segurança do Trabalho</h3><p class="ds-muted" style="margin:0">3 módulos · 13 aulas · 4 horas · 128 alunos</p></div><div class="ds-card-footer" style="display:flex;gap:8px;flex-wrap:wrap"><a class="ds-btn ds-btn-tonal ds-btn-sm" href="#1a">Módulos</a><a class="ds-btn ds-btn-ghost ds-btn-sm" href="#1a">Regras</a><a class="ds-btn ds-btn-ghost ds-btn-sm" href="#1a">Editar</a><button class="ds-btn ds-btn-ghost ds-btn-sm ds-btn-icon-only" aria-label="Remover curso"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"></path></svg></button></div></div>
+          <div class="ds-card"><div class="ds-card-body"><div><span class="ds-chip ds-chip-neutral">Rascunho</span></div><h3 class="ds-card-title">Legislação Aplicada à Fiscalização</h3><p class="ds-muted" style="margin:0">1 módulo · 4 aulas · 1 hora · nenhum aluno</p></div><div class="ds-card-footer" style="display:flex;gap:8px;flex-wrap:wrap"><a class="ds-btn ds-btn-tonal ds-btn-sm" href="#1a">Módulos</a><a class="ds-btn ds-btn-ghost ds-btn-sm" href="#1a">Regras</a><a class="ds-btn ds-btn-ghost ds-btn-sm" href="#1a">Editar</a><button class="ds-btn ds-btn-ghost ds-btn-sm ds-btn-icon-only" aria-label="Remover curso"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"></path></svg></button></div></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Especificação</div>
+            <div style="display:grid;grid-template-columns:180px 1fr;gap:12px 16px;font-size:15px">
+              <span style="font-weight:700">ordem</span><span>Chip de status → título → linha de contagens → rodapé de ações. O chip vem <em>antes</em> do título, no lugar do overline.</span>
+              <span style="font-weight:700">contagens</span><span>Módulos, aulas, carga, alunos, nesta ordem, separados por " · ". Zero alunos vira "nenhum aluno".</span>
+              <span style="font-weight:700">rodapé</span><span><code>.ds-card-footer</code> em <code>--surface-sunken</code>, as mesmas quatro ações com "Regras" encurtado.</span>
+              <span style="font-weight:700">card</span><span>Não é <code>interactive</code>: com quatro destinos, o card inteiro não pode ser um link.</span>
+              <span style="font-weight:700">sem dusk</span><span>Nenhum <code>dusk</code> nesta lista — os testes operam a tabela. Regra do código de origem, mantida.</span>
+              <span style="font-weight:700">espaço</span><span>16px entre cards; 20px de margem lateral na coluna.</span>
+            </div>
+          </div>
+          <div style="background:var(--surface-sunken);border-radius:16px;padding:22px;box-shadow:inset 0 0 0 1px var(--divider)"><pre>{{ bladeCardRow }}</pre></div>
+          <div class="ds-alert ds-alert-info"><div><strong>Duas marcações, um componente de dado.</strong> Tabela e cards devem ler do mesmo <code>$course</code> sem recalcular nada. Se a contagem aparecer formatada de dois jeitos diferentes, é bug — extraia o texto para um accessor no model.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 06 + 07 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">06</span><h2 style="font-size:30px;margin:0">Paginação</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">x-ui.pagination</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">Pílulas de 40px centradas abaixo da tabela, com contagem à esquerda. É o paginador do Laravel com casca nova — os parâmetros de query e a marcação de <code>aria-current</code> não mudam.</p>
+      <div style="background:var(--surface-body);border-radius:20px;padding:32px;display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap">
+        <span class="ds-caption">Mostrando 1–15 de 42 cursos</span>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="ds-btn ds-btn-ghost ds-btn-sm ds-btn-icon-only" disabled="" aria-label="Página anterior"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg></button>
+          <a href="#1a" style="width:40px;height:40px;border-radius:var(--radius-pill);display:flex;align-items:center;justify-content:center;background:var(--primary);color:#fff;font-weight:700" aria-current="page">1</a>
+          <a href="#1a" style="width:40px;height:40px;border-radius:var(--radius-pill);display:flex;align-items:center;justify-content:center;color:var(--text-secondary);font-weight:600">2</a>
+          <a href="#1a" style="width:40px;height:40px;border-radius:var(--radius-pill);display:flex;align-items:center;justify-content:center;color:var(--text-secondary);font-weight:600">3</a>
+          <button class="ds-btn ds-btn-ghost ds-btn-sm ds-btn-icon-only" aria-label="Próxima página"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></button>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:170px 1fr;gap:10px 16px;font-size:15px;max-width:900px">
+        <span style="font-weight:700">página atual</span><span>Preenchida em <code>--primary</code>, peso 700, com <code>aria-current="page"</code></span>
+        <span style="font-weight:700">demais</span><span>Sem fundo, <code>--text-secondary</code>; hover ganha <code>--surface-alt</code></span>
+        <span style="font-weight:700">setas</span><span>Botões ícone; desabilitadas nos extremos, nunca escondidas</span>
+        <span style="font-weight:700">contagem</span><span>"Mostrando X–Y de N cursos" à esquerda — adição desta especificação, o paginador atual não a exibe</span>
+        <span style="font-weight:700">só com 2+ páginas</span><span>Com uma página, o bloco inteiro não é renderizado</span>
+      </div>
+
+      <div style="height:1px;background:var(--divider)"></div>
+
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">07</span><h2 style="font-size:30px;margin:0">Filtro superior</h2><span class="ds-chip ds-chip-attention">proposta — não existe hoje</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">O slide mostra busca e filtro de status. Nada disso está no Blade: hoje a tela lista tudo, paginado. Desenhei a proposta abaixo para o cliente aprovar, com o custo declarado — é filtro de servidor, não de cliente, e mexe no <code>CourseController::index()</code>.</p>
+      <div style="background:var(--surface-body);border-radius:20px;padding:32px">
+        <div class="ds-filter-bar" style="margin-bottom:0">
+          <div class="ds-field" style="margin-bottom:0;flex:1;min-width:280px;max-width:420px"><div class="ds-field-shell filled"><input class="ds-control" placeholder="Buscar por título" value=""><label class="ds-float-label">Buscar curso</label></div></div>
+          <div class="ds-tabs"><button class="ds-tab" aria-selected="true">Todos</button><button class="ds-tab">Publicados</button><button class="ds-tab">Rascunhos</button></div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:170px 1fr;gap:10px 16px;font-size:15px;max-width:900px">
+        <span style="font-weight:700">busca</span><span>Campo único por título, submetido no <code>Enter</code>. Sem busca ao digitar — é consulta de banco.</span>
+        <span style="font-weight:700">status</span><span>Abas <code>Todos</code> / <code>Publicados</code> / <code>Rascunhos</code>, o mesmo componente de <a href="#1a">Meus cursos</a>.</span>
+        <span style="font-weight:700">custo</span><span>Parâmetros novos no controlador, mais cobertura de teste. Não é mudança de casca.</span>
+        <span style="font-weight:700">decisão</span><span>Precisa de confirmação do cliente. Sem ela, a tela vai sem filtro — como está hoje.</span>
+      </div>
+    </div>
+
+    <!-- 08 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">08</span><h2 style="font-size:30px;margin:0">Estados, remoção, contrato e aceite</h2></div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:32px">
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="ds-overline">Nenhum curso</div>
+          <div class="ds-empty" style="padding:32px 24px">
+            <div class="ds-empty-icon"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.5A5.5 5.5 0 0 0 6.5 4H2v15h5a4 4 0 0 1 5 2 4 4 0 0 1 5-2h5V4h-4.5A5.5 5.5 0 0 0 12 6.5z"></path><path d="M12 6.5V21"></path></svg></div>
+            <div style="font-size:18px;font-weight:700">Nenhum curso cadastrado</div>
+            <p class="ds-muted" style="margin:0;font-size:15px">Crie o primeiro Curso da sua Organização para começar a montar módulos e lições.</p>
+            <button class="ds-btn ds-btn-primary ds-btn-sm" style="margin-top:8px">Criar curso</button>
+          </div>
+          <div class="ds-caption">Descrição e ação já existem no código, preservadas. Dentro da tabela, o bloco ocupa <code>colspan="5"</code>.</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="ds-overline">Remover curso</div>
+          <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-5);padding:28px;display:flex;flex-direction:column;gap:14px">
+            <span style="width:52px;height:52px;border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;background:var(--critical-container);color:var(--on-critical-container)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"></path></svg></span>
+            <h3 style="font-size:22px;margin:0">Remover curso</h3>
+            <p class="ds-muted" style="margin:0;font-size:15px">Remover “Legislação Aplicada à Fiscalização” é uma ação permanente. Cursos com matrículas ativas não podem ser removidos.</p>
+            <div style="display:flex;gap:12px;justify-content:flex-end"><button class="ds-btn ds-btn-ghost ds-btn-sm">Cancelar</button><button class="ds-btn ds-btn-danger ds-btn-sm">Remover</button></div>
+          </div>
+          <div class="ds-caption">Mensagem verbatim do código, com as aspas curvas que ela já usa. Único diálogo de confirmação real desta tela — não há contrato de teste exigindo submit imediato aqui.</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="ds-overline">Responsivo</div>
+          <div style="display:grid;grid-template-columns:130px 1fr;gap:10px 16px;font-size:15px">
+            <span style="font-weight:700">≥ 1240px</span><span>tabela completa, conteúdo máx. 1240px, ações sem quebra</span>
+            <span style="font-weight:700">768–1239px</span><span>tabela; "Regras de conclusão" encurta para "Regras" e as ações podem quebrar em duas linhas</span>
+            <span style="font-weight:700">&lt; 768px</span><span>cards do bloco 05; ação primária do cabeçalho em 100% da largura</span>
+          </div>
+          <div class="ds-caption">A troca acontece no mesmo ponto do Bootstrap atual (<code>md</code>), para não mexer no contrato visual dos testes.</div>
+        </div>
+      </div>
+
+      <div style="height:1px;background:var(--divider)"></div>
+
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:36px">
+        <div>
+          <div class="ds-overline" style="margin-bottom:12px">Contrato dusk — nenhum destes muda</div>
+          <div style="display:grid;grid-template-columns:290px 1fr;gap:10px 16px;font-size:15px">
+            <code>new-course</code><span>ação primária do cabeçalho</span>
+            <code>course-row-{id}</code><span>o <code>&lt;tr&gt;</code> do curso</span>
+            <code>manage-modules-{id}</code><span>botão "Módulos"</span>
+            <code>manage-completion-rules-{id}</code><span>botão "Regras de conclusão"</span>
+            <code>edit-course-{id}</code><span>botão "Editar"</span>
+            <code>delete-course-{id}</code><span>gatilho da remoção</span>
+            <code>delete-form-{id}</code><span>o diálogo de confirmação</span>
+          </div>
+          <div class="ds-alert ds-alert-attention" style="margin-top:20px"><div>Os <code>dusk</code> ficam <strong>só</strong> na tabela. Wrappers novos — <code>.ds-table-wrap</code>, <code>.ds-card-body</code>, <code>.ds-card-footer</code> — não recebem <code>dusk</code>, e a lista de cards continua sem nenhum.</div></div>
+        </div>
+        <div>
+          <div class="ds-overline" style="margin-bottom:12px">Critérios de aceite</div>
+          <div style="display:flex;flex-direction:column;gap:10px;font-size:15px">
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>As cinco colunas, nesta ordem, com "Alunos" alinhado à direita em <code>tabular-nums</code>.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>As quatro ações por linha, com os mesmos destinos e os mesmos <code>dusk</code>.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Chip <code>success</code> "Publicado" e <code>neutral</code> "Rascunho", em sentence case.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Remoção sempre por diálogo, com o título do curso e a mensagem verbatim.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Curso com matrícula ativa: lixeira desabilitada <strong>com motivo escrito ao lado</strong>.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Abaixo de <code>md</code>, cards com a mesma informação e sem <code>dusk</code> duplicado.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Estado vazio com título, descrição e ação, dentro da tabela em <code>colspan="5"</code>.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Zero <code>style=</code> inline; zero caixa-alta fora do overline e do <code>th</code>.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Zero vermelho, laranja ou amarelo — inclusive na remoção e no chip de rascunho.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Nenhum filtro implementado sem a confirmação do bloco 07.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span><code>artisan dusk</code> filtrado em <code>courses</code> passa sem alteração de seletor.</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const Z = "\u200B";
+const b = (s) => s.split("{{").join("{" + Z + "{").split("}}").join("}" + Z + "}");
+
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      bladeTable: b(`{{-- courses/index.blade.php — tabela, a partir de md --}}
+<div class="ds-hide-below-md">
+  <x-ui.data-table striped hover responsive
+      :headers="[
+        'Título',
+        'Carga horária',
+        ['label' => 'Alunos', 'align' => 'end'],
+        'Status',
+        ['label' => 'Ações', 'align' => 'end'],
+      ]">
+
+    @forelse($courses as $course)
+      <tr dusk="course-row-{{ $course->id }}">
+        <td>
+          <x-course.title-cell :course="$course" />
+        </td>
+
+        <td>{{ $course->workload_hours }} {{ Str::plural('hora', $course->workload_hours) }}</td>
+
+        <td class="ds-num">{{ $course->students_count }}</td>
+
+        <td>
+          <span class="ds-chip ds-chip-{{ $course->is_published ? 'success' : 'neutral' }}">
+            {{ $course->is_published ? 'Publicado' : 'Rascunho' }}
+          </span>
+        </td>
+
+        <td class="ds-cell-actions">
+          <x-course.row-actions :course="$course" />
+        </td>
+      </tr>
+    @empty
+      <x-empty-state colspan="5" icon="book-open"
+          title="Nenhum curso cadastrado"
+          description="Crie o primeiro Curso da sua Organização para começar a montar módulos e lições."
+          action-label="Criar curso"
+          :action-href="route('courses.create')" />
+    @endforelse
+  </x-ui.data-table>
+</div>`),
+
+      bladeTitleCell: b(`{{-- components/course/title-cell.blade.php --}}
+@props(['course'])
+
+<div class="ds-cell-title">{{ $course->title }}</div>
+
+<div class="ds-caption">
+  @if($course->modules_count === 0)
+    Sem módulos cadastrados
+  @else
+    {{ $course->modules_count }} {{ Str::plural('módulo', $course->modules_count) }}
+    ·
+    {{ $course->lessons_count }} {{ Str::plural('aula', $course->lessons_count) }}
+  @endif
+</div>`),
+
+      bladeActions: b(`{{-- components/course/row-actions.blade.php --}}
+@props(['course', 'compact' => false])
+
+<x-ui.button variant="tonal" size="sm"
+             :href="route('courses.modules.index', $course)"
+             dusk="manage-modules-{{ $course->id }}">Módulos</x-ui.button>
+
+<x-ui.button variant="ghost" size="sm"
+             :href="route('courses.completion-rules.index', $course)"
+             dusk="manage-completion-rules-{{ $course->id }}">
+  {{ $compact ? 'Regras' : 'Regras de conclusão' }}
+</x-ui.button>
+
+<x-ui.button variant="ghost" size="sm"
+             :href="route('courses.edit', $course)"
+             dusk="edit-course-{{ $course->id }}">Editar</x-ui.button>
+
+{{-- matrícula ativa protege o Curso: desabilitado COM motivo ao lado --}}
+@if($course->students_count > 0)
+  <x-ui.button variant="ghost" size="sm" icon-only icon="trash"
+               disabled aria-label="Remover curso"
+               dusk="delete-course-{{ $course->id }}" />
+  <span class="ds-caption">
+    {{ $course->students_count }} {{ Str::plural('aluno', $course->students_count) }} matriculado{{ $course->students_count > 1 ? 's' : '' }}
+  </span>
+@else
+  <x-ui.button variant="ghost" size="sm" icon-only icon="trash"
+               aria-label="Remover curso"
+               data-modal-target="#delete-course-{{ $course->id }}"
+               dusk="delete-course-{{ $course->id }}" />
+@endif
+
+<x-ui.confirm-modal
+    id="delete-course-{{ $course->id }}"
+    icon="trash"
+    tone="critical"
+    title="Remover curso"
+    :action="route('courses.destroy', $course)"
+    method="DELETE"
+    confirm-label="Remover"
+    :message="'Remover “'.$course->title.'” é uma ação permanente. Cursos com matrículas ativas não podem ser removidos.'"
+    dusk="delete-form-{{ $course->id }}" />`),
+
+      bladeCardRow: b(`{{-- courses/index.blade.php — cards, abaixo de md.
+     Mesma informação, SEM dusk (os testes operam a tabela). --}}
+<div class="ds-show-below-md ds-stack">
+  @forelse($courses as $course)
+    <x-ui.card>
+      <x-slot:kickerSlot>
+        <span class="ds-chip ds-chip-{{ $course->is_published ? 'success' : 'neutral' }}">
+          {{ $course->is_published ? 'Publicado' : 'Rascunho' }}
+        </span>
+      </x-slot:kickerSlot>
+
+      <x-slot:titleSlot>{{ $course->title }}</x-slot:titleSlot>
+
+      <p class="ds-muted">
+        {{ $course->modules_count }} {{ Str::plural('módulo', $course->modules_count) }}
+        ·
+        {{ $course->lessons_count }} {{ Str::plural('aula', $course->lessons_count) }}
+        ·
+        {{ $course->workload_hours }} {{ Str::plural('hora', $course->workload_hours) }}
+        ·
+        @if($course->students_count === 0)
+          nenhum aluno
+        @else
+          {{ $course->students_count }} {{ Str::plural('aluno', $course->students_count) }}
+        @endif
+      </p>
+
+      <x-slot:footerSlot>
+        <x-course.row-actions :course="$course" compact />
+      </x-slot:footerSlot>
+    </x-ui.card>
+  @empty
+    <x-empty-state icon="book-open"
+        title="Nenhum curso cadastrado"
+        description="Crie o primeiro Curso da sua Organização para começar a montar módulos e lições."
+        action-label="Criar curso"
+        :action-href="route('courses.create')" />
+  @endforelse
+</div>
+
+<x-ui.pagination :paginator="$courses" label="cursos" />`),
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <meta name="design_doc_mode" content="canvas">
+  <link rel="stylesheet" href="_ds/plataforma-ead-design-system-618bb28f-056b-421b-b1d4-d0fef3cd30e2/styles.css">
+  <script src="_ds/plataforma-ead-design-system-618bb28f-056b-421b-b1d4-d0fef3cd30e2/_ds_bundle.js"></script>
+  <style>
+    a{color:var(--primary);text-decoration:none}
+    a:hover{color:var(--primary-hover)}
+    pre{margin:0;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;line-height:1.7;white-space:pre-wrap;color:var(--grey-800)}
+    code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.92em;background:var(--surface-alt);border-radius:6px;padding:1px 6px}
+  </style>
+</helmet>
+
+<section style="display:flex;flex-direction:column;gap:28px;padding:64px;background:var(--surface-body);font-family:var(--font-sans);color:var(--text-primary);line-height:1.6;width:2040px;box-sizing:border-box">
+
+  <div id="1a" style="display:flex;flex-direction:column;gap:28px">
+
+    <header style="display:flex;align-items:flex-start;justify-content:space-between;gap:48px;background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px">
+      <div style="max-width:1180px;display:flex;flex-direction:column;gap:14px">
+        <div class="ds-overline" style="color:var(--primary)">Especificação de componentes · tela 13 · slide 13</div>
+        <h1 style="font-size:46px;line-height:1.08;margin:0;letter-spacing:-.02em">Correção de dissertativas</h1>
+        <p style="font-size:19px;color:var(--text-secondary);margin:0;text-wrap:pretty">São <strong>duas telas em sequência</strong>: a fila de tentativas aguardando correção, em ordem da mais antiga para a mais recente, e a tela de correção, onde o gestor dá um veredito por questão dissertativa e salva tudo de uma vez. Especificação componente por componente, lida de <code>quizzes/attempts/pending.blade.php</code> e <code>quizzes/attempts/show.blade.php</code>.</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;align-items:flex-end;flex:none">
+        <span class="ds-chip ds-chip-primary ds-chip-plain ds-chip-lg">1a</span>
+        <span class="ds-caption">8 componentes · 9 blocos</span>
+      </div>
+    </header>
+
+    <div class="ds-alert ds-alert-attention"><div><strong>A regra que manda nesta tela.</strong> A nota da tentativa só é recalculada quando <em>todas</em> as dissertativas têm veredito — por isso cada par de rádios é <code>required</code>. Correção parcial não existe: ou o gestor decide todas, ou a tentativa fica presa em "aguardando correção". Toda a especificação abaixo é organizada em volta disso.</div></div>
+
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px">
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">01</div><div style="font-size:17px;font-weight:800">QueueHeader</div><div class="ds-caption">título + FIFO</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">02</div><div style="font-size:17px;font-weight:800">PendingTable</div><div class="ds-caption">4 colunas, mais antiga primeiro</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">03</div><div style="font-size:17px;font-weight:800">GradingHeader</div><div class="ds-caption">contexto do aluno</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">04</div><div style="font-size:17px;font-weight:800">GradingProgress</div><div class="ds-caption">quantas faltam</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">05</div><div style="font-size:17px;font-weight:800">AnswerSurface</div><div class="ds-caption">texto do aluno preservado</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">06</div><div style="font-size:17px;font-weight:800">VerdictChoice</div><div class="ds-caption">correta · incorreta</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">07</div><div style="font-size:17px;font-weight:800">AutoGradedRow</div><div class="ds-caption">objetivas, leitura</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">08</div><div style="font-size:17px;font-weight:800">SaveBar</div><div class="ds-caption">bloqueia incompleto</div></div></div>
+    </div>
+
+    <!-- 00 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:24px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">00</span><h2 style="font-size:30px;margin:0">O que as telas fazem</h2></div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px">
+        <div style="background:var(--blue-50);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">Ver a fila</div><div style="font-size:15px">Toda tentativa com <code>status = awaiting_manual_grading</code> da organização do gestor, da mais antiga para a mais recente.</div></div>
+        <div style="background:var(--blue-50);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">Ler a resposta</div><div style="font-size:15px">O texto do aluno aparece integral, com quebras de linha preservadas, sem truncar e sem rolagem interna.</div></div>
+        <div style="background:var(--blue-50);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">Decidir</div><div style="font-size:15px">Correta ou incorreta, por questão. Não há nota parcial, não há comentário, não há rubrica — o modelo é binário.</div></div>
+        <div style="background:var(--mint-100);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">Salvar de uma vez</div><div style="font-size:15px">Um POST com todos os vereditos. A nota e o status da tentativa são recalculados no servidor.</div></div>
+        <div style="background:var(--mint-100);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">Ver o que já foi corrigido</div><div style="font-size:15px">As objetivas aparecem na mesma tela, já corrigidas automaticamente, apenas para leitura.</div></div>
+        <div style="background:var(--mint-100);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">FIFO explícito</div><div style="font-size:15px">A ordenação por <code>completed_at</code> crescente é regra de produto: quem enviou primeiro é corrigido primeiro. A tela não oferece reordenação.</div></div>
+      </div>
+
+      <div style="background:var(--surface-sunken);border-radius:20px;padding:28px;box-shadow:inset 0 0 0 1px var(--divider)"><pre>quizzes/attempts/pending.blade.php     — GET quiz-attempts.pending
+├── x-layout.page-header                                        ← 01
+└── x-ui.table                                                  ← 02
+    ├── thead: Aluno · Curso / prova · Enviado em · Ações
+    ├── tr[dusk=pending-attempt-row-{id}]
+    │   └── td Corrigir   dusk="grade-attempt-{id}"
+    ├── x-ui.empty-state  dusk="pending-attempts-empty"          ← 09
+    └── x-ui.pagination
+
+quizzes/attempts/show.blade.php        — GET quiz-attempts.show
+├── x-layout.page-header                                        ← 03
+├── Voltar às correções pendentes   dusk="back-to-pending"
+├── x-ui.card  título = nome da prova
+│   └── form POST quiz-attempts.grade   dusk="grade-attempt-form"
+│       ├── resumo do progresso da correção                     ← 04
+│       ├── @foreach questão
+│       │   ├── "Questão N" + enunciado
+│       │   ├── SE essay:
+│       │   │   ├── resposta do aluno    dusk="essay-answer-{qid}"  ← 05
+│       │   │   ├── input hidden  grades[i][answer_id]
+│       │   │   └── par de rádios        grades[i][is_correct]      ← 06
+│       │   └── SENÃO: "Corrigida automaticamente" + chip           ← 07
+│       └── Salvar correção   dusk="grade-attempt-submit"            ← 08</pre></div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
+        <div style="background:var(--surface-alt);border-radius:16px;padding:20px"><div class="ds-overline" style="margin-bottom:6px">Regra 1</div><div style="font-size:15px">Coluna de leitura de 760px na tela de correção. É trabalho de ler texto longo; largura de formulário não serve.</div></div>
+        <div style="background:var(--surface-alt);border-radius:16px;padding:20px"><div class="ds-overline" style="margin-bottom:6px">Regra 2</div><div style="font-size:15px">"Incorreta" não é vermelho. Veredito negativo é chip neutro; erro de formulário é <code>--critical</code>. As duas coisas não se confundem.</div></div>
+        <div style="background:var(--surface-alt);border-radius:16px;padding:20px"><div class="ds-overline" style="margin-bottom:6px">Regra 3</div><div style="font-size:15px">A carga é <code>grades[i][answer_id]</code> + <code>grades[i][is_correct]</code> — uma <em>lista</em>, não um mapa por id. O índice <code>i</code> é o da questão no laço.</div></div>
+      </div>
+    </div>
+
+    <!-- 01 + 02 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">01</span><h2 style="font-size:30px;margin:0">A fila</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">x-layout.page-header</span><span class="ds-chip ds-chip-neutral ds-chip-plain">x-ui.table</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">Cabeçalho com breadcrumb de dois níveis, sem ação primária — não se cria correção, ela chega. A tabela tem quatro colunas e uma só ação por linha. O subtítulo é o que comunica a ordem da fila, e ele é preservado verbatim: "Tentativas com questões dissertativas aguardando correção manual, da mais antiga para a mais recente."</p>
+
+      <div style="background:var(--surface-body);border-radius:20px;padding:36px;display:flex;flex-direction:column;gap:28px">
+        <div class="ds-page-header" style="margin:0">
+          <div>
+            <div class="ds-caption" style="margin-bottom:12px">Avaliações / Correções pendentes</div>
+            <div class="ds-overline" style="color:var(--primary);margin-bottom:8px">Avaliações</div>
+            <h1 class="ds-page-title">Correções pendentes</h1>
+            <p class="ds-lead" style="margin:12px 0 0">Tentativas com questões dissertativas aguardando correção manual, da mais antiga para a mais recente.</p>
+          </div>
+          <div style="flex:none"><span class="ds-chip ds-chip-primary ds-chip-plain ds-chip-lg">4 na fila</span></div>
+        </div>
+        <div class="ds-table-wrap" style="background:var(--surface);border-radius:20px;box-shadow:var(--elev-1);overflow:hidden">
+          <table class="ds-table" style="width:100%;border-collapse:collapse">
+            <thead><tr style="background:var(--surface-sunken)"><th style="text-align:left;padding:16px 20px;font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--text-secondary);width:280px">Aluno</th><th style="text-align:left;padding:16px 20px;font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--text-secondary)">Curso / prova</th><th style="text-align:left;padding:16px 20px;font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--text-secondary);width:190px">Enviado em</th><th style="text-align:right;padding:16px 20px;font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--text-secondary);width:150px">Ações</th></tr></thead>
+            <tbody>
+              <tr style="border-top:1px solid var(--divider)" dusk="pending-attempt-row-88"><td style="padding:16px 20px"><div style="display:flex;align-items:center;gap:12px"><span style="width:36px;height:36px;flex:none;border-radius:50%;background:var(--primary-container);color:var(--on-primary-container);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800">JM</span><span style="font-weight:600">Joana Martins</span></div></td><td style="padding:16px 20px"><div style="font-weight:600">Fundamentos de Segurança do Trabalho</div><div class="ds-caption">Segurança em trabalho em altura</div></td><td style="padding:16px 20px;font-variant-numeric:tabular-nums">12/07/2026 14:38<div class="ds-caption">há 6 dias</div></td><td style="padding:16px 20px;text-align:right"><a class="ds-btn ds-btn-tonal ds-btn-sm" href="#1a">Corrigir</a></td></tr>
+              <tr style="border-top:1px solid var(--divider);background:var(--blue-50)"><td style="padding:16px 20px"><div style="display:flex;align-items:center;gap:12px"><span style="width:36px;height:36px;flex:none;border-radius:50%;background:var(--primary-container);color:var(--on-primary-container);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800">RC</span><span style="font-weight:600">Ricardo Camargo</span></div></td><td style="padding:16px 20px"><div style="font-weight:600">Boas Práticas de Atendimento ao Cidadão</div><div class="ds-caption">Avaliação final</div></td><td style="padding:16px 20px;font-variant-numeric:tabular-nums">14/07/2026 09:02<div class="ds-caption">há 4 dias</div></td><td style="padding:16px 20px;text-align:right"><a class="ds-btn ds-btn-tonal ds-btn-sm" href="#1a">Corrigir</a></td></tr>
+              <tr style="border-top:1px solid var(--divider)"><td style="padding:16px 20px"><div style="display:flex;align-items:center;gap:12px"><span style="width:36px;height:36px;flex:none;border-radius:50%;background:var(--primary-container);color:var(--on-primary-container);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800">AS</span><span style="font-weight:600">Ana Souza</span></div></td><td style="padding:16px 20px"><div style="font-weight:600">Fundamentos de Segurança do Trabalho</div><div class="ds-caption">Segurança em trabalho em altura</div></td><td style="padding:16px 20px;font-variant-numeric:tabular-nums">17/07/2026 18:20<div class="ds-caption">ontem</div></td><td style="padding:16px 20px;text-align:right"><a class="ds-btn ds-btn-tonal ds-btn-sm" href="#1a">Corrigir</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) 620px;gap:36px;align-items:start">
+        <div>
+          <div class="ds-overline" style="margin-bottom:12px">As quatro colunas</div>
+          <div style="display:grid;grid-template-columns:170px 110px 1fr;gap:12px 16px;font-size:15px">
+            <div style="font-weight:800">coluna</div><div style="font-weight:800">largura</div><div style="font-weight:800">conteúdo</div>
+            <span>Aluno</span><span>280px</span><span>Avatar de iniciais 36px + nome em peso 600. O avatar é adição desta especificação: a fila é uma lista de pessoas.</span>
+            <span>Curso / prova</span><span>flexível</span><span>Curso em peso 600, título da prova em caption abaixo. No código as duas linhas são separadas por <code>&lt;br&gt;</code>; passam a ser dois blocos.</span>
+            <span>Enviado em</span><span>190px</span><span><code>dd/mm/aaaa hh:mm</code> em <code>tabular-nums</code>, com o tempo relativo em caption abaixo.</span>
+            <span>Ações</span><span>150px</span><span>Um botão "Corrigir", tonal <code>sm</code>, à direita.</span>
+          </div>
+          <div class="ds-alert ds-alert-info" style="margin-top:20px"><div><strong>Tempo relativo é reforço, não substituto.</strong> A data absoluta fica sempre visível — "há 6 dias" sozinho não serve para quem precisa registrar quando corrigiu. Cálculo no servidor, em pt-BR: "ontem", "há 4 dias", "há 1 mês".</div></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Cabeçalho e contador</div>
+            <div style="display:grid;grid-template-columns:160px 1fr;gap:10px 16px;font-size:15px">
+              <code>:breadcrumb</code><span>Avaliações → Correções pendentes, os dois apontando para a própria fila (como no código).</span>
+              <code>kicker</code><span>"Avaliações"</span>
+              <code>title</code><span>"Correções pendentes" — sentence case; o código escreve "Correções Pendentes".</span>
+              <code>subtitle</code><span>Verbatim, é o que explica a ordem FIFO.</span>
+              <span style="font-weight:700">contador</span><span>Chip "N na fila" no slot de ações. Adição desta especificação; zero não renderiza chip.</span>
+              <span style="font-weight:700">vocabulário</span><span>"Curso / prova" no <code>th</code> — o código diz "Curso / Quiz". Mesma decisão de vocabulário dos outros canvases, pendente de confirmação.</span>
+            </div>
+          </div>
+          <div style="background:var(--surface-sunken);border-radius:16px;padding:22px;box-shadow:inset 0 0 0 1px var(--divider)"><pre>{{ bladeQueue }}</pre></div>
+          <div class="ds-alert ds-alert-attention"><div><strong>Não adicione filtro nem ordenação aqui.</strong> A fila é FIFO por decisão de produto. Coluna clicável para ordenar por aluno ou por curso quebraria o contrato que o subtítulo promete.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 03 + 04 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">03</span><h2 style="font-size:30px;margin:0">Cabeçalho e progresso da correção</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">x-layout.page-header</span><span class="ds-chip ds-chip-neutral ds-chip-plain">x-grading.progress</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">O cabeçalho da correção carrega três informações de contexto: de quem é a tentativa, de que curso e de que prova. O código põe o nome do aluno no título junto de "Corrigir Tentativa ·"; aqui o nome vai para o <strong>título</strong> e a ação para o kicker, porque o gestor está corrigindo <em>uma pessoa</em>, não uma abstração. Abaixo dele, uma linha diz quantas dissertativas faltam — é o que impede o gestor de tentar salvar incompleto.</p>
+
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) 600px;gap:36px;align-items:start">
+        <div style="background:var(--surface-body);border-radius:20px;padding:36px;display:flex;flex-direction:column;gap:24px">
+          <div style="max-width:760px">
+            <div class="ds-page-header" style="margin:0">
+              <div>
+                <div class="ds-caption" style="margin-bottom:12px"><a href="#1a">Avaliações</a> / <a href="#1a">Correções pendentes</a> / Joana Martins</div>
+                <div class="ds-overline" style="color:var(--primary);margin-bottom:8px">Corrigir tentativa · Fundamentos de Segurança do Trabalho</div>
+                <h1 class="ds-page-title">Joana Martins</h1>
+                <p class="ds-lead" style="margin:12px 0 0">Avalie cada questão dissertativa como correta ou incorreta antes de salvar a correção.</p>
+              </div>
+              <div style="flex:none"><a class="ds-btn ds-btn-tonal" href="#1a" dusk="back-to-pending">Voltar à fila</a></div>
+            </div>
+          </div>
+          <div style="max-width:760px;display:flex;flex-direction:column;gap:14px">
+            <div style="background:var(--surface);border-radius:16px;padding:20px 24px;box-shadow:var(--elev-1);display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+              <div style="flex:1;min-width:220px"><div style="display:flex;justify-content:space-between;margin-bottom:8px"><span class="ds-caption">Vereditos dados</span><span class="ds-caption" style="font-weight:700;color:var(--text-primary)">1 de 2</span></div><div class="ds-progress"><div class="ds-progress-bar" style="width:50%"></div></div></div>
+              <span class="ds-caption">Enviada em 12/07/2026 14:38 · 3 questões, 2 dissertativas</span>
+            </div>
+            <div style="background:var(--surface);border-radius:16px;padding:20px 24px;box-shadow:var(--elev-1);display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+              <div style="flex:1;min-width:220px"><div style="display:flex;justify-content:space-between;margin-bottom:8px"><span class="ds-caption">Vereditos dados</span><span class="ds-caption" style="font-weight:700;color:var(--text-primary)">2 de 2</span></div><div class="ds-progress"><div class="ds-progress-bar" style="width:100%;background:var(--secondary)"></div></div></div>
+              <span class="ds-chip ds-chip-success">Pronto para salvar</span>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Cabeçalho</div>
+            <div style="display:grid;grid-template-columns:160px 1fr;gap:12px 16px;font-size:15px">
+              <code>:breadcrumb</code><span>Avaliações → Correções pendentes → nome do aluno. Os dois primeiros levam à fila.</span>
+              <code>kicker</code><span>"Corrigir tentativa · {curso}". No código o curso é o kicker e a ação está no título; aqui os dois se juntam.</span>
+              <code>title</code><span>Nome do aluno.</span>
+              <code>subtitle</code><span>"Avalie cada questão dissertativa como correta ou incorreta antes de salvar a correção." — verbatim.</span>
+              <code>actions</code><span>"Voltar à fila", tonal, <code>dusk="back-to-pending"</code>. No código é um botão solto abaixo do cabeçalho; sobe para o slot de ações.</span>
+            </div>
+          </div>
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Progresso da correção</div>
+            <div style="display:grid;grid-template-columns:160px 1fr;gap:10px 16px;font-size:15px">
+              <span style="font-weight:700">o que conta</span><span>Vereditos dados sobre total de dissertativas. Objetivas não entram.</span>
+              <span style="font-weight:700">barra</span><span><code>.ds-progress</code> 10px; <code>--primary</code> em andamento, <code>--secondary</code> ao completar.</span>
+              <span style="font-weight:700">chip</span><span>"Pronto para salvar" aparece só em 100%. Antes disso, nenhum chip.</span>
+              <span style="font-weight:700">metadados</span><span>Data de envio e composição da prova ("3 questões, 2 dissertativas"), em caption.</span>
+              <span style="font-weight:700">vivo</span><span>O contador é atualizado no cliente ao marcar um rádio — é o único JS desta tela e é opcional: sem ele, a barra reflete o estado do servidor.</span>
+            </div>
+          </div>
+          <div class="ds-alert ds-alert-info"><div><strong>Por que existe.</strong> Numa tentativa com seis dissertativas, o gestor não tem como saber que esqueceu a quarta antes de o navegador reclamar. O contador transforma um erro de submit numa informação visível desde o começo.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 05 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">05</span><h2 style="font-size:30px;margin:0">Resposta do aluno</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">essay-answer-{qid}</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">Superfície afundada, raio 20px, padding 28px, com <code>white-space: pre-wrap</code> — as quebras de linha que o aluno digitou são a estrutura da resposta dele e devem sobreviver. Sem limite de altura, sem rolagem interna, sem botão "ver mais": a página rola, o bloco não.</p>
+
+      <div style="display:grid;grid-template-columns:760px minmax(0,1fr);gap:40px;align-items:start">
+        <div style="background:var(--surface-body);border-radius:20px;padding:36px;display:flex;flex-direction:column;gap:24px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:10px">Com resposta</div>
+            <div class="ds-caption" style="margin-bottom:6px">Questão 3</div>
+            <p style="font-weight:700;font-size:18px;margin:0 0 16px">Descreva o procedimento de bloqueio e etiquetagem antes de uma manutenção.</p>
+            <div style="background:var(--surface-sunken);border-radius:20px;padding:28px;box-shadow:inset 0 0 0 1px var(--divider);white-space:pre-wrap" dusk="essay-answer-14">Primeiro é preciso desligar o equipamento na chave geral e conferir que ele parou de operar.
+
+Depois se instala o dispositivo de bloqueio no ponto de energia e a etiqueta com o nome de quem fez o bloqueio, a data e o motivo.
+
+Só o próprio responsável pode retirar o bloqueio, depois de confirmar que a manutenção terminou e que ninguém está na área.</div>
+            <div class="ds-caption" style="margin-top:10px">Três parágrafos preservados. Se o bloco colapsasse as quebras, a resposta viraria um muro de texto.</div>
+          </div>
+          <div>
+            <div class="ds-overline" style="margin-bottom:10px">Sem resposta</div>
+            <div style="background:var(--surface-sunken);border-radius:20px;padding:28px;box-shadow:inset 0 0 0 1px var(--divider);color:var(--text-secondary);font-style:italic">O aluno não respondeu esta questão.</div>
+            <div class="ds-caption" style="margin-top:10px">O código escreve "(sem resposta)" entre parênteses. Vira uma frase completa, em itálico e cinza — e o veredito continua obrigatório: quem decide se resposta em branco vale zero é o gestor, não a interface.</div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Especificação</div>
+            <div style="display:grid;grid-template-columns:180px 1fr;gap:12px 16px;font-size:15px">
+              <span style="font-weight:700">superfície</span><span><code>--surface-sunken</code>, raio <code>--radius-lg</code>, borda interna <code>--divider</code>. Sem sombra: é conteúdo recebido, não elemento ativo.</span>
+              <span style="font-weight:700">padding</span><span>28px. O texto precisa de margem para ser lido, não de densidade.</span>
+              <span style="font-weight:700">texto</span><span>16px, entrelinha 1,6, <code>white-space: pre-wrap</code>, <code>overflow-wrap: anywhere</code> para palavras muito longas.</span>
+              <span style="font-weight:700">altura</span><span>Livre. Nenhum <code>max-height</code>, nenhuma rolagem interna, nenhum clamp.</span>
+              <span style="font-weight:700">contexto acima</span><span>"Questão N" em caption, enunciado em 18px peso 700. O enunciado não é <code>h</code> de documento — é rótulo de bloco de formulário.</span>
+              <span style="font-weight:700">largura</span><span>Coluna de 760px. Linha mais larga que isso cansa em texto corrido.</span>
+              <code>dusk</code><span><code>essay-answer-{questão}</code>, no bloco de texto</span>
+            </div>
+          </div>
+          <div style="background:var(--surface-sunken);border-radius:16px;padding:22px;box-shadow:inset 0 0 0 1px var(--divider)"><pre>{{ bladeAnswer }}</pre></div>
+          <div class="ds-alert ds-alert-attention"><div><strong>Nunca renderize a resposta como HTML.</strong> O texto vem do aluno. <code>{{ escaped }}</code> sempre; a formatação visual é do CSS, não do conteúdo.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 06 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">06</span><h2 style="font-size:30px;margin:0">Veredito</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">grade-correct / grade-incorrect</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">Duas opções em cartões clicáveis lado a lado, com o mesmo tratamento das opções de resposta do aluno: alvo grande, controle à esquerda, destaque por contorno. Nenhuma das duas nasce marcada — o gestor precisa escolher, e é isso que o <code>required</code> garante. "Correta" recebe contorno menta quando escolhida; "Incorreta" recebe contorno neutro escuro. Nenhuma das duas é vermelha.</p>
+
+      <div style="display:grid;grid-template-columns:760px minmax(0,1fr);gap:40px;align-items:start">
+        <div style="background:var(--surface-body);border-radius:20px;padding:36px;display:flex;flex-direction:column;gap:24px">
+          <div><div class="ds-overline" style="margin-bottom:10px">Sem veredito — estado inicial</div><div style="display:flex;gap:12px"><label style="flex:1;display:flex;align-items:center;gap:14px;padding:16px 20px;background:var(--surface);border:1.5px solid var(--border-color);border-radius:14px;cursor:pointer"><input type="radio" name="d-v1" class="ds-check-input"><span style="font-weight:600">Correta</span></label><label style="flex:1;display:flex;align-items:center;gap:14px;padding:16px 20px;background:var(--surface);border:1.5px solid var(--border-color);border-radius:14px;cursor:pointer"><input type="radio" name="d-v1" class="ds-check-input"><span style="font-weight:600">Incorreta</span></label></div></div>
+          <div><div class="ds-overline" style="margin-bottom:10px">Correta</div><div style="display:flex;gap:12px"><label style="flex:1;display:flex;align-items:center;gap:14px;padding:16px 20px;background:var(--mint-100);border:1.5px solid var(--secondary);border-radius:14px;cursor:pointer;box-shadow:var(--elev-1)"><input type="radio" name="d-v2" class="ds-check-input" checked=""><span style="font-weight:700">Correta</span></label><label style="flex:1;display:flex;align-items:center;gap:14px;padding:16px 20px;background:var(--surface);border:1.5px solid var(--border-color);border-radius:14px;cursor:pointer"><input type="radio" name="d-v2" class="ds-check-input"><span style="font-weight:600">Incorreta</span></label></div></div>
+          <div><div class="ds-overline" style="margin-bottom:10px">Incorreta</div><div style="display:flex;gap:12px"><label style="flex:1;display:flex;align-items:center;gap:14px;padding:16px 20px;background:var(--surface);border:1.5px solid var(--border-color);border-radius:14px;cursor:pointer"><input type="radio" name="d-v3" class="ds-check-input"><span style="font-weight:600">Correta</span></label><label style="flex:1;display:flex;align-items:center;gap:14px;padding:16px 20px;background:var(--surface-alt);border:1.5px solid var(--grey-500);border-radius:14px;cursor:pointer;box-shadow:var(--elev-1)"><input type="radio" name="d-v3" class="ds-check-input" checked=""><span style="font-weight:700">Incorreta</span></label></div><div class="ds-caption" style="margin-top:8px">Cinza escuro, não vermelho. Incorreta é um fato registrado, não um alarme.</div></div>
+          <div><div class="ds-overline" style="margin-bottom:10px">Faltando, depois de tentar salvar</div><div style="display:flex;gap:12px"><label style="flex:1;display:flex;align-items:center;gap:14px;padding:16px 20px;background:var(--surface);border:1.5px solid var(--critical);border-radius:14px;cursor:pointer"><input type="radio" name="d-v4" class="ds-check-input"><span style="font-weight:600">Correta</span></label><label style="flex:1;display:flex;align-items:center;gap:14px;padding:16px 20px;background:var(--surface);border:1.5px solid var(--critical);border-radius:14px;cursor:pointer"><input type="radio" name="d-v4" class="ds-check-input"><span style="font-weight:600">Incorreta</span></label></div><div class="ds-invalid-feedback"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg>Dê um veredito para esta questão.</div></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Especificação</div>
+            <div style="display:grid;grid-template-columns:180px 1fr;gap:12px 16px;font-size:15px">
+              <span style="font-weight:700">forma</span><span>Dois cartões de mesma largura (<code>flex:1</code>), gap 12px, altura mínima 56px, raio 14px. O <code>&lt;label&gt;</code> inteiro é o alvo.</span>
+              <span style="font-weight:700">rótulos</span><span>"Correta" e "Incorreta", verbatim. Nesta ordem, sempre.</span>
+              <span style="font-weight:700">correta escolhida</span><span>Fundo <code>--mint-100</code>, borda <code>--secondary</code>, peso 700, <code>--elev-1</code>.</span>
+              <span style="font-weight:700">incorreta escolhida</span><span>Fundo <code>--surface-alt</code>, borda <code>--grey-500</code>, peso 700. Nunca <code>--critical</code>: crítico é o erro do formulário, não o veredito.</span>
+              <span style="font-weight:700">nenhuma marcada</span><span>É o estado inicial legítimo. Não pré-selecione "Correta" por conveniência — isso fabrica nota.</span>
+              <span style="font-weight:700">campo oculto</span><span><code>grades[i][answer_id]</code> na mesma fatia de índice do par de rádios.</span>
+              <span style="font-weight:700">required</span><span>Nos dois rádios, como no código. É o que impede correção parcial.</span>
+            </div>
+          </div>
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Contrato dusk</div>
+            <div style="display:grid;grid-template-columns:230px 1fr;gap:10px 16px;font-size:15px">
+              <code>grade-correct-{answer_id}</code><span>rádio "Correta" — sufixado pelo id da <em>resposta</em>, não da questão</span>
+              <code>grade-incorrect-{answer_id}</code><span>rádio "Incorreta"</span>
+              <span style="font-weight:700">name</span><span><code>grades[{i}][is_correct]</code> com <code>value="1"</code> e <code>value="0"</code></span>
+              <span style="font-weight:700">id</span><span><code>grade-{i}-correct</code> / <code>grade-{i}-incorrect</code>, ligados ao <code>for</code> do label</span>
+            </div>
+          </div>
+          <div style="background:var(--surface-sunken);border-radius:16px;padding:22px;box-shadow:inset 0 0 0 1px var(--divider)"><pre>{{ bladeVerdict }}</pre></div>
+          <div class="ds-alert ds-alert-info"><div><strong>Teclado.</strong> O par é um <code>radiogroup</code> com <code>aria-labelledby</code> apontando para o enunciado: ← e → alternam o veredito, Tab passa para a próxima questão. Foco visível no cartão inteiro.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 07 + 08 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">07</span><h2 style="font-size:30px;margin:0">Objetiva já corrigida</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">leitura</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">As objetivas aparecem na mesma sequência das dissertativas, para o gestor ver a tentativa inteira — mas sem controle nenhum. Uma linha em caption: "Corrigida automaticamente" mais o chip do resultado. O bloco é visivelmente mais leve que o de uma dissertativa: sem superfície afundada, sem cartões de veredito.</p>
+
+      <div style="display:grid;grid-template-columns:760px minmax(0,1fr);gap:40px;align-items:start">
+        <div style="background:var(--surface-body);border-radius:20px;padding:36px;display:flex;flex-direction:column;gap:20px">
+          <div><div class="ds-caption" style="margin-bottom:6px">Questão 1</div><p style="font-weight:700;font-size:18px;margin:0 0 12px">Qual equipamento é obrigatório em trabalho em altura?</p><div style="display:flex;align-items:center;gap:10px"><span class="ds-caption">Corrigida automaticamente</span><span class="ds-chip ds-chip-success">Correta</span></div></div>
+          <div style="height:1px;background:var(--divider)"></div>
+          <div><div class="ds-caption" style="margin-bottom:6px">Questão 2</div><p style="font-weight:700;font-size:18px;margin:0 0 12px">Quais itens compõem a análise preliminar de risco?</p><div style="display:flex;align-items:center;gap:10px"><span class="ds-caption">Corrigida automaticamente</span><span class="ds-chip ds-chip-neutral">Incorreta</span></div></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Especificação</div>
+            <div style="display:grid;grid-template-columns:180px 1fr;gap:12px 16px;font-size:15px">
+              <span style="font-weight:700">texto</span><span>"Corrigida automaticamente" em caption, seguido do chip. Verbatim do código, sem o travessão.</span>
+              <span style="font-weight:700">chip correta</span><span><code>success</code> "Correta"</span>
+              <span style="font-weight:700">chip incorreta</span><span><code>neutral</code> "Incorreta". O código usa a variante <code>accent-2</code>; na nova paleta não existe equivalente quente e não se cria um.</span>
+              <span style="font-weight:700">sem controles</span><span>Nenhum rádio, nenhum campo oculto. Objetiva não entra em <code>grades[]</code>.</span>
+              <span style="font-weight:700">separador</span><span>Divisor de 1px entre blocos de questão, como no código (<code>border-bottom</code>). 32px de respiro de cada lado.</span>
+            </div>
+          </div>
+          <div class="ds-alert ds-alert-info"><div><strong>Por que mostrar.</strong> O gestor precisa do contexto da tentativa para julgar a dissertativa — quem errou todas as objetivas e escreveu uma resposta genérica é um caso diferente de quem acertou tudo. Esconder as objetivas economizaria tela e tiraria informação de decisão.</div></div>
+        </div>
+      </div>
+
+      <div style="height:1px;background:var(--divider)"></div>
+
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">08</span><h2 style="font-size:30px;margin:0">Salvar a correção</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">grade-attempt-submit</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">Uma ação no fim da coluna. Como salvar recalcula a nota e fecha a tentativa, o botão só é útil quando todos os vereditos estão dados — mas ele <strong>não fica desabilitado</strong>: fica ativo e, ao ser acionado incompleto, leva o foco à primeira questão sem veredito e mostra o alerta. Botão desabilitado sem explicação deixa o gestor sem saber o que falta.</p>
+
+      <div style="display:grid;grid-template-columns:760px minmax(0,1fr);gap:40px;align-items:start">
+        <div style="background:var(--surface-body);border-radius:20px;padding:36px;display:flex;flex-direction:column;gap:20px">
+          <div class="ds-alert ds-alert-danger" style="max-width:640px"><div><div style="font-weight:700;margin-bottom:4px">Faltou um veredito</div>Avalie a questão 3 para salvar a correção.</div></div>
+          <div class="ds-form-actions" style="margin-top:0"><button class="ds-btn ds-btn-primary" dusk="grade-attempt-submit"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>Salvar correção</button><a class="ds-btn ds-btn-ghost" href="#1a">Voltar à fila</a></div>
+          <div class="ds-alert ds-alert-success" style="max-width:640px"><div>Correção salva. A nota da tentativa foi recalculada e o aluno já pode vê-la.</div></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Especificação</div>
+            <div style="display:grid;grid-template-columns:180px 1fr;gap:12px 16px;font-size:15px">
+              <span style="font-weight:700">rótulo</span><span>"Salvar correção". No código, "Salvar Correção".</span>
+              <span style="font-weight:700">posição</span><span>Fim da coluna de 760px, alinhado à esquerda, com "Voltar à fila" fantasma ao lado. Não é fixo na tela.</span>
+              <span style="font-weight:700">incompleto</span><span>Alerta <code>danger</code> no topo do formulário nomeando a questão, foco na primeira pendente, e os cartões dela com borda <code>--critical</code>.</span>
+              <span style="font-weight:700">nunca desabilitado</span><span>O botão continua acionável — a validação explica, não bloqueia silenciosamente.</span>
+              <span style="font-weight:700">enviando</span><span>Rótulo "Salvando…", botão inerte, sem duplo envio.</span>
+              <span style="font-weight:700">sucesso</span><span>Volta à fila com toast de sucesso; a tentativa sai da lista.</span>
+            </div>
+          </div>
+          <div style="background:var(--surface-sunken);border-radius:16px;padding:22px;box-shadow:inset 0 0 0 1px var(--divider)"><pre>{{ bladeSubmit }}</pre></div>
+          <div class="ds-alert ds-alert-attention"><div><strong>A validação do navegador não basta.</strong> O <code>required</code> nos rádios dá uma bolha nativa que não diz <em>qual</em> questão falta e não sobrevive a autofill. Mantenha o <code>required</code> <em>e</em> implemente o alerta com o número da questão.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 09 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">09</span><h2 style="font-size:30px;margin:0">Estados, contrato e aceite</h2></div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:32px">
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="ds-overline">Fila vazia</div>
+          <div class="ds-empty" style="padding:32px 24px" dusk="pending-attempts-empty">
+            <div class="ds-empty-icon" style="background:var(--mint-100);color:var(--secondary)"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></div>
+            <div style="font-size:18px;font-weight:700">Nenhuma correção pendente</div>
+            <p class="ds-muted" style="margin:0;font-size:15px">Quando um aluno enviar uma prova com questão dissertativa, ela aparece aqui.</p>
+          </div>
+          <div class="ds-caption">O código escreve só "Nenhuma correção pendente." O bloco ganha ícone menta — fila vazia é boa notícia — e a explicação de quando algo aparece. O <code>dusk="pending-attempts-empty"</code> permanece.</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="ds-overline">Tentativa já corrigida por outro gestor</div>
+          <div class="ds-alert ds-alert-info"><div>Esta tentativa foi corrigida em 18/07/2026 por Marcos Vieira. A nota final é 80%.</div></div>
+          <div class="ds-caption">Dois gestores podem abrir a mesma tentativa. Ao chegar numa já corrigida, a tela mostra o resultado em leitura, sem formulário — em vez de deixar salvar duas vezes. Estado não coberto pelo código atual.</div>
+          <div class="ds-overline" style="margin-top:10px">Prova sem dissertativa na fila</div>
+          <div class="ds-alert ds-alert-attention"><div>Esta tentativa não tem questão dissertativa. Nada a corrigir.</div></div>
+          <div class="ds-caption">Só acontece por inconsistência de dados; melhor dizer do que mostrar um formulário sem campos.</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="ds-overline">Responsivo</div>
+          <div style="display:grid;grid-template-columns:130px 1fr;gap:10px 16px;font-size:15px">
+            <span style="font-weight:700">≥ 1240px</span><span>fila em tabela; correção em coluna de 760px</span>
+            <span style="font-weight:700">768–1239px</span><span>tabela mantida; correção com 32px de margem lateral</span>
+            <span style="font-weight:700">&lt; 768px</span><span>fila em cards (aluno, curso/prova, data, Corrigir); cartões de veredito empilham em duas linhas de largura cheia</span>
+          </div>
+          <div class="ds-caption">Corrigir no celular é caso real — o gestor lê no ônibus. Alvo de toque de 44px em cada veredito, em qualquer largura.</div>
+        </div>
+      </div>
+
+      <div style="height:1px;background:var(--divider)"></div>
+
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:36px">
+        <div>
+          <div class="ds-overline" style="margin-bottom:12px">Contrato dusk — nenhum destes muda</div>
+          <div style="display:grid;grid-template-columns:290px 1fr;gap:10px 16px;font-size:15px">
+            <code>pending-attempt-row-{id}</code><span>linha da fila</span>
+            <code>grade-attempt-{id}</code><span>botão "Corrigir"</span>
+            <code>pending-attempts-empty</code><span>estado vazio da fila</span>
+            <code>back-to-pending</code><span>voltar à fila</span>
+            <code>grade-attempt-form</code><span>o <code>&lt;form&gt;</code> de correção</span>
+            <code>essay-answer-{questão}</code><span>bloco da resposta do aluno</span>
+            <code>grade-correct-{answer_id}</code><span>rádio "Correta"</span>
+            <code>grade-incorrect-{answer_id}</code><span>rádio "Incorreta"</span>
+            <code>grade-attempt-submit</code><span>botão de salvar</span>
+          </div>
+          <div class="ds-alert ds-alert-attention" style="margin-top:20px"><div>Atenção ao sufixo: a linha da fila e o botão "Corrigir" usam o <strong>id da tentativa</strong>; a resposta usa o <strong>id da questão</strong>; os rádios usam o <strong>id da resposta</strong>. Três chaves diferentes na mesma tela — não unifique.</div></div>
+        </div>
+        <div>
+          <div class="ds-overline" style="margin-bottom:12px">Critérios de aceite</div>
+          <div style="display:flex;flex-direction:column;gap:10px;font-size:15px">
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Fila ordenada por <code>completed_at</code> crescente, sem opção de reordenar.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Data em <code>dd/mm/aaaa hh:mm</code>, com tempo relativo em caption ao lado, nunca no lugar.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Resposta do aluno com <code>pre-wrap</code>, sem truncar, sem rolagem interna e sempre escapada.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Par de vereditos "Correta" / "Incorreta" nesta ordem, nenhum pré-marcado, os dois <code>required</code>.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Carga como lista: <code>grades[i][answer_id]</code> + <code>grades[i][is_correct]</code> na mesma fatia de índice.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Objetivas listadas em leitura, com "Corrigida automaticamente" e chip <code>success</code> / <code>neutral</code>.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Salvar incompleto nomeia a questão faltante e leva o foco até ela; o botão nunca fica desabilitado sem explicação.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Contador "N de M vereditos" visível desde o início da correção.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Zero vermelho, laranja ou amarelo — inclusive no veredito "Incorreta".</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Zero <code>style=</code> inline; zero caixa-alta fora do overline e do <code>th</code>.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span><code>artisan dusk</code> filtrado nas telas de correção passa sem alteração de seletor.</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const Z = "\u200B";
+const b = (s) => s.split("{{").join("{" + Z + "{").split("}}").join("}" + Z + "}");
+
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      bladeQueue: b(`{{-- quizzes/attempts/pending.blade.php --}}
+<x-layout.page-header
+    :breadcrumb="[
+      ['label' => 'Avaliações', 'url' => route('quiz-attempts.pending')],
+      ['label' => 'Correções pendentes', 'url' => route('quiz-attempts.pending')],
+    ]"
+    kicker="Avaliações"
+    title="Correções pendentes"
+    subtitle="Tentativas com questões dissertativas aguardando correção manual, da mais antiga para a mais recente.">
+
+  @if($attempts->total() > 0)
+    <x-slot:actions>
+      <span class="ds-chip ds-chip-primary ds-chip-plain ds-chip-lg">
+        {{ $attempts->total() }} na fila
+      </span>
+    </x-slot:actions>
+  @endif
+</x-layout.page-header>
+
+<x-ui.table :headers="[
+      'Aluno',
+      'Curso / prova',
+      'Enviado em',
+      ['label' => 'Ações', 'align' => 'end'],
+    ]">
+
+  @forelse($attempts as $attempt)
+    <tr dusk="pending-attempt-row-{{ $attempt->id }}">
+      <td data-label="Aluno">
+        <div class="ds-cell-person">
+          <x-ui.avatar :name="$attempt->user->name" size="36" />
+          <span class="ds-cell-title">{{ $attempt->user->name }}</span>
+        </div>
+      </td>
+
+      <td data-label="Curso / prova">
+        <div class="ds-cell-title">{{ $attempt->quiz->lesson->module->course->title }}</div>
+        <div class="ds-caption">{{ $attempt->quiz->title }}</div>
+      </td>
+
+      <td data-label="Enviado em" class="ds-num">
+        {{ $attempt->completed_at?->format('d/m/Y H:i') }}
+        <div class="ds-caption">{{ $attempt->completed_at?->diffForHumans() }}</div>
+      </td>
+
+      <td data-label="Ações" class="ds-cell-actions">
+        <x-ui.button variant="tonal" size="sm"
+                     :href="route('quiz-attempts.show', $attempt)"
+                     dusk="grade-attempt-{{ $attempt->id }}">Corrigir</x-ui.button>
+      </td>
+    </tr>
+  @empty
+    <x-empty-state :colspan="4" dusk="pending-attempts-empty"
+        icon="check" tone="success"
+        title="Nenhuma correção pendente"
+        description="Quando um aluno enviar uma prova com questão dissertativa, ela aparece aqui." />
+  @endforelse
+</x-ui.table>
+
+<x-ui.pagination :paginator="$attempts" label="tentativas" />`),
+
+      bladeAnswer: b(`{{-- quizzes/attempts/show.blade.php — bloco da dissertativa --}}
+<div class="ds-grading-question">
+  <div class="ds-caption">Questão {{ $index + 1 }}</div>
+  <p class="ds-grading-prompt" id="prompt-{{ $question->id }}">
+    {{ $question->question_text }}
+  </p>
+
+  {{-- texto do ALUNO: sempre escapado, pre-wrap, sem max-height --}}
+  <div class="ds-answer-surface" dusk="essay-answer-{{ $question->id }}">
+    @if(filled($answer?->essay_answer))
+      {{ $answer->essay_answer }}
+    @else
+      <span class="ds-answer-empty">O aluno não respondeu esta questão.</span>
+    @endif
+  </div>
+
+  {{-- veredito … ver bloco 06 --}}
+</div>`),
+
+      bladeVerdict: b(`{{-- par de vereditos — grades é uma LISTA, não um mapa por id --}}
+<input type="hidden"
+       name="grades[{{ $index }}][answer_id]"
+       value="{{ $answer?->id }}" />
+
+<div class="ds-verdict" role="radiogroup"
+     aria-labelledby="prompt-{{ $question->id }}">
+
+  <label class="ds-verdict-option is-correct">
+    <input type="radio"
+           id="grade-{{ $index }}-correct"
+           name="grades[{{ $index }}][is_correct]"
+           value="1" required
+           class="ds-check-input"
+           @checked($answer?->is_correct === true)
+           dusk="grade-correct-{{ $answer?->id }}" />
+    <span>Correta</span>
+  </label>
+
+  <label class="ds-verdict-option is-incorrect">
+    <input type="radio"
+           id="grade-{{ $index }}-incorrect"
+           name="grades[{{ $index }}][is_correct]"
+           value="0" required
+           class="ds-check-input"
+           @checked($answer?->is_correct === false)
+           dusk="grade-incorrect-{{ $answer?->id }}" />
+    <span>Incorreta</span>
+  </label>
+</div>`),
+
+      bladeSubmit: b(`{{-- fim do formulário de correção --}}
+@if($errors->has('grades'))
+  <x-ui.alert variant="danger" title="Faltou um veredito">
+    Avalie a questão {{ $errors->first('grades') }} para salvar a correção.
+  </x-ui.alert>
+@endif
+
+<x-ui.form-actions>
+  {{-- nunca disabled: a validação explica o que falta --}}
+  <x-ui.button type="submit" variant="primary" icon="check"
+               dusk="grade-attempt-submit">Salvar correção</x-ui.button>
+
+  <x-ui.button variant="ghost"
+               :href="route('quiz-attempts.pending')">Voltar à fila</x-ui.button>
+</x-ui.form-actions>
+
+{{-- objetiva já corrigida (bloco 07): leitura, fora de grades[] --}}
+<p class="ds-caption ds-auto-graded">
+  Corrigida automaticamente
+  <span class="ds-chip ds-chip-{{ $answer?->is_correct ? 'success' : 'neutral' }}">
+    {{ $answer?->is_correct ? 'Correta' : 'Incorreta' }}
+  </span>
+</p>`),
+    };
+  }
+}
+</script>
+</body>
+</html>

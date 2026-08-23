@@ -1,0 +1,10 @@
+:root{
+--ease-standard:cubic-bezier(.4,0,.2,1);/* @kind other */
+--ease-emphasized:cubic-bezier(.2,0,0,1);/* @kind other */
+--ease-decelerate:cubic-bezier(0,0,.2,1);/* @kind other */
+--duration-fast:120ms;/* @kind other */
+--duration-base:200ms;/* @kind other */
+--duration-slow:320ms;/* @kind other */
+--transition-base:all var(--duration-base) var(--ease-standard);/* @kind other */
+--transition-elevation:box-shadow var(--duration-base) var(--ease-standard),transform var(--duration-base) var(--ease-standard);/* @kind other */
+}

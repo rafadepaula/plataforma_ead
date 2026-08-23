@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <meta name="design_doc_mode" content="canvas">
+  <link rel="stylesheet" href="_ds/plataforma-ead-design-system-618bb28f-056b-421b-b1d4-d0fef3cd30e2/styles.css">
+  <script src="_ds/plataforma-ead-design-system-618bb28f-056b-421b-b1d4-d0fef3cd30e2/_ds_bundle.js"></script>
+  <style>
+    a{color:var(--primary);text-decoration:none}
+    a:hover{color:var(--primary-hover)}
+    pre{margin:0;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;line-height:1.7;white-space:pre-wrap;color:var(--grey-800)}
+    code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.92em;background:var(--surface-alt);border-radius:6px;padding:1px 6px}
+  </style>
+</helmet>
+
+<section style="display:flex;flex-direction:column;gap:28px;padding:64px;background:var(--surface-body);font-family:var(--font-sans);color:var(--text-primary);line-height:1.6;width:2040px;box-sizing:border-box">
+
+  <div id="1a" style="display:flex;flex-direction:column;gap:28px">
+
+    <header style="display:flex;align-items:flex-start;justify-content:space-between;gap:48px;background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px">
+      <div style="max-width:1180px;display:flex;flex-direction:column;gap:14px">
+        <div class="ds-overline" style="color:var(--primary)">Especificação de componentes · tela 18 · slide 18</div>
+        <h1 style="font-size:46px;line-height:1.08;margin:0;letter-spacing:-.02em">Fórum — tópicos do curso</h1>
+        <p style="font-size:19px;color:var(--text-secondary);margin:0;text-wrap:pretty">Um fórum por curso, atrás do controle de matrícula: lista de tópicos com os fixados primeiro, um card por tópico, ação de fixar para o gestor, e um diálogo para abrir tópico novo — mais o FAB que assume o lugar do botão em tela estreita. Especificação componente por componente, lida de <code>forum/index.blade.php</code>, <code>forum/partials/_topic.blade.php</code> e <code>forum/create.blade.php</code>.</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;align-items:flex-end;flex:none">
+        <span class="ds-chip ds-chip-primary ds-chip-plain ds-chip-lg">1a</span>
+        <span class="ds-caption">7 componentes · 8 blocos</span>
+      </div>
+    </header>
+
+    <div class="ds-alert ds-alert-attention"><div><strong>Duas armadilhas técnicas nesta tela</strong>, as duas documentadas no próprio código e as duas fáceis de quebrar numa recasca: o botão de submit do diálogo <strong>não é descendente do formulário</strong> e por isso depende do atributo <code>form=</code> (bloco 05); e o card do tópico tem <strong>um link e um formulário lado a lado</strong> dentro de uma superfície interativa (bloco 03). Leia esses dois blocos antes de mexer na marcação.</div></div>
+
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px">
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">01</div><div style="font-size:17px;font-weight:800">ForumHeader</div><div class="ds-caption">3 níveis + ação condicional</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">02</div><div style="font-size:17px;font-weight:800">TopicList</div><div class="ds-caption">fixados primeiro</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">03</div><div style="font-size:17px;font-weight:800">TopicCard</div><div class="ds-caption">avatar, trecho, respostas</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">04</div><div style="font-size:17px;font-weight:800">PinAction</div><div class="ds-caption">só gestor</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">05</div><div style="font-size:17px;font-weight:800">NewTopicModal</div><div class="ds-caption">form= obrigatório</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">06</div><div style="font-size:17px;font-weight:800">Fab</div><div class="ds-caption">abaixo de lg</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">07</div><div style="font-size:17px;font-weight:800">CreatePage</div><div class="ds-caption">fallback sem diálogo</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">08</div><div style="font-size:17px;font-weight:800">Estados</div><div class="ds-caption">vazio, permissão, aceite</div></div></div>
+    </div>
+
+    <!-- 00 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:24px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">00</span><h2 style="font-size:30px;margin:0">O que a tela faz</h2></div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px">
+        <div style="background:var(--blue-50);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">Ver os tópicos</div><div style="font-size:15px">Fixados primeiro, depois os mais recentes. Cada card mostra quem abriu, quando, um trecho e quantas respostas tem.</div></div>
+        <div style="background:var(--blue-50);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">Abrir tópico</div><div style="font-size:15px">Título e conteúdo, num diálogo. O conteúdo é sanitizado no servidor antes de ser publicado.</div></div>
+        <div style="background:var(--blue-50);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">Fixar e desafixar</div><div style="font-size:15px">Só gestor e admin da organização. A ação alterna no mesmo botão.</div></div>
+        <div style="background:var(--mint-100);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">Matrícula é a porta</div><div style="font-size:15px">O aluno precisa de matrícula ativa ou concluída no curso. Gestor e admin da organização entram sempre.</div></div>
+        <div style="background:var(--mint-100);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">Duas permissões, dois efeitos</div><div style="font-size:15px"><code>$canCreateTopic</code> controla o botão, o FAB e o diálogo. <code>$canPin</code> controla a ação de fixar em cada card.</div></div>
+        <div style="background:var(--mint-100);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">Um fórum por curso</div><div style="font-size:15px">A rota é <code>courses/{curso}/forum</code>. Não existe fórum global nem busca entre cursos.</div></div>
+      </div>
+
+      <div style="background:var(--surface-sunken);border-radius:20px;padding:28px;box-shadow:inset 0 0 0 1px var(--divider)"><pre>forum/index.blade.php            — GET courses/{curso}/forum
+├── x-layout.page-header                                        ← 01
+│   └── SE $canCreateTopic:
+│       └── botão "Novo tópico"  (só ≥ lg)  dusk="new-topic-button"
+│
+├── SE $canCreateTopic:
+│   └── x-ui.fab  "Novo tópico"  (só < lg)                      ← 06
+│
+├── @forelse tópico → _topic.blade.php                          ← 02 / 03
+│   └── card interativo  dusk="topic-row-{id}"
+│       ├── a  dusk="open-topic-{id}"       ← ocupa o card
+│       │   ├── x-ui.avatar (iniciais)
+│       │   ├── badge "Fixado"  dusk="pinned-badge-{id}"
+│       │   ├── h4  título
+│       │   ├── trecho do conteúdo (2 linhas)
+│       │   └── autor — data · N respostas
+│       └── SE $canPin:                                          ← 04
+│           └── form POST forum.pin  dusk="pin-form-{id}"
+│               └── botão Fixar | Desafixar  dusk="pin-topic-{id}"
+│   @empty  x-ui.empty-state  dusk="no-topics"                   ← 08
+│
+├── x-ui.pagination
+│
+└── SE $canCreateTopic:                                          ← 05
+    └── x-ui.modal #new-topic-modal
+        └── form#new-topic-form  dusk="new-topic-form"
+            ├── x-ui.input     título     dusk="new-topic-title"
+            ├── x-ui.textarea  conteúdo   dusk="new-topic-content"
+            └── slot actions (IRMÃO do form, não descendente)
+                ├── Cancelar
+                └── submit form="new-topic-form"  dusk="new-topic-submit"
+
+forum/create.blade.php           — fallback de página inteira    ← 07</pre></div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
+        <div style="background:var(--surface-alt);border-radius:16px;padding:20px"><div class="ds-overline" style="margin-bottom:6px">Regra 1</div><div style="font-size:15px">Coluna de leitura de 880px. Fórum é texto; lista larga demais dificulta varrer os títulos.</div></div>
+        <div style="background:var(--surface-alt);border-radius:16px;padding:20px"><div class="ds-overline" style="margin-bottom:6px">Regra 2</div><div style="font-size:15px">"Fixado" é chip <code>info</code>, não destaque quente. Fixar organiza, não alarma.</div></div>
+        <div style="background:var(--surface-alt);border-radius:16px;padding:20px"><div class="ds-overline" style="margin-bottom:6px">Regra 3</div><div style="font-size:15px">Conteúdo de usuário sempre escapado, sempre com trecho limitado a duas linhas na lista.</div></div>
+      </div>
+    </div>
+
+    <!-- 01 + 02 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">01</span><h2 style="font-size:30px;margin:0">Cabeçalho e lista</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">x-layout.page-header</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">Breadcrumb de três níveis — Meus cursos → curso → Fórum —, kicker "Fórum", título com o nome do curso e o subtítulo verbatim. A ação primária só existe se o usuário pode criar tópico, e só a partir de <code>lg</code>: abaixo disso ela é o FAB do bloco 06. Os cards têm 8px entre si, não 24px: a lista precisa ser varrida, não contemplada.</p>
+
+      <div style="display:grid;grid-template-columns:880px minmax(0,1fr);gap:40px;align-items:start">
+        <div style="background:var(--surface-body);border-radius:20px;padding:36px;display:flex;flex-direction:column;gap:24px">
+          <div class="ds-page-header" style="margin:0">
+            <div>
+              <div class="ds-caption" style="margin-bottom:12px"><a href="#1a">Meus cursos</a> / <a href="#1a">Fundamentos de Segurança do Trabalho</a> / Fórum</div>
+              <div class="ds-overline" style="color:var(--primary);margin-bottom:8px">Fórum</div>
+              <h1 class="ds-page-title">Fundamentos de Segurança do Trabalho</h1>
+              <p class="ds-lead" style="margin:12px 0 0">Tire dúvidas e converse com a turma sobre este curso.</p>
+            </div>
+            <div style="flex:none"><button class="ds-btn ds-btn-primary" dusk="new-topic-button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>Novo tópico</button></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div class="ds-card ds-card-interactive" dusk="topic-row-31"><div class="ds-card-body" style="flex-direction:row;align-items:flex-start;gap:16px;padding:18px 24px"><span style="width:44px;height:44px;flex:none;border-radius:50%;background:var(--primary-container);color:var(--on-primary-container);display:flex;align-items:center;justify-content:center;font-weight:800">MV</span><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><span class="ds-chip ds-chip-info" dusk="pinned-badge-31">Fixado</span><h4 style="font-size:17px;margin:0">Leia antes de perguntar: como usar o fórum</h4></div><p class="ds-muted" style="margin:6px 0;font-size:15px">Este tópico reúne as dúvidas mais frequentes do curso e explica como descrever bem um problema para receber uma resposta útil.</p><div class="ds-caption" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap"><span>Marcos Vieira — 02/07/2026 09:14</span><span style="display:inline-flex;align-items:center;gap:6px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>12 respostas</span></div></div><button class="ds-btn ds-btn-ghost ds-btn-sm" dusk="pin-topic-31" style="flex:none">Desafixar</button></div></div>
+            <div class="ds-card ds-card-interactive"><div class="ds-card-body" style="flex-direction:row;align-items:flex-start;gap:16px;padding:18px 24px"><span style="width:44px;height:44px;flex:none;border-radius:50%;background:var(--primary-container);color:var(--on-primary-container);display:flex;align-items:center;justify-content:center;font-weight:800">JM</span><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><h4 style="font-size:17px;margin:0">Dúvida sobre validade do talabarte</h4></div><p class="ds-muted" style="margin:6px 0;font-size:15px">Na aula de EPI o instrutor fala em conferir a validade, mas o equipamento que usamos aqui não tem data visível na etiqueta. Como proceder nesse caso?</p><div class="ds-caption" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap"><span>Joana Martins — 15/07/2026 18:42</span><span style="display:inline-flex;align-items:center;gap:6px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>3 respostas</span></div></div><button class="ds-btn ds-btn-ghost ds-btn-sm" style="flex:none">Fixar</button></div></div>
+            <div class="ds-card ds-card-interactive"><div class="ds-card-body" style="flex-direction:row;align-items:flex-start;gap:16px;padding:18px 24px"><span style="width:44px;height:44px;flex:none;border-radius:50%;background:var(--primary-container);color:var(--on-primary-container);display:flex;align-items:center;justify-content:center;font-weight:800">AS</span><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><h4 style="font-size:17px;margin:0">A prova do módulo 2 tem quantas tentativas?</h4></div><p class="ds-muted" style="margin:6px 0;font-size:15px">Não achei essa informação na descrição do curso.</p><div class="ds-caption" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap"><span>Ana Souza — 17/07/2026 08:05</span><span style="display:inline-flex;align-items:center;gap:6px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>1 resposta</span></div></div><button class="ds-btn ds-btn-ghost ds-btn-sm" style="flex:none">Fixar</button></div></div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Cabeçalho</div>
+            <div style="display:grid;grid-template-columns:160px 1fr;gap:12px 16px;font-size:15px">
+              <code>:breadcrumb</code><span>Meus cursos → curso (link para a sala de aula) → "Fórum" (texto).</span>
+              <code>kicker</code><span>"Fórum".</span>
+              <code>title</code><span>Título do curso. O fórum não tem nome próprio.</span>
+              <code>subtitle</code><span>"Tire dúvidas e converse com a turma sobre este curso." — verbatim.</span>
+              <code>actions</code><span>"Novo tópico" só se <code>$canCreateTopic</code>, e só a partir de <code>lg</code>. <code>dusk="new-topic-button"</code>.</span>
+            </div>
+          </div>
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Lista</div>
+            <div style="display:grid;grid-template-columns:160px 1fr;gap:10px 16px;font-size:15px">
+              <span style="font-weight:700">ordem</span><span><code>is_pinned</code> desc, depois <code>created_at</code> desc. Do servidor; a tela não reordena.</span>
+              <span style="font-weight:700">espaço</span><span>8px entre cards. Densidade de lista, não de galeria.</span>
+              <span style="font-weight:700">largura</span><span>880px, coluna única.</span>
+              <span style="font-weight:700">sem separador</span><span>Cada card já tem elevação; divisor entre eles seria ruído.</span>
+              <span style="font-weight:700">paginação</span><span>Abaixo da lista, com <code>label="Paginação dos tópicos"</code> preservado.</span>
+              <span style="font-weight:700">sem filtro</span><span>Não existe busca nem filtro por autor. Não adicione sem confirmação.</span>
+            </div>
+          </div>
+          <div class="ds-alert ds-alert-info"><div><strong>Fixado não é seção.</strong> Os fixados vêm primeiro por ordenação, misturados na mesma lista, marcados pelo chip. Não crie um bloco "Fixados" separado: a paginação é uma só e um fixado poderia cair na página 2.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 03 + 04 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">03</span><h2 style="font-size:30px;margin:0">Card do tópico</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">topic-row-{id}</span><span class="ds-chip ds-chip-neutral ds-chip-plain">open-topic-{id}</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">Card interativo com três zonas: <strong>avatar</strong> de iniciais, <strong>miolo</strong> (chip de fixado + título, trecho de duas linhas, linha de autoria com contagem de respostas) e <strong>ação de fixar</strong>, quando o usuário pode. O link ocupa o miolo inteiro e cresce; a ação fica fora dele.</p>
+
+      <div class="ds-alert ds-alert-danger"><div><strong>Link e formulário são irmãos, nunca aninhados.</strong> O <code>&lt;a&gt;</code> do tópico e o <code>&lt;form&gt;</code> de fixar dividem a mesma linha do card. O card <em>não</em> pode ser um <code>&lt;a&gt;</code> envolvendo tudo — isso poria um <code>&lt;form&gt;</code> e um <code>&lt;button&gt;</code> dentro de um link, o que é marcação inválida e faz o clique em "Fixar" navegar em vez de submeter. O card é um <code>&lt;div class="ds-card ds-card-interactive"&gt;</code>: o hover é da superfície, o destino é do <code>&lt;a&gt;</code> interno em <code>flex:1</code>.</div></div>
+
+      <div style="display:grid;grid-template-columns:880px minmax(0,1fr);gap:40px;align-items:start">
+        <div style="background:var(--surface-body);border-radius:20px;padding:36px;display:flex;flex-direction:column;gap:20px">
+          <div><div class="ds-overline" style="margin-bottom:10px">Aluno — sem permissão de fixar</div><div class="ds-card ds-card-interactive"><div class="ds-card-body" style="flex-direction:row;align-items:flex-start;gap:16px;padding:18px 24px"><span style="width:44px;height:44px;flex:none;border-radius:50%;background:var(--primary-container);color:var(--on-primary-container);display:flex;align-items:center;justify-content:center;font-weight:800">JM</span><div style="flex:1;min-width:0"><h4 style="font-size:17px;margin:0">Dúvida sobre validade do talabarte</h4><p class="ds-muted" style="margin:6px 0;font-size:15px">Na aula de EPI o instrutor fala em conferir a validade, mas o equipamento que usamos aqui não tem data visível na etiqueta.</p><div class="ds-caption" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap"><span>Joana Martins — 15/07/2026 18:42</span><span style="display:inline-flex;align-items:center;gap:6px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>3 respostas</span></div></div><span style="color:var(--text-disabled);flex:none;align-self:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></span></div></div><div class="ds-caption" style="margin-top:8px">Sem a ação, o chevron ocupa a ponta direita — o card continua legível como item clicável.</div></div>
+          <div><div class="ds-overline" style="margin-bottom:10px">Sem respostas</div><div class="ds-card ds-card-interactive"><div class="ds-card-body" style="flex-direction:row;align-items:flex-start;gap:16px;padding:18px 24px"><span style="width:44px;height:44px;flex:none;border-radius:50%;background:var(--primary-container);color:var(--on-primary-container);display:flex;align-items:center;justify-content:center;font-weight:800">RC</span><div style="flex:1;min-width:0"><h4 style="font-size:17px;margin:0">Material complementar da aula 3</h4><p class="ds-muted" style="margin:6px 0;font-size:15px">Alguém tem a referência da norma citada no final do vídeo?</p><div class="ds-caption" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap"><span>Ricardo Camargo — 18/07/2026 07:30</span><span style="display:inline-flex;align-items:center;gap:6px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>Nenhuma resposta ainda</span></div></div><span style="color:var(--text-disabled);flex:none;align-self:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></span></div></div><div class="ds-caption" style="margin-top:8px">"Nenhuma resposta ainda" em vez de "0 respostas": zero é convite para responder.</div></div>
+          <div><div class="ds-overline" style="margin-bottom:10px">Foco por teclado</div><div class="ds-card" style="box-shadow:var(--elev-1),0 0 0 3px var(--focus-ring-alpha)"><div class="ds-card-body" style="flex-direction:row;align-items:flex-start;gap:16px;padding:18px 24px"><span style="width:44px;height:44px;flex:none;border-radius:50%;background:var(--primary-container);color:var(--on-primary-container);display:flex;align-items:center;justify-content:center;font-weight:800">AS</span><div style="flex:1;min-width:0"><h4 style="font-size:17px;margin:0">A prova do módulo 2 tem quantas tentativas?</h4><div class="ds-caption" style="margin-top:6px">Ana Souza — 17/07/2026 08:05</div></div><button class="ds-btn ds-btn-ghost ds-btn-sm" style="flex:none">Fixar</button></div></div><div class="ds-caption" style="margin-top:8px">O anel de foco é desenhado no card, mas pertence ao <code>&lt;a&gt;</code> interno. Tab passa do link para o botão de fixar, nesta ordem.</div></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Zonas</div>
+            <div style="display:grid;grid-template-columns:150px 1fr;gap:12px 16px;font-size:15px">
+              <span style="font-weight:700">Avatar</span><span>44px, iniciais em maiúsculas — até duas, das duas primeiras palavras do nome. Cálculo já existe no parcial; mantenha-o no servidor.</span>
+              <span style="font-weight:700">Chip fixado</span><span><code>info</code> "Fixado", antes do título, na mesma linha. <code>dusk="pinned-badge-{id}"</code>. Ausente quando não fixado — não renderize chip vazio.</span>
+              <span style="font-weight:700">Título</span><span><code>h4</code> 17px peso 700. Verbatim.</span>
+              <span style="font-weight:700">Trecho</span><span>Conteúdo do tópico, <code>--text-secondary</code>, clamp de 2 linhas. Sempre escapado.</span>
+              <span style="font-weight:700">Autoria</span><span>"Nome — dd/mm/aaaa hh:mm", com a contagem de respostas ao lado, separada por 14px. Travessão preservado do código.</span>
+              <span style="font-weight:700">Respostas</span><span>Ícone <code>message-square</code> 16px + "N respostas", pluralizado. Zero vira "Nenhuma resposta ainda".</span>
+              <span style="font-weight:700">Ponta direita</span><span>A ação de fixar, ou o chevron quando não há ação.</span>
+            </div>
+          </div>
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Card e estados</div>
+            <div style="display:grid;grid-template-columns:150px 1fr;gap:10px 16px;font-size:15px">
+              <span style="font-weight:700">superfície</span><span><code>.ds-card .ds-card-interactive</code>, padding 18px/24px, raio 20px, <code>--elev-1</code>.</span>
+              <span style="font-weight:700">hover</span><span><code>--elev-3</code> e −3px em Y, do próprio componente. 200ms.</span>
+              <span style="font-weight:700">alinhamento</span><span>Avatar e miolo em <code>flex-start</code>; a ação centrada na vertical.</span>
+              <code>dusk</code><span><code>topic-row-{id}</code> no card, <code>open-topic-{id}</code> no <code>&lt;a&gt;</code> — nós distintos.</span>
+            </div>
+          </div>
+          <div style="background:var(--surface-sunken);border-radius:16px;padding:22px;box-shadow:inset 0 0 0 1px var(--divider)"><pre>{{ bladeTopic }}</pre></div>
+        </div>
+      </div>
+
+      <div style="height:1px;background:var(--divider)"></div>
+
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">04</span><h2 style="font-size:30px;margin:0">Fixar e desafixar</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">pin-topic-{id}</span></div>
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) 620px;gap:36px;align-items:start">
+        <div style="background:var(--surface-body);border-radius:20px;padding:32px;display:flex;gap:20px;flex-wrap:wrap;align-items:center">
+          <button class="ds-btn ds-btn-ghost ds-btn-sm">Fixar</button><span class="ds-caption">tópico comum</span>
+          <button class="ds-btn ds-btn-tonal ds-btn-sm">Desafixar</button><span class="ds-caption">tópico fixado — tonal, porque desfaz um estado ativo</span>
+          <button class="ds-btn ds-btn-ghost ds-btn-sm" disabled="">Fixando…</button><span class="ds-caption">enviando</span>
+        </div>
+        <div style="display:grid;grid-template-columns:170px 1fr;gap:12px 16px;font-size:15px">
+          <span style="font-weight:700">quem vê</span><span>Só com <code>$canPin</code> — gestor e admin da organização. Aluno não vê o botão, nem desabilitado.</span>
+          <span style="font-weight:700">forma</span><span><code>&lt;form method="POST"&gt;</code> com CSRF, um botão de submit. Sem confirmação: fixar é reversível no mesmo botão.</span>
+          <span style="font-weight:700">rótulo</span><span>"Fixar" ou "Desafixar", conforme o estado. Verbatim do código.</span>
+          <span style="font-weight:700">variante</span><span>Fantasma para fixar, tonal para desafixar.</span>
+          <span style="font-weight:700">efeito</span><span>Recarrega a lista e o tópico muda de posição. A mudança de ordem é a confirmação visual — sem toast.</span>
+          <code>dusk</code><span><code>pin-form-{id}</code> no formulário, <code>pin-topic-{id}</code> no botão.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 05 + 06 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">05</span><h2 style="font-size:30px;margin:0">Diálogo de novo tópico</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">new-topic-form</span><span class="ds-chip ds-chip-critical">contrato rígido</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">Dois campos: título e conteúdo. Diálogo de tamanho médio, foco no título ao abrir, ações no rodapé.</p>
+
+      <div class="ds-alert ds-alert-danger"><div><strong>O submit não é descendente do formulário.</strong> O rodapé do diálogo é irmão do corpo, então um <code>&lt;button type="submit"&gt;</code> ali dentro <em>nunca</em> submeteria o formulário — formulários nativos só submetem por controles descendentes ou associados. A solução, já no código, é <code>id="new-topic-form"</code> no <code>&lt;form&gt;</code> e <code>form="new-topic-form"</code> no botão. Se a casca nova mudar a estrutura do diálogo, esse par <strong>tem</strong> que sobreviver — ou mova o rodapé para dentro do formulário, e então valide o outro caminho.</div></div>
+
+      <div style="display:grid;grid-template-columns:620px minmax(0,1fr);gap:40px;align-items:start">
+        <div style="background:var(--surface-body);border-radius:20px;padding:36px">
+          <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-5);padding:32px;display:flex;flex-direction:column;gap:20px">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px"><h3 style="font-size:24px;margin:0">Novo tópico</h3><button class="ds-btn-close" aria-label="Fechar">✕</button></div>
+            <div class="ds-field" style="margin-bottom:0"><div class="ds-field-shell"><input class="ds-control" dusk="new-topic-title"><label class="ds-float-label">Título <span class="ds-required">*</span></label></div></div>
+            <div class="ds-field" style="margin-bottom:0"><div class="ds-field-shell"><textarea class="ds-control" rows="5" dusk="new-topic-content"></textarea><label class="ds-float-label">Conteúdo <span class="ds-required">*</span></label></div><div class="ds-form-text">O conteúdo é sanitizado no servidor antes de ser publicado.</div></div>
+            <div class="ds-form-actions" style="margin-top:0;justify-content:flex-end"><button class="ds-btn ds-btn-ghost">Cancelar</button><button class="ds-btn ds-btn-primary" dusk="new-topic-submit">Publicar tópico</button></div>
+          </div>
+          <div style="margin-top:24px">
+            <div class="ds-overline" style="margin-bottom:10px">Com erro de validação</div>
+            <div class="ds-field" style="margin-bottom:0"><div class="ds-field-shell"><input class="ds-control is-invalid" value=""><label class="ds-float-label">Título <span class="ds-required">*</span></label></div><div class="ds-invalid-feedback"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg>Informe o título do tópico.</div></div>
+            <div class="ds-caption" style="margin-top:8px">Erro do servidor reabre o diálogo com os valores de <code>old()</code> preenchidos. Se isso não estiver garantido, use a página do bloco 07 como destino do erro.</div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Especificação</div>
+            <div style="display:grid;grid-template-columns:170px 1fr;gap:12px 16px;font-size:15px">
+              <span style="font-weight:700">tamanho</span><span><code>md</code> — largura máx. 560px, raio 28px, <code>--elev-5</code>, scrim 42%.</span>
+              <span style="font-weight:700">título</span><span>"Novo tópico". O código escreve "Novo Tópico".</span>
+              <code>title</code><span>Campo de texto, obrigatório. <code>dusk="new-topic-title"</code>.</span>
+              <code>content</code><span>Textarea de 5 linhas, obrigatório. <code>dusk="new-topic-content"</code>.</span>
+              <span style="font-weight:700">ajuda</span><span>"O conteúdo é sanitizado no servidor antes de ser publicado." — o texto existe na página de fallback; passa a aparecer também no diálogo.</span>
+              <span style="font-weight:700">ações</span><span>"Cancelar" fantasma e "Publicar tópico" primário, à direita. O submit leva <code>form="new-topic-form"</code>.</span>
+              <span style="font-weight:700">foco</span><span>No título ao abrir; preso no diálogo; <code>Esc</code> fecha.</span>
+              <span style="font-weight:700">só com permissão</span><span>O diálogo inteiro não é renderizado sem <code>$canCreateTopic</code>.</span>
+            </div>
+          </div>
+          <div style="background:var(--surface-sunken);border-radius:16px;padding:22px;box-shadow:inset 0 0 0 1px var(--divider)"><pre>{{ bladeModal }}</pre></div>
+        </div>
+      </div>
+
+      <div style="height:1px;background:var(--divider)"></div>
+
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">06</span><h2 style="font-size:30px;margin:0">FAB</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">x-ui.fab</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">Abaixo de <code>lg</code>, o botão do cabeçalho é substituído pelo FAB — os dois abrem o mesmo diálogo, e nunca aparecem juntos. É o único FAB do produto.</p>
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) 620px;gap:36px;align-items:start">
+        <div style="background:var(--surface-body);border-radius:20px;padding:32px;position:relative;min-height:200px">
+          <div style="position:absolute;right:32px;bottom:32px;display:flex;align-items:center;gap:14px"><span class="ds-caption">24px das bordas</span><button style="height:56px;padding:0 24px;border-radius:var(--radius-pill);background:var(--primary);color:#fff;border:none;font-weight:700;font-size:16px;display:flex;align-items:center;gap:10px;box-shadow:var(--elev-primary);cursor:pointer"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>Novo tópico</button></div>
+          <div class="ds-caption">Área de conteúdo. O FAB flutua sobre ela, sem cobrir o último card — a lista ganha 96px de respiro no fim.</div>
+        </div>
+        <div style="display:grid;grid-template-columns:170px 1fr;gap:12px 16px;font-size:15px">
+          <span style="font-weight:700">quando</span><span>Só abaixo de <code>lg</code> e só com <code>$canCreateTopic</code>.</span>
+          <span style="font-weight:700">forma</span><span>Pílula de 56px de altura com ícone <code>plus</code> e o rótulo "Novo tópico". Não é FAB circular sem texto — a ação precisa ser nomeada.</span>
+          <span style="font-weight:700">posição</span><span><code>fixed</code>, 24px da borda direita e inferior, respeitando a área segura do aparelho.</span>
+          <span style="font-weight:700">elevação</span><span><code>--elev-primary</code> — o glow de marca. Sobe para <code>--elev-3</code> no press.</span>
+          <span style="font-weight:700">respiro</span><span>96px no fim da lista, para o FAB não cobrir o último tópico.</span>
+          <span style="font-weight:700">nunca dois</span><span>Botão e FAB são exclusivos por largura. Dois gatilhos visíveis ao mesmo tempo é bug.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 07 + 08 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">07</span><h2 style="font-size:30px;margin:0">Página de fallback</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">forum/create</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">Existe uma página inteira para criar tópico, alcançável por navegação direta em <code>forum/create</code>. Mesmo contrato de <code>forum.store</code>, mesmos <code>dusk</code>, textarea de 12 linhas em vez de 5. Ela não é o caminho principal — o diálogo é — mas continua funcionando e precisa da mesma casca.</p>
+
+      <div style="display:grid;grid-template-columns:640px minmax(0,1fr);gap:40px;align-items:start">
+        <div style="background:var(--surface-body);border-radius:20px;padding:36px;display:flex;flex-direction:column;gap:20px">
+          <div class="ds-page-header" style="margin:0">
+            <div>
+              <div class="ds-caption" style="margin-bottom:12px"><a href="#1a">Fundamentos de Segurança do Trabalho</a> / Novo tópico</div>
+              <div class="ds-overline" style="color:var(--primary);margin-bottom:8px">Fundamentos de Segurança do Trabalho / Fórum</div>
+              <h1 class="ds-page-title" style="font-size:30px">Novo tópico</h1>
+              <p class="ds-lead" style="margin:12px 0 0">Compartilhe sua dúvida ou observação com a turma.</p>
+            </div>
+          </div>
+          <div class="ds-card"><div class="ds-card-body">
+            <div class="ds-field"><div class="ds-field-shell"><input class="ds-control"><label class="ds-float-label">Título <span class="ds-required">*</span></label></div></div>
+            <div class="ds-field" style="margin-bottom:0"><div class="ds-field-shell"><textarea class="ds-control" rows="8"></textarea><label class="ds-float-label">Conteúdo <span class="ds-required">*</span></label></div><div class="ds-form-text">O conteúdo é sanitizado no servidor antes de ser publicado.</div></div>
+            <div class="ds-form-actions" style="justify-content:flex-end"><a class="ds-btn ds-btn-ghost" href="#1a">Cancelar</a><button class="ds-btn ds-btn-primary">Publicar tópico</button></div>
+          </div></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Especificação</div>
+            <div style="display:grid;grid-template-columns:170px 1fr;gap:12px 16px;font-size:15px">
+              <span style="font-weight:700">largura</span><span>640px, coluna única, num card.</span>
+              <code>:breadcrumb</code><span>Curso (link para o fórum) → "Novo tópico".</span>
+              <code>kicker</code><span>"{curso} / Fórum".</span>
+              <code>subtitle</code><span>"Compartilhe sua dúvida ou observação com a turma." — verbatim.</span>
+              <span style="font-weight:700">textarea</span><span>12 linhas no código; nesta casca, 8 — a coluna é mais estreita e o campo cresce na vertical.</span>
+              <span style="font-weight:700">mesmos dusk</span><span><code>new-topic-form</code>, <code>new-topic-title</code>, <code>new-topic-content</code>, <code>new-topic-submit</code> — <strong>idênticos</strong> aos do diálogo. As duas telas nunca aparecem juntas, então não há colisão.</span>
+              <span style="font-weight:700">aqui o submit é filho</span><span>Nesta página o botão está dentro do formulário; o atributo <code>form=</code> é dispensável, mas mantê-lo não causa dano.</span>
+            </div>
+          </div>
+          <div class="ds-alert ds-alert-info"><div><strong>Não elimine esta página.</strong> Ela é o destino sem JS e o lugar natural para reexibir erros de validação. Se o diálogo não conseguir reabrir com <code>old()</code>, redirecione o erro para cá.</div></div>
+        </div>
+      </div>
+
+      <div style="height:1px;background:var(--divider)"></div>
+
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">08</span><h2 style="font-size:30px;margin:0">Estados, contrato e aceite</h2></div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:32px">
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="ds-overline">Nenhum tópico</div>
+          <div class="ds-empty" style="padding:32px 24px" dusk="no-topics">
+            <div class="ds-empty-icon"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg></div>
+            <div style="font-size:18px;font-weight:700">Nenhum tópico por aqui</div>
+            <p class="ds-muted" style="margin:0;font-size:15px">Abra o primeiro tópico e comece a conversa com a turma.</p>
+            <button class="ds-btn ds-btn-tonal ds-btn-sm" style="margin-top:8px">Novo tópico</button>
+          </div>
+          <div class="ds-caption">Título, descrição e ação já existem no código, verbatim. O botão só aparece com <code>$canCreateTopic</code> — sem permissão, fica só o texto.</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="ds-overline">Matriz de permissão</div>
+          <div style="display:grid;grid-template-columns:1fr 90px 90px;gap:10px 12px;font-size:15px;background:var(--surface-body);border-radius:16px;padding:20px">
+            <div style="font-weight:800">perfil</div><div style="font-weight:800">criar</div><div style="font-weight:800">fixar</div>
+            <span>Aluno matriculado</span><span>sim</span><span>não</span>
+            <span>Aluno com matrícula concluída</span><span>sim</span><span>não</span>
+            <span>Gestor da organização</span><span>sim</span><span>sim</span>
+            <span>Admin</span><span>sim</span><span>sim</span>
+            <span>Sem matrícula</span><span colspan="2">não entra na tela</span>
+          </div>
+          <div class="ds-caption">Sem permissão, o controle <strong>não é renderizado</strong> — nunca desabilitado. Botão cinza para quem nunca poderá usar é ruído.</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="ds-overline">Responsivo</div>
+          <div style="display:grid;grid-template-columns:130px 1fr;gap:10px 16px;font-size:15px">
+            <span style="font-weight:700">≥ 1024px</span><span>botão no cabeçalho, sem FAB; cards em 880px</span>
+            <span style="font-weight:700">768–1023px</span><span>FAB no lugar do botão; cards em 100% da coluna</span>
+            <span style="font-weight:700">&lt; 768px</span><span>ação de fixar desce para baixo do miolo; diálogo em tela cheia; 96px de respiro no fim da lista</span>
+          </div>
+          <div class="ds-caption">O avatar de 44px e o clamp de 2 linhas no trecho não mudam em nenhuma largura.</div>
+        </div>
+      </div>
+
+      <div style="height:1px;background:var(--divider)"></div>
+
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:36px">
+        <div>
+          <div class="ds-overline" style="margin-bottom:12px">Contrato dusk — nenhum destes muda</div>
+          <div style="display:grid;grid-template-columns:250px 1fr;gap:10px 16px;font-size:15px">
+            <code>new-topic-button</code><span>ação do cabeçalho</span>
+            <code>topic-row-{id}</code><span>o card do tópico</span>
+            <code>open-topic-{id}</code><span>o link do tópico</span>
+            <code>pinned-badge-{id}</code><span>chip "Fixado"</span>
+            <code>pin-form-{id}</code><span>o <code>&lt;form&gt;</code> de fixar</span>
+            <code>pin-topic-{id}</code><span>botão fixar/desafixar</span>
+            <code>no-topics</code><span>estado vazio</span>
+            <code>new-topic-form</code><span>o <code>&lt;form&gt;</code> de criação (diálogo e página)</span>
+            <code>new-topic-title</code><span>campo título</span>
+            <code>new-topic-content</code><span>campo conteúdo</span>
+            <code>new-topic-submit</code><span>botão publicar</span>
+          </div>
+          <div class="ds-alert ds-alert-attention" style="margin-top:20px"><div>O <code>id="new-topic-form"</code> não é <code>dusk</code>, mas é igualmente intocável: é o alvo do atributo <code>form=</code> do submit. Renomeá-lo quebra a criação de tópico sem gerar nenhum erro visível.</div></div>
+        </div>
+        <div>
+          <div class="ds-overline" style="margin-bottom:12px">Critérios de aceite</div>
+          <div style="display:flex;flex-direction:column;gap:10px;font-size:15px">
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Tópicos fixados primeiro, depois os mais recentes, numa lista só e numa paginação só.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>O card é um <code>&lt;div&gt;</code> interativo: link e formulário de fixar são irmãos, nunca aninhados.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span><code>topic-row-{id}</code> e <code>open-topic-{id}</code> em nós distintos.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Submit do diálogo mantém <code>form="new-topic-form"</code>, ou o rodapé passa para dentro do <code>&lt;form&gt;</code>.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Botão do cabeçalho e FAB nunca visíveis ao mesmo tempo.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Sem permissão, os controles não são renderizados — nunca desabilitados.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Trecho do tópico com clamp de 2 linhas e sempre escapado.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Contagem de respostas pluralizada; zero vira "Nenhuma resposta ainda".</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Chip "Fixado" em <code>info</code>; zero vermelho, laranja ou amarelo na tela.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Página <code>forum/create</code> preservada, com os mesmos <code>dusk</code>.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Zero <code>style=</code> inline; zero caixa-alta fora do overline.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span><code>artisan dusk</code> filtrado em <code>forum</code> passa sem alteração de seletor.</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const Z = "\u200B";
+const b = (s) => s.split("{{").join("{" + Z + "{").split("}}").join("}" + Z + "}");
+
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      bladeTopic: b(`{{-- forum/partials/_topic.blade.php --}}
+@php
+  $initials = collect(explode(' ', trim($topic->user->name)))
+      ->filter()->map(fn ($p) => mb_strtoupper(mb_substr($p, 0, 1)))
+      ->take(2)->implode('');
+  $repliesCount = $topic->replies_count ?? $topic->replies()->count();
+@endphp
+
+{{-- Card é DIV interativo, não <a>: o link e o form de fixar são
+     IRMÃOS. Um <form>/<button> dentro de <a> é inválido e faria o
+     clique em "Fixar" navegar em vez de submeter. --}}
+<div class="ds-card ds-card-interactive ds-topic" dusk="topic-row-{{ $topic->id }}">
+  <div class="ds-card-body ds-topic-body">
+
+    <a href="{{ route('forum.show', [$course, $topic]) }}"
+       class="ds-topic-link"
+       dusk="open-topic-{{ $topic->id }}">
+
+      <x-ui.avatar :initials="$initials" size="44" />
+
+      <div class="ds-topic-main">
+        <div class="ds-topic-heading">
+          @if($topic->is_pinned)
+            <span class="ds-chip ds-chip-info" dusk="pinned-badge-{{ $topic->id }}">Fixado</span>
+          @endif
+          <h4 class="ds-topic-title">{{ $topic->title }}</h4>
+        </div>
+
+        <p class="ds-muted ds-clamp-2">{{ $topic->content }}</p>
+
+        <div class="ds-caption ds-topic-meta">
+          <span>{{ $topic->user->name }} — {{ $topic->created_at->format('d/m/Y H:i') }}</span>
+          <span class="ds-topic-replies">
+            <x-ui.icon name="message-square" size="16" aria-hidden="true" />
+            @if($repliesCount === 0)
+              Nenhuma resposta ainda
+            @else
+              {{ $repliesCount }} {{ Str::plural('resposta', $repliesCount) }}
+            @endif
+          </span>
+        </div>
+      </div>
+    </a>
+
+    @if($canPin)
+      <form method="POST" action="{{ route('forum.pin', [$course, $topic]) }}"
+            dusk="pin-form-{{ $topic->id }}">
+        @csrf
+        <x-ui.button type="submit" size="sm"
+                     :variant="$topic->is_pinned ? 'tonal' : 'ghost'"
+                     dusk="pin-topic-{{ $topic->id }}">
+          {{ $topic->is_pinned ? 'Desafixar' : 'Fixar' }}
+        </x-ui.button>
+      </form>
+    @else
+      <x-ui.icon name="chevron-right" size="18" class="ds-topic-chevron" aria-hidden="true" />
+    @endif
+  </div>
+</div>`),
+
+      bladeModal: b(`{{-- forum/index.blade.php — cabeçalho, FAB e diálogo --}}
+<x-layout.page-header
+    :breadcrumb="[
+      ['label' => 'Meus cursos', 'url' => route('student.courses.index')],
+      ['label' => $course->title, 'url' => route('classroom.show', $course)],
+      ['label' => 'Fórum'],
+    ]"
+    kicker="Fórum"
+    :title="$course->title"
+    subtitle="Tire dúvidas e converse com a turma sobre este curso.">
+
+  @if($canCreateTopic)
+    <x-slot:actions>
+      {{-- só ≥ lg; abaixo disso quem assume é o FAB --}}
+      <x-ui.button class="ds-hide-below-lg"
+                   data-modal-target="#new-topic-modal"
+                   dusk="new-topic-button">Novo tópico</x-ui.button>
+    </x-slot:actions>
+  @endif
+</x-layout.page-header>
+
+@if($canCreateTopic)
+  <x-ui.fab label="Novo tópico" icon="plus"
+            class="ds-show-below-lg"
+            data-modal-target="#new-topic-modal" />
+
+  <x-ui.modal id="new-topic-modal" title="Novo tópico" size="md">
+    {{-- CONTRATO: o slot actions vira .modal-footer, IRMÃO do corpo —
+         não descendente deste <form>. Um <button type="submit"> ali
+         nunca submeteria (HTML5 §4.10.18.6). Por isso:
+         id no <form> + form="new-topic-form" no botão.
+         Renomear esse id quebra a criação sem erro visível. --}}
+    <form id="new-topic-form" method="POST"
+          action="{{ route('forum.store', $course) }}"
+          dusk="new-topic-form">
+      @csrf
+
+      <x-ui.field-stack>
+        <x-ui.input name="title" label="Título" required
+                    :value="old('title')" dusk="new-topic-title" />
+
+        <x-ui.textarea name="content" label="Conteúdo" :rows="5" required
+                       :value="old('content')"
+                       hint="O conteúdo é sanitizado no servidor antes de ser publicado."
+                       dusk="new-topic-content" />
+      </x-ui.field-stack>
+
+      <x-slot:actions>
+        <x-ui.button variant="ghost" data-modal-dismiss>Cancelar</x-ui.button>
+        <x-ui.button type="submit" form="new-topic-form"
+                     dusk="new-topic-submit">Publicar tópico</x-ui.button>
+      </x-slot:actions>
+    </form>
+  </x-ui.modal>
+@endif`),
+    };
+  }
+}
+</script>
+</body>
+</html>

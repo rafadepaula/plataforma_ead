@@ -1,0 +1,13 @@
+:root{
+/* 4px grid, generous rhythm — the system breathes twice as much as before */
+--space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-5:20px;--space-6:24px;
+--space-7:32px;--space-8:40px;--space-9:48px;--space-10:64px;--space-11:80px;
+/* Component padding */
+--pad-btn-y:12px;--pad-btn-x:24px;--pad-btn-sm-y:8px;--pad-btn-sm-x:18px;--pad-btn-lg-y:16px;--pad-btn-lg-x:32px;
+--pad-card:28px;--pad-field-y:14px;--pad-field-x:16px;--pad-cell-y:18px;--pad-cell-x:20px;
+--gap-inline:12px;--gap-stack:20px;--gap-section:40px;
+/* Layout */
+--appbar-height:76px;--nav-width:280px;--nav-collapsed:88px;--main-pad:40px;
+--content-max:1240px;--reading-max:760px;--form-max:440px;--dropdown-width:380px;
+--field-height:52px;--control-height:48px;--touch-min:48px;
+}

@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <meta name="design_doc_mode" content="canvas">
+  <link rel="stylesheet" href="_ds/plataforma-ead-design-system-618bb28f-056b-421b-b1d4-d0fef3cd30e2/styles.css">
+  <script src="_ds/plataforma-ead-design-system-618bb28f-056b-421b-b1d4-d0fef3cd30e2/_ds_bundle.js"></script>
+  <style>
+    a{color:var(--primary);text-decoration:none}
+    a:hover{color:var(--primary-hover)}
+    pre{margin:0;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;line-height:1.7;white-space:pre-wrap;color:var(--grey-800)}
+    code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.92em;background:var(--surface-alt);border-radius:6px;padding:1px 6px}
+  </style>
+</helmet>
+
+<section style="display:flex;flex-direction:column;gap:28px;padding:64px;background:var(--surface-body);font-family:var(--font-sans);color:var(--text-primary);line-height:1.6;width:2040px;box-sizing:border-box">
+
+  <div id="1a" style="display:flex;flex-direction:column;gap:28px">
+
+    <header style="display:flex;align-items:flex-start;justify-content:space-between;gap:48px;background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px">
+      <div style="max-width:1180px;display:flex;flex-direction:column;gap:14px">
+        <div class="ds-overline" style="color:var(--primary)">Especificação de componentes · tela 16 · slide 16</div>
+        <h1 style="font-size:46px;line-height:1.08;margin:0;letter-spacing:-.02em">Aula — quatro conteúdos, uma casca</h1>
+        <p style="font-size:19px;color:var(--text-secondary);margin:0;text-wrap:pretty">Uma tela que despacha por formato: <strong>vídeo</strong>, <strong>PDF</strong>, <strong>texto e imagem</strong> ou <strong>prova</strong>. O que muda é o miolo do card; cabeçalho, largura e o par selo/botão de conclusão são os mesmos. Especificação componente por componente, lida de <code>classroom/lesson.blade.php</code> e dos quatro parciais em <code>classroom/partials/</code>.</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;align-items:flex-end;flex:none">
+        <span class="ds-chip ds-chip-primary ds-chip-plain ds-chip-lg">1a</span>
+        <span class="ds-caption">8 componentes · 9 blocos</span>
+      </div>
+    </header>
+
+    <div class="ds-alert ds-alert-attention"><div><strong>Três coisas do slide que a tela não tem.</strong> Não existe barra visível de "tempo assistido" — o progresso do vídeo é salvo em silêncio e comunicado por uma frase; não existe coluna lateral com materiais e próximas aulas nesta tela (isso é a <a href="#1a">Sala de aula</a>); e o vídeo <strong>não tem</strong> botão "Marcar como concluída", porque conclui sozinho aos 90%. Especifiquei a tela real e marquei a barra de tempo como proposta no bloco 03.</div></div>
+
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px">
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">01</div><div style="font-size:17px;font-weight:800">LessonHeader</div><div class="ds-caption">breadcrumb de 3 níveis</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">02</div><div style="font-size:17px;font-weight:800">LessonShell</div><div class="ds-caption">o despacho por tipo</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">03</div><div style="font-size:17px;font-weight:800">VideoPlayer</div><div class="ds-caption">16:9 + progresso 5s</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">04</div><div style="font-size:17px;font-weight:800">PdfViewer</div><div class="ds-caption">iframe + baixar</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">05</div><div style="font-size:17px;font-weight:800">TextImage</div><div class="ds-caption">leitura 760px</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">06</div><div style="font-size:17px;font-weight:800">QuizHandoff</div><div class="ds-caption">dois estados</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">07</div><div style="font-size:17px;font-weight:800">CompletionBar</div><div class="ds-caption">selo + botão</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">08</div><div style="font-size:17px;font-weight:800">Estados</div><div class="ds-caption">degradado, contrato</div></div></div>
+    </div>
+
+    <!-- 00 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:24px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">00</span><h2 style="font-size:30px;margin:0">O que a tela faz</h2></div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px">
+        <div style="background:var(--blue-50);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">Consumir o conteúdo</div><div style="font-size:15px">Vídeo do YouTube, PDF embutido, texto com imagem, ou o encaminhamento para a prova.</div></div>
+        <div style="background:var(--blue-50);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">Registrar progresso</div><div style="font-size:15px">No vídeo, automático: o tempo assistido é enviado a cada 5 segundos e a aula conclui aos 90%.</div></div>
+        <div style="background:var(--blue-50);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">Marcar como concluída</div><div style="font-size:15px">Em PDF e em texto, a conclusão é manual: um botão que desaparece e dá lugar ao selo.</div></div>
+        <div style="background:var(--mint-100);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">Ordem do despacho</div><div style="font-size:15px"><code>quiz</code> tem prioridade sobre qualquer <code>youtube_url</code> ou <code>pdf_path</code> perdido. Dado malformado nunca cai num player concluível.</div></div>
+        <div style="background:var(--mint-100);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">Prova não conclui aqui</div><div style="font-size:15px">Aula de prova não tem botão de conclusão: quem conclui é a submissão da prova, com <code>completion_source = quiz_passed</code>.</div></div>
+        <div style="background:var(--mint-100);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">Voltar</div><div style="font-size:15px">Um botão de volta à sala de aula no cabeçalho, <code>dusk="back-to-classroom"</code>.</div></div>
+      </div>
+
+      <div style="background:var(--surface-sunken);border-radius:20px;padding:28px;box-shadow:inset 0 0 0 1px var(--divider)"><pre>classroom/lesson.blade.php        — GET classroom.lesson
+├── x-layout.page-header                                        ← 01
+│   └── slot actions: Voltar à sala de aula  dusk="back-to-classroom"
+│
+└── x-ui.card                                                    ← 02
+    │   despacho, NESTA ordem — quiz primeiro, sempre
+    ├── type === 'quiz'      → _quiz-placeholder                 ← 06
+    ├── youtube_url presente → _video                            ← 03
+    ├── pdf_path presente    → _pdf                              ← 04
+    └── senão                → _text-image                       ← 05
+
+_video                                    _pdf / _text-image
+├── wrapper 16:9                          ├── iframe | img + texto
+│   └── [data-youtube-player]             └── barra de conclusão      ← 07
+│       dusk="video-player-{id}"              ├── selo   dusk="lesson-completed-badge"
+│       └── iframe de fallback                └── botão  dusk="mark-complete-button"
+│   OU aviso  dusk="video-unavailable-{id}"
+└── barra de conclusão                    ← 07
+    ├── selo  dusk="lesson-completed-badge"
+    └── frase "O progresso é salvo automaticamente…"
+        (SEM botão de marcar)</pre></div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
+        <div style="background:var(--surface-alt);border-radius:16px;padding:20px"><div class="ds-overline" style="margin-bottom:6px">Regra 1</div><div style="font-size:15px">Coluna de leitura de 880px para mídia e 760px para texto corrido. Player mais largo que isso não melhora nada e desalinha o cabeçalho.</div></div>
+        <div style="background:var(--surface-alt);border-radius:16px;padding:20px"><div class="ds-overline" style="margin-bottom:6px">Regra 2</div><div style="font-size:15px">O selo e o botão são escondidos por <strong>classe</strong>, não pelo atributo <code>hidden</code>. É contrato com o JS existente — ver bloco 07.</div></div>
+        <div style="background:var(--surface-alt);border-radius:16px;padding:20px"><div class="ds-overline" style="margin-bottom:6px">Regra 3</div><div style="font-size:15px">Vídeo indisponível é aviso cinza com o que fazer. Não é <code>warning</code> amarelo e não culpa o aluno.</div></div>
+      </div>
+    </div>
+
+    <!-- 01 + 02 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">01</span><h2 style="font-size:30px;margin:0">Cabeçalho e casca</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">x-layout.page-header</span><span class="ds-chip ds-chip-neutral ds-chip-plain">x-ui.card</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">Breadcrumb de três níveis — Meus cursos → curso → aula —, kicker com <em>curso / módulo</em>, título com o nome da aula e o subtítulo verbatim. O conteúdo mora num card único, e é só o miolo desse card que muda de formato para formato.</p>
+
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) 600px;gap:36px;align-items:start">
+        <div style="background:var(--surface-body);border-radius:20px;padding:36px;display:flex;flex-direction:column;gap:24px">
+          <div style="max-width:880px">
+            <div class="ds-page-header" style="margin:0">
+              <div>
+                <div class="ds-caption" style="margin-bottom:12px"><a href="#1a">Meus cursos</a> / <a href="#1a">Fundamentos de Segurança do Trabalho</a> / Equipamentos de proteção individual</div>
+                <div class="ds-overline" style="color:var(--primary);margin-bottom:8px">Fundamentos de Segurança do Trabalho / Conceitos gerais</div>
+                <h1 class="ds-page-title">Equipamentos de proteção individual</h1>
+                <p class="ds-lead" style="margin:12px 0 0">Continue seus estudos e marque a lição como concluída ao terminar.</p>
+              </div>
+              <div style="flex:none"><a class="ds-btn ds-btn-tonal" href="#1a" dusk="back-to-classroom">Voltar à sala de aula</a></div>
+            </div>
+          </div>
+          <div style="max-width:880px;background:var(--surface);border-radius:20px;box-shadow:var(--elev-1);padding:32px;display:flex;flex-direction:column;gap:16px">
+            <div style="aspect-ratio:16/9;border-radius:14px;background:linear-gradient(135deg,var(--blue-100),var(--mint-100));display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--on-primary-container)">Miolo do card — muda por formato</div>
+            <div style="display:flex;align-items:center;gap:12px"><span class="ds-chip ds-chip-success">Concluída</span><span class="ds-caption">Barra de conclusão — igual nos quatro formatos</span></div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Cabeçalho</div>
+            <div style="display:grid;grid-template-columns:160px 1fr;gap:12px 16px;font-size:15px">
+              <code>:breadcrumb</code><span>Meus cursos → curso (link para a sala de aula) → título da aula (texto).</span>
+              <code>kicker</code><span><code>curso / módulo</code>, concatenado. Pode passar de uma linha; não truncar.</span>
+              <code>title</code><span>Título da aula, verbatim. <code>h1</code> único da página.</span>
+              <code>subtitle</code><span>"Continue seus estudos e marque a lição como concluída ao terminar." — verbatim, mesmo em aula de vídeo, onde a conclusão é automática.</span>
+              <code>actions</code><span>Botão tonal "Voltar à sala de aula", <code>dusk="back-to-classroom"</code>.</span>
+            </div>
+          </div>
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Casca e larguras</div>
+            <div style="display:grid;grid-template-columns:160px 1fr;gap:10px 16px;font-size:15px">
+              <span style="font-weight:700">card</span><span>Branco, raio 20px, <code>--elev-1</code>, padding 32px. Um só, sem cards aninhados.</span>
+              <span style="font-weight:700">mídia</span><span>Coluna de 880px — vídeo e PDF.</span>
+              <span style="font-weight:700">texto</span><span>Coluna de 760px, centrada no card — linha de leitura.</span>
+              <span style="font-weight:700">despacho</span><span>Quatro <code>@include</code>, nesta ordem: quiz, vídeo, PDF, texto. Nunca reordene.</span>
+              <span style="font-weight:700">sem lateral</span><span>Esta tela não tem coluna lateral. Materiais e próximas aulas ficam na sala de aula.</span>
+            </div>
+          </div>
+          <div class="ds-alert ds-alert-info"><div><strong>Por que quiz vem primeiro.</strong> Uma aula de prova com <code>youtube_url</code> preenchido por engano cairia no player e permitiria concluir sem fazer a prova. A ordem do despacho é uma proteção, não estilo.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 03 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">03</span><h2 style="font-size:30px;margin:0">Aula em vídeo</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">video-player-{id}</span><span class="ds-chip ds-chip-critical">contrato rígido</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">Caixa 16:9 em fundo escuro, com um <code>&lt;iframe&gt;</code> de fallback que o <code>LessonPlayer.js</code> substitui pelo player da API do YouTube. A proporção mora no <strong>wrapper externo</strong>, nunca no elemento marcado — porque a API <em>troca</em> esse elemento por um iframe próprio, e o dimensionamento tem que sobreviver à troca. Sem vídeo reconhecível, a caixa 16:9 não é renderizada e entra um aviso em fluxo normal.</p>
+
+      <div style="display:grid;grid-template-columns:880px minmax(0,1fr);gap:40px;align-items:start">
+        <div style="background:var(--surface-body);border-radius:20px;padding:36px;display:flex;flex-direction:column;gap:26px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:10px">Com vídeo</div>
+            <div style="aspect-ratio:16/9;border-radius:14px;background:var(--grey-900);display:flex;align-items:center;justify-content:center;overflow:hidden" dusk="video-player-21"><span style="width:72px;height:72px;border-radius:50%;background:rgba(255,255,255,.14);color:#fff;display:flex;align-items:center;justify-content:center"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3"></polygon></svg></span></div>
+            <div style="display:flex;align-items:center;gap:12px;margin-top:16px;flex-wrap:wrap"><span class="ds-caption" data-progress-hint="">O progresso é salvo automaticamente ao assistir o vídeo.</span></div>
+          </div>
+          <div>
+            <div class="ds-overline" style="margin-bottom:10px">Concluída — 90% assistidos</div>
+            <div style="aspect-ratio:16/9;border-radius:14px;background:var(--grey-900);display:flex;align-items:center;justify-content:center"><span style="width:72px;height:72px;border-radius:50%;background:rgba(255,255,255,.14);color:#fff;display:flex;align-items:center;justify-content:center"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3"></polygon></svg></span></div>
+            <div style="display:flex;align-items:center;gap:12px;margin-top:16px;flex-wrap:wrap"><span class="ds-chip ds-chip-success" data-completion-badge="" dusk="lesson-completed-badge"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>Concluída</span><span class="ds-caption">O progresso é salvo automaticamente ao assistir o vídeo.</span></div>
+            <div class="ds-caption" style="margin-top:8px">O selo aparece <strong>sem recarregar</strong>: o JS tira a classe que o escondia. Sem botão de marcar — vídeo conclui sozinho.</div>
+          </div>
+          <div>
+            <div class="ds-overline" style="margin-bottom:10px">Vídeo indisponível</div>
+            <div class="ds-alert ds-alert-attention" dusk="video-unavailable-21"><div><div style="font-weight:700;margin-bottom:4px">Vídeo indisponível</div>Não foi possível reconhecer o endereço do vídeo desta aula. Avise o responsável pelo curso para que o link do YouTube seja corrigido.</div></div>
+            <div class="ds-caption" style="margin-top:8px">Sem caixa 16:9, sem iframe, sem <code>data-video-id</code> falso. Texto verbatim; a única mudança é o tom: <code>attention</code> cinza em vez de <code>warning</code> amarelo.</div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">O que não pode mudar</div>
+            <div style="display:flex;flex-direction:column;gap:10px;font-size:15px">
+              <div><strong>A proporção fica fora.</strong> A caixa 16:9 é o wrapper; o nó <code>[data-youtube-player]</code> é substituído pela API. Regra CSS: <code>.ds-ratio &gt; *</code> dimensiona o que estiver no slot.</div>
+              <div><strong>Um só nó com o <code>dusk</code>.</strong> <code>video-player-{id}</code> está no mesmo elemento nos dois ramos do <code>@if</code>. Nunca duplique entre os ramos.</div>
+              <div><strong>Os quatro <code>data-*</code> andam juntos:</strong> <code>data-youtube-player</code>, <code>data-lesson-id</code>, <code>data-video-id</code>, <code>data-progress-url</code> — todos no mesmo nó, e só quando há vídeo reconhecido.</div>
+              <div><strong>O iframe de fallback permanece.</strong> É o que funciona sem JS e antes de a API assumir. Mantenha <code>allow</code>, <code>allowfullscreen</code> e os parâmetros <code>rel=0&amp;modestbranding=1&amp;controls=1</code>.</div>
+            </div>
+          </div>
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Tokens e medidas</div>
+            <div style="display:grid;grid-template-columns:170px 1fr;gap:10px 16px;font-size:15px">
+              <span style="font-weight:700">caixa</span><span><code>aspect-ratio: 16/9</code>, raio 14px, <code>overflow:hidden</code>, fundo <code>--grey-900</code></span>
+              <span style="font-weight:700">largura</span><span>Até 880px; abaixo disso, 100% da coluna</span>
+              <span style="font-weight:700">frase de progresso</span><span><code>.ds-caption</code>, abaixo do player, 16px de distância. Verbatim.</span>
+              <span style="font-weight:700">período</span><span>5 segundos entre envios; conclusão aos 90% — números do JS, não os altere na casca</span>
+              <span style="font-weight:700">aviso</span><span><code>ds-alert-attention</code>: título em peso 700 + explicação. Sem ícone de alerta quente.</span>
+            </div>
+          </div>
+          <div style="background:var(--surface-sunken);border-radius:16px;padding:22px;box-shadow:inset 0 0 0 1px var(--divider)"><pre>{{ bladeVideo }}</pre></div>
+          <div class="ds-alert ds-alert-attention"><div><strong>Barra de "tempo assistido" — proposta.</strong> O slide mostra uma; o produto não tem. Implementar exige ler <code>watched_seconds</code> e a duração do vídeo e desenhar uma <code>.ds-progress</code> abaixo do player, atualizada pelo mesmo <em>polling</em>. É a única adição desta tela que vale a pena discutir — e precisa de confirmação.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 04 + 05 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">04</span><h2 style="font-size:30px;margin:0">PDF, texto e imagem</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">pdf-viewer-{id}</span><span class="ds-chip ds-chip-neutral ds-chip-plain">lesson-content-{id}</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">Os dois formatos de conclusão manual. O <strong>PDF</strong> é um <code>&lt;iframe&gt;</code> 16:9 com o link "Baixar PDF" abaixo, à esquerda, e a barra de conclusão à direita. O <strong>texto e imagem</strong> é conteúdo em fluxo: imagem opcional no topo, depois o texto com quebras de linha preservadas, e a barra de conclusão no fim.</p>
+
+      <div style="display:grid;grid-template-columns:880px minmax(0,1fr);gap:40px;align-items:start">
+        <div style="background:var(--surface-body);border-radius:20px;padding:36px;display:flex;flex-direction:column;gap:28px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:10px">PDF</div>
+            <div style="aspect-ratio:16/9;border-radius:14px;background:var(--surface);box-shadow:inset 0 0 0 1.5px var(--border-color);display:flex;align-items:center;justify-content:center;color:var(--text-secondary)" dusk="pdf-viewer-22"><span style="display:flex;flex-direction:column;align-items:center;gap:10px"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6"></path></svg><span class="ds-caption">Documento embutido</span></span></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:16px;flex-wrap:wrap"><a href="#1a" style="font-weight:700;font-size:15px;display:flex;align-items:center;gap:8px" dusk="pdf-download-22"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="m7 10 5 5 5-5"></path><path d="M12 15V3"></path></svg>Baixar PDF</a><button class="ds-btn ds-btn-primary" dusk="mark-complete-button">Marcar como concluída</button></div>
+          </div>
+          <div style="height:1px;background:var(--divider)"></div>
+          <div>
+            <div class="ds-overline" style="margin-bottom:10px">Texto e imagem</div>
+            <div style="max-width:760px">
+              <div style="aspect-ratio:16/9;border-radius:14px;background:linear-gradient(135deg,var(--blue-100),var(--mint-100));margin-bottom:24px" dusk="lesson-image-23"></div>
+              <div style="white-space:pre-wrap;font-size:16px" dusk="lesson-content-23">O equipamento de proteção individual é a última barreira entre o trabalhador e o risco. Antes dele vêm as medidas coletivas — e é por isso que o EPI nunca substitui a análise da atividade.
+
+Cada EPI tem um certificado de aprovação, uma validade e uma instrução de uso. Conferir os três é parte da rotina, não uma formalidade.</div>
+              <div style="display:flex;align-items:center;gap:16px;margin-top:24px;flex-wrap:wrap"><span class="ds-chip ds-chip-success"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>Concluída</span><span class="ds-caption">Concluída em 14/07/2026</span></div>
+              <div class="ds-caption" style="margin-top:8px">Depois de concluir, o botão desaparece e o selo assume o lugar dele — nunca os dois ao mesmo tempo.</div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">PDF</div>
+            <div style="display:grid;grid-template-columns:170px 1fr;gap:12px 16px;font-size:15px">
+              <span style="font-weight:700">visor</span><span><code>&lt;iframe&gt;</code> 16:9, raio 14px, borda interna <code>--border-color</code>. O código usa <code>.border</code> escura; passa a borda discreta.</span>
+              <span style="font-weight:700">baixar</span><span>Link com ícone <code>upload</code> girado (download), peso 700, 15px, à esquerda. Atributo <code>download</code> mantido.</span>
+              <span style="font-weight:700">linha inferior</span><span><code>space-between</code>: baixar à esquerda, conclusão à direita, <code>flex-wrap</code>.</span>
+              <code>dusk</code><span><code>pdf-viewer-{id}</code> no iframe, <code>pdf-download-{id}</code> no link.</span>
+            </div>
+          </div>
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Texto e imagem</div>
+            <div style="display:grid;grid-template-columns:170px 1fr;gap:12px 16px;font-size:15px">
+              <span style="font-weight:700">imagem</span><span>Opcional, largura total da coluna, raio 14px, <code>alt</code> = título da aula. <code>loading="lazy"</code>.</span>
+              <span style="font-weight:700">texto</span><span>16px, entrelinha 1,6, largura 760px. O código faz <code>nl2br(e(...))</code> — mantenha o escape; na casca nova, <code>white-space: pre-wrap</code> resolve sem gerar <code>&lt;br&gt;</code>.</span>
+              <span style="font-weight:700">ausência</span><span>Sem imagem e sem texto, nada é renderizado além da barra de conclusão. Não invente um estado vazio aqui.</span>
+              <code>dusk</code><span><code>lesson-image-{id}</code> na imagem, <code>lesson-content-{id}</code> no bloco de texto.</span>
+            </div>
+          </div>
+          <div style="background:var(--surface-sunken);border-radius:16px;padding:22px;box-shadow:inset 0 0 0 1px var(--divider)"><pre>{{ bladeContent }}</pre></div>
+          <div class="ds-alert ds-alert-info"><div><strong>Conteúdo do gestor, sempre escapado.</strong> O texto da aula é entrada de usuário. Se um dia virar rich text de verdade, a sanitização é no servidor — nunca <code>{!! !!}</code> sem filtro.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 06 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">06</span><h2 style="font-size:30px;margin:0">Aula de prova</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">quiz-placeholder</span><span class="ds-chip ds-chip-neutral ds-chip-plain">start-quiz</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">Aula do tipo prova não mostra conteúdo: mostra o encaminhamento. São dois estados no mesmo nó <code>quiz-placeholder</code>: com prova autorada, um bloco centrado com o botão "Iniciar prova"; sem prova ainda, a mensagem de indisponível — para não linkar num 404. Nos dois casos, <strong>nenhum</strong> botão de marcar como concluída: <code>lessons.complete</code> recusa aula de prova com 422.</p>
+
+      <div style="display:grid;grid-template-columns:880px minmax(0,1fr);gap:40px;align-items:start">
+        <div style="background:var(--surface-body);border-radius:20px;padding:36px;display:flex;flex-direction:column;gap:24px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:10px">Prova disponível</div>
+            <div class="ds-empty" style="padding:44px 32px" dusk="quiz-placeholder">
+              <div class="ds-empty-icon"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11h6"></path><path d="M9 15h4"></path><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6"></path></svg></div>
+              <div style="font-size:20px;font-weight:700">Esta aula é uma prova</div>
+              <p class="ds-muted" style="margin:0">São 3 questões e 20 minutos. Tentativa 1 de 3.</p>
+              <button class="ds-btn ds-btn-primary" style="margin-top:8px" dusk="start-quiz">Iniciar prova</button>
+            </div>
+          </div>
+          <div>
+            <div class="ds-overline" style="margin-bottom:10px">Prova ainda não criada</div>
+            <div class="ds-empty" style="padding:44px 32px">
+              <div class="ds-empty-icon"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg></div>
+              <div style="font-size:20px;font-weight:700">Prova em preparação</div>
+              <p class="ds-muted" style="margin:0">O responsável pelo curso ainda está montando esta avaliação. Ela aparece aqui quando estiver pronta.</p>
+            </div>
+            <div class="ds-caption" style="margin-top:8px">O código escreve "Este conteúdo é um Quiz. A funcionalidade de Quiz estará disponível em breve." — que fala do sistema, não do curso. O texto novo diz a verdade da situação: falta o gestor montar.</div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Especificação</div>
+            <div style="display:grid;grid-template-columns:180px 1fr;gap:12px 16px;font-size:15px">
+              <span style="font-weight:700">forma</span><span>Bloco centrado no padrão de estado vazio: tracejado 1,5px, raio 20px, padding 44px/32px, ícone em círculo pastel.</span>
+              <span style="font-weight:700">com prova</span><span>Título "Esta aula é uma prova", resumo com número de questões, tempo e tentativa atual, e o botão primário "Iniciar prova". O resumo é adição desta especificação.</span>
+              <span style="font-weight:700">sem prova</span><span>Ícone <code>info</code>, título "Prova em preparação", explicação. Sem botão.</span>
+              <span style="font-weight:700">sem conclusão</span><span>Nem selo nem botão de marcar. A conclusão vem de <code>completion_source = quiz_passed</code>.</span>
+              <span style="font-weight:700">um só nó</span><span><code>dusk="quiz-placeholder"</code> nos dois ramos, no mesmo elemento — como no código.</span>
+              <code>start-quiz</code><span><code>dusk</code> no botão, destino <code>student.quizzes.show</code>.</span>
+              <span style="font-weight:700">vocabulário</span><span>"prova" na interface, <code>quiz</code> nas rotas — mesma decisão pendente dos outros canvases.</span>
+            </div>
+          </div>
+          <div style="background:var(--surface-sunken);border-radius:16px;padding:22px;box-shadow:inset 0 0 0 1px var(--divider)"><pre>{{ bladeQuiz }}</pre></div>
+          <div class="ds-alert ds-alert-info"><div><strong>Continuidade com a prova do aluno.</strong> O resumo aqui repete o que a tela de prova mostra no alerta "Antes de começar". Se o gestor escreveu instruções, mostre a primeira linha delas em vez do resumo genérico.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 07 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">07</span><h2 style="font-size:30px;margin:0">Barra de conclusão</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">lesson-completed-badge</span><span class="ds-chip ds-chip-neutral ds-chip-plain">mark-complete-button</span><span class="ds-chip ds-chip-critical">contrato rígido</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">Selo e botão vivem no mesmo par em três dos quatro formatos, e são <strong>alternativos</strong>: um está visível quando o outro está escondido. Quem alterna é o <code>LessonPlayer.js</code>, trocando uma classe utilitária — e é aqui que está a armadilha desta tela.</p>
+
+      <div class="ds-alert ds-alert-danger"><div><strong>Nunca use o atributo <code>hidden</code> nestes dois elementos.</strong> O Reboot do Bootstrap emite <code>[hidden] { display: none !important }</code>, uma regra de autor que vence qualquer <code>style.display</code> que o JS escreva para revelar o elemento — o selo simplesmente não apareceria. O estado escondido é uma <strong>classe</strong>, alternada por <code>classList</code>. Na casca nova, troque <code>.d-none</code> por uma classe própria (por exemplo <code>.ds-hidden</code>) e ajuste o JS junto, na mesma tarefa. Se sair o Bootstrap, a regra <code>!important</code> vai com ele — mas o padrão de classe permanece, porque é o que o JS manipula.</div></div>
+
+      <div style="display:grid;grid-template-columns:880px minmax(0,1fr);gap:40px;align-items:start">
+        <div style="background:var(--surface-body);border-radius:20px;padding:36px;display:flex;flex-direction:column;gap:24px">
+          <div><div class="ds-overline" style="margin-bottom:10px">Pendente — PDF e texto</div><div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap"><button class="ds-btn ds-btn-primary" dusk="mark-complete-button">Marcar como concluída</button><span class="ds-caption">Ao terminar, marque a aula para contar no seu progresso.</span></div></div>
+          <div><div class="ds-overline" style="margin-bottom:10px">Enviando</div><div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap"><button class="ds-btn ds-btn-primary" disabled="">Marcando…</button></div></div>
+          <div><div class="ds-overline" style="margin-bottom:10px">Concluída</div><div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap"><span class="ds-chip ds-chip-success" dusk="lesson-completed-badge"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>Concluída</span><span class="ds-caption">Concluída em 14/07/2026</span></div><div class="ds-caption" style="margin-top:8px">O botão sai por classe; o selo entra por classe. Sem recarregar a página.</div></div>
+          <div><div class="ds-overline" style="margin-bottom:10px">Pendente — vídeo</div><div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap"><span class="ds-caption">O progresso é salvo automaticamente ao assistir o vídeo.</span></div><div class="ds-caption" style="margin-top:8px">Nenhum botão. A frase substitui a ação: dizer que é automático é o que o aluno precisa saber.</div></div>
+          <div><div class="ds-overline" style="margin-bottom:10px">Falha ao marcar</div><div class="ds-alert ds-alert-danger" style="max-width:520px"><div>Não foi possível marcar a aula como concluída. Tente novamente.</div></div><div class="ds-caption" style="margin-top:8px">O botão volta ao estado pendente. Estado não coberto pelo código atual.</div></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Matriz por formato</div>
+            <div style="display:grid;grid-template-columns:150px 130px 1fr;gap:12px 16px;font-size:15px">
+              <div style="font-weight:800">formato</div><div style="font-weight:800">botão</div><div style="font-weight:800">como conclui</div>
+              <span>Vídeo</span><span>não tem</span><span>automático aos 90% do tempo assistido</span>
+              <span>PDF</span><span>tem</span><span>manual, POST <code>lessons.complete</code></span>
+              <span>Texto e imagem</span><span>tem</span><span>manual, POST <code>lessons.complete</code></span>
+              <span>Prova</span><span>não tem</span><span>submissão da prova aprovada</span>
+            </div>
+          </div>
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Especificação</div>
+            <div style="display:grid;grid-template-columns:180px 1fr;gap:10px 16px;font-size:15px">
+              <span style="font-weight:700">selo</span><span>Chip <code>success</code> com ícone <code>check</code> e texto "Concluída" — verbatim. <code>data-completion-badge</code> + <code>dusk="lesson-completed-badge"</code>.</span>
+              <span style="font-weight:700">botão</span><span><code>.ds-btn-primary</code>, rótulo "Marcar como concluída" — verbatim. <code>data-mark-complete-url</code> + <code>dusk="mark-complete-button"</code>.</span>
+              <span style="font-weight:700">data da conclusão</span><span>Caption ao lado do selo. Adição desta especificação; exige expor <code>completed_at</code>.</span>
+              <span style="font-weight:700">enviando</span><span>Rótulo "Marcando…", botão inerte. Sem spinner.</span>
+              <span style="font-weight:700">posição</span><span>Fim do conteúdo, alinhado à esquerda; no PDF, à direita da linha do "Baixar PDF".</span>
+              <span style="font-weight:700">nunca os dois</span><span>Selo e botão jamais visíveis ao mesmo tempo.</span>
+            </div>
+          </div>
+          <div style="background:var(--surface-sunken);border-radius:16px;padding:22px;box-shadow:inset 0 0 0 1px var(--divider)"><pre>{{ bladeCompletion }}</pre></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 08 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">08</span><h2 style="font-size:30px;margin:0">Estados, contrato e aceite</h2></div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:32px">
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="ds-overline">Estados degradados</div>
+          <div class="ds-alert ds-alert-attention"><div><div style="font-weight:700;margin-bottom:4px">Vídeo indisponível</div>Não foi possível reconhecer o endereço do vídeo desta aula. Avise o responsável pelo curso para que o link do YouTube seja corrigido.</div></div>
+          <div class="ds-alert ds-alert-attention"><div><div style="font-weight:700;margin-bottom:4px">Arquivo indisponível</div>Não foi possível abrir o PDF desta aula. Avise o responsável pelo curso.</div></div>
+          <div class="ds-caption">O primeiro é verbatim do código. O segundo é adição desta especificação — hoje um <code>pdf_path</code> inválido renderiza um iframe vazio, sem explicação.</div>
+          <div class="ds-caption">Nenhum dos dois culpa o aluno, nenhum usa tom quente e nenhum diz "erro".</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="ds-overline">Sem JavaScript</div>
+          <div style="background:var(--surface-body);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:10px">
+            <div style="font-size:15px">O <code>&lt;iframe&gt;</code> de fallback do YouTube toca normalmente — só não registra progresso.</div>
+            <div style="font-size:15px">O botão "Marcar como concluída" depende do JS. Sem ele, a aula não pode ser concluída.</div>
+            <div class="ds-caption">Comportamento atual, mantido. Se isso passar a importar, o caminho é um <code>&lt;form&gt;</code> POST de verdade em volta do botão — mudança de servidor, não de casca.</div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="ds-overline">Responsivo</div>
+          <div style="display:grid;grid-template-columns:130px 1fr;gap:10px 16px;font-size:15px">
+            <span style="font-weight:700">≥ 1024px</span><span>mídia até 880px, texto em 760px, card com padding 32px</span>
+            <span style="font-weight:700">768–1023px</span><span>mídia em 100% da coluna; card com padding 24px</span>
+            <span style="font-weight:700">&lt; 768px</span><span>player colado nas bordas do card; "Baixar PDF" e conclusão empilham; botão em 100% da largura</span>
+          </div>
+          <div class="ds-caption">A proporção 16:9 é mantida em qualquer largura — nunca troque por altura fixa.</div>
+        </div>
+      </div>
+
+      <div style="height:1px;background:var(--divider)"></div>
+
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:36px">
+        <div>
+          <div class="ds-overline" style="margin-bottom:12px">Contrato dusk e data-* — nenhum destes muda</div>
+          <div style="display:grid;grid-template-columns:270px 1fr;gap:10px 16px;font-size:15px">
+            <code>back-to-classroom</code><span>voltar à sala de aula</span>
+            <code>video-player-{id}</code><span>o nó do player — um só, nos dois ramos</span>
+            <code>video-unavailable-{id}</code><span>aviso de vídeo não reconhecido</span>
+            <code>pdf-viewer-{id}</code><span>iframe do PDF</span>
+            <code>pdf-download-{id}</code><span>link de baixar</span>
+            <code>lesson-image-{id}</code><span>imagem da aula</span>
+            <code>lesson-content-{id}</code><span>bloco de texto</span>
+            <code>quiz-placeholder</code><span>encaminhamento da prova, nos dois estados</span>
+            <code>start-quiz</code><span>botão de iniciar</span>
+            <code>lesson-completed-badge</code><span>selo de concluída</span>
+            <code>mark-complete-button</code><span>botão de marcar</span>
+            <span><code>data-youtube-player</code> / <code>data-lesson-id</code> / <code>data-video-id</code> / <code>data-progress-url</code></span><span>no mesmo nó do player</span>
+            <span><code>data-completion-badge</code> / <code>data-mark-complete-url</code> / <code>data-progress-hint</code></span><span>ganchos do <code>LessonPlayer.js</code></span>
+          </div>
+        </div>
+        <div>
+          <div class="ds-overline" style="margin-bottom:12px">Critérios de aceite</div>
+          <div style="display:flex;flex-direction:column;gap:10px;font-size:15px">
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Despacho na ordem quiz → vídeo → PDF → texto, sem exceção.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>A proporção 16:9 fica no wrapper externo; o nó <code>[data-youtube-player]</code> pode ser substituído sem quebrar o layout.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span><code>video-player-{id}</code> num único elemento, presente nos dois ramos do <code>@if</code>.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Sem vídeo reconhecível: nenhum <code>&lt;iframe&gt;</code>, nenhum <code>data-video-id</code>, e o aviso com texto verbatim.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Selo e botão escondidos por <strong>classe</strong>, nunca pelo atributo <code>hidden</code>.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Vídeo e prova sem botão de marcar; PDF e texto com botão.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Selo e botão nunca visíveis ao mesmo tempo, e o selo aparece sem recarregar.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Texto da aula sempre escapado, com quebras de linha preservadas.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Aula de prova sem prova criada não linka para lugar nenhum.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Zero vermelho, laranja ou amarelo — inclusive nos avisos de indisponível.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Barra de "tempo assistido" <strong>não</strong> implementada sem confirmação.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span><code>artisan dusk</code> filtrado em <code>classroom.lesson</code> passa sem alteração de seletor.</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const Z = "\u200B";
+const b = (s) => s.split("{{").join("{" + Z + "{").split("}}").join("}" + Z + "}");
+
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      bladeVideo: b(`{{-- classroom/partials/_video.blade.php --}}
+@php
+  $videoId  = $lesson->youtube_video_id;   {{-- null = irreconhecível --}}
+  $embedUrl = $lesson->youtube_embed_url;
+@endphp
+
+{{-- A caixa 16:9 é o wrapper EXTERNO: YT.Player() substitui o nó
+     [data-youtube-player] por um iframe próprio, e .ds-ratio > *
+     dimensiona o que ficar no slot. --}}
+<div @class(['ds-media', 'ds-ratio ds-ratio-16x9' => $videoId !== null])>
+  {{-- dusk video-player-{id} no MESMO nó nos dois ramos: é contrato
+       de teste e nunca pode ser duplicado entre o @if. --}}
+  <div
+      id="youtube-player-{{ $lesson->id }}"
+      @if($videoId !== null)
+        data-youtube-player
+        data-lesson-id="{{ $lesson->id }}"
+        data-video-id="{{ $videoId }}"
+        data-progress-url="{{ route('lessons.progress', $lesson) }}"
+      @endif
+      dusk="video-player-{{ $lesson->id }}">
+
+    @if($videoId !== null)
+      {{-- fallback: sem JS e antes de a API assumir --}}
+      <iframe src="{{ $embedUrl }}?rel=0&modestbranding=1&controls=1"
+              allow="autoplay; encrypted-media" allowfullscreen></iframe>
+    @else
+      <x-ui.alert variant="attention"
+                  title="Vídeo indisponível"
+                  dusk="video-unavailable-{{ $lesson->id }}">
+        Não foi possível reconhecer o endereço do vídeo desta aula. Avise o
+        responsável pelo curso para que o link do YouTube seja corrigido.
+      </x-ui.alert>
+    @endif
+  </div>
+</div>
+
+<div class="ds-completion-bar">
+  <x-lesson.completion-badge :lesson="$lesson" :completed="$isCompleted ?? false" />
+
+  @if($videoId !== null)
+    <span class="ds-caption" data-progress-hint>
+      O progresso é salvo automaticamente ao assistir o vídeo.
+    </span>
+  @endif
+  {{-- vídeo NÃO tem botão de marcar: conclui aos 90% --}}
+</div>`),
+
+      bladeContent: b(`{{-- classroom/partials/_pdf.blade.php --}}
+<div class="ds-ratio ds-ratio-16x9 ds-pdf-frame">
+  <iframe src="{{ Storage::url($lesson->pdf_path) }}"
+          dusk="pdf-viewer-{{ $lesson->id }}"></iframe>
+</div>
+
+<div class="ds-completion-bar ds-completion-bar-split">
+  <a href="{{ Storage::url($lesson->pdf_path) }}" download
+     class="ds-download-link"
+     dusk="pdf-download-{{ $lesson->id }}">
+    <x-ui.icon name="download" size="16" aria-hidden="true" /> Baixar PDF
+  </a>
+
+  <x-lesson.completion-controls :lesson="$lesson" :completed="$isCompleted ?? false" />
+</div>
+
+{{-- classroom/partials/_text-image.blade.php --}}
+<div class="ds-reading">
+  @if(filled($lesson->image_path))
+    <img src="{{ Storage::url($lesson->image_path) }}"
+         alt="{{ $lesson->title }}"
+         loading="lazy" decoding="async"
+         class="ds-lesson-image"
+         dusk="lesson-image-{{ $lesson->id }}">
+  @endif
+
+  {{-- escape sempre; pre-wrap no CSS dispensa o nl2br --}}
+  @if(filled($lesson->content_text))
+    <div class="ds-prose" dusk="lesson-content-{{ $lesson->id }}">
+      {{ $lesson->content_text }}
+    </div>
+  @endif
+
+  <div class="ds-completion-bar">
+    <x-lesson.completion-controls :lesson="$lesson" :completed="$isCompleted ?? false" />
+  </div>
+</div>`),
+
+      bladeQuiz: b(`{{-- classroom/partials/_quiz-placeholder.blade.php --}}
+{{-- dusk quiz-placeholder no MESMO nó nos dois ramos.
+     Sem botão de marcar: lessons.complete recusa quiz com 422. --}}
+@if($lesson->quiz)
+  <div class="ds-empty ds-quiz-handoff" dusk="quiz-placeholder">
+    <span class="ds-empty-icon"><x-ui.icon name="clipboard" size="30" /></span>
+
+    <p class="ds-empty-title">Esta aula é uma prova</p>
+
+    <p class="ds-muted">
+      @if(filled($lesson->quiz->instructions))
+        {{ Str::limit($lesson->quiz->instructions, 140) }}
+      @else
+        São {{ $lesson->quiz->questions_count }}
+        {{ Str::plural('questão', $lesson->quiz->questions_count) }}@if($lesson->quiz->time_limit_minutes)
+          e {{ $lesson->quiz->time_limit_minutes }} minutos@endif.
+        Tentativa {{ $completedAttempts + 1 }} de {{ $lesson->quiz->max_attempts }}.
+      @endif
+    </p>
+
+    <x-ui.button variant="primary"
+                 :href="route('student.quizzes.show', $lesson)"
+                 dusk="start-quiz">Iniciar prova</x-ui.button>
+  </div>
+@else
+  <div class="ds-empty ds-quiz-handoff" dusk="quiz-placeholder">
+    <span class="ds-empty-icon"><x-ui.icon name="info" size="30" /></span>
+    <p class="ds-empty-title">Prova em preparação</p>
+    <p class="ds-muted">
+      O responsável pelo curso ainda está montando esta avaliação.
+      Ela aparece aqui quando estiver pronta.
+    </p>
+  </div>
+@endif`),
+
+      bladeCompletion: b(`{{-- components/lesson/completion-controls.blade.php --}}
+@props(['lesson', 'completed' => false])
+
+{{-- ATENÇÃO: o estado escondido é uma CLASSE, alternada por classList
+     no LessonPlayer.js.reflectCompletion(). NUNCA use o atributo
+     hidden: o Reboot do Bootstrap emite
+     [hidden] { display: none !important } e o style.display do JS
+     não vence essa regra — o selo nunca apareceria. --}}
+
+<span @class(['ds-chip', 'ds-chip-success', 'ds-hidden' => ! $completed])
+      data-completion-badge
+      dusk="lesson-completed-badge">
+  <x-ui.icon name="check" size="14" aria-hidden="true" /> Concluída
+</span>
+
+@if($completed && $lesson->completed_at)
+  <span class="ds-caption">
+    Concluída em {{ $lesson->completed_at->format('d/m/Y') }}
+  </span>
+@endif
+
+<x-ui.button variant="primary"
+             @class(['ds-hidden' => $completed])
+             data-mark-complete-url="{{ route('lessons.complete', $lesson) }}"
+             dusk="mark-complete-button">
+  Marcar como concluída
+</x-ui.button>`),
+    };
+  }
+}
+</script>
+</body>
+</html>

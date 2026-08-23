@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <meta name="design_doc_mode" content="canvas">
+  <link rel="stylesheet" href="_ds/plataforma-ead-design-system-618bb28f-056b-421b-b1d4-d0fef3cd30e2/styles.css">
+  <script src="_ds/plataforma-ead-design-system-618bb28f-056b-421b-b1d4-d0fef3cd30e2/_ds_bundle.js"></script>
+  <style>
+    a{color:var(--primary);text-decoration:none}
+    a:hover{color:var(--primary-hover)}
+    pre{margin:0;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;line-height:1.7;white-space:pre-wrap;color:var(--grey-800)}
+    code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.92em;background:var(--surface-alt);border-radius:6px;padding:1px 6px}
+  </style>
+</helmet>
+
+<section style="display:flex;flex-direction:column;gap:28px;padding:64px;background:var(--surface-body);font-family:var(--font-sans);color:var(--text-primary);line-height:1.6;width:2040px;box-sizing:border-box">
+
+  <div id="1a" style="display:flex;flex-direction:column;gap:28px">
+
+    <header style="display:flex;align-items:flex-start;justify-content:space-between;gap:48px;background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px">
+      <div style="max-width:1180px;display:flex;flex-direction:column;gap:14px">
+        <div class="ds-overline" style="color:var(--primary)">Especificação de componentes · tela 20 · slide 20</div>
+        <h1 style="font-size:46px;line-height:1.08;margin:0;letter-spacing:-.02em">Login e convite — o shell de acesso</h1>
+        <p style="font-size:19px;color:var(--text-secondary);margin:0;text-wrap:pretty">Um shell de duas colunas serve quatro telas: login, recuperação de senha, redefinição e aceite de convite. À esquerda, o painel institucional; à direita, a coluna de formulário de 440px. O convite é o formulário mais inteligente do produto — ele <strong>muda de campos</strong> conforme o e-mail digitado já tenha conta. Especificação lida de <code>layouts/guest.blade.php</code>, <code>components/layout/guest-panel.blade.php</code>, <code>auth/login.blade.php</code>, <code>convite/show.blade.php</code> e <code>convite/invalid.blade.php</code>.</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;align-items:flex-end;flex:none">
+        <span class="ds-chip ds-chip-primary ds-chip-plain ds-chip-lg">1a</span>
+        <span class="ds-caption">7 componentes · 8 blocos</span>
+      </div>
+    </header>
+
+    <div class="ds-alert ds-alert-attention"><div><strong>A tela mais fácil de quebrar do produto.</strong> O formulário de convite tem <strong>quatro campos que aparecem e desaparecem</strong> conforme o e-mail, alternados por classe pelo <code>SmartInvitationForm.js</code> via <code>data-invitation-field</code>. Nenhum desses atributos pode mudar de nó, e o estado escondido continua sendo classe — nunca o atributo <code>hidden</code>. Bloco 05.</div></div>
+
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px">
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">01</div><div style="font-size:17px;font-weight:800">GuestShell</div><div class="ds-caption">5/7, painel + coluna</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">02</div><div style="font-size:17px;font-weight:800">GuestPanel</div><div class="ds-caption">marca do tenant</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">03</div><div style="font-size:17px;font-weight:800">LoginForm</div><div class="ds-caption">4 controles</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">04</div><div style="font-size:17px;font-weight:800">PasswordToggle</div><div class="ds-caption">dois ícones, um botão</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">05</div><div style="font-size:17px;font-weight:800">InvitationForm</div><div class="ds-caption">campos condicionais</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">06</div><div style="font-size:17px;font-weight:800">ConsentSwitch</div><div class="ds-caption">obrigatório</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">07</div><div style="font-size:17px;font-weight:800">InvalidInvite</div><div class="ds-caption">outro shell</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">08</div><div style="font-size:17px;font-weight:800">Erros e aceite</div><div class="ds-caption">validação, contrato</div></div></div>
+    </div>
+
+    <!-- 00 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:24px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">00</span><h2 style="font-size:30px;margin:0">O que as telas fazem</h2></div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px">
+        <div style="background:var(--blue-50);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">Entrar</div><div style="font-size:15px">E-mail, senha com botão de revelar, "Lembrar-me", entrar em bloco e o link de senha esquecida.</div></div>
+        <div style="background:var(--blue-50);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">Aceitar convite</div><div style="font-size:15px">Um link com token. O aluno informa o e-mail e o formulário decide se é cadastro novo ou vínculo de conta existente.</div></div>
+        <div style="background:var(--blue-50);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">Consentir</div><div style="font-size:15px">Interruptor obrigatório de compartilhamento de dados com a organização do curso.</div></div>
+        <div style="background:var(--mint-100);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">Não duplicar cadastro</div><div style="font-size:15px">E-mail já existente vira vínculo: o aluno confirma a senha e ganha a matrícula, sem segunda conta.</div></div>
+        <div style="background:var(--mint-100);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">Marca da organização</div><div style="font-size:15px">O painel usa <code>session('tenant_name')</code>: o aluno vê a marca de quem convidou, não a da plataforma.</div></div>
+        <div style="background:var(--mint-100);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">Convite inválido</div><div style="font-size:15px">Token expirado, revogado, esgotado ou inexistente cai numa página de erro pública, com 404.</div></div>
+      </div>
+
+      <div style="background:var(--surface-sunken);border-radius:20px;padding:28px;box-shadow:inset 0 0 0 1px var(--divider)"><pre>layouts/guest.blade.php        — shell de 4 telas                ← 01
+├── x-layout.guest-panel  .col-lg-5   (oculto abaixo de lg)      ← 02
+│   ├── brand-mark (iniciais do tenant) + nome
+│   ├── régua + h1 "Acesse a plataforma" + lead
+│   └── copyright
+└── coluna .col-lg-7  centrada
+    ├── x-help-button   (canto superior direito, absoluto)
+    └── .guest-form  440px
+        ├── x-layout.alerts     (flash de sessão)
+        └── @yield('content')
+
+auth/login.blade.php                                             ← 03
+├── x-layout.page-header  "Acesso / Entrar na plataforma"
+└── form POST login   dusk="login-form"
+    ├── e-mail          dusk="login-email"
+    ├── senha + toggle  dusk="login-password"                    ← 04
+    ├── checkbox        dusk="login-remember"
+    ├── submit block    dusk="login-submit"
+    └── link            dusk="forgot-password-link"
+
+convite/show.blade.php                                           ← 05
+├── x-layout.page-header  "Convite / Matrícula em {curso}"
+└── form POST /convite/{token}   dusk="invitation-form"
+    │   data-check-email-url  → consulta de e-mail
+    ├── e-mail  [data-invitation-email]     dusk="invitation-email"
+    ├── dica    [data-invitation-field=existing-account-hint]
+    ├── nome    [data-invitation-field=new-account]
+    ├── CPF     [data-invitation-field=new-account]
+    ├── senha                                (sempre visível)
+    ├── confirmar senha [data-invitation-field=new-account]
+    ├── x-ui.switch  consent  required                           ← 06
+    └── submit block  dusk="invitation-submit"
+
+convite/invalid.blade.php    — x-layout.public, status 404       ← 07</pre></div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
+        <div style="background:var(--surface-alt);border-radius:16px;padding:20px"><div class="ds-overline" style="margin-bottom:6px">Regra 1</div><div style="font-size:15px">Coluna de formulário de 440px, fixa. Campo de acesso mais largo que isso não fica mais fácil de preencher.</div></div>
+        <div style="background:var(--surface-alt);border-radius:16px;padding:20px"><div class="ds-overline" style="margin-bottom:6px">Regra 2</div><div style="font-size:15px">Erro de validação é borda <strong>e</strong> mensagem abaixo do campo, em <code>--critical</code>. Borda vermelha sozinha nunca — e vermelho, jamais.</div></div>
+        <div style="background:var(--surface-alt);border-radius:16px;padding:20px"><div class="ds-overline" style="margin-bottom:6px">Regra 3</div><div style="font-size:15px">Nenhuma cor literal no painel: a marca vem dos tokens. O painel é <code>--blue-100</code> por token, não por hex.</div></div>
+      </div>
+    </div>
+
+    <!-- 01 + 02 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">01</span><h2 style="font-size:30px;margin:0">Shell e painel institucional</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">layouts.guest</span><span class="ds-chip ds-chip-neutral ds-chip-plain">x-layout.guest-panel</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">Duas colunas de altura total: painel em <code>col-lg-5</code> (a fração mais próxima dos 46% pedidos) e formulário em <code>col-lg-7</code>. O painel <strong>desaparece</strong> abaixo de <code>lg</code> — não encolhe, não vira faixa no topo. O botão de ajuda fica absoluto no canto superior direito da coluna de formulário, com a rota atual como chave.</p>
+
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) 560px;gap:36px;align-items:start">
+        <div style="background:var(--surface-body);border-radius:20px;padding:36px">
+          <div style="display:grid;grid-template-columns:5fr 7fr;border-radius:20px;overflow:hidden;box-shadow:var(--elev-1);min-height:520px">
+            <div style="background:var(--blue-100);padding:40px;display:flex;flex-direction:column">
+              <div style="display:flex;align-items:center;gap:14px"><span style="width:44px;height:44px;border-radius:var(--radius-md);background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800">CR</span><span style="font-weight:800;font-size:19px;line-height:1.1">Conselho Regional</span></div>
+              <div style="margin-top:auto;margin-bottom:auto">
+                <div style="width:25%;height:2px;background:var(--primary);margin-bottom:24px"></div>
+                <h1 style="font-size:34px;font-weight:800;margin:0 0 20px;line-height:1.3">Acesse a plataforma</h1>
+                <p style="font-size:19px;color:var(--text-secondary);margin:0;text-wrap:pretty">Capacitação técnica continuada, provas interativas e emissão de certificados oficiais.</p>
+              </div>
+              <div class="ds-caption">© 2026 Plataforma EAD. Todos os direitos reservados.</div>
+            </div>
+            <div style="background:var(--surface);padding:40px;display:flex;align-items:center;justify-content:center;position:relative">
+              <div style="position:absolute;top:20px;right:20px"><button class="ds-btn ds-btn-ghost ds-btn-sm ds-btn-icon-only" aria-label="Ajuda"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 2.5-3 4"></path><path d="M12 17h.01"></path></svg></button></div>
+              <div style="width:100%;max-width:440px;background:var(--blue-50);border-radius:16px;padding:24px;text-align:center;font-weight:700">Coluna de formulário — 440px<div class="ds-caption" style="font-weight:400;margin-top:6px">Centrada na vertical e na horizontal</div></div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Shell</div>
+            <div style="display:grid;grid-template-columns:160px 1fr;gap:12px 16px;font-size:15px">
+              <span style="font-weight:700">colunas</span><span>5/7 em <code>lg</code>. Altura mínima de 100vh, sem margem externa.</span>
+              <span style="font-weight:700">abaixo de lg</span><span>O painel não é renderizado (<code>d-none d-lg-flex</code>); a coluna de formulário ocupa a tela inteira.</span>
+              <span style="font-weight:700">formulário</span><span>440px (<code>--form-max</code>), centrado nos dois eixos, com 40px de respiro lateral.</span>
+              <span style="font-weight:700">ajuda</span><span>Absoluto no canto superior direito, <code>key</code> = nome da rota atual.</span>
+              <span style="font-weight:700">alertas</span><span><code>x-layout.alerts</code> acima do conteúdo — é onde o flash de sessão aparece.</span>
+              <span style="font-weight:700">quatro telas</span><span>Login, recuperação, redefinição e convite usam este shell sem alteração.</span>
+            </div>
+          </div>
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Painel</div>
+            <div style="display:grid;grid-template-columns:160px 1fr;gap:10px 16px;font-size:15px">
+              <span style="font-weight:700">fundo</span><span><code>--blue-100</code> por token. O código usa <code>.bg-primary-subtle</code>, alimentado pelos tokens — nenhuma cor literal.</span>
+              <span style="font-weight:700">marca</span><span>Iniciais de <code>session('tenant_name')</code>, até duas letras. Sem tenant, cai no nome do app.</span>
+              <span style="font-weight:700">régua</span><span>Traço de 2px em <code>--primary</code>, 25% da largura, acima do título. Elemento de identidade do painel; mantenha.</span>
+              <code>title</code><span>"Acesse a plataforma" por padrão, sobrescrevível por prop.</span>
+              <span style="font-weight:700">lead</span><span>Slot; o padrão é "Capacitação técnica continuada, provas interativas e emissão de certificados oficiais." — verbatim.</span>
+              <span style="font-weight:700">copyright</span><span>Rodapé do painel, com <code>date('Y')</code>.</span>
+              <span style="font-weight:700">padding</span><span>40px; conteúdo central com <code>margin: auto</code> na vertical.</span>
+            </div>
+          </div>
+          <div class="ds-alert ds-alert-info"><div><strong>O <code>h1</code> do painel é o <code>h1</code> da página.</strong> O cabeçalho do formulário usa <code>title</code> do <code>page-header</code>, que nesta casca deve ser <code>h2</code> — dois <code>h1</code> na mesma tela é erro de estrutura, e o painel é quem carrega a identidade.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 03 + 04 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">03</span><h2 style="font-size:30px;margin:0">Login</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">login-form</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">Kicker "Acesso", título "Entrar na plataforma", sem subtítulo. Quatro controles em coluna: e-mail com foco automático, senha com botão de revelar, "Lembrar-me" e o botão em bloco. O link de senha esquecida fica centrado abaixo, 16px depois.</p>
+
+      <div style="display:grid;grid-template-columns:520px minmax(0,1fr);gap:40px;align-items:start">
+        <div style="background:var(--surface-body);border-radius:20px;padding:36px;display:flex;flex-direction:column;gap:28px">
+          <div style="max-width:440px;display:flex;flex-direction:column;gap:4px">
+            <div style="margin-bottom:16px"><div class="ds-overline" style="color:var(--primary);margin-bottom:6px">Acesso</div><h2 style="font-size:30px;margin:0">Entrar na plataforma</h2></div>
+            <div class="ds-field"><div class="ds-field-shell"><input class="ds-control" type="email" dusk="login-email"><label class="ds-float-label">E-mail <span class="ds-required">*</span></label></div></div>
+            <div class="ds-field"><div class="ds-field-shell" style="position:relative"><input class="ds-control" type="password" value="········" style="padding-right:52px" dusk="login-password"><label class="ds-float-label">Senha <span class="ds-required">*</span></label><button style="position:absolute;right:8px;top:50%;transform:translateY(-50%);width:36px;height:36px;border:none;background:none;color:var(--text-secondary);cursor:pointer;display:flex;align-items:center;justify-content:center" aria-label="Mostrar senha"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z"></path><circle cx="12" cy="12" r="3"></circle></svg></button></div></div>
+            <label class="ds-check" style="display:flex;align-items:center;gap:12px;margin:8px 0 20px"><input type="checkbox" class="ds-check-input" dusk="login-remember"><span>Lembrar-me</span></label>
+            <button class="ds-btn ds-btn-primary" style="width:100%" dusk="login-submit">Entrar</button>
+            <div style="text-align:center;margin-top:16px"><a href="#1a" style="font-size:15px;font-weight:600" dusk="forgot-password-link">Esqueceu sua senha?</a></div>
+          </div>
+          <div style="height:1px;background:var(--divider)"></div>
+          <div style="max-width:440px">
+            <div class="ds-overline" style="margin-bottom:10px">Credenciais inválidas</div>
+            <div class="ds-alert ds-alert-danger" style="margin-bottom:16px"><div>E-mail ou senha incorretos. Confira os dados e tente novamente.</div></div>
+            <div class="ds-field" style="margin-bottom:0"><div class="ds-field-shell filled"><input class="ds-control is-invalid" value="joana@exemplo.br"><label class="ds-float-label">E-mail <span class="ds-required">*</span></label></div><div class="ds-invalid-feedback"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg>Não encontramos uma conta com este e-mail.</div></div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Controles, na ordem</div>
+            <div style="display:grid;grid-template-columns:180px 1fr;gap:12px 16px;font-size:15px">
+              <code>email</code><span><code>type="email"</code>, obrigatório, <code>autofocus</code>, valor de <code>old('email')</code>. <code>dusk="login-email"</code>.</span>
+              <code>password</code><span>Obrigatório, com o botão de revelar do bloco 04. <code>dusk="login-password"</code>.</span>
+              <code>remember</code><span>Caixa de seleção "Lembrar-me". Fica <strong>checkbox</strong>, não interruptor: é preferência de sessão, não configuração persistida.</span>
+              <span style="font-weight:700">submit</span><span>Primário em bloco (100% da largura), rótulo "Entrar". <code>dusk="login-submit"</code>.</span>
+              <span style="font-weight:700">link</span><span>"Esqueceu sua senha?" centrado, 15px peso 600, em <code>--primary</code>. <code>dusk="forgot-password-link"</code>.</span>
+              <span style="font-weight:700">sem cadastro</span><span>Não existe "criar conta" aqui. Conta nasce por convite — não adicione o link.</span>
+            </div>
+          </div>
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Erros</div>
+            <div style="display:grid;grid-template-columns:180px 1fr;gap:10px 16px;font-size:15px">
+              <span style="font-weight:700">credencial</span><span>Alerta <code>danger</code> acima do formulário, no slot de alertas. Mensagem genérica — não revele se o e-mail existe.</span>
+              <span style="font-weight:700">campo</span><span><code>.is-invalid</code> + <code>.ds-invalid-feedback</code> com ícone, abaixo do campo. Nunca só a borda.</span>
+              <span style="font-weight:700">enviando</span><span>Botão inerte com rótulo "Entrando…".</span>
+              <span style="font-weight:700">cor</span><span><code>--critical</code>, azul-slate. Zero vermelho nesta tela, inclusive em falha de login.</span>
+            </div>
+          </div>
+          <div style="background:var(--surface-sunken);border-radius:16px;padding:22px;box-shadow:inset 0 0 0 1px var(--divider)"><pre>{{ bladeLogin }}</pre></div>
+        </div>
+      </div>
+
+      <div style="height:1px;background:var(--divider)"></div>
+
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">04</span><h2 style="font-size:30px;margin:0">Revelar senha</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">data-password-toggle-*</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">Um botão dentro do campo com <strong>dois ícones</strong> — <code>eye</code> e <code>eye-off</code> — dos quais um está sempre escondido por classe. O JS alterna a classe nos dois e troca o <code>type</code> do input. É o mesmo padrão de classe (não <code>hidden</code>) que aparece na tela de aula.</p>
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) 620px;gap:36px;align-items:start">
+        <div style="background:var(--surface-body);border-radius:20px;padding:32px;display:flex;flex-direction:column;gap:20px;max-width:520px">
+          <div><div class="ds-overline" style="margin-bottom:8px">Oculta</div><div class="ds-field" style="margin-bottom:0"><div class="ds-field-shell filled" style="position:relative"><input class="ds-control" type="password" value="········" style="padding-right:52px"><label class="ds-float-label">Senha</label><button style="position:absolute;right:8px;top:50%;transform:translateY(-50%);width:36px;height:36px;border:none;background:none;color:var(--text-secondary);cursor:pointer;display:flex;align-items:center;justify-content:center" aria-label="Mostrar senha"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z"></path><circle cx="12" cy="12" r="3"></circle></svg></button></div></div></div>
+          <div><div class="ds-overline" style="margin-bottom:8px">Revelada</div><div class="ds-field" style="margin-bottom:0"><div class="ds-field-shell filled" style="position:relative"><input class="ds-control" value="minha-senha-2026" style="padding-right:52px"><label class="ds-float-label">Senha</label><button style="position:absolute;right:8px;top:50%;transform:translateY(-50%);width:36px;height:36px;border:none;background:none;color:var(--primary);cursor:pointer;display:flex;align-items:center;justify-content:center" aria-label="Ocultar senha"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.7 5.1A10.6 10.6 0 0 1 12 5c6.4 0 10 7 10 7a18 18 0 0 1-2.2 3.1"></path><path d="M6.6 6.6A18 18 0 0 0 2 12s3.6 7 10 7a10.5 10.5 0 0 0 5.4-1.4"></path><path d="m2 2 20 20"></path></svg></button></div></div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:180px 1fr;gap:12px 16px;font-size:15px">
+          <span style="font-weight:700">botão</span><span>36px, dentro do campo, 8px da borda direita. O input ganha <code>padding-right: 52px</code> para o texto não passar por baixo.</span>
+          <span style="font-weight:700">aria-label</span><span>Alterna entre "Mostrar senha" e "Ocultar senha". O JS precisa trocar os dois — rótulo estático é falha de acessibilidade.</span>
+          <span style="font-weight:700">ícones</span><span><code>eye</code> e <code>eye-off</code>, 18px, com <code>data-password-toggle-icon="show|hide"</code> e <code>aria-hidden="true"</code>. Um deles sempre com a classe de escondido.</span>
+          <span style="font-weight:700">ganchos</span><span><code>data-password-toggle-field</code> no wrapper e <code>data-password-toggle-btn</code> no botão — nos mesmos nós.</span>
+          <span style="font-weight:700">classe, não hidden</span><span>Mesma armadilha do <code>[hidden] !important</code>: o estado escondido é classe alternada por <code>classList</code>.</span>
+          <span style="font-weight:700">nada de dusk</span><span>O botão não tem <code>dusk</code> hoje. Não invente um: seletor novo é contrato novo.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 05 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">05</span><h2 style="font-size:30px;margin:0">Convite — o formulário que muda</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">invitation-form</span><span class="ds-chip ds-chip-critical">contrato rígido</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">Kicker "Convite", título "Matrícula em {curso}", e o subtítulo que explica a inteligência do formulário: "Informe seu e-mail para continuar. Se você já tem conta na plataforma, basta confirmar sua senha." O e-mail é consultado em <code>data-check-email-url</code> e o resultado decide quais campos ficam visíveis.</p>
+
+      <div class="ds-alert ds-alert-danger"><div><strong>Quatro nós aparecem e desaparecem por classe.</strong> Os três blocos <code>[data-invitation-field="new-account"]</code> (nome, CPF, confirmar senha) e a dica <code>[data-invitation-field="existing-account-hint"]</code> são alternados pelo <code>SmartInvitationForm.toggleFields()</code> com <code>classList.toggle</code>. Consequências para a recasca: os atributos <code>data-invitation-field</code> e <code>data-invitation-email</code> ficam <strong>nos mesmos nós</strong>; o estado inicial da dica é escondido; e "mostrar" significa <em>remover a classe</em> — nunca use o atributo <code>hidden</code> nem <code>style="display:none"</code>.</div></div>
+
+      <div style="display:grid;grid-template-columns:520px minmax(0,1fr);gap:40px;align-items:start">
+        <div style="background:var(--surface-body);border-radius:20px;padding:36px;display:flex;flex-direction:column;gap:28px">
+          <div style="max-width:440px;display:flex;flex-direction:column;gap:4px">
+            <div class="ds-overline" style="margin-bottom:10px">Conta nova — estado padrão</div>
+            <div style="margin-bottom:16px"><div class="ds-overline" style="color:var(--primary);margin-bottom:6px">Convite</div><h2 style="font-size:26px;margin:0">Matrícula em Fundamentos de Segurança do Trabalho</h2><p class="ds-muted" style="margin:10px 0 0;font-size:15px">Informe seu e-mail para continuar. Se você já tem conta na plataforma, basta confirmar sua senha.</p></div>
+            <div class="ds-field"><div class="ds-field-shell filled"><input class="ds-control" type="email" value="joana@exemplo.br" dusk="invitation-email"><label class="ds-float-label">E-mail <span class="ds-required">*</span></label></div></div>
+            <div class="ds-field"><div class="ds-field-shell"><input class="ds-control" dusk="invitation-name"><label class="ds-float-label">Nome completo <span class="ds-required">*</span></label></div></div>
+            <div class="ds-field"><div class="ds-field-shell"><input class="ds-control" dusk="invitation-cpf"><label class="ds-float-label">CPF <span class="ds-required">*</span></label></div></div>
+            <div class="ds-field"><div class="ds-field-shell"><input class="ds-control" type="password" dusk="invitation-password"><label class="ds-float-label">Senha <span class="ds-required">*</span></label></div></div>
+            <div class="ds-field"><div class="ds-field-shell"><input class="ds-control" type="password" dusk="invitation-password-confirmation"><label class="ds-float-label">Confirmar senha <span class="ds-required">*</span></label></div></div>
+            <label class="ds-switch" style="margin:8px 0 20px"><input type="checkbox"><span class="ds-switch-track"><span class="ds-switch-thumb"></span></span><span style="font-size:15px">Concordo em compartilhar meus dados com a organização responsável por este curso.</span></label>
+            <button class="ds-btn ds-btn-primary" style="width:100%" dusk="invitation-submit">Matricular-me</button>
+          </div>
+          <div style="height:1px;background:var(--divider)"></div>
+          <div style="max-width:440px;display:flex;flex-direction:column;gap:4px">
+            <div class="ds-overline" style="margin-bottom:10px">Conta existente — nome, CPF e confirmação saem</div>
+            <div class="ds-field"><div class="ds-field-shell filled"><input class="ds-control" type="email" value="joana@exemplo.br"><label class="ds-float-label">E-mail <span class="ds-required">*</span></label></div></div>
+            <div style="background:var(--blue-50);border-radius:12px;padding:14px 16px;margin-bottom:16px" dusk="invitation-existing-account-hint"><span style="font-size:15px">Já encontramos uma conta com este e-mail. Confirme sua senha para se matricular.</span></div>
+            <div class="ds-field"><div class="ds-field-shell"><input class="ds-control" type="password"><label class="ds-float-label">Senha <span class="ds-required">*</span></label></div></div>
+            <label class="ds-switch" style="margin:8px 0 20px"><input type="checkbox"><span class="ds-switch-track"><span class="ds-switch-thumb"></span></span><span style="font-size:15px">Concordo em compartilhar meus dados com a organização responsável por este curso.</span></label>
+            <button class="ds-btn ds-btn-primary" style="width:100%">Matricular-me</button>
+            <div class="ds-caption" style="margin-top:10px">Três campos a menos, e a dica ocupa o lugar deles. O e-mail existente <strong>vincula</strong> a conta — não cria a segunda.</div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Campos por estado</div>
+            <div style="display:grid;grid-template-columns:200px 110px 110px;gap:12px 16px;font-size:15px">
+              <div style="font-weight:800">campo</div><div style="font-weight:800">conta nova</div><div style="font-weight:800">existente</div>
+              <code>email</code><span>sim</span><span>sim</span>
+              <span>dica de conta</span><span>oculta</span><span><strong>visível</strong></span>
+              <code>name</code><span>sim</span><span>oculto</span>
+              <code>cpf</code><span>sim</span><span>oculto</span>
+              <code>password</code><span>sim</span><span>sim</span>
+              <code>password_confirmation</code><span>sim</span><span>oculto</span>
+              <code>consent</code><span>sim</span><span>sim</span>
+            </div>
+          </div>
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Especificação</div>
+            <div style="display:grid;grid-template-columns:180px 1fr;gap:10px 16px;font-size:15px">
+              <span style="font-weight:700">cabeçalho</span><span>"Convite" no kicker; título com o nome do curso, em 26px porque pode ser longo. Subtítulo verbatim.</span>
+              <span style="font-weight:700">ajuda</span><span><code>x-help-button</code> com <code>key="invitation.show"</code>, no slot de ações.</span>
+              <span style="font-weight:700">dica</span><span>Bloco em <code>--blue-50</code>, raio 12px, no lugar dos campos que saíram. Texto verbatim. Não é alerta: é informação neutra.</span>
+              <span style="font-weight:700">consulta</span><span><code>data-check-email-url</code> no <code>&lt;form&gt;</code>, <code>data-invitation-email</code> no campo. Disparo no <code>blur</code>, não a cada tecla.</span>
+              <span style="font-weight:700">submit</span><span>Primário em bloco, "Matricular-me". <code>dusk="invitation-submit"</code>.</span>
+              <span style="font-weight:700">sem JS</span><span>Todos os campos ficam visíveis e o servidor valida. É o comportamento atual — não o "conserte" escondendo campos por CSS.</span>
+            </div>
+          </div>
+          <div style="background:var(--surface-sunken);border-radius:16px;padding:22px;box-shadow:inset 0 0 0 1px var(--divider)"><pre>{{ bladeInvite }}</pre></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 06 + 07 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">06</span><h2 style="font-size:30px;margin:0">Consentimento</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">x-ui.switch</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">Interruptor obrigatório, com a frase de consentimento inteira como rótulo. É o único interruptor do produto que é <strong>obrigatório</strong> — e por isso a validação dele precisa ser explícita, não uma bolha nativa em cima de um controle sem rótulo visível.</p>
+
+      <div style="display:grid;grid-template-columns:520px minmax(0,1fr);gap:40px;align-items:start">
+        <div style="background:var(--surface-body);border-radius:20px;padding:36px;display:flex;flex-direction:column;gap:24px;max-width:520px">
+          <div><div class="ds-overline" style="margin-bottom:10px">Desligado — estado inicial</div><label class="ds-switch" style="align-items:flex-start"><input type="checkbox"><span class="ds-switch-track"><span class="ds-switch-thumb"></span></span><span style="font-size:15px">Concordo em compartilhar meus dados com a organização responsável por este curso.</span></label></div>
+          <div><div class="ds-overline" style="margin-bottom:10px">Ligado</div><label class="ds-switch" style="align-items:flex-start"><input type="checkbox" checked=""><span class="ds-switch-track"><span class="ds-switch-thumb"></span></span><span style="font-size:15px">Concordo em compartilhar meus dados com a organização responsável por este curso.</span></label></div>
+          <div><div class="ds-overline" style="margin-bottom:10px">Faltando, depois de enviar</div><label class="ds-switch" style="align-items:flex-start"><input type="checkbox"><span class="ds-switch-track" style="box-shadow:0 0 0 2px var(--critical)"><span class="ds-switch-thumb"></span></span><span style="font-size:15px">Concordo em compartilhar meus dados com a organização responsável por este curso.</span></label><div class="ds-invalid-feedback"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg>É necessário concordar para concluir a matrícula.</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:180px 1fr;gap:12px 16px;font-size:15px">
+          <span style="font-weight:700">rótulo</span><span>A frase completa, verbatim, 15px, à direita da trilha, alinhada ao topo (<code>align-items: flex-start</code>) porque quebra em duas linhas.</span>
+          <span style="font-weight:700">trilha ligada</span><span><code>--secondary</code> — é confirmação.</span>
+          <span style="font-weight:700">obrigatório</span><span><code>required</code> no input. Sem asterisco: um asterisco perdido no fim de uma frase longa não é lido.</span>
+          <span style="font-weight:700">erro</span><span>Contorno <code>--critical</code> de 2px na trilha + mensagem abaixo. Nunca só a bolha do navegador.</span>
+          <span style="font-weight:700">alvo</span><span>O <code>&lt;label&gt;</code> inteiro alterna, incluindo o texto. Altura mínima de 44px.</span>
+          <span style="font-weight:700">interruptor, não caixa</span><span>É decisão de compartilhar dado, com efeito imediato ao salvar. Diferente de "Lembrar-me", que é checkbox.</span>
+        </div>
+      </div>
+
+      <div style="height:1px;background:var(--divider)"></div>
+
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">07</span><h2 style="font-size:30px;margin:0">Convite indisponível</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">x-layout.public</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">Token não encontrado, expirado, revogado ou esgotado devolve <strong>outro shell</strong>: <code>x-layout.public</code>, com status 404 e sem painel institucional — não há formulário, então não faz sentido convidar a acessar. A mensagem chega pronta do handler, para não haver duas cópias do texto que o teste verifica.</p>
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) 620px;gap:36px;align-items:start">
+        <div style="background:var(--surface-body);border-radius:20px;padding:36px">
+          <div style="max-width:560px;margin:0 auto">
+            <div class="ds-empty" style="padding:44px 32px">
+              <div class="ds-empty-icon"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></div>
+              <div style="font-size:18px;font-weight:700">Este convite expirou.</div>
+              <p class="ds-muted" style="margin:0;font-size:15px">Peça um novo link ao responsável pelo curso.</p>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div style="display:grid;grid-template-columns:180px 1fr;gap:12px 16px;font-size:15px">
+            <span style="font-weight:700">shell</span><span><code>x-layout.public</code>, título "Convite indisponível". <strong>Não</strong> use <code>layouts.guest</code>: sem formulário, o painel institucional seria falsa promessa.</span>
+            <span style="font-weight:700">bloco</span><span>Estado vazio com ícone <code>lock</code> em círculo pastel, centrado, largura de 560px.</span>
+            <span style="font-weight:700">mensagem</span><span>Vem do handler em peso 600 — quatro variações (não encontrado, expirado, revogado, esgotado). Não duplique o texto na view.</span>
+            <span style="font-weight:700">próximo passo</span><span>"Peça um novo link ao responsável pelo curso." — verbatim, em caption abaixo.</span>
+            <span style="font-weight:700">status</span><span>404. Sem redirecionamento silencioso para o login.</span>
+            <span style="font-weight:700">sem formulário</span><span>O teste verifica a ausência de <code>@invitation-form</code>. Nenhum campo, nenhum botão de tentar novamente.</span>
+          </div>
+          <div class="ds-alert ds-alert-info"><div><strong>Sem tom acusatório.</strong> O aluno não fez nada errado ao clicar num link antigo. Ícone de cadeado cinza, frase de fato, próximo passo — nada de "Acesso negado" nem de cor de alerta.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 08 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">08</span><h2 style="font-size:30px;margin:0">Campos, contrato e aceite</h2></div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:32px">
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="ds-overline">Anatomia do campo</div>
+          <div style="display:grid;grid-template-columns:150px 1fr;gap:10px 16px;font-size:15px">
+            <code>--field-height</code><span>52px de altura mínima</span>
+            <code>--radius-md</code><span>raio 14px</span>
+            <code>--border-color</code><span>borda 1,5px; <code>--border-strong</code> no hover</span>
+            <code>--primary</code><span>borda e rótulo em foco</span>
+            <code>--focus-ring-alpha</code><span>anel de 4px em foco</span>
+            <span style="font-weight:700">rótulo</span><span>Flutuante, sobe ao focar ou preencher. Nunca rótulo acima nem placeholder no lugar dele.</span>
+            <span style="font-weight:700">espaço</span><span><code>--space-5</code> entre campos</span>
+            <span style="font-weight:700">obrigatório</span><span>Asterisco em <code>--primary</code> dentro do rótulo</span>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="ds-overline">Responsivo</div>
+          <div style="display:grid;grid-template-columns:130px 1fr;gap:10px 16px;font-size:15px">
+            <span style="font-weight:700">≥ 1024px</span><span>painel 5/7 visível; formulário 440px centrado</span>
+            <span style="font-weight:700">&lt; 1024px</span><span>painel não renderizado; formulário centrado com 24px de margem; a marca do tenant sobe para o topo da coluna</span>
+            <span style="font-weight:700">&lt; 480px</span><span>formulário em 100% da largura; botão em bloco já é o padrão; ajuda continua no canto</span>
+          </div>
+          <div class="ds-caption">Abaixo de <code>lg</code>, sem a marca no painel o aluno perde a referência de quem convidou — por isso ela sobe para o topo da coluna de formulário. Adição desta especificação.</div>
+          <div class="ds-overline" style="margin-top:8px">Acessibilidade</div>
+          <div style="display:grid;grid-template-columns:130px 1fr;gap:10px 16px;font-size:15px">
+            <span style="font-weight:700">um h1</span><span>No painel. O título do formulário é <code>h2</code>.</span>
+            <span style="font-weight:700">autofocus</span><span>No e-mail, nas duas telas.</span>
+            <span style="font-weight:700">toggle</span><span><code>aria-label</code> alternado; ícones com <code>aria-hidden</code>.</span>
+            <span style="font-weight:700">erro</span><span><code>aria-describedby</code> ligando o campo à mensagem.</span>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="ds-overline">Contrato dusk — nenhum destes muda</div>
+          <div style="display:grid;grid-template-columns:250px 1fr;gap:10px 16px;font-size:15px">
+            <code>login-form</code><span>o <code>&lt;form&gt;</code> de login</span>
+            <code>login-email</code><span>campo e-mail</span>
+            <code>login-password</code><span>campo senha</span>
+            <code>login-remember</code><span>"Lembrar-me"</span>
+            <code>login-submit</code><span>botão entrar</span>
+            <code>forgot-password-link</code><span>link de senha esquecida</span>
+            <code>invitation-form</code><span>o <code>&lt;form&gt;</code> de convite</span>
+            <code>invitation-email</code><span>campo e-mail</span>
+            <code>invitation-existing-account-hint</code><span>dica de conta existente</span>
+            <code>invitation-name</code><span>campo nome</span>
+            <code>invitation-cpf</code><span>campo CPF</span>
+            <code>invitation-password</code><span>campo senha</span>
+            <code>invitation-password-confirmation</code><span>confirmação</span>
+            <code>invitation-submit</code><span>botão matricular-me</span>
+          </div>
+          <div class="ds-alert ds-alert-attention"><div>Além dos <code>dusk</code>, cinco atributos de comportamento são intocáveis: <code>data-check-email-url</code>, <code>data-invitation-email</code>, <code>data-invitation-field</code>, <code>data-password-toggle-field</code> e <code>data-password-toggle-btn</code>.</div></div>
+        </div>
+      </div>
+
+      <div style="height:1px;background:var(--divider)"></div>
+
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:36px">
+        <div>
+          <div class="ds-overline" style="margin-bottom:12px">Critérios de aceite</div>
+          <div style="display:flex;flex-direction:column;gap:10px;font-size:15px">
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Shell 5/7 com o painel oculto abaixo de <code>lg</code> e coluna de formulário de 440px.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Painel com iniciais e nome de <code>session('tenant_name')</code>, sem nenhuma cor literal.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Um único <code>h1</code> por tela, no painel.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Campos condicionais do convite alternados por <strong>classe</strong>, com os <code>data-invitation-field</code> nos mesmos nós.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>E-mail existente esconde nome, CPF e confirmação, e mostra a dica com o texto verbatim.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Botão de revelar senha com dois ícones e <code>aria-label</code> alternado.</span></div>
+          </div>
+        </div>
+        <div>
+          <div class="ds-overline" style="margin-bottom:12px">&nbsp;</div>
+          <div style="display:flex;flex-direction:column;gap:10px;font-size:15px">
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Consentimento obrigatório, com erro em contorno <strong>e</strong> mensagem.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Erro de campo sempre com <code>.is-invalid</code> + mensagem em <code>--critical</code>; nunca só borda.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Falha de login com mensagem genérica, sem revelar existência do e-mail.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Convite inválido em <code>x-layout.public</code>, status 404, sem formulário e com a mensagem do handler.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Nenhum link de "criar conta" no login.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Zero vermelho, laranja ou amarelo em qualquer estado de erro. Zero <code>style=</code> inline.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span><code>artisan dusk</code> filtrado em login e convite passa sem alteração de seletor.</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const Z = "\u200B";
+const b = (s) => s.split("{{").join("{" + Z + "{").split("}}").join("}" + Z + "}");
+
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      bladeLogin: b(`{{-- auth/login.blade.php --}}
+@extends('layouts.guest')
+
+@section('content')
+  {{-- h2, não h1: o h1 da página é o do painel institucional --}}
+  <x-layout.page-header kicker="Acesso" title="Entrar na plataforma" level="2" />
+
+  <form method="POST" action="{{ route('login') }}" dusk="login-form">
+    @csrf
+
+    <x-ui.input type="email" name="email" label="E-mail"
+                :value="old('email')" required autofocus
+                dusk="login-email" />
+
+    {{-- toggle de senha: dois ícones, um sempre escondido por CLASSE.
+         Nunca hidden — [hidden]{display:none!important} venceria o JS. --}}
+    <div class="ds-password-field" data-password-toggle-field>
+      <x-ui.input type="password" name="password" label="Senha" required
+                  dusk="login-password" />
+
+      <button type="button" class="ds-password-toggle"
+              data-password-toggle-btn
+              aria-label="Mostrar senha">
+        <x-ui.icon name="eye" size="18"
+                   data-password-toggle-icon="show" aria-hidden="true" />
+        <x-ui.icon name="eye-off" size="18" class="ds-hidden"
+                   data-password-toggle-icon="hide" aria-hidden="true" />
+      </button>
+    </div>
+
+    {{-- checkbox, não switch: preferência de sessão --}}
+    <x-ui.checkbox name="remember" label="Lembrar-me" dusk="login-remember" />
+
+    <x-ui.button type="submit" block dusk="login-submit">Entrar</x-ui.button>
+
+    <div class="ds-form-footnote">
+      <a href="{{ route('password.request') }}" dusk="forgot-password-link">
+        Esqueceu sua senha?
+      </a>
+    </div>
+  </form>
+@endsection`),
+
+      bladeInvite: b(`{{-- convite/show.blade.php --}}
+<x-layout.page-header
+    kicker="Convite"
+    :title="'Matrícula em '.$invitationLink->course->title"
+    level="2"
+    subtitle="Informe seu e-mail para continuar. Se você já tem conta na plataforma, basta confirmar sua senha.">
+  <x-slot:actions>
+    <x-help-button key="invitation.show" />
+  </x-slot:actions>
+</x-layout.page-header>
+
+<form method="POST"
+      action="{{ url('/convite/'.$invitationLink->token) }}"
+      data-check-email-url="{{ url('/convite/check-email') }}"
+      dusk="invitation-form">
+  @csrf
+
+  <x-ui.field-stack>
+    <x-ui.input type="email" name="email" label="E-mail"
+                :value="old('email')" required autofocus
+                dusk="invitation-email"
+                data-invitation-email />
+
+    {{-- SmartInvitationForm.toggleFields() faz
+         classList.toggle('ds-hidden', !exists) nestes quatro nós.
+         "Mostrar" = REMOVER a classe. Nunca use hidden. --}}
+    <p data-invitation-field="existing-account-hint"
+       class="ds-inline-note ds-hidden"
+       dusk="invitation-existing-account-hint">
+      Já encontramos uma conta com este e-mail. Confirme sua senha para se matricular.
+    </p>
+
+    <div data-invitation-field="new-account">
+      <x-ui.input name="name" label="Nome completo"
+                  :value="old('name')" required dusk="invitation-name" />
+    </div>
+
+    <div data-invitation-field="new-account">
+      <x-ui.input name="cpf" label="CPF"
+                  :value="old('cpf')" required dusk="invitation-cpf" />
+    </div>
+
+    {{-- senha aparece nos DOIS estados --}}
+    <x-ui.input type="password" name="password" label="Senha" required
+                dusk="invitation-password" />
+
+    <div data-invitation-field="new-account">
+      <x-ui.input type="password" name="password_confirmation"
+                  label="Confirmar senha" required
+                  dusk="invitation-password-confirmation" />
+    </div>
+
+    {{-- switch obrigatório: erro em contorno E mensagem --}}
+    <x-ui.switch name="consent" required
+                 label="Concordo em compartilhar meus dados com a organização responsável por este curso." />
+  </x-ui.field-stack>
+
+  <x-ui.button type="submit" block dusk="invitation-submit">Matricular-me</x-ui.button>
+</form>`),
+    };
+  }
+}
+</script>
+</body>
+</html>

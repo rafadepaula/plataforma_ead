@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="_ds/plataforma-ead-design-system-618bb28f-056b-421b-b1d4-d0fef3cd30e2/tokens/fonts.css">
+<link rel="stylesheet" href="_ds/plataforma-ead-design-system-618bb28f-056b-421b-b1d4-d0fef3cd30e2/tokens/colors.css">
+<link rel="stylesheet" href="_ds/plataforma-ead-design-system-618bb28f-056b-421b-b1d4-d0fef3cd30e2/tokens/typography.css">
+<link rel="stylesheet" href="_ds/plataforma-ead-design-system-618bb28f-056b-421b-b1d4-d0fef3cd30e2/tokens/spacing.css">
+<link rel="stylesheet" href="_ds/plataforma-ead-design-system-618bb28f-056b-421b-b1d4-d0fef3cd30e2/tokens/elevation.css">
+<link rel="stylesheet" href="_ds/plataforma-ead-design-system-618bb28f-056b-421b-b1d4-d0fef3cd30e2/tokens/motion.css">
+<link rel="stylesheet" href="_ds/plataforma-ead-design-system-618bb28f-056b-421b-b1d4-d0fef3cd30e2/tokens/primitives.css">
+<link rel="stylesheet" href="_ds/plataforma-ead-design-system-618bb28f-056b-421b-b1d4-d0fef3cd30e2/components/ui.css">
+<link rel="stylesheet" href="_ds/plataforma-ead-design-system-618bb28f-056b-421b-b1d4-d0fef3cd30e2/styles.css">
+<script src="_ds/plataforma-ead-design-system-618bb28f-056b-421b-b1d4-d0fef3cd30e2/_ds_bundle.js"></script>
+<style>
+body{margin:0;background:var(--grey-100,#eef1f7);font-family:var(--font-sans);color:var(--text-primary)}
+a{color:var(--primary);text-decoration:none}
+a:hover{color:var(--blue-700)}
+code{font-size:.92em;background:var(--surface-alt);padding:1px 5px;border-radius:6px}
+</style>
+</helmet>
+
+<section style="display:flex;align-items:flex-start;gap:80px;padding:64px">
+
+<div style="display:flex;flex-direction:column;gap:64px">
+
+<div id="1a" style="display:flex;flex-direction:column;gap:16px;width:1360px">
+<div style="display:flex;align-items:center;gap:12px">
+<span style="display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:26px;padding:0 10px;border-radius:var(--radius-pill);background:var(--primary);color:#fff;font-size:13px;font-weight:800">1a</span>
+<span style="font-size:15px;font-weight:700;color:var(--text-secondary)">Exemplar anotado — <strong>Table</strong> em Cursos e módulos (<code>courses/index.blade.php</code>)</span>
+</div>
+
+<div style="background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--elev-2);padding:40px;display:flex;flex-direction:column;gap:24px">
+
+<div style="position:relative">
+<span style="position:absolute;top:-10px;right:0;font-size:12px;font-weight:800;color:var(--primary)">01</span>
+<div class="ds-filter-bar">
+<div style="flex:1;min-width:240px"><div class="ds-field" style="margin-bottom:0"><div class="ds-field-shell"><span class="ds-float-label">Buscar curso</span><input class="ds-control" type="search"></div></div></div>
+<div style="width:220px"><div class="ds-field" style="margin-bottom:0"><div class="ds-field-shell filled"><span class="ds-float-label">Status</span><select class="ds-select"><option>Publicado</option><option>Rascunho</option></select></div></div></div>
+<button class="ds-btn ds-btn-ghost">Limpar filtros</button>
+</div>
+</div>
+
+<div style="position:relative">
+<span style="position:absolute;top:12px;right:-28px;font-size:12px;font-weight:800;color:var(--primary)">02</span>
+<span style="position:absolute;top:100px;left:-28px;font-size:12px;font-weight:800;color:var(--primary)">03</span>
+<span style="position:absolute;top:100px;right:-28px;font-size:12px;font-weight:800;color:var(--primary)">05</span>
+<div class="ds-table-wrap">
+<table class="ds-table ds-table-hover" dusk="courses-table">
+<thead><tr><th>Curso</th><th>Carga</th><th>Alunos</th><th>Status</th><th>Ações</th></tr></thead>
+<tbody>
+<tr>
+<td><div style="font-weight:600">Fundamentos de Segurança do Trabalho</div><div class="ds-caption">2 módulos · 13 aulas</div></td>
+<td style="font-variant-numeric:tabular-nums">4h</td>
+<td style="font-variant-numeric:tabular-nums">96</td>
+<td><span class="ds-chip ds-chip-success">Publicado</span></td>
+<td><div style="display:flex;gap:8px">
+<button class="ds-btn ds-btn-sm" style="background:transparent;border:1.5px solid var(--primary);color:var(--primary)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>Abrir</button>
+<button class="ds-btn ds-btn-sm" style="background:transparent;border:1.5px solid var(--border-color);color:var(--text-primary)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path><path d="m15 5 4 4"></path></svg>Editar</button>
+<button class="ds-btn ds-btn-sm" style="background:transparent;border:1.5px solid var(--critical);color:var(--critical)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>Remover</button>
+</div></td>
+</tr>
+<tr style="background:var(--state-hover)">
+<td><div style="font-weight:600">Boas Práticas de Atendimento</div><div class="ds-caption">3 módulos · 18 aulas</div></td>
+<td style="font-variant-numeric:tabular-nums">6h</td>
+<td style="font-variant-numeric:tabular-nums">74</td>
+<td><span class="ds-chip ds-chip-success">Publicado</span></td>
+<td><div style="display:flex;gap:8px">
+<button class="ds-btn ds-btn-sm" style="background:transparent;border:1.5px solid var(--primary);color:var(--primary)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>Abrir</button>
+<button class="ds-btn ds-btn-sm" style="background:transparent;border:1.5px solid var(--border-color);color:var(--text-primary)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path><path d="m15 5 4 4"></path></svg>Editar</button>
+<button class="ds-btn ds-btn-sm" style="background:transparent;border:1.5px solid var(--critical);color:var(--critical)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>Remover</button>
+</div></td>
+</tr>
+<tr>
+<td><div style="font-weight:600">Ética Profissional</div><div class="ds-caption">2 módulos · 9 aulas</div></td>
+<td style="font-variant-numeric:tabular-nums">3h</td>
+<td style="font-variant-numeric:tabular-nums">31</td>
+<td><span class="ds-chip ds-chip-neutral ds-chip-plain">Rascunho</span></td>
+<td><div style="display:flex;gap:8px">
+<button class="ds-btn ds-btn-sm" style="background:transparent;border:1.5px solid var(--primary);color:var(--primary)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>Abrir</button>
+<button class="ds-btn ds-btn-sm" style="background:transparent;border:1.5px solid var(--border-color);color:var(--text-primary)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path><path d="m15 5 4 4"></path></svg>Editar</button>
+<button class="ds-btn ds-btn-sm" style="background:transparent;border:1.5px solid var(--critical);color:var(--critical)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>Remover</button>
+</div></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<div style="position:relative">
+<span style="position:absolute;top:8px;right:0;font-size:12px;font-weight:800;color:var(--primary)">06</span>
+<ul class="ds-pagination"><li class="ds-page-item disabled"><a class="ds-page-link" href="#">‹</a></li><li class="ds-page-item active"><a class="ds-page-link" href="#">1</a></li><li class="ds-page-item"><a class="ds-page-link" href="#">2</a></li><li class="ds-page-item"><a class="ds-page-link" href="#">3</a></li><li class="ds-page-item"><a class="ds-page-link" href="#">4</a></li><li class="ds-page-item"><a class="ds-page-link" href="#">›</a></li></ul>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;padding-top:24px;border-top:1px solid var(--divider);font-size:14px;line-height:1.6;color:var(--text-secondary)">
+<div><strong style="color:var(--primary)">01</strong> FilterBar acima da tabela, fora do <code>.ds-table-wrap</code></div>
+<div><strong style="color:var(--primary)">02</strong> Cabeçalho em <code>--surface-sunken</code>, caption 13px caixa-alta</div>
+<div><strong style="color:var(--primary)">03</strong> Coluna primária: título 600 + caption de apoio</div>
+<div><strong style="color:var(--primary)">04</strong> Colunas numéricas em <code>tabular-nums</code></div>
+<div><strong style="color:var(--primary)">05</strong> Status como Chip; ações à direita, sempre a mesma ordem</div>
+<div><strong style="color:var(--primary)">06</strong> Paginação fora do card, alinhada à direita</div>
+</div>
+
+</div>
+</div>
+
+<div id="1c" style="display:flex;flex-direction:column;gap:16px;width:1360px">
+<div style="display:flex;align-items:center;gap:12px">
+<span style="display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:26px;padding:0 10px;border-radius:var(--radius-pill);background:var(--grey-900);color:#fff;font-size:13px;font-weight:800">1c</span>
+<span style="font-size:15px;font-weight:700;color:var(--text-secondary)">Estados e variações obrigatórias</span>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+
+<div style="display:flex;flex-direction:column;gap:12px">
+<div class="ds-overline" style="color:var(--primary)">Com barra de título (toolbar)</div>
+<div class="ds-table-wrap">
+<div class="ds-table-toolbar">
+<div><h2 style="font-size:20px;margin:0">Matrículas recentes</h2><p class="ds-caption" style="margin:4px 0 0">Atualizado há 5 minutos</p></div>
+<button class="ds-btn ds-btn-ghost">Ver todas</button>
+</div>
+<table class="ds-table ds-table-hover">
+<thead><tr><th>Aluno</th><th>Curso</th><th>Status</th></tr></thead>
+<tbody>
+<tr><td><div style="display:flex;align-items:center;gap:12px"><span class="ds-avatar ds-avatar-sm" style="background:var(--blue-100);color:var(--blue-800)">AL</span>Ana Beatriz Lima</div></td><td>Ética Profissional</td><td><span class="ds-chip ds-chip-success">Concluído</span></td></tr>
+<tr><td><div style="display:flex;align-items:center;gap:12px"><span class="ds-avatar ds-avatar-sm" style="background:var(--sky-100);color:var(--sky-800)">CS</span>Carlos Souza</div></td><td>NR 35</td><td><span class="ds-chip ds-chip-info">Em andamento</span></td></tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:12px">
+<div class="ds-overline" style="color:var(--primary)">Zebrada — só para leitura densa</div>
+<div class="ds-table-wrap">
+<table class="ds-table ds-table-striped">
+<thead><tr><th>Aula</th><th>Tipo</th><th>Duração</th></tr></thead>
+<tbody>
+<tr><td>Introdução à norma</td><td>Vídeo</td><td style="font-variant-numeric:tabular-nums">12 min</td></tr>
+<tr><td>Equipamentos de proteção</td><td>Vídeo</td><td style="font-variant-numeric:tabular-nums">18 min</td></tr>
+<tr><td>Checklist de campo</td><td>PDF</td><td style="font-variant-numeric:tabular-nums">—</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:12px">
+<div class="ds-overline" style="color:var(--primary)">Vazio — dentro do card, com próximo passo</div>
+<div class="ds-table-wrap">
+<table class="ds-table"><thead><tr><th>Curso</th><th>Carga</th><th>Alunos</th><th>Status</th></tr></thead></table>
+<div style="padding:24px">
+<div class="ds-empty">
+<div class="ds-empty-icon"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg></div>
+<h3 style="margin:0;font-size:20px;font-weight:700">Nenhum curso por aqui</h3>
+<p style="margin:0;font-size:15px;line-height:1.6;color:var(--text-secondary);max-width:420px">Crie o primeiro Curso da sua organização para começar a matricular Alunos.</p>
+<button class="ds-btn ds-btn-primary" style="margin-top:8px">Novo curso</button>
+</div>
+</div>
+</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:12px">
+<div class="ds-overline" style="color:var(--primary)">Filtro sem resultado — a busca permanece</div>
+<div class="ds-table-wrap">
+<div class="ds-table-toolbar"><div class="ds-caption">Filtro: “redação” · Status: Rascunho</div><button class="ds-btn ds-btn-ghost">Limpar filtros</button></div>
+<table class="ds-table"><thead><tr><th>Curso</th><th>Carga</th><th>Alunos</th><th>Status</th></tr></thead></table>
+<div style="padding:24px">
+<div class="ds-empty">
+<h3 style="margin:0;font-size:20px;font-weight:700">Nenhum resultado para este filtro</h3>
+<p style="margin:0;font-size:15px;line-height:1.6;color:var(--text-secondary);max-width:420px">Ajuste a busca ou limpe os filtros para ver todos os Cursos.</p>
+</div>
+</div>
+</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:12px">
+<div class="ds-overline" style="color:var(--primary)">Carregando — três linhas esqueleto</div>
+<div class="ds-table-wrap">
+<table class="ds-table">
+<thead><tr><th>Curso</th><th>Carga</th><th>Alunos</th><th>Status</th></tr></thead>
+<tbody>
+<tr><td><div style="height:14px;width:70%;border-radius:6px;background:var(--surface-sunken)"></div><div style="height:11px;width:40%;border-radius:6px;background:var(--surface-sunken);margin-top:8px"></div></td><td><div style="height:14px;width:36px;border-radius:6px;background:var(--surface-sunken)"></div></td><td><div style="height:14px;width:28px;border-radius:6px;background:var(--surface-sunken)"></div></td><td><div style="height:24px;width:96px;border-radius:var(--radius-pill);background:var(--surface-sunken)"></div></td></tr>
+<tr><td><div style="height:14px;width:55%;border-radius:6px;background:var(--surface-sunken)"></div><div style="height:11px;width:34%;border-radius:6px;background:var(--surface-sunken);margin-top:8px"></div></td><td><div style="height:14px;width:36px;border-radius:6px;background:var(--surface-sunken)"></div></td><td><div style="height:14px;width:28px;border-radius:6px;background:var(--surface-sunken)"></div></td><td><div style="height:24px;width:96px;border-radius:var(--radius-pill);background:var(--surface-sunken)"></div></td></tr>
+<tr><td><div style="height:14px;width:62%;border-radius:6px;background:var(--surface-sunken)"></div><div style="height:11px;width:30%;border-radius:6px;background:var(--surface-sunken);margin-top:8px"></div></td><td><div style="height:14px;width:36px;border-radius:6px;background:var(--surface-sunken)"></div></td><td><div style="height:14px;width:28px;border-radius:6px;background:var(--surface-sunken)"></div></td><td><div style="height:24px;width:96px;border-radius:var(--radius-pill);background:var(--surface-sunken)"></div></td></tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:12px">
+<div class="ds-overline" style="color:var(--primary)">Ação bloqueada — sem cor de alerta</div>
+<div class="ds-table-wrap">
+<table class="ds-table">
+<thead><tr><th>Curso</th><th>Alunos</th><th>Ações</th></tr></thead>
+<tbody>
+<tr>
+<td><div style="font-weight:600">NR 35 — turma 2026</div><div class="ds-caption">Matrículas ativas impedem a exclusão</div></td>
+<td style="font-variant-numeric:tabular-nums">96</td>
+<td><div style="display:flex;gap:8px">
+<button class="ds-btn ds-btn-sm" style="background:transparent;border:1.5px solid var(--primary);color:var(--primary)">Abrir</button>
+<button class="ds-btn ds-btn-sm" style="background:transparent;border:1.5px solid var(--border-color);color:var(--text-primary)">Editar</button>
+<button class="ds-btn ds-btn-sm" style="background:transparent;border:1.5px solid var(--border-color);color:var(--text-primary);opacity:.45" disabled><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>Remover</button>
+</div></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div style="font-size:14px;line-height:1.6;color:var(--text-secondary)">A exclusão desabilitada explica o motivo na própria linha. A confirmação, quando disponível, usa <strong>ConfirmModal</strong> com <code>--critical</code> e “Esta ação não poderá ser desfeita. Deseja continuar?”</div>
+</div>
+
+</div>
+</div>
+
+</div>
+
+<div id="1b" style="display:flex;flex-direction:column;gap:16px;width:860px">
+<div style="display:flex;align-items:center;gap:12px">
+<span style="display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:26px;padding:0 10px;border-radius:var(--radius-pill);background:var(--grey-900);color:#fff;font-size:13px;font-weight:800">1b</span>
+<span style="font-size:15px;font-weight:700;color:var(--text-secondary)">Especificação de montagem — componente Table</span>
+</div>
+
+<div style="background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--elev-1);padding:48px;display:flex;flex-direction:column;gap:40px">
+
+<div style="display:flex;flex-direction:column;gap:12px">
+<div class="ds-overline" style="color:var(--primary)">Componente</div>
+<h2 style="margin:0;font-size:30px;font-weight:700;letter-spacing:var(--tracking-tight)">Table</h2>
+<p style="margin:0;font-size:19px;line-height:1.6;color:var(--text-secondary)">Substitui <code>x-ui.table</code> e o <code>&lt;table class="table"&gt;</code> solto do Bootstrap. <strong>DataTable</strong> é alias do mesmo componente, mantido por continuidade de API. Toda listagem tabular do produto — cursos, alunos, matrículas, fila de correção, certificados, auditoria — monta por aqui.</p>
+<div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:4px">
+<x-import component-from-global-scope="PlataformaEADDesignSystem_618bb2.Badge" variant="primary" dot="{{ false }}" hint-size="150px,28px">components/data/Table.jsx</x-import>
+<x-import component-from-global-scope="PlataformaEADDesignSystem_618bb2.Badge" variant="neutral" dot="{{ false }}" hint-size="130px,28px">alias: DataTable</x-import>
+</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:12px">
+<div class="ds-overline" style="color:var(--primary)">Anatomia</div>
+<div style="display:flex;flex-direction:column;gap:8px;font-size:15px;line-height:1.6;color:var(--text-secondary)">
+<div><code>.ds-table-wrap</code> — casca branca, raio 20px (<code>--radius-lg</code>), <code>--elev-1</code>, <code>overflow:hidden</code>. É ela que dá o card; a tabela nunca tem borda própria.</div>
+<div><code>.ds-table-toolbar</code> — opcional: título h4 20px + caption de contexto à esquerda, ação ghost à direita. Padding 20/24.</div>
+<div><code>.ds-table-scroll</code> — <code>overflow-x:auto</code>, garante que a tabela larga role sem quebrar o card.</div>
+<div><code>.ds-table</code> — <code>border-collapse</code>, 100% de largura, corpo 16px.</div>
+<div><code>thead th</code> — 13px/700 caixa-alta, tracking .08em, cor <code>--text-secondary</code>, fundo <code>--surface-sunken</code>, <code>white-space:nowrap</code>. Única caixa-alta permitida na tabela.</div>
+<div><code>tbody tr</code> — separador <code>1px solid --divider</code> no topo; sem borda vertical em nenhum ponto.</div>
+<div><code>tfoot</code> — só para totais; mesma tipografia do corpo, peso 700.</div>
+<div>Paginação e FilterBar ficam <strong>fora</strong> do wrap, como irmãos.</div>
+</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:12px">
+<div class="ds-overline" style="color:var(--primary)">Medidas</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 24px;font-size:15px;line-height:1.6;color:var(--text-secondary)">
+<div>Célula: <code>--pad-cell-y</code> 18px / <code>--pad-cell-x</code> 20px</div>
+<div>Altura mínima de linha: 60px</div>
+<div>Toolbar: 20px vertical, 24px horizontal</div>
+<div>Gap entre botões de ação: 8px</div>
+<div>Raio do card: 20px · sombra <code>--elev-1</code></div>
+<div>Tabela → paginação: 24px</div>
+<div>FilterBar → tabela: 24px</div>
+<div>Seção → seção: 40px (<code>--gap-section</code>)</div>
+<div>Avatar em célula: <code>ds-avatar-sm</code>, gap 12px</div>
+<div>Alvo de toque das ações: 48px</div>
+</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:12px">
+<div class="ds-overline" style="color:var(--primary)">Tokens</div>
+<div style="display:flex;flex-direction:column;gap:8px;font-size:15px;line-height:1.6;color:var(--text-secondary)">
+<div><code>--surface</code> fundo do card · <code>--surface-sunken</code> cabeçalho e zebra</div>
+<div><code>--divider</code> #e2e7f0 separador de linha · sem <code>--border-color</code> dentro da tabela</div>
+<div><code>--state-hover</code> tint azul 6% na linha sob o cursor (120ms, <code>--ease-standard</code>)</div>
+<div><code>--text-primary</code> dado · <code>--text-secondary</code> cabeçalho e caption de apoio</div>
+<div><code>--primary</code> ação principal da linha · <code>--critical</code> ação destrutiva</div>
+<div>Chips: <code>ds-chip-success</code> Publicado/Concluído, <code>ds-chip-info</code> Em andamento, <code>ds-chip-neutral ds-chip-plain</code> Rascunho</div>
+<div><code>--font-size-body</code> 16px no dado, <code>--font-size-caption</code> 13px no apoio, 14px no botão sm</div>
+</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:12px">
+<div class="ds-overline" style="color:var(--primary)">Colunas — ordem e regras</div>
+<div style="display:flex;flex-direction:column;gap:10px;font-size:15px;line-height:1.6;color:var(--text-secondary)">
+<div><strong style="color:var(--text-primary)">1. Identidade</strong> — sempre a primeira e a mais larga. Nome em 600 e, abaixo, um caption com o contexto que evita uma coluna extra (“2 módulos · 13 aulas”). Com pessoa, prefixa Avatar por iniciais.</div>
+<div><strong style="color:var(--text-primary)">2. Atributos curtos</strong> — carga, tipo, data. Texto simples, alinhado à esquerda, <code>tabular-nums</code> quando numérico. Datas em <code>dd/mm/aaaa</code>, carga como “4h” em tabela densa.</div>
+<div><strong style="color:var(--text-primary)">3. Contagem</strong> — número puro, sem unidade repetida no corpo; a unidade fica no cabeçalho.</div>
+<div><strong style="color:var(--text-primary)">4. Status</strong> — sempre um Chip, sentence case, nunca texto solto e nunca matiz quente.</div>
+<div><strong style="color:var(--text-primary)">5. Ações</strong> — última coluna, cabeçalho “Ações” (ou vazio quando há uma ação única), ordem fixa: abrir → editar → remover.</div>
+<div>Teto de 6 colunas. Passou disso, o que sobra vai para o caption da coluna de identidade ou para a tela de detalhe.</div>
+</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:12px">
+<div class="ds-overline" style="color:var(--primary)">Ações de linha</div>
+<div style="display:flex;flex-direction:column;gap:8px;font-size:15px;line-height:1.6;color:var(--text-secondary)">
+<div>Botões <code>ds-btn-sm</code> com ícone 16px + rótulo. Ícone sozinho só quando a tabela tem mais de 5 colunas — e aí o rótulo vai para <code>aria-label</code>.</div>
+<div>Contorno é o padrão: principal com borda <code>--primary</code>, secundária com <code>--border-color</code>, destrutiva com <code>--critical</code>.</div>
+<div>Máximo de três ações visíveis. A quarta em diante vai para um menu <code>more</code>.</div>
+<div>Ação indisponível fica desabilitada (opacidade .45) com o motivo no caption da linha — nunca some sem explicação.</div>
+<div>Destrutiva ab
+</x-dc>
+</body>
+</html>

@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <meta name="design_doc_mode" content="canvas">
+  <link rel="stylesheet" href="_ds/plataforma-ead-design-system-618bb28f-056b-421b-b1d4-d0fef3cd30e2/styles.css">
+  <script src="_ds/plataforma-ead-design-system-618bb28f-056b-421b-b1d4-d0fef3cd30e2/_ds_bundle.js"></script>
+  <style>
+    a{color:var(--primary);text-decoration:none}
+    a:hover{color:var(--primary-hover)}
+    pre{margin:0;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;line-height:1.7;white-space:pre-wrap;color:var(--grey-800)}
+    code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.92em;background:var(--surface-alt);border-radius:6px;padding:1px 6px}
+  </style>
+</helmet>
+
+<section style="display:flex;flex-direction:column;gap:28px;padding:64px;background:var(--surface-body);font-family:var(--font-sans);color:var(--text-primary);line-height:1.6;width:2040px;box-sizing:border-box">
+
+  <div id="1a" style="display:flex;flex-direction:column;gap:28px">
+
+    <header style="display:flex;align-items:flex-start;justify-content:space-between;gap:48px;background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px">
+      <div style="max-width:1180px;display:flex;flex-direction:column;gap:14px">
+        <div class="ds-overline" style="color:var(--primary)">Especificação de componentes · tela 06 · slide 6</div>
+        <h1 style="font-size:46px;line-height:1.08;margin:0;letter-spacing:-.02em">Montar a trilha — módulos e lições</h1>
+        <p style="font-size:19px;color:var(--text-secondary);margin:0;text-wrap:pretty">O gestor estrutura o curso: cria módulos, cria lições dentro de cada módulo, define o tipo de conteúdo de cada lição e reordena tudo por arraste. Especificação componente por componente, com o comportamento e o vocabulário lidos do código de origem — <code>courses/modules/index.blade.php</code>, <code>courses/modules/_list.blade.php</code>, <code>modules/lessons/index.blade.php</code>, <code>modules/lessons/_form.blade.php</code> e <code>resources/js/modules/ModuleReorder.js</code>.</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;align-items:flex-end;flex:none">
+        <span class="ds-chip ds-chip-primary ds-chip-plain ds-chip-lg">1a</span>
+        <span class="ds-caption">9 componentes · 10 blocos</span>
+      </div>
+    </header>
+
+    <div class="ds-alert ds-alert-attention"><div><strong>São duas rotas, não uma.</strong> O slide mostra a lista e o formulário lado a lado para contar a história, mas o produto tem <code>courses/{curso}/modules</code> (lista de módulos) e <code>modules/{módulo}/lessons</code> (lista de lições), mais as telas de criar e editar lição. Os mesmos componentes servem as duas listas — é a mesma lista arrastável com outro conteúdo e outra <code>data-reorder-url</code>.</div></div>
+
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:16px">
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">01</div><div style="font-size:17px;font-weight:800">PageHeader</div><div class="ds-caption">breadcrumb, kicker, ações</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">02</div><div style="font-size:17px;font-weight:800">SortableList</div><div class="ds-caption">arraste + persistência</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">03</div><div style="font-size:17px;font-weight:800">SortableRow</div><div class="ds-caption">alça, título, tipo, ações</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">04</div><div style="font-size:17px;font-weight:800">DeleteButton</div><div class="ds-caption">destrutivo + confirmação</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">05</div><div style="font-size:17px;font-weight:800">LessonForm</div><div class="ds-caption">título e tipo</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">06</div><div style="font-size:17px;font-weight:800">ContentFields</div><div class="ds-caption">grupo condicional</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">07</div><div style="font-size:17px;font-weight:800">FileDropField</div><div class="ds-caption">múltiplos + lista</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">08</div><div style="font-size:17px;font-weight:800">YoutubeField</div><div class="ds-caption">URL + pré-visualização</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">09</div><div style="font-size:17px;font-weight:800">PublishSwitch</div><div class="ds-caption">publicado + ações</div></div></div>
+      <div class="ds-card"><div class="ds-card-body" style="gap:4px;padding:24px"><div class="ds-overline">10</div><div style="font-size:17px;font-weight:800">Estados</div><div class="ds-caption">vazio, toast, erro</div></div></div>
+    </div>
+
+    <!-- 00 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:24px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">00</span><h2 style="font-size:30px;margin:0">O que a tela faz</h2></div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px">
+        <div style="background:var(--blue-50);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">Módulos</div><div style="font-size:15px">Criar, editar e remover módulo do curso. Reordenar por arraste. Entrar nas lições de um módulo.</div></div>
+        <div style="background:var(--blue-50);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">Lições</div><div style="font-size:15px">Criar, editar e remover lição dentro do módulo. Reordenar por arraste. Ver o tipo de cada lição na lista.</div></div>
+        <div style="background:var(--blue-50);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">Conteúdo da lição</div><div style="font-size:15px">Texto em rich text, imagem, PDF e vídeo do YouTube com pré-visualização. Publicar ou manter oculta.</div></div>
+        <div style="background:var(--mint-100);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">Ordem</div><div style="font-size:15px">Soltar a linha grava a ordem na hora, via POST, e devolve um toast. Não existe botão "salvar ordem".</div></div>
+        <div style="background:var(--mint-100);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">Visibilidade</div><div style="font-size:15px">Lição não publicada não aparece para o aluno. O gestor vê o estado direto na lista.</div></div>
+        <div style="background:var(--mint-100);border-radius:16px;padding:22px"><div class="ds-overline" style="margin-bottom:8px">Validação</div><div style="font-size:15px">O servidor é a fonte da verdade: o link do YouTube é revalidado no envio, seja qual for a pré-visualização.</div></div>
+      </div>
+
+      <div style="background:var(--surface-sunken);border-radius:20px;padding:28px;box-shadow:inset 0 0 0 1px var(--divider)"><pre>courses/modules/index.blade.php            modules/lessons/index.blade.php
+├── x-layout.page-header       ← 01        ├── x-layout.page-header       ← 01
+│   breadcrumb + kicker + ações           │   kicker "curso / módulo"
+└── #module-list-container                └── x-sortable-list           ← 02
+    └── x-sortable-list        ← 02           └── x-sortable-row        ← 03
+        └── x-sortable-row     ← 03               ├── badge de tipo
+            ├── Lições / Editar                   ├── Editar
+            └── x-delete-button ← 04              └── x-delete-button   ← 04
+
+modules/lessons/{create,edit}.blade.php
+└── x-layout.page-header                   ← 01
+    └── x-lesson-form                      ← 05
+        ├── x-ui.input  título
+        ├── x-ui.select tipo de conteúdo
+        ├── [data-lesson-content-fields]   ← 06
+        │   ├── x-ui.input textarea (rich text)
+        │   ├── x-file-drop imagem          ← 07
+        │   ├── x-file-drop PDF             ← 07
+        │   └── x-youtube-field             ← 08
+        ├── x-ui.switch Publicado           ← 09
+        └── x-ui.form-actions               ← 09</pre></div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
+        <div style="background:var(--surface-alt);border-radius:16px;padding:20px"><div class="ds-overline" style="margin-bottom:6px">Regra 1</div><div style="font-size:15px">O JS de reordenação é compartilhado por módulos, lições e questões. <code>data-reorder-url</code>, <code>data-id</code> e a estrutura <code>lista &gt; item</code> não mudam.</div></div>
+        <div style="background:var(--surface-alt);border-radius:16px;padding:20px"><div class="ds-overline" style="margin-bottom:6px">Regra 2</div><div style="font-size:15px">Nenhum JS novo. Toast é o <code>NotificationService</code> existente; o alternador de campos e a pré-visualização já existem no <code>@push('scripts')</code> do formulário.</div></div>
+        <div style="background:var(--surface-alt);border-radius:16px;padding:20px"><div class="ds-overline" style="margin-bottom:6px">Regra 3</div><div style="font-size:15px">Toda ação destrutiva usa <code>--critical</code> (azul-slate) com ícone e texto. Nunca vermelho, laranja ou amarelo.</div></div>
+      </div>
+    </div>
+
+    <!-- 01 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">01</span><h2 style="font-size:30px;margin:0">Cabeçalho da página</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">x-layout.page-header</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">Quatro elementos numa ordem fixa: breadcrumb, overline (kicker), título e subtítulo; as ações ficam à direita, alinhadas ao topo. As duas telas usam o mesmo componente com conteúdos diferentes — em módulos o kicker é o nome do curso, em lições é <em>curso / módulo</em>.</p>
+
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) 600px;gap:36px;align-items:start">
+        <div style="background:var(--surface-body);border-radius:20px;padding:36px;display:flex;flex-direction:column;gap:28px">
+          <div class="ds-page-header" style="margin:0">
+            <div>
+              <div class="ds-caption" style="margin-bottom:12px"><a href="#1a">Cursos</a> / Fundamentos de Segurança do Trabalho</div>
+              <div class="ds-overline" style="color:var(--primary);margin-bottom:8px">Fundamentos de Segurança do Trabalho</div>
+              <h1 class="ds-page-title">Módulos</h1>
+              <p class="ds-lead" style="margin:12px 0 0">Arraste os módulos para reordená-los. A nova ordem é salva automaticamente.</p>
+            </div>
+            <div style="display:flex;gap:12px"><a class="ds-btn ds-btn-tonal" href="#1a">Voltar aos cursos</a><a class="ds-btn ds-btn-primary" href="#1a" dusk="new-module"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>Novo módulo</a></div>
+          </div>
+          <div style="height:1px;background:var(--divider)"></div>
+          <div class="ds-page-header" style="margin:0">
+            <div>
+              <div class="ds-caption" style="margin-bottom:12px"><a href="#1a">Cursos</a> / <a href="#1a">Fundamentos de Segurança do Trabalho</a> / Conceitos gerais</div>
+              <div class="ds-overline" style="color:var(--primary);margin-bottom:8px">Fundamentos de Segurança do Trabalho / Conceitos gerais</div>
+              <h1 class="ds-page-title">Lições</h1>
+              <p class="ds-lead" style="margin:12px 0 0">Arraste as lições para reordená-las. A nova ordem é salva automaticamente.</p>
+            </div>
+            <div style="display:flex;gap:12px"><a class="ds-btn ds-btn-tonal" href="#1a">Voltar aos módulos</a><a class="ds-btn ds-btn-primary" href="#1a" dusk="new-lesson"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>Nova lição</a></div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Props</div>
+            <div style="display:grid;grid-template-columns:150px 1fr;gap:12px 16px;font-size:15px">
+              <code>:breadcrumb</code><span>Array <code>[label, url]</code>. Último item sem link, cor <code>--text-primary</code>.</span>
+              <code>kicker</code><span>Overline azul. Em lições, <code>curso / módulo</code> concatenado.</span>
+              <code>title</code><span>"Módulos" ou "Lições". <code>h1.ds-page-title</code>, um por página.</span>
+              <code>subtitle</code><span>A frase do arraste, verbatim do código de origem.</span>
+              <code>actions</code><span>Slot. Secundária como <code>.ds-btn-tonal</code>, primária como <code>.ds-btn-primary</code> com ícone <code>plus</code>.</span>
+            </div>
+          </div>
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Texto — verbatim, não reescrever</div>
+            <div style="display:flex;flex-direction:column;gap:8px;font-size:15px">
+              <div>"Arraste os módulos para reordená-los. A nova ordem é salva automaticamente."</div>
+              <div>"Arraste as lições para reordená-las. A nova ordem é salva automaticamente."</div>
+              <div class="ds-caption">No código atual essa frase é um <code>form-text</code> solto acima da lista; passa a ser o <code>subtitle</code> do cabeçalho, no mesmo texto.</div>
+            </div>
+          </div>
+          <div class="ds-alert ds-alert-info"><div><strong>Ações preservadas.</strong> <code>dusk="new-module"</code> e <code>dusk="new-lesson"</code> continuam no botão primário. Os botões "Voltar" seguem sendo links <code>&lt;a&gt;</code>, não <code>&lt;button&gt;</code>.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 02 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">02</span><h2 style="font-size:30px;margin:0">Lista arrastável</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">x-sortable-list</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">Um <code>&lt;ul&gt;</code> sem marcador, coluna, gap 8px, com <code>data-reorder-url</code> no elemento da lista. O <code>ModuleReorder.js</code> já ligado escuta <code>dragstart</code>, <code>dragover</code>, <code>drop</code> e <code>dragend</code> na lista e faz <code>POST {ordered_ids: [...]}</code> na URL, coletando <code>[data-id]</code> na ordem final do DOM. A casca visual muda; esses atributos e essa hierarquia não.</p>
+
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) 600px;gap:36px;align-items:start">
+        <div style="background:var(--surface-body);border-radius:20px;padding:36px;display:flex;flex-direction:column;gap:24px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Lista de módulos — repouso</div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="display:flex;align-items:center;gap:14px;padding:14px 18px;background:var(--surface);border-radius:14px;box-shadow:var(--elev-1)"><span style="color:var(--text-disabled);cursor:grab"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"></circle><circle cx="9" cy="5" r="1"></circle><circle cx="9" cy="19" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="15" cy="5" r="1"></circle><circle cx="15" cy="19" r="1"></circle></svg></span><span style="flex:1;font-weight:600">Conceitos gerais</span><span class="ds-chip ds-chip-outline ds-chip-plain">3 lições</span><a class="ds-btn ds-btn-tonal ds-btn-sm" href="#1a">Lições</a><a class="ds-btn ds-btn-ghost ds-btn-sm" href="#1a">Editar</a><button class="ds-btn ds-btn-ghost ds-btn-sm ds-btn-icon-only" aria-label="Remover módulo"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"></path></svg></button></div>
+              <div style="display:flex;align-items:center;gap:14px;padding:14px 18px;background:var(--blue-50);border-radius:14px;box-shadow:var(--elev-3);opacity:.9"><span style="color:var(--primary)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"></circle><circle cx="9" cy="5" r="1"></circle><circle cx="9" cy="19" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="15" cy="5" r="1"></circle><circle cx="15" cy="19" r="1"></circle></svg></span><span style="flex:1;font-weight:700">Prática e avaliação</span><span class="ds-caption">arrastando</span></div>
+              <div style="height:6px;border-radius:3px;background:var(--primary);opacity:.35"></div>
+              <div style="display:flex;align-items:center;gap:14px;padding:14px 18px;background:var(--surface);border-radius:14px;box-shadow:var(--elev-1)"><span style="color:var(--text-disabled)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"></circle><circle cx="9" cy="5" r="1"></circle><circle cx="9" cy="19" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="15" cy="5" r="1"></circle><circle cx="15" cy="19" r="1"></circle></svg></span><span style="flex:1;font-weight:600">Encerramento</span><span class="ds-chip ds-chip-outline ds-chip-plain">1 lição</span></div>
+            </div>
+          </div>
+          <div style="display:flex;gap:16px;flex-wrap:wrap">
+            <div class="ds-alert ds-alert-success" style="flex:1;min-width:260px"><div>Ordem atualizada com sucesso.</div></div>
+            <div class="ds-alert ds-alert-danger" style="flex:1;min-width:260px"><div>Falha ao reordenar: tempo de resposta excedido.</div></div>
+          </div>
+          <div class="ds-caption">Os dois textos de toast vêm do <code>ModuleReorder.js</code> — mantenha as mensagens; troque só o componente que as exibe.</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Contrato técnico — intocável</div>
+            <div style="display:grid;grid-template-columns:190px 1fr;gap:12px 16px;font-size:15px">
+              <code>data-reorder-url</code><span>No <code>&lt;ul&gt;</code>. Rota <code>modules.reorder</code> ou <code>lessons.reorder</code>.</span>
+              <code>data-id</code><span>Em cada <code>&lt;li&gt;</code>. É o que compõe <code>ordered_ids</code>.</span>
+              <code>draggable="true"</code><span>Em cada <code>&lt;li&gt;</code>. Sem isso o arraste nativo não inicia.</span>
+              <code>dusk</code><span><code>module-list</code>, <code>lesson-list</code>, <code>module-list-container</code>.</span>
+              <span style="font-weight:700">hierarquia</span><span>O <code>[data-id]</code> é filho direto do <code>[data-reorder-url]</code>. Não insira wrapper entre os dois.</span>
+            </div>
+          </div>
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Estados do arraste</div>
+            <div style="display:grid;grid-template-columns:150px 1fr;gap:10px 16px;font-size:15px">
+              <span style="font-weight:700">repouso</span><span><code>--surface</code>, <code>--elev-1</code>, raio 14px</span>
+              <span style="font-weight:700">hover</span><span>camada de estado 6%, alça passa a <code>--text-secondary</code>, cursor <code>grab</code></span>
+              <span style="font-weight:700">arrastando</span><span><code>--blue-50</code>, <code>--elev-3</code>, cursor <code>grabbing</code></span>
+              <span style="font-weight:700">indicador de destino</span><span>barra de 6px em <code>--primary</code> a 35%, entre as linhas</span>
+              <span style="font-weight:700">salvando</span><span>opacidade .6 na lista até a resposta; sem spinner</span>
+            </div>
+          </div>
+          <div style="background:var(--surface-sunken);border-radius:16px;padding:22px;box-shadow:inset 0 0 0 1px var(--divider)"><pre>{{ bladeList }}</pre></div>
+          <div class="ds-alert ds-alert-attention"><div><strong>Teclado.</strong> O arraste nativo não é acessível por teclado. Cada linha recebe também <em>Mover para cima</em> e <em>Mover para baixo</em> como botões ícone, que postam na mesma <code>data-reorder-url</code>. É a única adição de comportamento autorizada nesta tela.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 03 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">03</span><h2 style="font-size:30px;margin:0">Linha da lista</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">x-sortable-row</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">Um <code>&lt;li&gt;</code> em flex, com quatro zonas da esquerda para a direita: <strong>alça</strong>, <strong>título</strong> (cresce), <strong>metadados</strong> e <strong>ações</strong>. A mesma linha serve módulo e lição — a diferença é o que entra em metadados e quais ações aparecem.</p>
+
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) 600px;gap:36px;align-items:start">
+        <div style="background:var(--surface-body);border-radius:20px;padding:36px;display:flex;flex-direction:column;gap:20px">
+          <div><div class="ds-overline" style="margin-bottom:10px">Lição — vídeo, publicada</div><div style="display:flex;align-items:center;gap:14px;padding:14px 18px;background:var(--surface);border-radius:14px;box-shadow:var(--elev-1)"><span style="color:var(--text-disabled)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"></circle><circle cx="9" cy="5" r="1"></circle><circle cx="9" cy="19" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="15" cy="5" r="1"></circle><circle cx="15" cy="19" r="1"></circle></svg></span><span style="flex:1;font-weight:600">Normas regulamentadoras</span><span class="ds-chip ds-chip-outline ds-chip-plain">Conteúdo</span><a class="ds-btn ds-btn-ghost ds-btn-sm" href="#1a">Editar</a><button class="ds-btn ds-btn-ghost ds-btn-sm ds-btn-icon-only" aria-label="Remover lição"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"></path></svg></button></div></div>
+          <div><div class="ds-overline" style="margin-bottom:10px">Lição — não publicada</div><div style="display:flex;align-items:center;gap:14px;padding:14px 18px;background:var(--surface);border-radius:14px;box-shadow:var(--elev-1)"><span style="color:var(--text-disabled)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"></circle><circle cx="9" cy="5" r="1"></circle><circle cx="9" cy="19" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="15" cy="5" r="1"></circle><circle cx="15" cy="19" r="1"></circle></svg></span><span style="flex:1;font-weight:600;color:var(--text-secondary)">Leitura complementar</span><span class="ds-chip ds-chip-outline ds-chip-plain">Conteúdo</span><span class="ds-chip ds-chip-neutral">Não publicada</span><a class="ds-btn ds-btn-ghost ds-btn-sm" href="#1a">Editar</a></div><div class="ds-caption" style="margin-top:8px">Título em <code>--text-secondary</code> e chip neutro. O aluno não vê esta lição.</div></div>
+          <div><div class="ds-overline" style="margin-bottom:10px">Lição do tipo quiz</div><div style="display:flex;align-items:center;gap:14px;padding:14px 18px;background:var(--surface);border-radius:14px;box-shadow:var(--elev-1)"><span style="color:var(--text-disabled)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"></circle><circle cx="9" cy="5" r="1"></circle><circle cx="9" cy="19" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="15" cy="5" r="1"></circle><circle cx="15" cy="19" r="1"></circle></svg></span><span style="flex:1;font-weight:600">Avaliação do módulo 2</span><span class="ds-chip ds-chip-primary ds-chip-plain">Quiz</span><a class="ds-btn ds-btn-ghost ds-btn-sm" href="#1a">Editar</a></div></div>
+          <div><div class="ds-overline" style="margin-bottom:10px">Foco por teclado</div><div style="display:flex;align-items:center;gap:14px;padding:14px 18px;background:var(--surface);border-radius:14px;box-shadow:var(--elev-1),0 0 0 3px var(--focus-ring-alpha)"><span style="color:var(--text-secondary)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"></circle><circle cx="9" cy="5" r="1"></circle><circle cx="9" cy="19" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="15" cy="5" r="1"></circle><circle cx="15" cy="19" r="1"></circle></svg></span><span style="flex:1;font-weight:600">Apresentação do curso</span><div style="display:flex;gap:4px"><button class="ds-btn ds-btn-ghost ds-btn-sm ds-btn-icon-only" aria-label="Mover para cima"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"></path></svg></button><button class="ds-btn ds-btn-ghost ds-btn-sm ds-btn-icon-only" aria-label="Mover para baixo"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg></button></div><a class="ds-btn ds-btn-ghost ds-btn-sm" href="#1a">Editar</a></div></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Zonas</div>
+            <div style="display:grid;grid-template-columns:150px 1fr;gap:12px 16px;font-size:15px">
+              <span style="font-weight:700">Alça</span><span>Ícone <code>grip-vertical</code> Lucide, 20px, <code>--text-disabled</code>, <code>aria-hidden="true"</code>, classe <code>drag-handle</code>. Substitui o caractere de texto usado hoje.</span>
+              <span style="font-weight:700">Título</span><span><code>flex:1</code>, peso 600, uma linha com <code>ellipsis</code>. Texto verbatim do banco.</span>
+              <span style="font-weight:700">Metadados</span><span>Chips. Em módulo: contagem de lições. Em lição: tipo (<code>Conteúdo</code> ou <code>Quiz</code>) e, quando oculta, <code>Não publicada</code>.</span>
+              <span style="font-weight:700">Ações</span><span>Da menos para a mais destrutiva: Lições (só módulo) · Editar · Remover.</span>
+            </div>
+          </div>
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Props</div>
+            <div style="display:grid;grid-template-columns:150px 1fr;gap:10px 16px;font-size:15px">
+              <code>:id</code><span>Vira <code>data-id</code> e sufixo dos <code>dusk</code>.</span>
+              <code>title</code><span>Texto da linha.</span>
+              <code>:chips</code><span>Array de <code>[label, variant]</code>. Vazio ⇒ nenhum chip.</span>
+              <code>:actions</code><span>Slot. Máximo três ações visíveis.</span>
+              <code>muted</code><span>Booleano. Título em <code>--text-secondary</code> para item não publicado.</span>
+            </div>
+          </div>
+          <div style="background:var(--surface-sunken);border-radius:16px;padding:22px;box-shadow:inset 0 0 0 1px var(--divider)"><pre>{{ bladeRow }}</pre></div>
+          <div class="ds-alert ds-alert-info"><div><strong>Densidade.</strong> Padding 14px/18px, altura resultante de 52px, alvo de toque de 44px em cada botão. Em telas abaixo de 840px as ações passam para uma segunda linha dentro da própria linha, sem virar menu.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 04 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">04</span><h2 style="font-size:30px;margin:0">Remover — botão e confirmação</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">x-delete-button</span><span class="ds-chip ds-chip-neutral ds-chip-plain">x-confirm-modal</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">Remover módulo ou lição é um <code>&lt;form method="POST"&gt;</code> com <code>@method('DELETE')</code> e CSRF — isso não muda. Muda a aparência: na linha, o gatilho é um botão ícone fantasma; a gravidade aparece no diálogo de confirmação, em <code>--critical</code>, com ícone e consequência escrita.</p>
+
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) 600px;gap:36px;align-items:start">
+        <div style="background:var(--surface-body);border-radius:20px;padding:36px;display:flex;flex-direction:column;gap:24px">
+          <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+            <button class="ds-btn ds-btn-ghost ds-btn-sm ds-btn-icon-only" aria-label="Remover módulo"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"></path></svg></button>
+            <span class="ds-caption">gatilho na linha — só ícone, com <code>aria-label</code></span>
+            <button class="ds-btn ds-btn-danger"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"></path></svg>Remover módulo</button>
+            <span class="ds-caption">confirmação — <code>.ds-btn-danger</code>, azul-slate</span>
+          </div>
+          <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-5);padding:32px;max-width:520px;display:flex;flex-direction:column;gap:16px">
+            <span style="width:52px;height:52px;border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;background:var(--critical-container);color:var(--on-critical-container)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"></path></svg></span>
+            <h3 style="font-size:24px;margin:0">Remover o módulo "Conceitos gerais"?</h3>
+            <p class="ds-muted" style="margin:0">As 3 lições deste módulo também serão removidas. Esta ação não poderá ser desfeita.</p>
+            <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:8px"><button class="ds-btn ds-btn-ghost">Cancelar</button><button class="ds-btn ds-btn-danger">Remover módulo</button></div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Regras</div>
+            <div style="display:flex;flex-direction:column;gap:10px;font-size:15px">
+              <div>Cor: <code>--critical</code> / <code>--critical-container</code>. Nenhum tom quente em nenhum estado.</div>
+              <div>O diálogo nomeia o item entre aspas e diz a consequência em cascata (lições que serão removidas).</div>
+              <div>"Esta ação não poderá ser desfeita." aparece verbatim, sem exclamação e sem a palavra "atenção".</div>
+              <div>O botão de confirmação repete o verbo e o objeto ("Remover módulo"), nunca só "Confirmar".</div>
+              <div>Cancelar é <code>.ds-btn-ghost</code> e fica à esquerda da ação destrutiva.</div>
+              <div>O <code>&lt;form&gt;</code> DELETE fica dentro do diálogo; a linha só abre o modal.</div>
+            </div>
+          </div>
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Contrato dusk</div>
+            <div style="display:grid;grid-template-columns:230px 1fr;gap:10px 16px;font-size:15px">
+              <code>delete-module-{id}</code><span>botão de submit do form</span>
+              <code>delete-module-form-{id}</code><span>o <code>&lt;form&gt;</code></span>
+              <code>delete-lesson-{id}</code><span>botão de submit do form</span>
+              <code>delete-lesson-form-{id}</code><span>o <code>&lt;form&gt;</code></span>
+            </div>
+          </div>
+          <div style="background:var(--surface-sunken);border-radius:16px;padding:22px;box-shadow:inset 0 0 0 1px var(--divider)"><pre>{{ bladeDelete }}</pre></div>
+          <div class="ds-alert ds-alert-attention"><div><strong>Mudança de fluxo.</strong> Hoje o submit é direto. Ao inserir o modal, o <code>dusk</code> do botão de submit precisa continuar dentro do <code>&lt;form&gt;</code> — o teste clica nele. Se um teste hoje clica na linha e espera o efeito imediato, ajuste o teste junto na mesma tarefa, não o seletor.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 05 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">05</span><h2 style="font-size:30px;margin:0">Formulário da lição — título e tipo</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">x-lesson-form</span><span class="ds-chip ds-chip-neutral ds-chip-plain">x-ui.field-stack</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">Coluna única de 640px no máximo, campos em <code>x-ui.field-stack</code>, rótulo flutuante em todos. Dois campos abrem o formulário: <strong>Título</strong> (obrigatório) e <strong>Tipo de conteúdo</strong>. O select controla a visibilidade do grupo de conteúdo do bloco 06 — é o único comportamento de cliente do formulário, e já existe.</p>
+
+      <div style="display:grid;grid-template-columns:560px minmax(0,1fr);gap:40px;align-items:start">
+        <div style="background:var(--surface-body);border-radius:20px;padding:36px;display:flex;flex-direction:column;gap:4px">
+          <div class="ds-field"><div class="ds-field-shell filled"><input class="ds-control" id="mt-title" value="Normas regulamentadoras"><label class="ds-float-label" for="mt-title">Título <span class="ds-required">*</span></label></div></div>
+          <div class="ds-field"><div class="ds-field-shell filled"><select class="ds-select" id="mt-type" dusk="lesson-type-select"><option>Conteúdo</option><option>Quiz (em breve)</option></select><label class="ds-float-label" for="mt-type">Tipo de conteúdo <span class="ds-required">*</span></label></div><div class="ds-form-text">Quiz será habilitado em uma etapa futura. Selecione "Conteúdo" para cadastrar Rich Text, Imagem, PDF ou vídeo do YouTube.</div></div>
+          <div class="ds-field" style="margin-top:12px"><div class="ds-field-shell filled"><input class="ds-control is-invalid" value=""><label class="ds-float-label">Título <span class="ds-required">*</span></label></div><div class="ds-invalid-feedback"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg>Informe o título da lição.</div></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Campos</div>
+            <div style="display:grid;grid-template-columns:180px 1fr;gap:12px 16px;font-size:15px">
+              <code>title</code><span><code>x-ui.input</code>, obrigatório, valor de <code>$lesson-&gt;title</code>. Asterisco em <code>--primary</code> no rótulo.</span>
+              <code>type</code><span><code>x-ui.select</code>, obrigatório, opções <code>content ⇒ Conteúdo</code> e <code>quiz ⇒ Quiz (em breve)</code>, valor de <code>old('type', $lesson-&gt;type ?? 'content')</code>.</span>
+              <span style="font-weight:700">hint do tipo</span><span>Frase verbatim do código de origem, em <code>.ds-form-text</code> imediatamente abaixo do select.</span>
+            </div>
+          </div>
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Medidas</div>
+            <div style="display:grid;grid-template-columns:180px 1fr;gap:10px 16px;font-size:15px">
+              <span style="font-weight:700">largura</span><span>máx. 640px, coluna única — nunca duas colunas de campo</span>
+              <code>--field-height</code><span>altura do controle; rótulo sobe ao preencher ou focar</span>
+              <code>--space-5</code><span>espaço entre campos (o <code>margin-bottom</code> de <code>.ds-field</code>)</span>
+              <span style="font-weight:700">erro</span><span><code>.is-invalid</code> + <code>.ds-invalid-feedback</code> com ícone; cor <code>--critical</code></span>
+            </div>
+          </div>
+          <div style="background:var(--surface-sunken);border-radius:16px;padding:22px;box-shadow:inset 0 0 0 1px var(--divider)"><pre>{{ bladeForm }}</pre></div>
+          <div class="ds-alert ds-alert-attention"><div><strong>Não renomear a opção.</strong> O rótulo é "Quiz (em breve)" e o valor é <code>quiz</code>. O slide de apresentação mostra "Prova" por licença narrativa; a interface segue o código.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 06 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">06</span><h2 style="font-size:30px;margin:0">Grupo de campos de conteúdo</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">data-lesson-content-fields</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">Um contêiner que agrupa texto, imagem, PDF e vídeo. Com <em>Tipo de conteúdo = Conteúdo</em> ele aparece; com <em>Quiz</em> ele é escondido inteiro. O atributo <code>data-lesson-content-fields</code> é o gancho do script existente e não muda de nó. Os quatro campos são alternativas, não obrigações: a lição pode ter só texto, só vídeo, ou combinações.</p>
+
+      <div style="display:grid;grid-template-columns:560px minmax(0,1fr);gap:40px;align-items:start">
+        <div style="background:var(--surface-body);border-radius:20px;padding:36px;display:flex;flex-direction:column;gap:16px">
+          <div class="ds-field" style="margin-bottom:0"><div class="ds-field-shell filled"><textarea class="ds-control" rows="4">Esta aula apresenta as normas regulamentadoras aplicáveis.</textarea><label class="ds-float-label">Texto (rich text)</label></div><div class="ds-form-text">Formatação básica: negrito, itálico, listas e links.</div></div>
+          <div style="display:flex;gap:12px;align-items:center"><span class="ds-chip ds-chip-outline ds-chip-plain">Imagem</span><span class="ds-chip ds-chip-outline ds-chip-plain">PDF</span><span class="ds-chip ds-chip-outline ds-chip-plain">Vídeo</span><span class="ds-caption">detalhados nos blocos 07 e 08</span></div>
+          <div style="background:var(--surface);border-radius:16px;padding:20px;box-shadow:var(--elev-1);opacity:.45"><div class="ds-caption">Grupo escondido quando o tipo é Quiz</div></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Composição, nesta ordem</div>
+            <div style="display:grid;grid-template-columns:180px 1fr;gap:12px 16px;font-size:15px">
+              <code>content_text</code><span>Textarea rich text, rótulo "Texto (rich text)". Altura inicial de 4 linhas, redimensionável na vertical.</span>
+              <code>images[]</code><span><code>x-file-drop</code> ← 07, <code>accept="image/*"</code>, múltiplos arquivos com lista e remoção.</span>
+              <code>pdfs[]</code><span><code>x-file-drop</code> ← 07, <code>accept="application/pdf"</code>, múltiplos arquivos com lista e remoção.</span>
+              <code>youtube_url</code><span><code>x-youtube-field</code> ← 08, com pré-visualização.</span>
+            </div>
+          </div>
+          <div class="ds-alert ds-alert-info"><div><strong>Alternância.</strong> O script existente faz <code>classList.toggle('d-none', tipo === 'quiz')</code>. Na nova casca, troque a classe utilitária Bootstrap pelo atributo <code>hidden</code> ou por uma classe própria — mas mantenha o mesmo nó com <code>data-lesson-content-fields</code> e o mesmo <code>dusk="lesson-type-select"</code> no select, senão o script perde o alvo.</div></div>
+          <div class="ds-alert ds-alert-attention"><div><strong>Rótulo em sentence case.</strong> O código de origem escreve "Texto (Rich Text)"; na nova linguagem é "Texto (rich text)". É a única correção de caixa autorizada neste formulário — os hints permanecem verbatim.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 07 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">07</span><h2 style="font-size:30px;margin:0">Envio de arquivos — imagens e PDFs</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">x-file-drop</span><span class="ds-chip ds-chip-neutral ds-chip-plain">múltiplos</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">Duas partes num só componente: a <strong>zona de envio</strong> (bloco tracejado com ícone <code>upload</code>, rótulo, ajuda e <code>&lt;input type="file" multiple&gt;</code>) e a <strong>lista de arquivos enviados</strong> logo abaixo dela. Aceita vários arquivos por vez, por seleção ou por arraste. Cada arquivo da lista mostra nome, tipo, tamanho e um botão de lixeira para removê-lo. O mesmo componente serve imagem e PDF; só mudam <code>accept</code>, rótulo e o texto de ajuda.</p>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:24px">
+        <div style="display:flex;flex-direction:column;gap:12px"><div class="ds-overline">Vazio</div><div class="ds-empty" style="padding:28px 24px"><div class="ds-empty-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="m17 8-5-5-5 5"></path><path d="M12 3v12"></path></svg></div><div style="font-weight:700">Imagens</div><div class="ds-caption">Arraste os arquivos ou escolha no computador. PNG ou JPG, até 2 MB cada.</div><button class="ds-btn ds-btn-tonal ds-btn-sm" style="margin-top:8px">Escolher arquivos</button></div></div>
+        <div style="display:flex;flex-direction:column;gap:12px"><div class="ds-overline">Recebendo arraste</div><div class="ds-empty" style="padding:28px 24px;border-color:var(--primary);border-style:dashed;background:var(--blue-50)"><div class="ds-empty-icon" style="background:var(--primary);color:#fff"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="m17 8-5-5-5 5"></path><path d="M12 3v12"></path></svg></div><div style="font-weight:700">Solte para enviar</div><div class="ds-caption">3 arquivos serão adicionados à lista.</div></div></div>
+        <div style="display:flex;flex-direction:column;gap:12px"><div class="ds-overline">Com erro em um arquivo</div><div class="ds-empty" style="padding:28px 24px;border-color:var(--critical)"><div class="ds-empty-icon" style="background:var(--critical-container);color:var(--on-critical-container)"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg></div><div style="font-weight:700">Imagens</div><div class="ds-invalid-feedback" style="justify-content:center">1 arquivo excede o tamanho máximo de 2 MB.</div><button class="ds-btn ds-btn-tonal ds-btn-sm" style="margin-top:8px">Escolher outros arquivos</button></div><div class="ds-caption">Os arquivos válidos permanecem na lista; só o recusado é apontado.</div></div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) 600px;gap:36px;align-items:start">
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div class="ds-overline">Lista de arquivos enviados</div>
+          <div style="background:var(--surface-body);border-radius:20px;padding:28px;display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;align-items:center;gap:14px;padding:12px 16px;background:var(--surface);border-radius:14px;box-shadow:var(--elev-1)"><span style="width:40px;height:40px;flex:none;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;background:var(--primary-container);color:var(--on-primary-container)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="9" cy="9" r="2"></circle><path d="m21 15-4.5-4.5L3 21"></path></svg></span><span style="flex:1;min-width:0"><span style="display:block;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">esquema-epi-completo.png</span><span class="ds-caption">PNG · imagem · 842 KB</span></span><button class="ds-btn ds-btn-ghost ds-btn-sm ds-btn-icon-only" aria-label="Remover esquema-epi-completo.png"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"></path></svg></button></div>
+            <div style="display:flex;align-items:center;gap:14px;padding:12px 16px;background:var(--surface);border-radius:14px;box-shadow:var(--elev-1)"><span style="width:40px;height:40px;flex:none;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;background:var(--primary-container);color:var(--on-primary-container)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6"></path></svg></span><span style="flex:1;min-width:0"><span style="display:block;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">apostila-nr35.pdf</span><span class="ds-caption">PDF · documento · 3,2 MB</span></span><button class="ds-btn ds-btn-ghost ds-btn-sm ds-btn-icon-only" aria-label="Remover apostila-nr35.pdf"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"></path></svg></button></div>
+            <div style="display:flex;align-items:center;gap:14px;padding:12px 16px;background:var(--surface);border-radius:14px;box-shadow:var(--elev-1)"><span style="width:40px;height:40px;flex:none;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;background:var(--surface-alt);color:var(--text-secondary)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6"></path></svg></span><span style="flex:1;min-width:0"><span style="display:block;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">checklist-de-inspecao-de-equipamentos-de-altura.pdf</span><span class="ds-caption">Enviando · 1,4 MB de 4,8 MB</span><span class="ds-progress" style="margin-top:8px"><span class="ds-progress-bar" style="width:29%"></span></span></span><button class="ds-btn ds-btn-ghost ds-btn-sm ds-btn-icon-only" aria-label="Cancelar envio de checklist-de-inspecao-de-equipamentos-de-altura.pdf"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button></div>
+            <div style="display:flex;align-items:center;gap:14px;padding:12px 16px;background:var(--surface);border-radius:14px;box-shadow:inset 0 0 0 1.5px var(--critical)"><span style="width:40px;height:40px;flex:none;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;background:var(--critical-container);color:var(--on-critical-container)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg></span><span style="flex:1;min-width:0"><span style="display:block;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">treinamento-completo.mp4</span><span class="ds-caption" style="color:var(--critical);font-weight:700">Tipo de arquivo não aceito · vídeo · 128 MB</span></span><button class="ds-btn ds-btn-ghost ds-btn-sm ds-btn-icon-only" aria-label="Remover treinamento-completo.mp4"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"></path></svg></button></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 4px 0"><span class="ds-caption">3 arquivos · 5,4 MB</span><button class="ds-btn ds-btn-ghost ds-btn-sm">Remover todos</button></div>
+          </div>
+          <div class="ds-overline" style="margin-top:8px">Anatomia da linha</div>
+          <div style="display:grid;grid-template-columns:150px 1fr;gap:12px 16px;font-size:15px">
+            <span style="font-weight:700">Ícone</span><span>Quadrado de 40px, raio <code>--radius-sm</code>, em <code>--primary-container</code>. Glifo por família: <code>image</code> para imagem, <code>file-text</code> para PDF. Tipo recusado usa <code>--critical-container</code> com <code>info</code>.</span>
+            <span style="font-weight:700">Nome</span><span>Peso 600, uma linha com <code>ellipsis</code>, nome original do arquivo verbatim. Nunca renomear nem truncar no meio.</span>
+            <span style="font-weight:700">Tipo e tamanho</span><span>Uma linha <code>.ds-caption</code>: extensão em caixa-alta, categoria em minúscula, tamanho. Separador é " · ". Tamanho em pt-BR, vírgula decimal: <code>842 KB</code>, <code>3,2 MB</code>.</span>
+            <span style="font-weight:700">Lixeira</span><span>Botão ícone fantasma, 40px, <code>aria-label="Remover {nome do arquivo}"</code>. Remove direto, sem modal — é ação reversível até salvar.</span>
+            <span style="font-weight:700">Rodapé</span><span>Contagem e soma dos arquivos válidos, com "Remover todos" à direita. Só aparece com dois ou mais arquivos.</span>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Props e regras</div>
+            <div style="display:grid;grid-template-columns:180px 1fr;gap:12px 16px;font-size:15px">
+              <code>name</code><span><code>images</code> ou <code>pdfs</code>, sem colchetes. O componente acrescenta <code>[]</code> ao <code>name</code> do input porque a seleção é múltipla; a prop crua vira o <code>id</code> e o <code>for</code> do rótulo.</span>
+              <code>label</code><span>"Imagens" ou "PDFs", no plural.</span>
+              <code>accept</code><span><code>image/*</code> · <code>application/pdf</code>. Repassado ao input; não é validação.</span>
+              <code>multiple</code><span>Padrão <code>true</code>. Passe <code>false</code> só onde o domínio exigir um único arquivo.</span>
+              <code>:files</code><span>Coleção já salva: <code>[nome, mime, tamanho, url]</code>. Alimenta a lista.</span>
+              <code>:max</code><span>Quantidade máxima. Alcançado o limite, a zona de envio fica desabilitada com a contagem no lugar da ajuda.</span>
+              <code>hint</code><span>Formatos e tamanho por arquivo. Frase curta, sem exclamação.</span>
+              <code>dusk</code><span><code>lesson-image-input</code> e <code>lesson-pdf-input</code> no <code>&lt;input&gt;</code>; <code>lesson-file-{id}</code> na linha e <code>remove-file-{id}</code> na lixeira.</span>
+            </div>
+          </div>
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Estados por arquivo</div>
+            <div style="display:grid;grid-template-columns:180px 1fr;gap:10px 16px;font-size:15px">
+              <span style="font-weight:700">enviado</span><span>Ícone pastel, nome, tipo e tamanho, lixeira.</span>
+              <span style="font-weight:700">enviando</span><span>Barra <code>.ds-progress</code> de 10px sob a linha do nome, tamanho parcial, e a lixeira vira <code>x</code> ("Cancelar envio").</span>
+              <span style="font-weight:700">recusado</span><span>Contorno <code>--critical</code> 1,5px, motivo na linha de metadados. Não conta no total e não é enviado.</span>
+              <span style="font-weight:700">já salvo</span><span>Idêntico a enviado, com o nome como link para o arquivo. Remover marca para exclusão no envio do formulário.</span>
+            </div>
+          </div>
+          <div class="ds-alert ds-alert-info"><div><strong>Remoção sem modal.</strong> A lixeira da lista tira o arquivo da seleção; nada é perdido até salvar. Por isso não usa <code>--critical</code> nem confirmação — diferente da remoção de lição do bloco 04.</div></div>
+          <div class="ds-alert ds-alert-attention"><div><strong>Mudança de contrato no back-end.</strong> Hoje o formulário grava <code>image_path</code> e <code>pdf_path</code>, um arquivo cada. Múltiplos arquivos exigem tabela de anexos da lição e ajuste de validação. É trabalho de servidor, não só de casca — precisa entrar no escopo da tarefa.</div></div>
+        </div>
+        <div style="background:var(--surface-sunken);border-radius:16px;padding:22px;box-shadow:inset 0 0 0 1px var(--divider)"><pre>{{ bladeFile }}</pre></div>
+      </div>
+    </div>
+
+    <!-- 08 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">08</span><h2 style="font-size:30px;margin:0">Vídeo do YouTube e pré-visualização</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">x-youtube-field</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">Campo de URL com ajuda fixa e um bloco de pré-visualização que aparece só quando a URL casa com o padrão de YouTube. O <code>&lt;iframe&gt;</code> de embed, o wrapper e o gancho de script já existem — a especificação aqui é de casca e de estados. Enquanto não há URL válida, o espaço mostra o pastel wash com o ícone de play, nunca uma área vazia.</p>
+
+      <div style="display:grid;grid-template-columns:560px minmax(0,1fr);gap:40px;align-items:start">
+        <div style="background:var(--surface-body);border-radius:20px;padding:36px;display:flex;flex-direction:column;gap:20px">
+          <div class="ds-field" style="margin-bottom:0"><div class="ds-field-shell filled"><input class="ds-control" dusk="lesson-youtube-input" value="https://www.youtube.com/watch?v=dQw4w9WgXcQ"><label class="ds-float-label">URL do YouTube</label></div><div class="ds-form-text">O servidor revalida o link no envio: apenas vídeos do YouTube são aceitos.</div></div>
+          <div>
+            <span class="ds-label">Pré-visualização</span>
+            <div style="aspect-ratio:16/9;border-radius:14px;background:linear-gradient(135deg,var(--blue-100),var(--mint-100));display:flex;align-items:center;justify-content:center;max-width:480px"><span style="width:64px;height:64px;border-radius:50%;background:var(--surface);color:var(--primary);display:flex;align-items:center;justify-content:center;box-shadow:var(--elev-2)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3"></polygon></svg></span></div>
+            <div class="ds-form-text">A pré-visualização é apenas conveniência.</div>
+          </div>
+          <div class="ds-field" style="margin-bottom:0"><div class="ds-field-shell filled"><input class="ds-control is-invalid" value="https://vimeo.com/12345"><label class="ds-float-label">URL do YouTube</label></div><div class="ds-invalid-feedback"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg>Informe um link do YouTube.</div></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Estados</div>
+            <div style="display:grid;grid-template-columns:180px 1fr;gap:12px 16px;font-size:15px">
+              <span style="font-weight:700">vazio</span><span>Pastel wash com ícone <code>play</code> centralizado; sem <code>&lt;iframe&gt;</code> no DOM.</span>
+              <span style="font-weight:700">URL válida</span><span>Wrapper visível, <code>&lt;iframe src="youtube.com/embed/{id}"&gt;</code>, proporção 16/9, largura máx. 480px, raio 14px.</span>
+              <span style="font-weight:700">URL inválida</span><span>Wrapper escondido e campo em <code>.is-invalid</code> só depois do envio — durante a digitação não se acusa erro.</span>
+              <span style="font-weight:700">tipo Quiz</span><span>Campo e pré-visualização somem junto com o grupo do bloco 06.</span>
+            </div>
+          </div>
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Contrato técnico</div>
+            <div style="display:grid;grid-template-columns:230px 1fr;gap:10px 16px;font-size:15px">
+              <code>lesson-youtube-input</code><span><code>dusk</code> no input; o script escuta o evento <code>input</code> nele</span>
+              <code>youtube-preview</code><span><code>dusk</code> no <code>&lt;iframe&gt;</code></span>
+              <code>data-youtube-preview-wrapper</code><span>nó mostrado/escondido</span>
+              <code>data-youtube-preview-frame</code><span>nó cujo <code>src</code> é reescrito</span>
+              <span style="font-weight:700">hint</span><span>"O servidor revalida o link no envio: apenas vídeos do YouTube são aceitos." — verbatim</span>
+              <span style="font-weight:700">iframe</span><span>Mantenha <code>allow</code>, <code>referrerpolicy</code> e <code>allowfullscreen</code> como estão</span>
+            </div>
+          </div>
+          <div style="background:var(--surface-sunken);border-radius:16px;padding:22px;box-shadow:inset 0 0 0 1px var(--divider)"><pre>{{ bladeYoutube }}</pre></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 09 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">09</span><h2 style="font-size:30px;margin:0">Publicado e ações do formulário</h2><span class="ds-chip ds-chip-neutral ds-chip-plain">x-ui.switch</span><span class="ds-chip ds-chip-neutral ds-chip-plain">x-ui.form-actions</span></div>
+      <p style="margin:0;font-size:16px;color:var(--text-secondary);max-width:980px">O último campo é o interruptor <em>Publicado</em>, seguido da barra de ações. O interruptor não salva sozinho: só marca o estado que será gravado no envio — por isso vem acompanhado de uma linha explicando o efeito para o aluno.</p>
+
+      <div style="display:grid;grid-template-columns:560px minmax(0,1fr);gap:40px;align-items:start">
+        <div style="background:var(--surface-body);border-radius:20px;padding:36px;display:flex;flex-direction:column;gap:24px">
+          <div>
+            <label class="ds-switch"><input type="checkbox" checked=""><span class="ds-switch-track"><span class="ds-switch-thumb"></span></span><span style="font-weight:600">Publicado</span></label>
+            <div class="ds-form-text">A lição fica visível para os alunos matriculados assim que você salvar.</div>
+          </div>
+          <div>
+            <label class="ds-switch"><input type="checkbox"><span class="ds-switch-track"><span class="ds-switch-thumb"></span></span><span style="font-weight:600">Publicado</span></label>
+            <div class="ds-form-text">A lição continua oculta para os alunos. Você pode publicá-la depois.</div>
+          </div>
+          <div class="ds-form-actions" style="margin-top:0"><button class="ds-btn ds-btn-primary"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>Salvar alterações</button><button class="ds-btn ds-btn-ghost">Cancelar</button></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div>
+            <div class="ds-overline" style="margin-bottom:12px">Especificação</div>
+            <div style="display:grid;grid-template-columns:180px 1fr;gap:12px 16px;font-size:15px">
+              <code>is_published</code><span>Nome do campo. <code>:checked</code> vem de <code>$lesson-&gt;is_published</code>.</span>
+              <span style="font-weight:700">trilha ligada</span><span><code>--secondary</code> (menta) — é confirmação, não alerta.</span>
+              <span style="font-weight:700">rótulo</span><span>"Publicado", sentence case, à direita da trilha, clicável junto.</span>
+              <span style="font-weight:700">ajuda</span><span>Muda com o estado: o que o aluno vê agora, em segunda pessoa.</span>
+              <span style="font-weight:700">ações</span><span><code>.ds-form-actions</code>: borda superior <code>--divider</code>, primária à esquerda, "Cancelar" fantasma ao lado.</span>
+              <span style="font-weight:700">criar vs. editar</span><span>Em criar, o rótulo do botão é "Criar lição"; em editar, "Salvar alterações".</span>
+            </div>
+          </div>
+          <div style="background:var(--surface-sunken);border-radius:16px;padding:22px;box-shadow:inset 0 0 0 1px var(--divider)"><pre>{{ bladeSwitch }}</pre></div>
+          <div class="ds-alert ds-alert-info"><div><strong>Sem salvamento automático.</strong> Nenhum campo do formulário grava no <code>change</code>. Só o arraste da lista persiste sozinho — e é por isso que a lista tem toast e o formulário não.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 10 -->
+    <div style="background:var(--surface);border-radius:28px;box-shadow:var(--elev-1);padding:44px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--primary)">10</span><h2 style="font-size:30px;margin:0">Estados, contrato e aceite</h2></div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:32px">
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="ds-overline">Nenhum módulo</div>
+          <div class="ds-empty" style="padding:32px 24px">
+            <div class="ds-empty-icon"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg></div>
+            <div style="font-size:18px;font-weight:700">Nenhum módulo cadastrado</div>
+            <p class="ds-muted" style="margin:0;font-size:15px">Comece criando o primeiro módulo do curso; as lições entram dentro dele.</p>
+            <button class="ds-btn ds-btn-primary ds-btn-sm" style="margin-top:8px">Novo módulo</button>
+          </div>
+          <div class="ds-caption">O código atual mostra só "Nenhum Módulo cadastrado." O bloco ganha próximo passo e passa a sentence case.</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="ds-overline">Nenhuma lição</div>
+          <div class="ds-empty" style="padding:32px 24px">
+            <div class="ds-empty-icon"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.5A5.5 5.5 0 0 0 6.5 4H2v15h5a4 4 0 0 1 5 2 4 4 0 0 1 5-2h5V4h-4.5A5.5 5.5 0 0 0 12 6.5z"></path><path d="M12 6.5V21"></path></svg></div>
+            <div style="font-size:18px;font-weight:700">Nenhuma lição cadastrada</div>
+            <p class="ds-muted" style="margin:0;font-size:15px">Crie a primeira lição deste módulo. Ela pode ser um texto, uma imagem, um PDF ou um vídeo.</p>
+            <button class="ds-btn ds-btn-primary ds-btn-sm" style="margin-top:8px">Nova lição</button>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="ds-overline">Responsivo</div>
+          <div style="display:grid;grid-template-columns:130px 1fr;gap:10px 16px;font-size:15px">
+            <span style="font-weight:700">≥ 1240px</span><span>lista e formulário em telas separadas, conteúdo máx. 1240px; formulário máx. 640px</span>
+            <span style="font-weight:700">840–1239px</span><span>mesma estrutura, ações do cabeçalho abaixo do título</span>
+            <span style="font-weight:700">&lt; 840px</span><span>ações da linha quebram para a segunda linha; alça continua visível; botões em 100%</span>
+          </div>
+          <div class="ds-caption">O arraste continua funcionando por toque; os botões mover para cima/baixo são a alternativa acessível.</div>
+        </div>
+      </div>
+
+      <div style="height:1px;background:var(--divider)"></div>
+
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:36px">
+        <div>
+          <div class="ds-overline" style="margin-bottom:12px">Contrato dusk e data-* — nenhum destes muda</div>
+          <div style="display:grid;grid-template-columns:250px 1fr;gap:10px 16px;font-size:15px">
+            <code>module-list-container</code><span>wrapper da lista de módulos</span>
+            <code>module-list</code><span>o <code>&lt;ul&gt;</code> de módulos</span>
+            <code>module-row-{id}</code><span>o <code>&lt;li&gt;</code> do módulo</span>
+            <code>manage-lessons-{id}</code><span>botão "Lições"</span>
+            <code>edit-module-{id}</code><span>botão "Editar"</span>
+            <span><code>delete-module-{id}</code> / <code>delete-module-form-{id}</code></span><span>ação de remover</span>
+            <code>new-module</code><span>ação primária do cabeçalho</span>
+            <code>lesson-list</code><span>o <code>&lt;ul&gt;</code> de lições</span>
+            <code>lesson-row-{id}</code><span>o <code>&lt;li&gt;</code> da lição</span>
+            <code>edit-lesson-{id}</code><span>botão "Editar"</span>
+            <span><code>delete-lesson-{id}</code> / <code>delete-lesson-form-{id}</code></span><span>ação de remover</span>
+            <code>new-lesson</code><span>ação primária do cabeçalho</span>
+            <code>lesson-type-select</code><span>select de tipo</span>
+            <code>lesson-image-input</code> / <code>lesson-pdf-input</code><span>inputs de arquivo</span>
+            <code>lesson-youtube-input</code><span>campo de URL</span>
+            <code>youtube-preview</code><span>iframe da pré-visualização</span>
+            <code>data-reorder-url</code> / <code>data-id</code><span>contrato do arraste</span>
+          </div>
+        </div>
+        <div>
+          <div class="ds-overline" style="margin-bottom:12px">Critérios de aceite</div>
+          <div style="display:flex;flex-direction:column;gap:10px;font-size:15px">
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Arrastar e soltar continua salvando a ordem e exibindo os toasts "Ordem atualizada com sucesso." e "Falha ao reordenar: …".</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span><code>data-reorder-url</code> e <code>data-id</code> nos mesmos nós, sem wrapper intermediário.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Alça de arraste é o ícone <code>grip-vertical</code> Lucide com <code>aria-hidden="true"</code>, no lugar do caractere de texto.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Hints do tipo de conteúdo e do YouTube preservados verbatim.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Envio de imagens e PDFs aceita múltiplos arquivos, por seleção e por arraste, e lista cada um com nome, tipo, tamanho e lixeira.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Pré-visualização aparece só com URL de YouTube válida e o servidor revalida no envio.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Remover exige confirmação nomeando o item e a consequência; cor <code>--critical</code>, com ícone.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Zero vermelho, laranja ou amarelo. Zero caixa-alta fora do overline.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Zero <code>style=</code> inline e nenhum JS novo além dos botões mover para cima/baixo.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span>Reordenação possível só por teclado, com foco visível em cada linha.</span></div>
+            <div style="display:flex;gap:12px"><span style="color:var(--secondary);font-weight:800">✓</span><span><code>artisan dusk</code> filtrado em módulos e lições passa sem alteração de seletor.</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const Z = "\u200B";
+const b = (s) => s.split("{{").join("{" + Z + "{").split("}}").join("}" + Z + "}");
+
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      bladeList: b(`{{-- components/sortable-list.blade.php --}}
+@props(['reorderUrl','dusk'=>null])
+
+<ul data-reorder-url="{{ $reorderUrl }}"
+    dusk="{{ $dusk }}"
+    class="ds-sortable-list">
+  {{ $slot }}
+</ul>
+
+{{-- uso: lista de módulos --}}
+<x-sortable-list :reorder-url="route('modules.reorder', \$course)" dusk="module-list">
+  @forelse(\$modules as \$module)
+    <x-sortable-row ... />
+  @empty
+    <x-empty-state title="Nenhum módulo cadastrado" ... />
+  @endforelse
+</x-sortable-list>`),
+
+      bladeRow: b(`{{-- components/sortable-row.blade.php --}}
+@props(['id','title','chips'=>[],'muted'=>false,'dusk'=>null])
+
+<li data-id="{{ $id }}"
+    dusk="{{ $dusk }}"
+    draggable="true"
+    class="ds-sortable-item @if($muted) is-muted @endif">
+
+  <span class="ds-sortable-handle">
+    <x-ui.icon name="grip-vertical" size="20" aria-hidden="true" class="drag-handle" />
+  </span>
+
+  <span class="ds-sortable-title">{{ $title }}</span>
+
+  @foreach($chips as [$label, $variant])
+    <span class="ds-chip ds-chip-{{ $variant }} ds-chip-plain">{{ $label }}</span>
+  @endforeach
+
+  <span class="ds-sortable-actions">{{ $slot }}</span>
+</li>
+
+{{-- uso: linha de lição --}}
+<x-sortable-row :id="\$lesson->id"
+                :title="\$lesson->title"
+                :chips="[[\$lesson->type === 'quiz' ? 'Quiz' : 'Conteúdo', 'outline']]"
+                :muted="! \$lesson->is_published"
+                dusk="lesson-row-{{ $lesson->id }}">
+  <x-ui.button variant="ghost" size="sm"
+               href="{{ route('lessons.edit', $lesson) }}"
+               dusk="edit-lesson-{{ $lesson->id }}">Editar</x-ui.button>
+  <x-delete-button :model="$lesson" kind="lesson" />
+</x-sortable-row>`),
+
+      bladeDelete: b(`{{-- components/delete-button.blade.php --}}
+@props(['model','kind','label'=>null,'consequence'=>null])
+
+<x-ui.confirm-modal
+    id="delete-{{ $kind }}-{{ $model->id }}-modal"
+    icon="trash"
+    tone="critical"
+    :title="'Remover o '.$kind.' \\''.$model->title.'\\'?'"
+    :body="$consequence.' Esta ação não poderá ser desfeita.'">
+
+  <x-slot:trigger>
+    <x-ui.button variant="ghost" size="sm" icon-only
+                 icon="trash"
+                 :aria-label="'Remover '.$kind" />
+  </x-slot:trigger>
+
+  <form method="POST"
+        action="{{ route($kind.'s.destroy', $model) }}"
+        dusk="delete-{{ $kind }}-form-{{ $model->id }}">
+    @csrf
+    @method('DELETE')
+    <x-ui.button type="submit" variant="danger"
+                 dusk="delete-{{ $kind }}-{{ $model->id }}">
+      Remover {{ $kind }}
+    </x-ui.button>
+  </form>
+</x-ui.confirm-modal>`),
+
+      bladeForm: b(`{{-- modules/lessons/_form.blade.php (recasca) --}}
+@php $type = old('type', $lesson->type ?? 'content'); @endphp
+
+<x-ui.field-stack class="ds-form-narrow">
+  <x-ui.input name="title" label="Título" required :value="$lesson->title" />
+
+  <x-ui.select
+      name="type"
+      label="Tipo de conteúdo"
+      required
+      :options="['content' => 'Conteúdo', 'quiz' => 'Quiz (em breve)']"
+      :selected="$type"
+      hint='Quiz será habilitado em uma etapa futura. Selecione "Conteúdo" para cadastrar Rich Text, Imagem, PDF ou vídeo do YouTube.'
+      dusk="lesson-type-select" />
+
+  <div id="lesson-content-fields" data-lesson-content-fields class="ds-stack">
+    <x-ui.input type="textarea" name="content_text"
+                label="Texto (rich text)" :value="$lesson->content_text" />
+
+    <x-file-drop name="images" label="Imagens" accept="image/*" multiple
+                 :files="$lesson->imageFiles"
+                 hint="Arraste os arquivos ou escolha no computador. PNG ou JPG, até 2 MB cada."
+                 dusk="lesson-image-input" />
+
+    <x-file-drop name="pdfs" label="PDFs" accept="application/pdf" multiple
+                 :files="$lesson->pdfFiles"
+                 hint="Arraste os arquivos ou escolha no computador. PDF, até 10 MB cada."
+                 dusk="lesson-pdf-input" />
+
+    <x-youtube-field :value="$lesson->youtube_url" />
+  </div>
+
+  <x-ui.switch name="is_published" label="Publicado"
+               :checked="$lesson->is_published" />
+</x-ui.field-stack>`),
+
+      bladeFile: b(`{{-- components/file-drop.blade.php --}}
+@props([
+  'name','label','accept'=>null,'hint'=>null,
+  'multiple'=>true,'files'=>[],'max'=>null,
+])
+
+<div class="ds-file-drop" data-file-drop data-max="{{ $max }}">
+
+  {{-- zona de envio --}}
+  <label for="{{ $name }}" class="ds-empty ds-file-drop-zone
+         @error($name.'.*') is-invalid @enderror">
+    <span class="ds-empty-icon"><x-ui.icon name="upload" size="28" /></span>
+    <span class="ds-file-drop-label">{{ $label }}</span>
+    @if($hint)<span class="ds-caption">{{ $hint }}</span>@endif
+
+    <input type="file"
+           id="{{ $name }}"
+           name="{{ $name }}[]"
+           accept="{{ $accept }}"
+           @if($multiple) multiple @endif
+           class="ds-visually-hidden"
+           {{ $attributes }} />
+  </label>
+
+  {{-- lista de arquivos: nome + tipo + tamanho + lixeira --}}
+  <ul class="ds-file-list" data-file-list>
+    @foreach($files as $file)
+      <li class="ds-file-item" dusk="lesson-file-{{ $file['id'] }}">
+        <span class="ds-file-icon">
+          <x-ui.icon :name="str_contains($file['mime'], 'image') ? 'image' : 'file-text'" size="20" />
+        </span>
+
+        <span class="ds-file-meta">
+          <a class="ds-file-name" href="{{ $file['url'] }}">{{ $file['name'] }}</a>
+          <span class="ds-caption">
+            {{ Str::upper($file['extension']) }} ·
+            {{ __('mime.'.$file['mime']) }} ·
+            {{ Number::fileSize($file['size'], precision: 1) }}
+          </span>
+        </span>
+
+        <form method="POST" action="{{ route('lessons.files.destroy', $file['id']) }}">
+          @csrf
+          @method('DELETE')
+          <x-ui.button type="submit" variant="ghost" size="sm" icon-only
+                       icon="trash"
+                       :aria-label="'Remover '.$file['name']"
+                       dusk="remove-file-{{ $file['id'] }}" />
+        </form>
+      </li>
+    @endforeach
+  </ul>
+
+  @if(count($files) > 1)
+    <div class="ds-file-list-footer">
+      <span class="ds-caption">{{ count($files) }} arquivos · {{ $totalSize }}</span>
+      <x-ui.button variant="ghost" size="sm">Remover todos</x-ui.button>
+    </div>
+  @endif
+
+  @error($name.'.*')
+    <div class="ds-invalid-feedback">
+      <x-ui.icon name="info" size="14" /> {{ $message }}
+    </div>
+  @enderror
+</div>`),
+
+      bladeYoutube: b(`{{-- components/youtube-field.blade.php --}}
+@props(['value'=>null])
+
+<x-ui.input
+    name="youtube_url"
+    label="URL do YouTube"
+    :value="$value"
+    placeholder="https://www.youtube.com/watch?v=..."
+    hint="O servidor revalida o link no envio: apenas vídeos do YouTube são aceitos."
+    dusk="lesson-youtube-input" />
+
+<div data-youtube-preview-wrapper class="ds-youtube-preview" hidden>
+  <span class="ds-label">Pré-visualização</span>
+  <div class="ds-youtube-frame">
+    <iframe data-youtube-preview-frame dusk="youtube-preview" frameborder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+  </div>
+  <p class="ds-form-text">A pré-visualização é apenas conveniência.</p>
+</div>
+
+{{-- estado vazio: pastel wash, sem iframe no DOM --}}
+<div class="ds-youtube-placeholder" aria-hidden="true">
+  <x-ui.icon name="play" size="24" />
+</div>`),
+
+      bladeSwitch: b(`{{-- fim do formulário --}}
+<x-ui.switch name="is_published" label="Publicado"
+             :checked="$lesson->is_published"
+             :hint="$lesson->is_published
+                ? 'A lição fica visível para os alunos matriculados assim que você salvar.'
+                : 'A lição continua oculta para os alunos. Você pode publicá-la depois.'" />
+
+<x-ui.form-actions>
+  <x-ui.button type="submit" variant="primary" icon="check">
+    {{ $lesson->exists ? 'Salvar alterações' : 'Criar lição' }}
+  </x-ui.button>
+  <x-ui.button variant="ghost" :href="url()->previous()">Cancelar</x-ui.button>
+</x-ui.form-actions>`),
+    };
+  }
+}
+</script>
+</body>
+</html>
