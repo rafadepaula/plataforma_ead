@@ -9,14 +9,14 @@
     />
 
     <x-ui.card>
-        <form method="POST" action="{{ route('modules.lessons.store', $module) }}" enctype="multipart/form-data" dusk="lesson-form">
+        <form method="POST" action="{{ route('modules.lessons.store', $module) }}" enctype="multipart/form-data" dusk="lesson-form" data-lesson-form>
             @csrf
 
             @include('modules.lessons._form')
 
             <x-ui.form-actions>
                 <x-ui.button type="submit" dusk="lesson-submit">Criar Lição</x-ui.button>
-                <x-ui.button variant="secondary" href="{{ route('modules.lessons.index', $module) }}">Cancelar</x-ui.button>
+                <x-ui.button variant="ghost" href="{{ route('modules.lessons.index', $module) }}">Cancelar</x-ui.button>
             </x-ui.form-actions>
         </form>
     </x-ui.card>

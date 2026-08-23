@@ -37,8 +37,10 @@ class StoreLessonRequest extends FormRequest
             'type' => ['required', Rule::in(['content', 'quiz'])],
             'order_index' => ['nullable', 'integer', 'min:0'],
             'content_text' => ['nullable', 'string'],
-            'image' => ['nullable', 'image', 'max:4096'],
-            'pdf' => ['nullable', 'file', 'mimes:pdf', 'max:10240'],
+            'images' => ['nullable', 'array'],
+            'images.*' => ['image', 'max:2048'],
+            'pdfs' => ['nullable', 'array'],
+            'pdfs.*' => ['file', 'mimes:pdf', 'max:10240'],
             'youtube_url' => ['nullable', 'url'],
         ];
     }

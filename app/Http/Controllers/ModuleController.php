@@ -29,7 +29,7 @@ class ModuleController extends Controller
     {
         Gate::authorize('viewAny', [Module::class, $course]);
 
-        $modules = $course->modules()->orderBy('order_index')->get();
+        $modules = $course->modules()->withCount('lessons')->orderBy('order_index')->get();
 
         return view('courses.modules.index', ['course' => $course, 'modules' => $modules]);
     }

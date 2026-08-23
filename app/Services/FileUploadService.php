@@ -31,6 +31,36 @@ class FileUploadService
         return $this->store($file, $course, 'pdfs');
     }
 
+    /**
+     *  stores a batch of image uploads, returning the stored paths
+     * in the same order as the given files (index-aligned, so callers can
+     * zip them back with the `UploadedFile` instances for per-file metadata).
+     *
+     * @param  array<int, UploadedFile>  $files
+     * @return list<string>
+     */
+    public function storeImages(array $files, Course $course): array
+    {
+        return array_map(
+            fn (UploadedFile $file): string => $this->store($file, $course, 'images'),
+            array_values($files),
+        );
+    }
+
+    /**
+     *  stores a batch of PDF uploads, index-aligned with the input.
+     *
+     * @param  array<int, UploadedFile>  $files
+     * @return list<string>
+     */
+    public function storePdfs(array $files, Course $course): array
+    {
+        return array_map(
+            fn (UploadedFile $file): string => $this->store($file, $course, 'pdfs'),
+            array_values($files),
+        );
+    }
+
     protected function store(UploadedFile $file, Course $course, string $kind): string
     {
         $orgId = $this->resolveOrgId($course);

@@ -1,0 +1,24 @@
+// =============================================================================
+// Componente: YouTube field (campo de URL com pré-visualização 16:9)
+// -----------------------------------------------------------------------------
+// `x-ui.youtube-field`: o estado vazio é um bloco 16:9 em pastel wash
+// (`linear-gradient(135deg, var(--blue-100), var(--mint-100))`) com botão
+// circular de play; o estado preenchido é o `<iframe>` responsivo (a moldura
+// 16:9 vem das utilities `.ratio.ratio-16x9` do Bootstrap). Bootstrap não
+// entrega esse padrão pronto.
+// Regra: qualquer declaração aqui só pode consumir var(--*), nunca literal de
+// cor/raio/sombra.
+// =============================================================================
+
+.ds-youtube-wash {
+    background: linear-gradient(135deg, var(--blue-100), var(--mint-100));
+}
+
+.ds-youtube-play {
+    width: 56px;
+    height: 56px;
+    color: var(--text-secondary);
+    background: var(--surface);
+    border-radius: var(--radius-pill);
+    box-shadow: var(--elev-1);
+}

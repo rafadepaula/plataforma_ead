@@ -6,6 +6,7 @@ use App\Http\Requests\ReorderLessonsRequest;
 use App\Http\Requests\StoreLessonRequest;
 use App\Http\Requests\UpdateLessonRequest;
 use App\Models\Lesson;
+use App\Models\LessonMedia;
 use App\Models\Module;
 use App\Services\AuditService;
 use App\Services\FileUploadService;
@@ -39,7 +40,7 @@ class LessonController extends Controller
     {
         Gate::authorize('viewAny', [Lesson::class, $module]);
 
-        $lessons = $module->lessons()->orderBy('order_index')->get();
+        $lessons = $module->lessons()->with('media')->orderBy('order_index')->get();
 
         return view('modules.lessons.index', ['module' => $module, 'lessons' => $lessons]);
     }
@@ -53,10 +54,8 @@ class LessonController extends Controller
 
     public function store(StoreLessonRequest $request, Module $module): RedirectResponse
     {
-        $data = $request->validated();
-        $data = $this->handleMediaFields($request, $data, $module);
-
-        $module->lessons()->create($data);
+        $lesson = $module->lessons()->create($this->validatedAttributes($request));
+        $this->syncMedia($request, $lesson);
 
         return redirect()->route('modules.lessons.index', $module)
             ->with('success', 'Lição criada com sucesso.');
@@ -71,10 +70,8 @@ class LessonController extends Controller
 
     public function update(UpdateLessonRequest $request, Lesson $lesson): RedirectResponse
     {
-        $data = $request->validated();
-        $data = $this->handleMediaFields($request, $data, $lesson->module, $lesson);
-
-        $lesson->update($data);
+        $lesson->update($this->validatedAttributes($request));
+        $this->syncMedia($request, $lesson);
 
         return redirect()->route('modules.lessons.index', $lesson->module)
             ->with('success', 'Lição atualizada com sucesso.');
@@ -140,42 +137,96 @@ class LessonController extends Controller
     }
 
     /**
-     * Resolves the `image`/`pdf` uploads (via `FileUploadService`, isolated
-     * under the parent Course's `org_id`) and canonicalizes a non-empty
-     * `youtube_url` (via `YoutubeSanitizerService`) into the validated
-     * attributes, replacing any previously stored file on update.
+     * Strips the media-only inputs (`images[]`/`pdfs[]`/`removed_media[]` —
+     * handled after the Lesson exists by `syncMedia()`) out of the validated
+     * payload and canonicalizes a non-empty `youtube_url` (via
+     * `YoutubeSanitizerService`).
      *
-     * @param  array<string, mixed>  $data
      * @return array<string, mixed>
      */
-    private function handleMediaFields(
-        StoreLessonRequest|UpdateLessonRequest $request,
-        array $data,
-        Module $module,
-        ?Lesson $lesson = null,
-    ): array {
-        $course = $module->course;
-
-        if ($request->hasFile('image')) {
-            if ($lesson?->image_path) {
-                Storage::disk('public')->delete($lesson->image_path);
-            }
-            $data['image_path'] = $this->fileUploadService->storeImage($request->file('image'), $course);
-        }
-        unset($data['image']);
-
-        if ($request->hasFile('pdf')) {
-            if ($lesson?->pdf_path) {
-                Storage::disk('public')->delete($lesson->pdf_path);
-            }
-            $data['pdf_path'] = $this->fileUploadService->storePdf($request->file('pdf'), $course);
-        }
-        unset($data['pdf']);
+    private function validatedAttributes(StoreLessonRequest|UpdateLessonRequest $request): array
+    {
+        $data = $request->validated();
+        unset($data['images'], $data['pdfs'], $data['removed_media']);
 
         if (! empty($data['youtube_url'])) {
             $data['youtube_url'] = $this->youtubeSanitizerService->sanitize($data['youtube_url']);
         }
 
         return $data;
+    }
+
+    /**
+     * Applies the media-only request inputs against an already-persisted
+     * Lesson: deletes the attachments listed in `removed_media[]` (ids
+     * belonging to any other Lesson are silently ignored — a cross-tenant
+     * probe must never delete another org's files), then appends a
+     * `LessonMedia` row per uploaded `images[]`/`pdfs[]` file (via
+     * `FileUploadService`, isolated under the parent Course's `org_id`).
+     *
+     * Uploads are additive: a new image never replaces an existing one —
+     * per-attachment removal is what `removed_media[]` is for. Finally the
+     * deprecated legacy `image_path`/`pdf_path` columns are re-synced to the
+     * first attachment of each kind (or `null` once none remain) so
+     * not-yet-migrated read paths keep working. That resync uses
+     * `saveQuietly()`: it is bookkeeping derived from the media rows just
+     * written, not a distinct user action, so it must not fire a second
+     * `AuditObserver` "updated" row on top of the create()/update() the
+     * caller already logged for this same request.
+     */
+    private function syncMedia(StoreLessonRequest|UpdateLessonRequest $request, Lesson $lesson): void
+    {
+        $course = $lesson->module->course;
+        $changed = false;
+
+        $removedIds = array_values(array_map('intval', (array) $request->input('removed_media', [])));
+
+        if ($removedIds !== []) {
+            // Ownership guard: scoping to the Lesson's own media means an id
+            // belonging to another Lesson (possibly another org's) is ignored.
+            $lesson->media()->whereIn('id', $removedIds)->get()
+                ->each(function (LessonMedia $media): void {
+                    Storage::disk('public')->delete($media->path);
+                    $media->delete();
+                });
+            $changed = true;
+        }
+
+        $imageFiles = array_values((array) $request->file('images', []));
+
+        if ($imageFiles !== []) {
+            foreach ($this->fileUploadService->storeImages($imageFiles, $course) as $index => $path) {
+                $file = $imageFiles[$index];
+                $lesson->media()->create([
+                    'kind' => LessonMedia::KIND_IMAGE,
+                    'path' => $path,
+                    'original_name' => $file->getClientOriginalName(),
+                    'size_bytes' => $file->getSize(),
+                ]);
+            }
+            $changed = true;
+        }
+
+        $pdfFiles = array_values((array) $request->file('pdfs', []));
+
+        if ($pdfFiles !== []) {
+            foreach ($this->fileUploadService->storePdfs($pdfFiles, $course) as $index => $path) {
+                $file = $pdfFiles[$index];
+                $lesson->media()->create([
+                    'kind' => LessonMedia::KIND_PDF,
+                    'path' => $path,
+                    'original_name' => $file->getClientOriginalName(),
+                    'size_bytes' => $file->getSize(),
+                ]);
+            }
+            $changed = true;
+        }
+
+        if ($changed) {
+            $lesson->forceFill([
+                'image_path' => $lesson->images()->orderBy('id')->value('path'),
+                'pdf_path' => $lesson->pdfs()->orderBy('id')->value('path'),
+            ])->saveQuietly();
+        }
     }
 }

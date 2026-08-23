@@ -1,11 +1,28 @@
 {{--
-    text/image lesson: plain content render + an explicit
-    "Marcar como concluída" button (hidden once `is_completed`), bound to
-    POST `lessons.complete` by `resources/js/modules/LessonPlayer.js`.
+    text/image lesson: plain content render + every attached image
+    (multiple since `lesson_media`), plus an explicit "Marcar como concluída"
+    button (hidden once `is_completed`), bound to POST `lessons.complete` by
+    `resources/js/modules/LessonPlayer.js`.
+
+    Images are read through `Lesson::media()`; the flat `image_path` column
+    is only a legacy fallback for lessons that carry no media rows (e.g. rows
+    written before the backfill migration).
 --}}
+@php
+    $images = $lesson->media->where('kind', \App\Models\LessonMedia::KIND_IMAGE)->values();
+@endphp
 
 <div class="mb-4">
-    @if(! empty($lesson->image_path))
+    @if ($images->isNotEmpty())
+        @foreach ($images as $index => $media)
+            <img
+                src="{{ Storage::url($media->path) }}"
+                alt="{{ $lesson->title }}"
+                class="img-fluid border mb-4"
+                dusk="lesson-image-{{ $lesson->id }}{{ $index > 0 ? '-'.$index : '' }}"
+            >
+        @endforeach
+    @elseif (! empty($lesson->image_path))
         <img src="{{ Storage::url($lesson->image_path) }}" alt="{{ $lesson->title }}" class="img-fluid border mb-4" dusk="lesson-image-{{ $lesson->id }}">
     @endif
 

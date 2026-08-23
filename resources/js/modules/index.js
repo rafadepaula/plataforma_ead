@@ -9,6 +9,7 @@ import DashboardFilter     from './DashboardFilter';
 import ForumPolling        from './ForumPolling';
 import ForumReportModal    from './ForumReportModal';
 import HttpClient          from './HttpClient';
+import LessonForm          from './LessonForm';
 import LessonPlayer        from './LessonPlayer';
 import ModuleReorder       from './ModuleReorder';
 import NotificationBell    from './NotificationBell';
@@ -32,6 +33,7 @@ export default {
     DashboardFilter:     new DashboardFilter(httpClient),
     ForumPolling:        new ForumPolling(httpClient),
     ForumReportModal:    new ForumReportModal(httpClient, notifications),
+    LessonForm:          new LessonForm(),
     LessonPlayer:        new LessonPlayer(httpClient, notifications),
     ModuleReorder:       new ModuleReorder(httpClient, notifications),
     NotificationBell:    new NotificationBell(httpClient),

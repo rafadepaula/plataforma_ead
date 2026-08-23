@@ -88,6 +88,40 @@ class Lesson extends Model
     }
 
     /**
+     *  every attached file (images + PDFs) of this lesson. New
+     * consumers must read lesson media through this relation — the flat
+     * `image_path`/`pdf_path` columns are deprecated single-file leftovers,
+     * only kept (synced with the first attachment of each kind) for legacy
+     * read paths.
+     *
+     * @return HasMany<LessonMedia, $this>
+     */
+    public function media(): HasMany
+    {
+        return $this->hasMany(LessonMedia::class);
+    }
+
+    /**
+     *  only the image attachments of this lesson.
+     *
+     * @return HasMany<LessonMedia, $this>
+     */
+    public function images(): HasMany
+    {
+        return $this->hasMany(LessonMedia::class)->where('kind', LessonMedia::KIND_IMAGE);
+    }
+
+    /**
+     *  only the PDF attachments of this lesson.
+     *
+     * @return HasMany<LessonMedia, $this>
+     */
+    public function pdfs(): HasMany
+    {
+        return $this->hasMany(LessonMedia::class)->where('kind', LessonMedia::KIND_PDF);
+    }
+
+    /**
      * @return HasOne<Quiz, $this>
      */
     public function quiz(): HasOne

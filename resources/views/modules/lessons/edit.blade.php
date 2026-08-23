@@ -9,7 +9,7 @@
     />
 
     <x-ui.card>
-        <form method="POST" action="{{ route('lessons.update', $lesson) }}" enctype="multipart/form-data" dusk="lesson-form">
+        <form method="POST" action="{{ route('lessons.update', $lesson) }}" enctype="multipart/form-data" dusk="lesson-form" data-lesson-form>
             @csrf
             @method('PUT')
 
@@ -17,7 +17,7 @@
 
             <x-ui.form-actions>
                 <x-ui.button type="submit" dusk="lesson-submit">Salvar Alterações</x-ui.button>
-                <x-ui.button variant="secondary" href="{{ route('modules.lessons.index', $lesson->module) }}">Cancelar</x-ui.button>
+                <x-ui.button variant="ghost" href="{{ route('modules.lessons.index', $lesson->module) }}">Cancelar</x-ui.button>
             </x-ui.form-actions>
         </form>
     </x-ui.card>

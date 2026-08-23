@@ -1,0 +1,73 @@
+// =============================================================================
+// Componente: Sortable list (lista reordenável Material Bootstrap)
+// -----------------------------------------------------------------------------
+// Linhas arrastáveis do montador de trilhas: `x-ui.sortable-list` /
+// `x-ui.sortable-row` (`ds-sortable-*`), chips de metadados das linhas
+// (`ds-chip-outline`/`ds-chip-primary`/`ds-chip-plain`) e a dropzone
+// multi-arquivo `x-ui.file-drop` (`ds-file-drop`). Bootstrap não entrega
+// esses padrões prontos.
+// Regra: qualquer declaração aqui só pode consumir var(--*), nunca literal de
+// cor/raio/sombra.
+// =============================================================================
+
+// A alça é a affordância de arraste (o `<li>` inteiro é draggable para o
+// HTML5 DnD, mas o cursor de grab comunica onde o gesto comeia).
+.ds-sortable-list .drag-handle {
+    color: var(--text-disabled);
+    cursor: grab;
+}
+
+.ds-sortable-list .drag-handle:active {
+    cursor: grabbing;
+}
+
+// Título da linha: peso 600 + ellipsis de uma linha (utilities `fw-semibold`
+// e `text-truncate` vêm do componente; aqui só o mínimo para o truncate
+// funcionar dentro de um flex).
+.ds-sortable-title {
+    min-width: 0;
+}
+
+// -----------------------------------------------------------------------------
+// Chips de metadados (estáticos, não-filtro) das linhas. A base `.ds-chip`
+// vive em `_chip.scss` (filtro interativo); estas variantes são o par
+// container/on-container só-leitura — sem cursor de botão.
+// -----------------------------------------------------------------------------
+.ds-chip.ds-chip-plain {
+    cursor: default;
+}
+
+.ds-chip.ds-chip-outline {
+    color: var(--text-secondary);
+    background-color: transparent;
+}
+
+.ds-chip.ds-chip-primary {
+    color: var(--on-primary-container);
+    background-color: var(--primary-container);
+    border-color: transparent;
+}
+
+// -----------------------------------------------------------------------------
+// Dropzone multi-arquivo (`x-ui.file-drop`): borda tracejada vem das
+// utilities (`border border-dashed rounded`); aqui ficam a affordância de
+// clique e o estado de erro por campo (validação cliente do LessonForm.js
+// e mensagens do servidor).
+// -----------------------------------------------------------------------------
+.ds-file-drop {
+    cursor: pointer;
+    transition: var(--transition-base);
+
+    &:hover {
+        background: var(--state-hover);
+    }
+
+    &:focus-within {
+        outline: var(--focus-ring-width) solid var(--focus-ring);
+        outline-offset: 2px;
+    }
+}
+
+.ds-file-drop.is-invalid {
+    border-color: var(--critical);
+}

@@ -57,4 +57,39 @@ class ModuleReorderTest extends DuskTestCase
         $this->assertSame(0, $second->fresh()->order_index);
         $this->assertSame(1, $first->fresh()->order_index);
     }
+
+    /**
+     * Exercises the actual keyboard-accessible `data-move-down` button
+     * click path (`ModuleReorder.js::handleMoveButton()`), not
+     * `persistOrder()` directly: the `@forelse` loop in
+     * `courses/modules/_list.blade.php` leaves whitespace text nodes
+     * between rendered `<li>` rows, so this is the only way to catch a
+     * regression that swaps `nextSibling`/`previousElementSibling` and
+     * silently no-ops the DOM move while still showing the success toast.
+     */
+    public function test_move_down_button_persists_after_reload(): void
+    {
+        $org = Organization::factory()->create();
+        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor->assignRole(RolesEnum::GESTOR->value);
+        $course = Course::factory()->create(['org_id' => $org->id]);
+        $first = Module::factory()->for($course)->create(['title' => 'Módulo Um', 'order_index' => 0]);
+        $second = Module::factory()->for($course)->create(['title' => 'Módulo Dois', 'order_index' => 1]);
+        $third = Module::factory()->for($course)->create(['title' => 'Módulo Três', 'order_index' => 2]);
+
+        $this->browse(function (Browser $browser) use ($gestor, $course, $first): void {
+            $browser->loginAs($gestor)
+                ->visit(route('courses.modules.index', $course))
+                ->waitFor('@module-list')
+                ->assertSeeIn('@module-list', 'Módulo Um')
+                ->click('@module-row-'.$first->id.' [data-move-down]')
+                ->waitForText('Ordem atualizada com sucesso.')
+                ->refresh()
+                ->waitFor('@module-list');
+        });
+
+        $this->assertSame(1, $first->fresh()->order_index);
+        $this->assertSame(0, $second->fresh()->order_index);
+        $this->assertSame(2, $third->fresh()->order_index);
+    }
 }

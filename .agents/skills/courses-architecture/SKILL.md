@@ -12,6 +12,7 @@ metadata:
   role: architecture
   specs:
     - spec/specs/05-courses-modules-and-content-management.md
+    - spec/specs/23-trail-builder-modules-and-lessons.md
     - spec/specs/00-architecture-database-and-guardrails.md
 ---
 
@@ -33,6 +34,7 @@ section). Admin with no active impersonation manage nothing here. No fallback to
 | `course_user` (pivot) | `user_id`, `course_id`, `status` (`active`\|`cancelled`\|`completed`), `progress_percentage`, `enrolled_at`, `completed_at` | Not org-scoped — enrollment cross orgs (see `tenancy-architecture`) |
 | `modules` | `course_id`, `title`, `description`, `order_index` | **Cascade-inherited** via `courses.org_id` — no own `org_id`, no `OrgScope` |
 | `lessons` | `module_id`, `title`, `type` (`content`\|`quiz`), `content_text`, `youtube_url`, `pdf_path`, `image_path`, `order_index`, `is_published` | **Cascade-inherited** via `modules`, `courses.org_id` |
+| `lesson_media` | `lesson_id` FK `cascadeOnDelete`, `kind` ENUM(`image`\|`pdf`), `path`, `original_name` nullable, `size_bytes` nullable unsignedBigInteger; INDEX(`lesson_id`,`kind`) | **Cascade-inherited** via `lesson -> module -> courses.org_id` — no own `org_id`, no `OrgScope` (same as `Module`/`Lesson`) |
 
 All three (`courses`, `modules`, `lessons`) use `SoftDeletes`. Every delete
 action here soft-delete (`deleted_at`), never hard `DELETE`. Matter most for
@@ -63,6 +65,37 @@ enforcement point for that case. See `courses-conventions` for exact pattern
 (`withoutGlobalScopes()` when read parent Course inside Policy — read through
 normal scoped relation while acting as different-org Gestor return `null`
 instead of real cross-tenant row, turn intended 403 into type error).
+
+## Lesson Media: `lesson_media` Is the Read Model, Legacy Columns Are Compat
+
+SPEC-23 §3.1 (RF07) requires MULTIPLE images and MULTIPLE PDFs per lesson, so
+attachments live in `lesson_media` rows (`LessonMedia::KIND_IMAGE`/`KIND_PDF`),
+one row per file, written by `LessonController::syncMedia()` via
+`FileUploadService::storeImages()`/`storePdfs()` (the media-only inputs are
+first stripped out of the mass-assigned attributes by
+`LessonController::validatedAttributes()`). Rules of the road:
+
+- Every read path iterates `Lesson::media()` (or the `images()`/`pdfs()`
+  scopes). The legacy `lessons.image_path`/`pdf_path` VARCHAR columns are kept
+  and backfilled from (migration `2026_08_23_000002`), synced with the first
+  attachment of each kind, and nulled when that kind's last attachment is
+  removed — they exist purely so legacy/classroom read paths keep working.
+  Never write a new consumer against them.
+- Per-file limits: images 2MB (`max:2048`), PDFs 10MB (`max:10240`), enforced
+  per element (`images.*`/`pdfs.*`) so a request mixing one oversized file
+  with valid siblings fails atomically — no partial upload, no Lesson row.
+- Removal is a server round-trip: the update request carries `removed_media[]`
+  of `lesson_media` ids, validated only as `['integer']` (no `exists` rule —
+  an id for another lesson/tenant is not rejected at validation time).
+  `syncMedia()` scopes the delete query to the route-bound lesson's own
+  `media()` relation, so a foreign id is silently ignored rather than
+  triggering a 422, before deleting the row AND
+  `Storage::disk('public')->delete()`ing the file.
+- Deletion semantics: `lesson_media.lesson_id` is `cascadeOnDelete` at the DB
+  level, but Lesson deletion is a SOFT delete, so media rows are only purged
+  on a hard delete. The Gestor ConfirmModal cascade warning ("As {N} lições
+  deste módulo também serão removidas...") mirrors the DB cascade, while the
+  actual soft delete leaves lesson rows and `lesson_progress` intact.
 
 ## Course Delete Guard
 

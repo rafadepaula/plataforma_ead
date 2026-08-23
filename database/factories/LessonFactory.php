@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\Lesson;
+use App\Models\LessonMedia;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -91,5 +92,34 @@ class LessonFactory extends Factory
             'pdf_path' => null,
             'image_path' => null,
         ]);
+    }
+
+    /**
+     * Multi-file lesson: attaches `LessonMedia` rows after creation
+     * (default one image + one PDF; pass counts to customize). Also syncs
+     * the legacy `image_path`/`pdf_path` columns to the first attachment of
+     * each kind, mirroring `LessonController::syncMedia()`.
+     */
+    public function media(int $images = 1, int $pdfs = 1): static
+    {
+        return $this->afterCreating(function (Lesson $lesson) use ($images, $pdfs): void {
+            $firstImage = null;
+            $firstPdf = null;
+
+            if ($images > 0) {
+                LessonMedia::factory()->count($images)->image()->for($lesson, 'lesson')->create();
+                $firstImage = $lesson->images()->orderBy('id')->value('path');
+            }
+
+            if ($pdfs > 0) {
+                LessonMedia::factory()->count($pdfs)->pdf()->for($lesson, 'lesson')->create();
+                $firstPdf = $lesson->pdfs()->orderBy('id')->value('path');
+            }
+
+            $lesson->forceFill([
+                'image_path' => $firstImage,
+                'pdf_path' => $firstPdf,
+            ])->save();
+        });
     }
 }

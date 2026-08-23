@@ -24,6 +24,7 @@
     'variant' => 'danger',
     'message' => null,
     'formDusk' => null,
+    'confirmDusk' => null,
 ])
 
 @php
@@ -73,7 +74,7 @@
                     <x-ui.button type="submit"
                                  :variant="$variant"
                                  :icon="$variant === 'danger' ? 'trash' : null"
-                                 dusk="confirm-modal-{{ $id }}-confirm">{{ $confirmLabel }}</x-ui.button>
+                                 dusk="{{ $confirmDusk ?? 'confirm-modal-'.$id.'-confirm' }}">{{ $confirmLabel }}</x-ui.button>
                 </form>
             </div>
         </div>

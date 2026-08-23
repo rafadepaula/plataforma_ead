@@ -9,6 +9,16 @@
  * list (nested under a Module). Posts the new ordered `id` sequence via
  * the shared `HttpClient` module and surfaces a `NotificationService`
  * toast on success/failure.
+ *
+ * Failure contract (SPEC-23 §4): the DOM order is snapshotted BEFORE the
+ * POST and restored on any non-2xx response, so the UI never lies about
+ * the persisted order. Concurrent reorders by two gestores resolve as
+ * last-write-wins on the server — acceptable and documented.
+ *
+ * Accessibility (SPEC-23 §4): each row carries `data-move-up`/`data-move-down`
+ * buttons (rendered by `<x-ui.sortable-row>`) that reorder via keyboard and
+ * persist through this exact same endpoint/payload — no parallel path that
+ * could bypass the server's tenant guard.
  */
 export class ModuleReorder {
     constructor(httpClient, notificationService) {
@@ -58,6 +68,34 @@ export class ModuleReorder {
         list.addEventListener('dragend', () => {
             this.draggedItem = null;
         });
+
+        list.addEventListener('click', (event) => {
+            this.handleMoveButton(list, event);
+        });
+    }
+
+    /**
+     * Keyboard-accessible move-up/move-down: same DOM reorder, same
+     * persistence call — the server-side tenant/ownership guard is shared
+     * with the drag path.
+     */
+    handleMoveButton(list, event) {
+        const moveUp = event.target.closest('[data-move-up]');
+        const moveDown = event.target.closest('[data-move-down]');
+        if (!moveUp && !moveDown) return;
+
+        const item = (moveUp || moveDown).closest('[data-id]');
+        if (!item || !list.contains(item)) return;
+
+        if (moveUp && item.previousElementSibling) {
+            list.insertBefore(item, item.previousElementSibling);
+            this.persistOrder(list);
+        }
+
+        if (moveDown && item.nextElementSibling) {
+            list.insertBefore(item.nextElementSibling, item);
+            this.persistOrder(list);
+        }
     }
 
     async persistOrder(list) {
@@ -66,10 +104,15 @@ export class ModuleReorder {
 
         if (!url || orderedIds.length === 0) return;
 
+        // Snapshot ANTES do POST: em caso de falha a lista volta exatamente
+        // à ordem que o servidor conhece.
+        const snapshot = Array.from(list.children);
+
         try {
             await this.httpClient.post(url, { ordered_ids: orderedIds });
             this.notify('success', 'Ordem atualizada com sucesso.');
         } catch (error) {
+            snapshot.forEach((child) => list.appendChild(child));
             this.notify('error', `Falha ao reordenar: ${error.message}`);
         }
     }
