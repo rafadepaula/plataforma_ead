@@ -46,6 +46,19 @@ These tests guard SPEC-08 contract, must stay green (PHPUnit, no Pest):
   `tests/Browser/EssayGradingScreenTest.php` (Bucket 2, Dusk E2E) — full
   browser flow through `student/quizzes/show.blade.php` and
   `quizzes/attempts/show.blade.php`.
+- `tests/Feature/MultiTenantQuizManagementTest.php` (SPEC-24) —
+  additive cross-org isolation on Quiz/QuizQuestion (view/update/
+  delete/reorder 403 on another org's records via direct route hits),
+  options-payload isolation (smuggled foreign option id untouched), the
+  4 question-type CRUD happy paths, and reorder dense-reassignment from
+  non-contiguous `order_index`.
+- `tests/Browser/QuizAuthoringDuskTest.php` (SPEC-24) — single
+  lifecycle-chain test (per `testing-conventions` journey-grouping
+  convention, not a per-module file) covering type-switch options/essay
+  toggling, template-clone add-option, min-2-options guard toast, marking
+  an option correct applying `.is-correct`, `true_false`'s 2 fixed
+  readonly rows, then create → edit → reorder through the shared
+  `ModuleReorder.js` path.
 
 Run narrowest of these first after touching this module:
 
@@ -54,8 +67,10 @@ vendor/bin/sail artisan test --filter=SubmitQuizAttemptTest
 vendor/bin/sail artisan test --filter=QuizAttemptLimitsTest
 vendor/bin/sail artisan test --filter=EssayManualGradingTest
 vendor/bin/sail artisan test --filter=QuizManagementTest
+vendor/bin/sail artisan test --filter=MultiTenantQuizManagementTest
 vendor/bin/sail dusk --filter=StudentQuizAttemptTest
 vendor/bin/sail dusk --filter=EssayGradingScreenTest
+vendor/bin/sail dusk --filter=QuizAuthoringDuskTest
 ```
 
 ## Quiz Submission Scores Unexpectedly
@@ -159,6 +174,11 @@ counts done. Also re-check:
 
 - `spec/specs/08-quizzes-and-evaluations-engine.md` — RF08, RF09, RN02,
   RN03, RN04, RN11.
+- `spec/specs/24-quiz-authoring-and-question-builder.md` — Material
+  Bootstrap redesign of `quizzes/edit.blade.php`/
+  `_question-form.blade.php` (two-column layout, `.is-correct` highlight,
+  radio/checkbox visual swap); UI-only, no schema or business-rule
+  change.
 - `courses-maintenance` — analogous reorder/Policy cascade-authorize
   pattern this module copies one level deeper.
 - `learning-maintenance` — `MarkLessonCompleteAction`,

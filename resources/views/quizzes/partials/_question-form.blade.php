@@ -74,7 +74,7 @@
 
             <div data-options-list="{{ $formSuffix }}" class="d-flex flex-column gap-2">
                 @forelse($existingOptions as $i => $option)
-                    <div class="d-flex align-items-center gap-2" data-option-row data-option-id="{{ $option->id }}">
+                    <div class="d-flex align-items-center gap-2 quiz-option-row{{ $option->is_correct ? ' is-correct' : '' }}" data-option-row data-option-id="{{ $option->id }}">
                         <input type="hidden" name="options[{{ $i }}][id]" value="{{ $option->id }}" />
                         <input type="checkbox" name="options[{{ $i }}][is_correct]" value="1"
                                @checked($option->is_correct) data-correct-checkbox
@@ -89,7 +89,7 @@
                 @empty
                     {{-- Blank forms start with the minimum 2 rows every single_choice/true_false/multiple_choice question needs. --}}
                     @for($i = 0; $i < 2; $i++)
-                        <div class="d-flex align-items-center gap-2" data-option-row>
+                        <div class="d-flex align-items-center gap-2 quiz-option-row" data-option-row>
                             <input type="checkbox" name="options[{{ $i }}][is_correct]" value="1" data-correct-checkbox
                                    class="form-check-input flex-shrink-0 m-0" dusk="option-correct-{{ $formSuffix }}-{{ $i }}" />
                             <input type="text" name="options[{{ $i }}][option_text]"
@@ -110,9 +110,9 @@
                 </x-ui.button>
             </div>
 
-            {{-- Cloned by `QuizBuilder.addOption()` — kept as an inert `<template>` so it is never itself submitted. --}}
+            {{-- Cloned by `QuizBuilder.addOption()` — kept as an inert `<template>` so it is never itself submitted. A freshly cloned row always starts unchecked/uncorrect, so no `is-correct` class here. --}}
             <template data-option-template="{{ $formSuffix }}">
-                <div class="d-flex align-items-center gap-2" data-option-row>
+                <div class="d-flex align-items-center gap-2 quiz-option-row" data-option-row>
                     <input type="checkbox" name="options[__INDEX__][is_correct]" value="1" data-correct-checkbox
                            class="form-check-input flex-shrink-0 m-0" />
                     <input type="text" name="options[__INDEX__][option_text]" placeholder="Texto da opção"

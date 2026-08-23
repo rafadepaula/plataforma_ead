@@ -168,6 +168,38 @@ whatever persisted option ids no longer present in submitted `options[]`
 array; everything else present in `options[]` is upsert (matched by
 `options[{i}][id]`, blank for brand-new row).
 
+## `quizzes/edit.blade.php` Is a Two-Column Grid (Material Bootstrap, SPEC-24)
+
+Rules form and questions section sit in a Bootstrap `row g-4`: rules
+`x-ui.card` in `col-lg-5` (left), questions header/list in `col-lg-7`
+(right), per `spec/new_ds/DESIGN.md` §4.5. Below `lg` it stacks to a
+single full-width column automatically (no bespoke breakpoint CSS) — do
+not reintroduce a fixed-width layout or hardcode desktop-only widths.
+
+## Option Rows Carry `.quiz-option-row`/`.is-correct`, Radio↔Checkbox Swap Is Cosmetic Only
+
+Every `[data-option-row]` (server-rendered, blank-form, and the
+`<template data-option-template>` clone target) also carries
+`.quiz-option-row` (base styling in `resources/scss/components/
+_quiz-builder.scss`). A row whose `[data-correct-checkbox]` is checked
+gets `.is-correct` added (mint `--mint-100` background, `--secondary`
+border) — server sets it on initial render when `$option->is_correct` is
+true; client keeps it in sync via `QuizBuilder.js`'s
+`syncRowHighlight()`/`syncCorrectHighlight()`, called from the `change`
+listener, `applyTypeBehavior()` (per-row loop, on init/type switch), and
+`applyRowDisabledState()` (freshly cloned rows always start
+unchecked/uncorrect — never highlighted on clone).
+
+`applyTypeBehavior()`/`applyRowDisabledState()` also toggle each row's
+`[data-correct-checkbox].type` between `radio`/`checkbox` to match
+`single_choice`/`true_false` vs `multiple_choice` visually. This is
+**purely cosmetic** — the checkboxes are never given a shared `name`
+attribute, so native radio-group exclusivity never applies.
+`enforceSingleCorrect()` (existing, see below) remains the **only**
+mechanism enforcing single-correct-option for `single_choice`/
+`true_false`. Do not remove `enforceSingleCorrect()` under the
+assumption that swapping `type="radio"` makes it redundant.
+
 ## Reorder: Reuses `ModuleReorder.js`, No New JS Module
 
 `quizzes/partials/_question-list.blade.php` `<ul>` carries exact same

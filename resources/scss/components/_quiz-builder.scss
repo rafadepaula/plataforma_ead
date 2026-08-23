@@ -1,0 +1,25 @@
+// =============================================================================
+// Componente: Quiz builder (autoria de provas e construtor de questões)
+// -----------------------------------------------------------------------------
+// Linha de opção (`[data-option-row]`) de `quizzes/partials/_question-form.blade.php`.
+// `QuizBuilder.js` alterna `.is-correct` em `[data-option-row]` sempre que o
+// `[data-correct-checkbox]` da linha muda (`syncCorrectHighlight()`); o
+// servidor já marca a classe no primeiro render quando `$option->is_correct`
+// é verdadeiro — ver `quizzes-conventions`.
+// Regra: qualquer declaração aqui só pode consumir var(--*), nunca literal de
+// cor/raio/sombra.
+// =============================================================================
+
+.quiz-option-row {
+    padding: var(--space-2) var(--space-3);
+    border: 1.5px solid transparent;
+    border-radius: var(--radius-md);
+    transition: var(--transition-base);
+}
+
+// Linha marcada como gabarito: fundo menta + borda `--secondary` (nunca
+// vermelho/laranja/amarelo — gabarito não é alerta).
+.quiz-option-row.is-correct {
+    background: var(--mint-100);
+    border-color: var(--secondary);
+}
