@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Course;
 use DOMDocument;
 use DOMElement;
 use DOMXPath;
@@ -99,10 +100,10 @@ class UiTableComponentTest extends TestCase
         $this->assertStringNotContainsString('#e2e7f0', $scss);
     }
 
-    public function test_pagination_is_aligned_to_the_right_outside_the_table_card(): void
+    public function test_pagination_shows_the_result_counter_and_links_only_when_there_are_multiple_pages(): void
     {
-        $paginator = new LengthAwarePaginator(range(1, 10), 20, 10, 1);
-        $html = Blade::render('<x-ui.pagination :paginator="$paginator" />', compact('paginator'));
+        $paginator = new LengthAwarePaginator(range(1, 10), 24, 10, 1);
+        $html = Blade::render('<x-ui.pagination :paginator="$paginator" item-label="cursos" />', compact('paginator'));
 
         $xpath = $this->xpathFor($html);
         $navigations = $xpath->query('//nav[contains(concat(" ", normalize-space(@class), " "), " ds-pagination ")]');
@@ -112,8 +113,108 @@ class UiTableComponentTest extends TestCase
         $navigation = $navigations->item(0);
         $this->assertInstanceOf(DOMElement::class, $navigation);
         $navigationClasses = $this->classTokens($navigation);
-        $this->assertContains('justify-content-end', $navigationClasses);
+        $this->assertContains('justify-content-between', $navigationClasses);
         $this->assertNotContains('justify-content-center', $navigationClasses);
+        $this->assertSame(1, $xpath->query('.//*[normalize-space(.)="Mostrando 1–10 de 24 cursos"]', $navigation)?->count());
+        $this->assertSame(0, $xpath->query('.//nav', $navigation)?->count());
+        $this->assertSame(2, $xpath->query('.//ul[contains(concat(" ", normalize-space(@class), " "), " pagination ")]', $navigation)?->count());
+        $this->assertSame(1, $xpath->query('.//ul[contains(concat(" ", normalize-space(@class), " "), " d-sm-none ") and not(.//*[@data-page])]', $navigation)?->count());
+        $this->assertSame(1, $xpath->query('.//ul[contains(concat(" ", normalize-space(@class), " "), " d-none ") and contains(concat(" ", normalize-space(@class), " "), " d-sm-flex ") and .//a[@data-page="2"]]', $navigation)?->count());
+        $this->assertSame(1, $xpath->query('.//a[@data-page="2" and normalize-space(.)="2"]', $navigation)?->count());
+        $this->assertStringNotContainsString('Showing', $html);
+        $this->assertStringNotContainsString('results', $html);
+
+        $singlePagePaginator = new LengthAwarePaginator(range(1, 4), 4, 10, 1);
+        $singlePageHtml = Blade::render('<x-ui.pagination :paginator="$singlePagePaginator" item-label="cursos" />', compact('singlePagePaginator'));
+
+        $this->assertSame('', trim($singlePageHtml));
+    }
+
+    public function test_course_catalog_columns_and_pagination_controls_follow_the_visual_contract(): void
+    {
+        $courseStyles = file_get_contents(resource_path('scss/components/_courses.scss'));
+        $componentIndex = file_get_contents(resource_path('scss/components/_index.scss'));
+        $appStyles = file_get_contents(resource_path('scss/app.scss'));
+        $paginationStyles = file_get_contents(resource_path('scss/components/_pastel-wash.scss'));
+
+        $this->assertIsString($courseStyles);
+        $this->assertMatchesRegularExpression('/\.course-catalog-workload-column\s*\{\s*width:\s*150px;\s*\}/', $courseStyles);
+        $this->assertMatchesRegularExpression('/\.course-catalog-students-column\s*\{\s*width:\s*110px;\s*text-align:\s*right;\s*\}/', $courseStyles);
+        $this->assertMatchesRegularExpression('/\.course-catalog-status-column\s*\{\s*width:\s*130px;\s*\}/', $courseStyles);
+        $this->assertMatchesRegularExpression('/\.course-catalog-actions-column\s*\{\s*width:\s*470px;\s*text-align:\s*right;\s*\}/', $courseStyles);
+
+        $this->assertIsString($componentIndex);
+        $this->assertMatchesRegularExpression('/@import\s+["\']courses["\'];/', $componentIndex);
+        $this->assertMatchesRegularExpression('/@import\s+["\']pastel-wash["\'];/', $componentIndex);
+
+        $this->assertIsString($appStyles);
+        $this->assertMatchesRegularExpression('/@import\s+["\']components\/index["\'];/', $appStyles);
+
+        $this->assertIsString($paginationStyles);
+        $this->assertMatchesRegularExpression(
+            '/\.ds-pagination\s*\{[\s\S]*?\.page-link\s*\{[\s\S]*?width:\s*40px;[\s\S]*?height:\s*40px;[\s\S]*?border-radius:\s*var\(--radius-pill\);[\s\S]*?\}/',
+            $paginationStyles,
+        );
+        $this->assertStringNotContainsString('!important', $paginationStyles);
+    }
+
+    public function test_course_title_cell_renders_exact_module_and_lesson_pluralization(): void
+    {
+        $emptyCourse = $this->courseWithCounts(modules: 0, lessons: 0);
+        $singularCourse = $this->courseWithCounts(modules: 1, lessons: 1);
+        $pluralCourse = $this->courseWithCounts(modules: 2, lessons: 3);
+
+        $emptyHtml = Blade::render('<x-course.title-cell :course="$course" />', ['course' => $emptyCourse]);
+        $singularHtml = Blade::render('<x-course.title-cell :course="$course" />', ['course' => $singularCourse]);
+        $pluralHtml = Blade::render('<x-course.title-cell :course="$course" />', ['course' => $pluralCourse]);
+
+        $this->assertStringContainsString('Sem módulos cadastrados', $emptyHtml);
+        $this->assertStringNotContainsString('0 módulos', $emptyHtml);
+        $this->assertStringContainsString('1 módulo · 1 aula', $singularHtml);
+        $this->assertStringContainsString('2 módulos · 3 aulas', $pluralHtml);
+    }
+
+    public function test_course_row_actions_disable_removal_and_explain_active_enrollments(): void
+    {
+        $singularCourse = $this->courseWithCounts(activeStudents: 1);
+        $pluralCourse = $this->courseWithCounts(activeStudents: 2);
+
+        $singularHtml = Blade::render('<x-course.row-actions :course="$course" />', ['course' => $singularCourse]);
+        $pluralHtml = Blade::render('<x-course.row-actions :course="$course" />', ['course' => $pluralCourse]);
+        $xpath = $this->xpathFor($pluralHtml);
+
+        $this->assertSame(1, $xpath->query('//a[@dusk="manage-modules-42" and contains(@class, "btn-tonal")]')?->count());
+        $this->assertSame(1, $xpath->query('//a[@dusk="manage-completion-rules-42" and contains(@class, "btn-ghost")]')?->count());
+        $this->assertSame(1, $xpath->query('//a[@dusk="edit-course-42" and contains(@class, "btn-ghost")]')?->count());
+        $this->assertSame(1, $xpath->query('//button[@dusk="delete-course-42" and @disabled]')?->count());
+        $this->assertSame(0, $xpath->query('//*[@data-bs-target="#delete-course-42"]')?->count());
+        $this->assertStringContainsString('1 aluno matriculado', $singularHtml);
+        $this->assertStringContainsString('2 alunos matriculados', $pluralHtml);
+    }
+
+    public function test_course_row_actions_enable_removal_without_an_enrollment_warning(): void
+    {
+        $course = $this->courseWithCounts(activeStudents: 0);
+
+        $html = Blade::render('<x-course.row-actions :course="$course" />', compact('course'));
+        $xpath = $this->xpathFor($html);
+
+        $this->assertSame(1, $xpath->query('//button[@dusk="delete-course-42" and @data-bs-toggle="modal" and @data-bs-target="#delete-course-42" and not(@disabled)]')?->count());
+        $this->assertStringNotContainsString('matriculado', $html);
+    }
+
+    private function courseWithCounts(int $modules = 2, int $lessons = 3, int $activeStudents = 0): Course
+    {
+        $course = new Course;
+        $course->forceFill([
+            'id' => 42,
+            'title' => 'Curso Laravel',
+            'modules_count' => $modules,
+            'lessons_count' => $lessons,
+            'active_students_count' => $activeStudents,
+        ]);
+
+        return $course;
     }
 
     private function xpathFor(string $html): DOMXPath

@@ -176,33 +176,21 @@ class ResponsiveNoHorizontalScrollTest extends DuskTestCase
             self::assertNotSame('transparent', $layout['labelColor']);
             self::assertGreaterThan(0, $layout['labelColorAlpha']);
 
-            $browser->assertVisible('@edit-course-'.$course->id)
-                ->assertVisible('@delete-course-'.$course->id)
-                ->assertVisible('#course-actions-toggle-'.$course->id);
-
-            $toggleHasFocus = $browser->script(
-                'document.querySelector('.json_encode('#course-actions-toggle-'.$course->id, JSON_THROW_ON_ERROR).').focus(); return document.activeElement === document.querySelector('.json_encode('#course-actions-toggle-'.$course->id, JSON_THROW_ON_ERROR).');'
-            )[0];
-
-            self::assertTrue($toggleHasFocus);
-
-            $browser->keys('#course-actions-toggle-'.$course->id, '{ARROW_DOWN}')
-                ->waitFor('@manage-completion-rules-'.$course->id)
-                ->assertVisible('@manage-completion-rules-'.$course->id);
-
-            $dropdownItemHasFocus = $browser->script(
-                'return document.activeElement === document.querySelector('.json_encode('[dusk="manage-completion-rules-'.$course->id.'"]', JSON_THROW_ON_ERROR).');'
-            )[0];
-
-            self::assertTrue($dropdownItemHasFocus);
-
-            $browser->keys('@manage-completion-rules-'.$course->id, '{ESCAPE}')
-                ->waitUntil('!document.querySelector('.json_encode('#course-actions-toggle-'.$course->id, JSON_THROW_ON_ERROR).').closest(".dropdown").querySelector(".dropdown-menu").classList.contains("show")')
-                ->click('#course-actions-toggle-'.$course->id)
-                ->waitFor('@manage-completion-rules-'.$course->id)
+            $browser->assertVisible('@manage-modules-'.$course->id)
                 ->assertVisible('@manage-completion-rules-'.$course->id)
-                ->click('#course-actions-toggle-'.$course->id)
-                ->waitUntil('!document.querySelector('.json_encode('#course-actions-toggle-'.$course->id, JSON_THROW_ON_ERROR).').closest(".dropdown").querySelector(".dropdown-menu").classList.contains("show")');
+                ->assertVisible('@edit-course-'.$course->id)
+                ->assertVisible('@delete-course-'.$course->id)
+                ->assertDisabled('@delete-course-'.$course->id)
+                ->assertMissing('#course-actions-toggle-'.$course->id);
+
+            foreach (['manage-modules', 'manage-completion-rules', 'edit-course'] as $action) {
+                $actionSelector = '[dusk="'.$action.'-'.$course->id.'"]';
+                $actionHasFocus = $browser->script(
+                    'document.querySelector('.json_encode($actionSelector, JSON_THROW_ON_ERROR).').focus(); return document.activeElement === document.querySelector('.json_encode($actionSelector, JSON_THROW_ON_ERROR).');'
+                )[0];
+
+                self::assertTrue($actionHasFocus);
+            }
 
             $this->assertNoHorizontalScrollAtEveryWidth($browser);
         });

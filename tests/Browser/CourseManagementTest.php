@@ -10,16 +10,6 @@ use App\Models\User;
 use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 
-/**
- * E2E coverage: a Gestor creates/edits/deletes a Course, a
- * Module, and a Lesson through the UI, including the destructive-action
- * confirmations.
- *
- * Agrupado por cadeia de ciclo de vida (ver `testing-conventions`): a
- * jornada de autoria completa (curso → edição → módulo → lição → remoção da
- * lição → remoção do curso) num único método; o guard de matrículas ativas
- * e a negativa de autorização do Aluno ficam isolados.
- */
 class CourseManagementTest extends DuskTestCase
 {
     public function test_gestor_course_module_and_lesson_full_lifecycle(): void
@@ -28,10 +18,30 @@ class CourseManagementTest extends DuskTestCase
         $gestor = User::factory()->create(['org_id' => $org->id]);
         $gestor->assignRole(RolesEnum::GESTOR->value);
 
-        $this->browse(function (Browser $browser) use ($gestor): void {
-            // 1. Criação do Curso
+        $publishedCourse = Course::factory()->published()->create([
+            'org_id' => $org->id,
+            'title' => 'Academia Publicada',
+        ]);
+        $draftCourse = Course::factory()->create([
+            'org_id' => $org->id,
+            'title' => 'Biblioteca Rascunho',
+        ]);
+
+        foreach (range(1, 16) as $number) {
+            Course::factory()->create([
+                'org_id' => $org->id,
+                'title' => sprintf('Curso Paginado %02d', $number),
+                'is_published' => $number % 2 === 0,
+            ]);
+        }
+
+        $this->browse(function (Browser $browser) use ($draftCourse, $gestor, $publishedCourse): void {
+            // 1. Entrada no fluxo de criação pelo catálogo
             $browser->loginAs($gestor)
-                ->visit(route('courses.create'))
+                ->visit(route('courses.index'))
+                ->waitFor('@new-course')
+                ->click('@new-course')
+                ->waitForLocation('/courses/create')
                 ->waitFor('@course-form')
                 ->type('title', 'Curso Dusk')
                 ->type('workload_hours', '20')
@@ -42,7 +52,79 @@ class CourseManagementTest extends DuskTestCase
 
             $course = Course::where('title', 'Curso Dusk')->firstOrFail();
 
-            // 2. Edição do Curso
+            $this->assertDatabaseHas('courses', [
+                'id' => $course->id,
+                'title' => 'Curso Dusk',
+                'deleted_at' => null,
+            ]);
+
+            // 2. Estrutura, dados e contratos de ação do catálogo
+            $browser->assertSeeIn('h1', 'Cursos')
+                ->assertPresent('@new-course')
+                ->assertPresent('#courses-filter-form[role="search"]')
+                ->assertPresent('#search[name="search"]')
+                ->assertPresent('button[name="status"][value="all"]')
+                ->assertPresent('button[name="status"][value="published"]')
+                ->assertPresent('button[name="status"][value="draft"]')
+                ->assertPresent('#courses-filter-reset')
+                ->assertSeeIn('#courses-table', 'Título')
+                ->assertSeeIn('#courses-table', 'Carga horária')
+                ->assertSeeIn('#courses-table', 'Alunos')
+                ->assertSeeIn('#courses-table', 'Status')
+                ->assertSeeIn('#courses-table', 'Ações')
+                ->assertSeeIn('@course-row-'.$course->id, 'Sem módulos cadastrados')
+                ->assertSeeIn('@course-row-'.$course->id, '20 horas')
+                ->assertSeeIn('@course-row-'.$course->id, 'Rascunho')
+                ->assertAttribute('@manage-modules-'.$course->id, 'href', route('courses.modules.index', $course))
+                ->assertAttribute('@manage-completion-rules-'.$course->id, 'href', route('courses.completion-rules.index', $course))
+                ->assertAttribute('@edit-course-'.$course->id, 'href', route('courses.edit', $course))
+                ->assertAttribute('@delete-course-'.$course->id, 'data-bs-target', '#delete-course-'.$course->id);
+
+            foreach (['course-row', 'manage-modules', 'manage-completion-rules', 'edit-course', 'delete-course'] as $action) {
+                $selectorCount = $browser->script(
+                    "return document.querySelectorAll('[dusk=\"{$action}-{$course->id}\"]').length;",
+                )[0];
+
+                $this->assertSame(1, $selectorCount);
+            }
+
+            // 3. Busca textual e estado vazio filtrado
+            $browser->type('#search', 'Academia')
+                ->clickAndWaitForReload('button[name="status"][value="all"]')
+                ->assertQueryStringHas('search', 'Academia')
+                ->assertSee($publishedCourse->title)
+                ->assertDontSee($draftCourse->title)
+                ->clear('#search')
+                ->type('#search', 'Resultado inexistente')
+                ->clickAndWaitForReload('button[name="status"][value="all"]')
+                ->assertSeeIn('#courses-table', 'Nenhum curso cadastrado')
+                ->assertSeeIn('#courses-table', 'Crie o primeiro curso para começar a matricular alunos.')
+                ->assertAttribute('#courses-table a[href="'.route('courses.create').'"]', 'href', route('courses.create'));
+
+            // 4. Abas de status e limpeza de filtros
+            $browser->clickAndWaitForReload('#courses-filter-reset')
+                ->clickAndWaitForReload('button[name="status"][value="published"]')
+                ->assertQueryStringHas('status', 'published')
+                ->assertSee($publishedCourse->title)
+                ->assertDontSee($draftCourse->title)
+                ->clickAndWaitForReload('button[name="status"][value="draft"]')
+                ->assertQueryStringHas('status', 'draft')
+                ->assertSee($draftCourse->title)
+                ->assertDontSee($publishedCourse->title)
+                ->clickAndWaitForReload('#courses-filter-reset')
+                ->assertInputValue('#search', '')
+                ->assertSee($publishedCourse->title)
+                ->assertSee($draftCourse->title);
+
+            // 5. Paginação do catálogo
+            $browser->assertSee('Mostrando 1–10 de 19 cursos')
+                ->assertPresent('.ds-pagination')
+                ->assertVisible('.ds-pagination a[data-page="2"]')
+                ->clickAndWaitForReload('.ds-pagination a[data-page="2"]')
+                ->assertQueryStringHas('page', '2')
+                ->assertSee('Curso Paginado 16');
+
+            // 6. Edição do curso
             $browser->visit(route('courses.index'))
                 ->waitFor('@edit-course-'.$course->id)
                 ->click('@edit-course-'.$course->id)
@@ -58,7 +140,7 @@ class CourseManagementTest extends DuskTestCase
                 'title' => 'Curso Dusk Editado',
             ]);
 
-            // 3. Módulo dentro do Curso
+            // 7. Módulo dentro do curso
             $browser->visit(route('courses.modules.create', $course))
                 ->waitFor('@module-form')
                 ->type('title', 'Módulo Dusk')
@@ -68,7 +150,13 @@ class CourseManagementTest extends DuskTestCase
 
             $module = Module::where('course_id', $course->id)->where('title', 'Módulo Dusk')->firstOrFail();
 
-            // 4. Lição dentro do Módulo
+            $this->assertDatabaseHas('modules', [
+                'id' => $module->id,
+                'course_id' => $course->id,
+                'title' => 'Módulo Dusk',
+            ]);
+
+            // 8. Lição dentro do módulo
             $browser->visit(route('modules.lessons.create', $module))
                 ->waitFor('@lesson-form')
                 ->type('title', 'Lição Dusk')
@@ -81,28 +169,40 @@ class CourseManagementTest extends DuskTestCase
 
             $lesson = $module->lessons()->where('title', 'Lição Dusk')->firstOrFail();
 
-            // 5. Remoção da Lição
+            // 9. Contadores do catálogo após a criação de conteúdo
+            $browser->visit(route('courses.index'))
+                ->waitFor('@course-row-'.$course->id)
+                ->assertSeeIn('@course-row-'.$course->id, '1 módulo · 1 aula');
+
+            $this->assertDatabaseHas('courses', ['id' => $course->id, 'deleted_at' => null]);
+
+            // 10. Remoção da lição
             $browser->visit(route('modules.lessons.index', $module))
                 ->waitFor('@delete-lesson-'.$lesson->id)
-                ->click('@delete-lesson-'.$lesson->id)
-                ->waitForLocation('/modules/'.$module->id.'/lessons')
+                ->clickAndWaitForReload('@delete-lesson-'.$lesson->id)
                 ->assertDontSee('Lição Dusk');
 
-            // 6. Remoção do Curso (soft delete, atrás de `x-ui.confirm-modal`)
-            // e desaparecimento da listagem
+            $this->assertSoftDeleted($lesson);
+
+            // 11. Confirmação e remoção lógica do curso
             $browser->visit(route('courses.index'))
                 ->waitFor('@delete-course-'.$course->id)
                 ->click('@delete-course-'.$course->id)
-                ->waitFor('@confirm-modal-delete-course-'.$course->id.'-confirm')
-                ->click('@confirm-modal-delete-course-'.$course->id.'-confirm')
-                ->waitForLocation('/courses')
+                ->waitFor('#delete-course-'.$course->id.'.show')
+                ->assertPresent('form[dusk="delete-form-'.$course->id.'"]')
+                ->assertVisible('@delete-form-'.$course->id)
+                ->assertSeeIn('#delete-course-'.$course->id, 'Remover curso')
+                ->assertSeeIn('#delete-course-'.$course->id, 'Remover “Curso Dusk Editado” é uma ação permanente.')
+                ->assertSeeIn('#delete-course-'.$course->id, 'Cursos com matrículas ativas não podem ser removidos.')
+                ->clickAndWaitForReload('@confirm-modal-delete-course-'.$course->id.'-confirm')
+                ->assertSee('Curso removido com sucesso.')
                 ->assertDontSee('Curso Dusk Editado');
 
             $this->assertSoftDeleted($course);
         });
     }
 
-    public function test_a_course_with_active_enrollments_cannot_be_deleted(): void
+    public function test_course_with_active_enrollment_delete_is_blocked(): void
     {
         $org = Organization::factory()->create();
         $gestor = User::factory()->create(['org_id' => $org->id]);
@@ -113,15 +213,23 @@ class CourseManagementTest extends DuskTestCase
         $aluno->assignRole(RolesEnum::ALUNO->value);
         $course->students()->attach($aluno->id, ['enrolled_at' => now(), 'status' => 'active']);
 
-        $this->browse(function (Browser $browser) use ($gestor, $course): void {
+        $this->browse(function (Browser $browser) use ($aluno, $gestor, $course): void {
+            // 1. Catálogo apresenta o motivo e desabilita a ação destrutiva
             $browser->loginAs($gestor)
                 ->visit(route('courses.index'))
                 ->waitFor('@delete-course-'.$course->id)
-                ->click('@delete-course-'.$course->id)
-                ->waitFor('@confirm-modal-delete-course-'.$course->id.'-confirm')
-                ->click('@confirm-modal-delete-course-'.$course->id.'-confirm')
-                ->waitForLocation('/courses')
-                ->assertSee('Não é possível excluir um Curso com matrículas ativas.');
+                ->assertDisabled('@delete-course-'.$course->id)
+                ->assertSeeIn('@course-row-'.$course->id, '1 aluno matriculado')
+                ->assertAttributeMissing('@delete-course-'.$course->id, 'data-bs-target')
+                ->assertMissing('#delete-course-'.$course->id)
+                ->assertMissing('@confirm-modal-delete-course-'.$course->id.'-confirm');
+
+            // 2. Curso e matrícula permanecem intactos
+            $this->assertDatabaseHas('course_user', [
+                'course_id' => $course->id,
+                'user_id' => $aluno->id,
+                'status' => 'active',
+            ]);
         });
 
         $this->assertNotSoftDeleted($course);
@@ -134,6 +242,7 @@ class CourseManagementTest extends DuskTestCase
         $aluno->assignRole(RolesEnum::ALUNO->value);
 
         $this->browse(function (Browser $browser) use ($aluno): void {
+            // 1. Autorização negativa independente
             $browser->loginAs($aluno)
                 ->visit(route('courses.index'))
                 ->assertSee('403');
