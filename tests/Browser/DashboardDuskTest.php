@@ -33,7 +33,7 @@ class DashboardDuskTest extends DuskTestCase
             $browser->loginAs($admin)
                 ->visit(route('admin.dashboard'))
                 ->waitFor('@admin-dashboard')
-                ->assertSee('Dashboard')
+                ->assertSee('Painel')
                 ->assertSee('Um panorama da plataforma nos últimos 30 dias.')
                 ->assertDontSee('Novo curso')
                 ->assertSeeIgnoringCase('Alunos ativos')
@@ -41,7 +41,14 @@ class DashboardDuskTest extends DuskTestCase
                 ->assertAttribute('@recent-enrollments-table', 'aria-label', 'Matrículas recentes')
                 ->assertSee('Matrículas recentes')
                 ->assertSee('João Pereira')
-                ->assertSee('Nada aguardando você');
+                ->assertSee('Nada aguardando você')
+                ->assertPresent('@filter-period-7d')
+                ->assertPresent('@filter-period-30d')
+                ->assertPresent('@filter-period-year')
+                ->click('@filter-period-7d')
+                ->assertAttribute('@filter-period-7d', 'aria-pressed', 'true')
+                ->click('@filter-period-30d')
+                ->assertAttribute('@filter-period-30d', 'aria-pressed', 'true');
 
             // 2. Sem impersonation ativa, o Admin vê o resumo por Organização.
             $browser->waitFor('@organizations-summary-table')
