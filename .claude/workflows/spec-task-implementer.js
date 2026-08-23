@@ -3,12 +3,12 @@ export const meta = {
   description: 'Understand a spec task from spec/specs/, tech-refine it against the current codebase, implement it TDD-first via the laravel-tdd RED-GREEN-REFACTOR cycle and the laravel-dusk skill for browser flows, using PHPUnit classes per project convention, verify the full suite, loop code-reviewer, validate-test-quality & spec-usecase-test-checker until clean, then check the module skills for staleness.',
   whenToUse: 'Run once per spec requirement passed via args - spec file, optionally an RF task ref - to take it from spec text to reviewed, tested code with its skills kept in sync.',
   phases: [
-    { title: 'Understand', detail: 'Read the spec task, extract requirements/business rules', model: 'sonnet' },
-    { title: 'Tech-Refine', detail: 'Study current codebase, produce a 3-bucket implementation plan', model: 'sonnet' },
-    { title: 'Code', detail: '3 parallel agents, each applying laravel-tdd RED-GREEN-REFACTOR in PHPUnit, using laravel-dusk for any browser-facing bucket', model: 'sonnet' },
-    { title: 'Test', detail: 'Run the full PHPUnit + Dusk suite via Sail, verify coverage per the laravel-tdd checklist', model: 'sonnet' },
-    { title: 'Review', detail: 'code-reviewer, validate-test-quality & spec-usecase-test-checker loop: audit code & test efficacy, verify E2E Dusk coverage for all use cases, fix CONFIRMED findings, capped iterations', model: 'sonnet' },
-    { title: 'Meta-Skill-Check', detail: 'Per SPEC-03, check the touched module skill triad for staleness against the code just merged and update it', model: 'sonnet' }
+    { title: 'Understand', detail: 'Read the spec task, extract requirements/business rules', model: 'opus' },
+    { title: 'Tech-Refine', detail: 'Study current codebase, produce a 3-bucket implementation plan', model: 'opus' },
+    { title: 'Code', detail: '3 parallel agents, each applying laravel-tdd RED-GREEN-REFACTOR in PHPUnit, using laravel-dusk for any browser-facing bucket', model: 'opus' },
+    { title: 'Test', detail: 'Run the full PHPUnit + Dusk suite via Sail, verify coverage per the laravel-tdd checklist', model: 'opus' },
+    { title: 'Review', detail: 'code-reviewer, validate-test-quality & spec-usecase-test-checker loop: audit code & test efficacy, verify E2E Dusk coverage for all use cases, fix CONFIRMED findings, capped iterations', model: 'opus' },
+    { title: 'Meta-Skill-Check', detail: 'Per SPEC-03, check the touched module skill triad for staleness against the code just merged and update it', model: 'opus' }
   ]
 }
 
@@ -130,7 +130,7 @@ const understanding = await agent(
     `Do NOT write or edit any code. This is a research-only pass.`,
     `Extract: the requirement text verbatim, every business rule (RN) tied to it, the DB tables/columns it touches (per spec 00 section 2.1), the acceptance criteria / checklist items from the spec, and cross-references to other spec files this task depends on.`
   ].join('\n'),
-  { label: 'understand', phase: 'Understand', model: 'sonnet', schema: UNDERSTANDING_SCHEMA }
+  { label: 'understand', phase: 'Understand', model: 'opus', schema: UNDERSTANDING_SCHEMA }
 )
 
 // ---------------------------------------------------------------------
@@ -147,7 +147,7 @@ const techPlan = await agent(
     `Follow the laravel-best-practices skill conventions while assessing fit (idiomatic Eloquent, policies, form requests, actions).`,
     `Produce a concrete technical plan split into EXACTLY 3 independent buckets of work suitable for 3 parallel coding agents (e.g. "migrations+models", "controllers/actions+routes", "Blade views+JS"), each bucket listing exact files to create/modify. List edge cases and open questions that would block implementation.`
   ].join('\n'),
-  { label: 'tech-refine', phase: 'Tech-Refine', model: 'sonnet', schema: TECH_PLAN_SCHEMA }
+  { label: 'tech-refine', phase: 'Tech-Refine', model: 'opus', schema: TECH_PLAN_SCHEMA }
 )
 
 const buckets = (techPlan?.buckets ?? []).slice(0, 3)
@@ -173,7 +173,7 @@ const codeResults = await parallel(
         `If this bucket touches Blade views, JS interactions, or any browser-facing flow (per spec/specs/00 §5's mandatory Dusk coverage), use the laravel-dusk skill: write the PHPUnit-style Browser test in tests/Browser (dusk selectors, explicit waitFor over pause, DatabaseMigrations or DatabaseTruncation trait — never RefreshDatabase in a Dusk test, since it runs in a separate HTTP process). Always prefix Dusk/artisan commands with \`vendor/bin/sail\` per project convention (the skill's own examples omit it).`,
         `Only touch the files listed for this bucket. Follow existing project conventions (CLAUDE.md, laravel-best-practices skill). Run \`vendor/bin/sail bin pint --dirty --format agent\` on any PHP files you touch before finishing.`
       ].join('\n'),
-      { label: `code:${bucket.name ?? i + 1}`, phase: 'Code', model: 'sonnet' }
+      { label: `code:${bucket.name ?? i + 1}`, phase: 'Code', model: 'opus' }
     )
   )
 )
@@ -197,7 +197,7 @@ const testResults = await agent(
     `Run \`vendor/bin/sail artisan test --compact\` for the FULL Unit/Feature suite (not just this task's tests, to catch regressions across buckets), then \`vendor/bin/sail artisan dusk\` for the Browser suite, then \`php scripts/check-coverage.php\` if present.`,
     `Report exact pass/fail counts per suite and coverage percentage. If anything fails, fix it and re-run before finishing.`
   ].join('\n'),
-  { label: 'test', phase: 'Test', model: 'sonnet' }
+  { label: 'test', phase: 'Test', model: 'opus' }
 )
 
 // ---------------------------------------------------------------------
@@ -222,7 +222,7 @@ while (iterations < MAX_REVIEW_ITERATIONS && budget.remaining() > 0) {
       JSON.stringify(testResults),
       `Report findings ranked most-severe first, each with a clear verdict (CONFIRMED or PLAUSIBLE). Empty findings array if the diff is clean.`
     ].join('\n'),
-    { label: `review:${iterations}`, phase: 'Review', model: 'sonnet', agentType: 'code-reviewer', schema: REVIEW_SCHEMA }
+    { label: `review:${iterations}`, phase: 'Review', model: 'opus', agentType: 'code-reviewer', schema: REVIEW_SCHEMA }
   )
 
   const confirmed = (lastReview?.findings ?? []).filter(f => f.verdict === 'CONFIRMED')
@@ -243,7 +243,7 @@ while (iterations < MAX_REVIEW_ITERATIONS && budget.remaining() > 0) {
       JSON.stringify(confirmed),
       `Fix every listed issue directly in the code. Re-run the relevant tests afterward to confirm nothing broke. Do not introduce new scope beyond fixing these findings.`
     ].join('\n'),
-    { label: `fix:${iterations}`, phase: 'Review', model: 'sonnet' }
+    { label: `fix:${iterations}`, phase: 'Review', model: 'opus' }
   )
 }
 
@@ -268,7 +268,7 @@ const skillCheck = await agent(
     `3. Separately check whether the project-level skills this task actually used — .agents/skills/laravel-tdd and .claude/skills/laravel-dusk — need a project-specific note added, ONLY if this task hit a real gap in them (e.g. a pattern not covered, an example that doesn't match this codebase). Do not rewrite these two skills wholesale — they are shared across all modules; add a narrow note only if truly needed.`,
     `Report which skills were reviewed, which were created, which were updated (with a one-line reason each), and which needed no change.`
   ].join('\n'),
-  { label: 'meta-skill-check', phase: 'Meta-Skill-Check', model: 'sonnet', schema: SKILL_CHECK_SCHEMA }
+  { label: 'meta-skill-check', phase: 'Meta-Skill-Check', model: 'opus', schema: SKILL_CHECK_SCHEMA }
 )
 
 return {
