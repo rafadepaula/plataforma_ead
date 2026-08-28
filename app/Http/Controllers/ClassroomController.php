@@ -6,9 +6,11 @@ use App\Enums\Permissions\RolesEnum;
 use App\Models\Certificate;
 use App\Models\Course;
 use App\Models\Lesson;
+use App\Models\LessonMedia;
 use App\Models\LessonProgress;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class ClassroomController extends Controller
 {
@@ -120,7 +122,10 @@ class ClassroomController extends Controller
 
         $course = $lesson->module->course()->withoutGlobalScopes()->firstOrFail();
         $lesson->module->setRelation('course', $course);
-        $lesson->loadMissing(['quiz', 'media']);
+        $lesson->loadMissing([
+            'media',
+            'quiz' => fn ($query) => $query->withCount('questions'),
+        ]);
 
         $progress = LessonProgress::query()
             ->where('user_id', $user->id)
@@ -132,6 +137,49 @@ class ClassroomController extends Controller
             'course' => $course,
             'isCompleted' => (bool) ($progress?->is_completed),
             'watchedSeconds' => $progress?->watched_seconds,
+            'tracksProgress' => $user->hasActiveOrCompletedEnrollment($course),
+            'mediaAvailability' => $this->resolveMediaAvailability($lesson),
         ]);
+    }
+
+    /**
+     * Resolve, once per request, quais arquivos de mídia da aula ainda existem
+     * no disco. As views renderizam o aviso neutro de "material indisponível" a
+     * partir deste mapa em vez de tocar o `Storage` — que, num disco remoto,
+     * custaria uma requisição de rede por arquivo a cada render.
+     *
+     * O mapa cobre SOMENTE os arquivos que o despacho de formato de
+     * `classroom/lesson.blade.php` realmente vai desenhar: prova e vídeo não
+     * exibem arquivo algum, e cada um dos outros dois formatos exibe uma única
+     * espécie. Consultar o disco para os demais seria I/O jogado fora.
+     *
+     * @return array<string, bool>
+     */
+    protected function resolveMediaAvailability(Lesson $lesson): array
+    {
+        if ($lesson->type === 'quiz' || ! empty($lesson->youtube_url)) {
+            return [];
+        }
+
+        $rendersPdf = ! empty($lesson->pdf_path);
+        $kind = $rendersPdf ? LessonMedia::KIND_PDF : LessonMedia::KIND_IMAGE;
+        $legacyPath = $rendersPdf ? $lesson->pdf_path : $lesson->image_path;
+
+        $paths = $lesson->media
+            ->where('kind', $kind)
+            ->pluck('path')
+            ->filter();
+
+        /** Espelha o fallback das partials: a coluna legada só entra em cena sem anexos. */
+        if ($paths->isEmpty()) {
+            $paths = collect([$legacyPath])->filter();
+        }
+
+        $disk = Storage::disk('public');
+
+        return $paths
+            ->unique()
+            ->mapWithKeys(fn (string $path): array => [$path => $disk->exists($path)])
+            ->all();
     }
 }

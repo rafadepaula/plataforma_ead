@@ -355,6 +355,39 @@ Regra prática: **mais de 5 utilities no mesmo elemento, repetidas em mais de um
 
 ---
 
+## 5.1 Pegadinha do raio: `rounded-4` **não** é 20px
+
+`resources/scss/_bridge.scss` redefine a escala inteira do Bootstrap, e
+`$border-radius-xl: 28px`. Ou seja, `rounded-4` (que mapeia para
+`$border-radius-xl`) entrega **28px**, o raio de modal — não os 20px de
+card que o design pede. Como `$card-border-radius: 20px` já vale para
+`.card`, a correção é **remover** `rounded-4`, nunca empilhar outra classe
+de raio por cima. Regra geral: em superfície que já é `.card`, não declare
+raio; em superfície que não é, use a classe da camada 3, não a utility.
+
+Mesma armadilha no espaçamento: a escala do Bootstrap não tem passo de
+32px (`p-4` = 24px, `p-5` = 48px). Quando o design fixa 32px, é classe de
+componente (ou utility `*-Nx` do design system, §7), nunca `p-4 p-md-5`.
+
+## 5.2 Família `.ds-*` da tela de aula (SPEC-28)
+
+Definidas em `resources/scss/components/_classroom.scss` (bloco "Player de
+Aula & Formatos Multimídia"), só consomem `var(--*)`:
+
+| Classe | Papel |
+|---|---|
+| `.ds-lesson-card` | padding 32px do card único de conteúdo (20px no mobile) |
+| `.ds-ratio` / `.ds-ratio-16x9` | proporção 16:9 com fundo grey-900, raio e `overflow: hidden` — substitui `ratio ratio-16x9 bg-black rounded-4 overflow-hidden` |
+| `.ds-pdf-frame` | moldura do `<iframe>` de PDF (a proporção vem do `.ds-ratio-16x9` que o envolve) |
+| `.ds-reading-column` | coluna de leitura de 760px |
+| `.ds-lesson-content` | corpo textual com `white-space: pre-wrap` (é o que preserva quebras de linha — nunca troque `{{ }}` por `{!! !!}` para isso) |
+| `.ds-quiz-placeholder(-icon/-title/-text)` | hand-off para a prova; substitui `p-5 text-center border border-dashed rounded-4` (`.border-dashed` é classe fantasma, definida só em `_reorder-list.scss`) |
+| `.ds-media-unavailable(-title/-text)` | mídia indisponível — vídeo com link ilegível, PDF ou imagem ausente no disco — no par neutro `--attention-container`/`--on-attention-container` — nunca token crítico/vermelho: o arquivo quebrado não é culpa do aluno. É uma superfície só para os três formatos; não crie variante por formato |
+
+A visibilidade do botão de conclusão e do selo é alternada **só** com `.d-none` (`@class()` no Blade, `classList` no `LessonPlayer.js`). O atributo HTML `hidden` é **proibido** nesses controles: o Reboot aplica `[hidden] { display: none !important }` e ganha do toggle de classe.
+
+---
+
 ## 6. Validação Laravel: `.is-invalid` + `.invalid-feedback`
 
 Padrão único para todo campo do sistema. Componente resolve o erro sozinho a partir de `$errors`; tela só passa `name`.

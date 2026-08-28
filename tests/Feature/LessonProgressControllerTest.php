@@ -9,6 +9,7 @@ use App\Models\Lesson;
 use App\Models\Module;
 use App\Models\Organization;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
 
@@ -104,6 +105,58 @@ class LessonProgressControllerTest extends TestCase
             ->assertJson([
                 'message' => 'Esta lição não pode ser concluída manualmente.',
             ]);
+
+        $this->assertDatabaseMissing('lesson_progress', [
+            'user_id' => $aluno->id,
+            'lesson_id' => $lesson->id,
+        ]);
+    }
+
+    /**
+     * A `youtube_url` that cannot be resolved into a video id leaves the lesson
+     * without a player, so the 90% threshold can never fire. Manual completion
+     * must stay open, otherwise the lesson blocks course progress forever.
+     */
+    public function test_manual_completion_is_allowed_for_a_video_lesson_whose_url_is_unrecognizable(): void
+    {
+        [$course, $module] = $this->createCourseWithModule();
+        $lesson = Lesson::factory()->for($module)->create(['is_published' => true]);
+        DB::table('lessons')->where('id', $lesson->id)->update(['youtube_url' => 'https://vimeo.com/999999']);
+        $lesson->refresh();
+
+        $aluno = $this->createEnrolledAluno($course);
+        $this->actingAs($aluno);
+
+        $this->postJson(route('lessons.complete', $lesson))
+            ->assertOk()
+            ->assertJson(['is_completed' => true]);
+
+        $this->assertDatabaseHas('lesson_progress', [
+            'user_id' => $aluno->id,
+            'lesson_id' => $lesson->id,
+            'is_completed' => true,
+            'completion_source' => 'manual_click',
+        ]);
+    }
+
+    /**
+     * The mirror of the rule above: with no player there is no progress to
+     * report, so the polling endpoint must refuse the same lesson.
+     */
+    public function test_progress_endpoint_is_rejected_for_a_video_lesson_whose_url_is_unrecognizable(): void
+    {
+        [$course, $module] = $this->createCourseWithModule();
+        $lesson = Lesson::factory()->for($module)->create(['is_published' => true]);
+        DB::table('lessons')->where('id', $lesson->id)->update(['youtube_url' => 'https://vimeo.com/999999']);
+        $lesson->refresh();
+
+        $aluno = $this->createEnrolledAluno($course);
+        $this->actingAs($aluno);
+
+        $this->postJson(route('lessons.progress', $lesson), [
+            'watched_seconds' => 95,
+            'duration_seconds' => 100,
+        ])->assertStatus(422)->assertJson(['message' => 'Esta lição não é um vídeo.']);
 
         $this->assertDatabaseMissing('lesson_progress', [
             'user_id' => $aluno->id,

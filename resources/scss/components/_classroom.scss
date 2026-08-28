@@ -220,6 +220,14 @@
 // Player de Aula & Formatos Multimídia (Vídeo, PDF, Leitura, Prova)
 // -----------------------------------------------------------------------------
 
+// 0. Card de conteúdo da aula
+// Raio de 20px vem do próprio `.card` ($card-border-radius); aqui só o
+// respiro interno de 32px exigido pela casca de aula, que não existe na
+// escala de spacers do Bootstrap (p-4 = 24px, p-5 = 48px).
+.ds-lesson-card {
+    padding: 32px;
+}
+
 // 1. Proporção 16:9 para mídia (Player de vídeo e visualizador de PDF)
 .ds-ratio {
     position: relative;
@@ -271,23 +279,8 @@
     width: 100%;
 }
 
-// 3. Visualizador de PDF
-.ds-pdf-viewer {
-    width: 100%;
-    aspect-ratio: 16 / 9;
-    border: var(--border-width) solid var(--border-color);
-    border-radius: var(--radius-md);
-    background-color: var(--surface);
-    overflow: hidden;
-
-    iframe {
-        width: 100%;
-        height: 100%;
-        border: 0;
-        border-radius: inherit;
-    }
-}
-
+// 3. Visualizador de PDF: o `<iframe>` mora dentro de `.ds-ratio-16x9`, que
+// já cuida da proporção — aqui só a moldura.
 .ds-pdf-frame {
     width: 100%;
     height: 100%;
@@ -336,23 +329,29 @@
     }
 }
 
-// 5. Estado degradado de vídeo indisponível (tom neutro/attention)
-.ds-video-unavailable {
+// 5. Estado degradado de mídia indisponível (tom neutro/attention).
+// Compartilhado por vídeo com link ilegível, PDF e imagem ausentes no disco:
+// a mesma superfície serve os três, então o nome não pode ser de um formato só.
+.ds-media-unavailable {
     border-radius: var(--radius-md);
     background-color: var(--attention-container);
     color: var(--on-attention-container);
     padding: 20px 24px;
     border: var(--border-width) solid var(--divider);
 
-    .ds-video-unavailable-title {
+    // Os filhos herdam o par de tom do container (`--on-attention-container`)
+    // em vez de fixar uma cor própria, para o contraste continuar correto se o
+    // token do container mudar.
+    .ds-media-unavailable-title {
         font-weight: var(--font-weight-bold);
-        color: var(--text-primary);
+        color: inherit;
         margin-bottom: 4px;
     }
 
-    .ds-video-unavailable-text {
+    .ds-media-unavailable-text {
         font-size: 0.9375rem;
-        color: var(--text-secondary);
+        color: inherit;
+        opacity: 0.88;
         margin: 0;
     }
 }
@@ -364,4 +363,19 @@
     font-size: 1.0625rem;
     line-height: 1.7;
     color: var(--text-primary);
+}
+
+// 7. Responsividade da casca de aula em telas menores
+@media (max-width: 767.98px) {
+    .ds-lesson-card {
+        padding: 20px;
+    }
+
+    .ds-quiz-placeholder {
+        padding: 32px 20px;
+    }
+
+    .ds-media-unavailable {
+        padding: 16px 20px;
+    }
 }

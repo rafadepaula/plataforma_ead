@@ -49,24 +49,44 @@ calling Action. Do not route that branch through
 Both `LessonProgressController` actions validate lesson **shape** before
 touching `lesson_progress`, checking `type === 'quiz'` first (quiz
 completion reserved for SPEC-08's `SubmitQuizAttemptAction`), so malformed
-data carrying both `type=quiz` and `youtube_url` still 422s as quiz:
+data carrying both `type=quiz` and `youtube_url` still 422s as quiz. The
+video half of the guard tests the **resolved** `youtube_video_id`
+accessor, never the raw `youtube_url` column:
 
 ```php
-// complete(): rejects quiz lessons and video lessons
-if ($lesson->type === 'quiz' || ! empty($lesson->youtube_url)) {
+// complete(): rejects quiz lessons and PLAYABLE video lessons
+if ($lesson->type === 'quiz' || $lesson->youtube_video_id !== null) {
     return response()->json(['message' => '...'], 422);
 }
 
-// updateProgress(): rejects quiz lessons and non-video lessons
-if ($lesson->type === 'quiz' || empty($lesson->youtube_url)) {
+// updateProgress(): rejects quiz lessons and lessons with no resolvable player
+if ($lesson->type === 'quiz' || $lesson->youtube_video_id === null) {
     return response()->json(['message' => '...'], 422);
 }
 ```
 
-Both actions also 404 unpublished lesson for Aluno specifically
-(`! $lesson->is_published && $user->hasRole(RolesEnum::ALUNO->value)`),
-mirroring `ClassroomController`'s same check. Admin/Gestor keep preview
-access to draft lessons, so role check not optional.
+Do not "simplify" either line back to `empty($lesson->youtube_url)`. A
+lesson whose URL cannot be parsed into an id (a Vimeo link, a typo) has no
+player, so no 90% threshold can ever fire for it; the accessor form is what
+keeps it manually completable instead of permanently blocking course
+progress. `LessonProgressControllerTest` pins both directions.
+
+Both actions then apply **two** access checks, in this order:
+
+```php
+abort_unless($lesson->is_published, 404);   // no role exemption
+$this->abortUnlessEnrolled($request, $lesson, $request->user());  // 403
+```
+
+The unpublished check no longer carries the `hasRole(RolesEnum::ALUNO)`
+qualifier the page controllers use: staff never reach the write anyway,
+because `abortUnlessEnrolled()` 403s anyone without an `active`/`completed`
+`course_user` row. Keep that ordering — a draft lesson must read as 404,
+not as 403 — and keep the enrollment guard on **every** new write endpoint
+added to this controller. `lesson_progress` feeds
+`RecalculateCourseProgress` and, through `CourseCompletedByStudent`,
+`IssueCertificateAction`: letting a previewing Gestor write it would mint a
+real Certificate for a Course they were never enrolled in.
 
 ## Resolving `Course` Inside This Module: Always `withoutGlobalScopes()`
 
@@ -99,6 +119,22 @@ soft-deleted Course's card render. Copy this narrower, named-scope form
 only for a query that must also keep `SoftDeletes`' own scope; every other
 lookup in this module keeps using the blanket `withoutGlobalScopes()` form
 above.
+
+On a route already behind `student.enrolled`, do **not** re-run the cascade:
+`EnsureStudentIsEnrolled` stores the Course it resolved on the request, and
+controllers read it back through the middleware's own constant, falling back
+to the query only for a direct (unmiddlewared) controller call:
+
+```php
+$course = $request->attributes->get(EnsureStudentIsEnrolled::RESOLVED_COURSE_ATTRIBUTE);
+
+if (! $course instanceof Course) {
+    $course = $lesson->module->course()->withoutGlobalScopes()->firstOrFail();
+}
+```
+
+This matters most on `updateProgress()`, which the player polls every 5s;
+the fallback branch must stay, and must keep `withoutGlobalScopes()`.
 
 When controller needs Course cached onto relation the view reads directly
 (e.g. `$lesson->module->course`), set it explicitly so later access does
@@ -151,9 +187,81 @@ Neither the native `hidden` attribute nor `style.display` works here:
 Bootstrap's Reboot emits `[hidden] { display: none !important }`, and an
 author rule without `!important` cannot beat that — so do not reintroduce
 either approach. Never rename/replace `.d-none` with another hide utility
-on these two selectors without updating `LessonPlayer.js` in lockstep —
-`classroom/lesson.blade.php` and every `classroom/partials/_*` template
-(`_video`, `_text-image`, `_pdf`) depend on this exact class name.
+on these two selectors without updating `LessonPlayer.js` in lockstep.
+Since SPEC-28 the markup itself lives in exactly one file —
+`resources/views/components/classroom/completion-bar.blade.php` — so this
+rule has a single enforcement point, and
+`tests/Feature/LessonDispatchOrderTest.php` asserts, on rendered HTML, that
+neither control ever carries a ` hidden` attribute and that `isCompleted`
+flips `.d-none` from the badge to the button.
+
+## SPEC-28 `<x-classroom.completion-bar>`: One Emitter for Two Frozen Selectors
+
+`resources/views/components/classroom/completion-bar.blade.php` takes **4**
+props (`lesson`, `isCompleted` = false, `manual` = true,
+`tracksProgress` = true) and a slot:
+
+```blade
+{{-- _pdf, _text-image --}}
+<x-classroom.completion-bar :lesson="$lesson" :is-completed="$isCompleted ?? false"
+    :tracks-progress="$tracksProgress ?? true" />
+
+{{-- _video --}}
+<x-classroom.completion-bar :lesson="$lesson" :is-completed="$isCompleted ?? false"
+    :manual="false" :tracks-progress="$tracksProgress ?? true">
+    <span class="small text-body-secondary" data-progress-hint>...</span>
+</x-classroom.completion-bar>
+```
+
+The button renders only when `$manual && $tracksProgress`; the badge always
+renders, so a previewing staff member still sees the lesson's real state.
+
+- `:manual="false"` renders the badge **without** any button: a video
+  lesson completes itself at the 90% threshold, and a manual button there
+  would be rejected with 422 by `LessonProgressController::complete()`
+  anyway (see the shape-guard section above).
+- `:tracks-progress` must be forwarded by **every** partial, always as
+  `$tracksProgress ?? true` so the component still works when rendered
+  outside `ClassroomController::showLesson()`. Passing `false` (the actor
+  has no `active`/`completed` enrollment) drops the button regardless of
+  `:manual`, because `abortUnlessEnrolled()` would answer 403 to the click.
+  Omitting it hands a previewing Admin/Gestor a button that always errors.
+- `_quiz-placeholder` never mounts the component at all — a quiz completes
+  through `SubmitQuizAttemptAction`.
+- Extra layout is passed via `$attributes` (`class="justify-content-end
+  mt-4"` in `_pdf`), never by wrapping the component in another flex row
+  that duplicates the gap.
+
+Do not re-inline this markup into a partial: `lesson-completed-badge` and
+`mark-complete-button` are recorded per-file in
+`tests/fixtures/dusk-selectors-snapshot.json`, so a second emitter breaks
+`DuskSelectorContractTest` (and gives `LessonPlayer.js` two nodes to
+toggle).
+
+## SPEC-28 Lesson Partials: `.ds-*` Classes, Suffixed Media Selectors, Escaped Text
+
+- The content card in `classroom/lesson.blade.php` is `card ds-surface
+  border-0 shadow-sm ds-lesson-card` — **no `rounded-4`**. `_bridge.scss`
+  redefines `$border-radius-xl: 28px`, so `rounded-4` would override the
+  20px `.card` radius the design mandates. `.ds-lesson-card` exists because
+  the Bootstrap spacer scale has no 32px step (`p-4` = 24px, `p-5` = 48px).
+- Media wrappers use `.ds-ratio.ds-ratio-16x9` (+ `.ds-pdf-frame` on the
+  PDF iframe), the degraded media state (video, PDF, image) uses `.ds-media-unavailable(-title
+  /-text)` (neutral `--attention-container`, never a critical/red token),
+  and the quiz hand-off uses `.ds-quiz-placeholder(-icon/-title/-text)` —
+  not `border border-dashed`, which is a ghost class defined only in
+  `_reorder-list.scss`.
+- A lesson may carry several `lesson_media` rows. Both `_pdf` and
+  `_text-image` compute one `$suffix` (`$index > 0 ? '-'.$index : ''`) and
+  reuse it in every selector, so the **first** item keeps the unsuffixed
+  `pdf-viewer-{id}` / `lesson-image-{id}` the E2E contract expects.
+- `content_text` is rendered with `{{ }}` inside
+  `dusk="lesson-content-{id}"` and shaped by `.ds-lesson-content`
+  (`white-space: pre-wrap`) — never `{!! !!}`. Newlines are preserved by
+  CSS, not by unescaping.
+- A lesson with neither media nor text renders the calm
+  `dusk="lesson-empty-{id}"` note plus the completion bar, never an empty
+  card.
 
 ## SPEC-26 `<x-course.card>`: 4 Sub-Components, One View Model, No Extra Query
 

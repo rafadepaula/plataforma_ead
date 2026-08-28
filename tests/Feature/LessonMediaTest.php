@@ -147,7 +147,10 @@ class LessonMediaTest extends TestCase
 
     public function test_student_lesson_view_renders_every_media_image(): void
     {
+        Storage::fake('public');
+
         $lesson = Lesson::factory()->for($this->makeModule())->media(images: 2, pdfs: 0)->create(['is_published' => true]);
+        $lesson->images()->get()->each(fn ($media) => Storage::disk('public')->put($media->path, 'fake-png'));
         $this->actingAsEnrolledStudent($lesson);
 
         $response = $this->get(route('classroom.lesson', $lesson));
@@ -162,6 +165,9 @@ class LessonMediaTest extends TestCase
 
     public function test_student_lesson_view_falls_back_to_the_legacy_image_column(): void
     {
+        Storage::fake('public');
+        Storage::disk('public')->put('orgs/1/courses/1/images/legacy.png', 'fake-png');
+
         $lesson = Lesson::factory()->for($this->makeModule())->withImage()->create([
             'image_path' => 'orgs/1/courses/1/images/legacy.png',
             'is_published' => true,
@@ -177,7 +183,10 @@ class LessonMediaTest extends TestCase
 
     public function test_student_lesson_view_renders_every_media_pdf(): void
     {
+        Storage::fake('public');
+
         $lesson = Lesson::factory()->for($this->makeModule())->media(images: 0, pdfs: 2)->create(['is_published' => true]);
+        $lesson->pdfs()->get()->each(fn ($media) => Storage::disk('public')->put($media->path, '%PDF-1.4'));
         $this->actingAsEnrolledStudent($lesson);
 
         $response = $this->get(route('classroom.lesson', $lesson));
@@ -193,6 +202,9 @@ class LessonMediaTest extends TestCase
 
     public function test_student_lesson_view_falls_back_to_the_legacy_pdf_column(): void
     {
+        Storage::fake('public');
+        Storage::disk('public')->put('orgs/1/courses/1/pdfs/legacy.pdf', '%PDF-1.4');
+
         $lesson = Lesson::factory()->for($this->makeModule())->withPdf()->create([
             'pdf_path' => 'orgs/1/courses/1/pdfs/legacy.pdf',
             'is_published' => true,

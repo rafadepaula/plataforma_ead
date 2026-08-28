@@ -2,6 +2,10 @@
     "count": 423,
     "entries": [
         {
+            "file": "classroom/partials/_text-image.blade.php",
+            "selector": "image-unavailable-{{ $lesson->id }}{{ $suffix }}"
+        },
+        {
             "file": "admin/users/edit.blade.php",
             "selector": "admin-user-form"
         },
@@ -311,19 +315,15 @@
         },
         {
             "file": "classroom/partials/_pdf.blade.php",
-            "selector": "lesson-completed-badge"
+            "selector": "pdf-download-{{ $lesson->id }}{{ $suffix }}"
         },
         {
             "file": "classroom/partials/_pdf.blade.php",
-            "selector": "mark-complete-button"
+            "selector": "pdf-viewer-{{ $lesson->id }}{{ $suffix }}"
         },
         {
             "file": "classroom/partials/_pdf.blade.php",
-            "selector": "pdf-download-{{ $lesson->id }}{{ $index > 0 ? '-'.$index : '' }}"
-        },
-        {
-            "file": "classroom/partials/_pdf.blade.php",
-            "selector": "pdf-viewer-{{ $lesson->id }}{{ $index > 0 ? '-'.$index : '' }}"
+            "selector": "pdf-unavailable-{{ $lesson->id }}{{ $suffix }}"
         },
         {
             "file": "classroom/partials/_quiz-placeholder.blade.php",
@@ -339,23 +339,15 @@
         },
         {
             "file": "classroom/partials/_text-image.blade.php",
-            "selector": "lesson-completed-badge"
-        },
-        {
-            "file": "classroom/partials/_text-image.blade.php",
             "selector": "lesson-content-{{ $lesson->id }}"
         },
         {
             "file": "classroom/partials/_text-image.blade.php",
-            "selector": "lesson-image-{{ $lesson->id }}{{ $index > 0 ? '-'.$index : '' }}"
+            "selector": "lesson-empty-{{ $lesson->id }}"
         },
         {
             "file": "classroom/partials/_text-image.blade.php",
-            "selector": "mark-complete-button"
-        },
-        {
-            "file": "classroom/partials/_video.blade.php",
-            "selector": "lesson-completed-badge"
+            "selector": "lesson-image-{{ $lesson->id }}{{ $suffix }}"
         },
         {
             "file": "classroom/partials/_video.blade.php",
@@ -376,6 +368,14 @@
         {
             "file": "components/classroom/certificate-card.blade.php",
             "selector": "download-certificate"
+        },
+        {
+            "file": "components/classroom/completion-bar.blade.php",
+            "selector": "lesson-completed-badge"
+        },
+        {
+            "file": "components/classroom/completion-bar.blade.php",
+            "selector": "mark-complete-button"
         },
         {
             "file": "components/classroom/lesson-row.blade.php",

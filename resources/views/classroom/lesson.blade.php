@@ -20,7 +20,7 @@
         </x-slot:actions>
     </x-layout.page-header>
 
-    <div class="card ds-surface border-0 shadow-sm p-4 p-md-5 rounded-4">
+    <div class="card ds-surface border-0 shadow-sm ds-lesson-card">
         @if($lesson->type === 'quiz')
             @include('classroom.partials._quiz-placeholder')
         @elseif(! empty($lesson->youtube_url))

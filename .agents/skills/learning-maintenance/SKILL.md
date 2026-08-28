@@ -104,6 +104,21 @@ Tests guard SPEC-07 contract. Must stay green (PHPUnit, no Pest):
   glyph/chip rendering, a 375px stacking check asserting the sidebar sits
   below the track with no horizontal overflow, and a long-title overflow
   check.
+- `tests/Feature/LessonDispatchOrderTest.php` (SPEC-28) — 9 tests freezing
+  the lesson-player view contract: the exclusive `@if/@elseif` dispatch on
+  conflicting rows (a `type=quiz` Lesson carrying BOTH `youtube_url` and
+  `pdf_path` renders `quiz-placeholder` and neither `video-player-{id}`
+  nor `mark-complete-button`; a content Lesson with both renders only the
+  video), the PDF-only and text-only branches, the material-less lesson
+  falling back to `lesson-empty-{id}` plus the completion bar, the
+  `hidden`-attribute prohibition asserted on the rendered tags of both
+  completion controls, the `.d-none` swap in both directions (pending vs a
+  completed `lesson_progress` row), and `content_text` escaping
+  (`<script>alert(1)</script>` + newlines).
+- `tests/Browser/LessonPlayerDuskTest.php` (SPEC-28 Dusk) — one lifecycle
+  test covering all 6 rendered states (video, PDF, text/image, quiz ready,
+  quiz in preparation, degraded video), the back-to-classroom button and
+  the resulting `lesson_progress` rows.
 - `tests/Browser/StudentCoursesCatalogUiTest.php` (SPEC-26 Dusk) — the
   tabs/cards lifecycle chain (all 3 tabs, all 4 status chips, progress bar
   selector, per-status CTA target) plus a separate contextual-empty-state-
@@ -121,10 +136,15 @@ vendor/bin/sail artisan test --filter=LessonManualCompletionTest
 vendor/bin/sail artisan test --filter=VideoThresholdCompletionTest
 vendor/bin/sail artisan test --filter=StudentCourseControllerTest
 vendor/bin/sail artisan test --filter=ClassroomOverviewRenderingTest
+vendor/bin/sail artisan test --filter=LessonDispatchOrderTest
+vendor/bin/sail artisan test --filter=LessonProgressControllerTest
+vendor/bin/sail artisan test --filter=LessonMediaTest
+vendor/bin/sail artisan test --filter=DuskSelectorContractTest
 vendor/bin/sail artisan dusk --filter=MultiOrgStudentClassroomTest
 vendor/bin/sail artisan dusk --filter=VideoThresholdCompletionTest
 vendor/bin/sail artisan dusk --filter=StudentCoursesCatalogUiTest
 vendor/bin/sail dusk tests/Browser/ClassroomOverviewDuskTest.php
+vendor/bin/sail artisan dusk tests/Browser/LessonPlayerDuskTest.php
 ```
 
 ## `progress_percentage` Not Updating
@@ -287,3 +307,58 @@ Full rule: `testing-conventions`. Chain debugging: `testing-maintenance`.
   two `row` children. The order is DOM-level, not CSS-level; the 375px
   Dusk check compares `getBoundingClientRect().top` of `@module-{id}` and
   `@course-progress-bar` and will catch it.
+
+## SPEC-28 Lesson Player Failure Modes
+
+- **`DuskSelectorContractTest` fails with a count mismatch after touching
+  the lesson screen**: `lesson-completed-badge`/`mark-complete-button` now
+  live in `components/classroom/completion-bar.blade.php`, not in the three
+  partials, and `_pdf`/`_text-image` emit their suffixed selectors through
+  a shared `$suffix` variable. The fixture records the FILE of every
+  selector, so any move — even with identical selector text — must be
+  written back to `tests/fixtures/dusk-selectors-snapshot.json` in the same
+  change. Regenerate by scanning `resources/views/**/*.blade.php` for
+  `dusk="([^"]*)"`, sorting by `file` then `selector`, and rewriting
+  `count` + `entries`.
+- **The "Concluída" badge stays invisible after the button is clicked (or
+  after a 90% video poll)**: something reintroduced the `hidden` attribute
+  on the completion controls. Reboot's `[hidden] { display: none
+  !important }` beats the class toggle `LessonPlayer.js` performs.
+  `LessonDispatchOrderTest` asserts this on rendered HTML — if that test is
+  green and the browser still misbehaves, `public/build` is stale.
+- **A quiz lesson renders a video player or a manual-completion button**:
+  the `@if/@elseif` chain in `classroom/lesson.blade.php` was reordered, or
+  a partial mounted `<x-classroom.completion-bar>` without
+  `:manual="false"`. The server-side twin of this rule is the `type ===
+  'quiz'` check that must stay FIRST in `LessonProgressController::
+  updateProgress()`.
+- **A second PDF/image steals the unsuffixed selector**: the `$suffix`
+  computation must stay `$index > 0 ? '-'.$index : ''` and be used in every
+  selector of the loop. Re-computing it inline in one attribute and not the
+  other is how `pdf-viewer-{id}` and `pdf-download-{id}` drift apart.
+- **Newlines in `content_text` collapse**: they are preserved by
+  `.ds-lesson-content`'s `white-space: pre-wrap`, never by switching `{{ }}`
+  to `{!! !!}`. If the SCSS class is dropped, fix the SCSS.
+
+- **A previewing Admin/Gestor gets 403 from `lessons.complete` or the
+  progress poll**: that is the designed behaviour, not a regression.
+  `student.enrolled` lets staff *open* the lesson;
+  `LessonProgressController::abortUnlessEnrolled()` refuses the *write*, so
+  a preview can never mint a Certificate. The screen should not have
+  offered the button in the first place — check that the partial forwards
+  `:tracks-progress="$tracksProgress ?? true"`. A missing forward is the
+  actual bug.
+- **A media assertion fails with "material indisponível" although the
+  `lesson_media` rows exist**: since SPEC-28 the view renders from
+  `ClassroomController::resolveMediaAvailability()`, which calls
+  `Storage::disk('public')->exists()` per path. A feature test must
+  `Storage::fake('public')` **and** actually `put()` bytes at each
+  `media->path` (and at the legacy `pdf_path`/`image_path` when exercising
+  the fallback) — a factory row alone no longer renders a viewer. See the
+  `Storage::fake` setup in `tests/Feature/LessonMediaTest.php`.
+- **A manual completion 422s on a lesson that shows no player**: the guard
+  is `youtube_video_id`, not `youtube_url`. If an unparseable URL is
+  rejected, someone reverted the accessor check to `empty($lesson->
+  youtube_url)`; that would make the lesson uncompletable and freeze
+  `progress_percentage` for the whole course.
+  `LessonProgressControllerTest` covers both directions.

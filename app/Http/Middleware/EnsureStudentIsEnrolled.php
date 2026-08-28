@@ -26,9 +26,17 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class EnsureStudentIsEnrolled
 {
+    /**
+     * Chave do atributo de request onde o Course já resolvido fica disponível
+     * para os controllers da rota, que assim não repetem a cadeia
+     * `lesson -> module -> course`.
+     */
+    public const RESOLVED_COURSE_ATTRIBUTE = 'student_enrolled_course';
+
     public function handle(Request $request, Closure $next): Response
     {
         $course = $this->resolveCourse($request);
+        $request->attributes->set(self::RESOLVED_COURSE_ATTRIBUTE, $course);
 
         /** @var User $user */
         $user = $request->user();

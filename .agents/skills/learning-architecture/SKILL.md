@@ -144,7 +144,23 @@ denial stays a plain 403 in every case — that is tenancy, not enrollment.
 
 Middleware resolves Course from either `{course}` or `{lesson}` route
 parameter (supports both route shapes registered in `routes/web.php`),
-always `withoutGlobalScopes()`, same reason as above.
+always `withoutGlobalScopes()`, same reason as above. It publishes that
+resolved Course on the request under
+`EnsureStudentIsEnrolled::RESOLVED_COURSE_ATTRIBUTE`, so a controller on
+the same route reads it back instead of walking `lesson -> module ->
+course` again (see `learning-conventions`). The constant is a **public
+contract**: renaming it, or dropping the `$request->attributes->set()`
+call, silently pushes `LessonProgressController` onto its fallback query on
+every 5-second progress poll.
+
+**This middleware is not the whole gate for progress writes.** Passing it
+means "may open the screen", not "may record progress": Admin and same-org
+Gestor are allowed through so they can preview a course, while
+`LessonProgressController::abortUnlessEnrolled()` answers 403 to both write
+endpoints for anyone without an `active`/`completed` `course_user` row. The
+view side of that split is the `tracksProgress` flag described under
+SPEC-28 below. Any new endpoint that writes `lesson_progress` needs the
+second check too — `student.enrolled` alone will let staff through.
 
 ## SPEC-26: "Meus Cursos" Catalog Helpers on `Course`
 
@@ -256,6 +272,83 @@ distinguishable from "never issued". The card branches on
 **never** links `certificates.download`. Filtering it out in the query
 would silently regress it into the generic "not yet issued" copy.
 
+## SPEC-28: Unified Lesson Player — One Card, One Format, Exclusive Dispatch
+
+`GET lessons/{lesson}` (`ClassroomController::showLesson`, `auth` +
+`student.enrolled`) hands `classroom.lesson` **6 keys** — `lesson`,
+`course`, `isCompleted`, `watchedSeconds`, `tracksProgress`,
+`mediaAvailability` — and the Blade layer picks **exactly one** media
+format from a frozen `@if/@elseif` chain in
+`resources/views/classroom/lesson.blade.php`:
+
+```
+type === 'quiz'        -> classroom.partials._quiz-placeholder
+filled(youtube_url)    -> classroom.partials._video
+filled(pdf_path)       -> classroom.partials._pdf
+else                   -> classroom.partials._text-image
+```
+
+The order is a **contract, not a style choice**. Rows carry conflicting
+content columns in the wild (a quiz Lesson that also stores a
+`youtube_url`, a video Lesson that also stores a `pdf_path`), and this
+chain is what guarantees a quiz never reaches the video player and never
+renders a manual-completion button. `LessonProgressController::
+updateProgress()` mirrors the same precedence server-side — it checks
+`type === 'quiz'` **before** the `youtube_video_id === null` check — so the
+two layers agree on which lesson is video-driven. Reordering either side
+without the other silently lets a quiz be completed by a video poll.
+`tests/Feature/LessonDispatchOrderTest.php` freezes all four branches.
+
+The server-side predicate is the **resolved video id**, not the raw
+`youtube_url` column. A lesson whose URL cannot be parsed into an id has no
+player to drive the 90% threshold, so `complete()` accepts it and
+`updateProgress()` rejects it — that inversion is what keeps one broken
+link from freezing a whole course. `_video.blade.php` mirrors it by passing
+`:manual="$videoId === null"`.
+
+### The two view flags added with the media states
+
+- **`tracksProgress`** — `$user->hasActiveOrCompletedEnrollment($course)`.
+  Every partial reads it (`$tracksProgress ?? true`) and forwards it to the
+  completion bar; `_video` also gates the `data-youtube-player` wiring on
+  it. It exists because `EnsureStudentIsEnrolled` lets Admin and same-org
+  Gestor *open* the screen to preview it, while
+  `LessonProgressController::abortUnlessEnrolled()` answers **403** on both
+  write endpoints for anyone without an `active`/`completed` `course_user`
+  row. Without the flag a previewing staff member would see a button that
+  always errors, and a video preview would queue an error toast every 5s.
+- **`mediaAvailability`** — a `path => bool` map built once per request by
+  `ClassroomController::resolveMediaAvailability()`, covering only the
+  files the dispatched format will actually draw. `_pdf` and `_text-image`
+  read it to render the neutral `.ds-media-unavailable` notice instead of
+  an empty viewer or a broken-image icon. Views must never touch `Storage`
+  themselves: on a remote disk that is one network round-trip per file per
+  render.
+
+A fifth partial must accept and forward **both** flags, or it silently
+renders a wrong screen.
+
+### The completion bar is one shared component, never re-inlined
+
+`resources/views/components/classroom/completion-bar.blade.php`
+(`<x-classroom.completion-bar :lesson :is-completed :manual :tracks-progress>`)
+is the ONLY
+place `dusk="lesson-completed-badge"` and `dusk="mark-complete-button"` are
+emitted. `_video` passes `:manual="false"` (video completes itself at 90%,
+so no button exists at all); `_pdf` and `_text-image` take the default
+`true`; `:tracks-progress="false"` drops the button for a non-enrolled
+previewer regardless of `:manual`. Do not copy the markup back into a
+partial — the selectors are E2E
+contract, and `tests/fixtures/dusk-selectors-snapshot.json` records the
+file each one lives in.
+
+Visibility of both controls is expressed **only** through `.d-none`
+(`@class()` server-side, `classList` in `LessonPlayer.js`). The `hidden`
+attribute is prohibited on them — Reboot's
+`[hidden] { display: none !important; }` cannot be beaten by a class
+toggle. See `learning-conventions` for the rule and
+`LessonDispatchOrderTest` for the guardrail.
+
 ## Related Specs
 
 - `spec/specs/07-student-learning-experience-and-progress.md` — RF13, RF14,
@@ -264,6 +357,8 @@ would silently regress it into the generic "not yet issued" copy.
   tabbed catalog, card anatomy, CTA-per-status contract.
 - `spec/specs/27-classroom-overview-and-progression.md` — classroom
   overview 8/4 grid, view contract, glyph and certificate-state rules.
+- `spec/specs/28-unified-lesson-player-and-multimedia.md` — lesson-player
+  shell, the 4 media partials, format-dispatch order, completion bar.
 - `spec/specs/05-courses-modules-and-content-management.md` /
   `courses-architecture` — `courses`/`modules`/`lessons` schema and
   `OrgScope`/cascade-inheritance model this feature reads from.

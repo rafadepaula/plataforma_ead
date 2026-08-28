@@ -532,3 +532,13 @@ vendor/bin/sail artisan test --compact tests/Feature/UiTableComponentTest.php
 vendor/bin/sail artisan dusk --filter=CourseManagementTest
 vendor/bin/sail artisan dusk --filter=test_courses_index_management_screen_has_no_horizontal_scroll
 ```
+
+## Raio de 28px "surgindo" num card (`rounded-4`)
+
+Sintoma: um card fica visivelmente mais arredondado que os vizinhos. Causa:
+`rounded-4` na marcação. `_bridge.scss` redefine `$border-radius-xl: 28px`
+(raio de modal), então `rounded-4` **não** entrega os 20px de card.
+Correção: apagar `rounded-4` — `.card` já traz `$card-border-radius: 20px`.
+Não adicione outra classe de raio por cima. Ver `bootstrap-conventions`
+§5.1, e §5.2 para a família `.ds-*` da tela de aula (SPEC-28), incluindo a
+proibição do atributo `hidden` nos controles de conclusão.

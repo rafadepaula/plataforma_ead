@@ -10,15 +10,54 @@
  * - Manual completion (text, image, PDF): binds click handlers on completion buttons
  *   (`[data-mark-complete-url]`, `[data-action="complete-lesson"]`, `[dusk="mark-complete-button"]`),
  *   POSTs to `lessons.complete`, manages loading state ('Marcando...'), and updates UI.
- * - UI updates: Toggles visibility using CSS classes (`.d-none` / `.ds-hidden`).
+ * - UI updates: Toggles visibility using Bootstrap's `.d-none` utility class.
  *   NEVER uses the HTML `hidden` attribute due to Bootstrap's `[hidden] { display: none !important }`.
  */
+
+/** Selectors that identify a manual completion button. */
+const MARK_COMPLETE_SELECTORS = [
+    '[data-mark-complete-url]',
+    '[data-action="complete-lesson"]',
+    '[dusk="mark-complete-button"]',
+    '[data-element="mark-complete-button"]',
+];
+
+/** Selectors that identify the "lição concluída" badge. */
+const COMPLETION_BADGE_SELECTORS = [
+    '[data-completion-badge]',
+    '[data-element="completed-badge"]',
+    '[dusk="lesson-completed-badge"]',
+    '[data-element="completion-badge"]',
+];
+
+/** Message shown when the student completes a lesson through the manual button. */
+const COMPLETION_SUCCESS_MESSAGE = 'Lição concluída com sucesso.';
+
+/**
+ * Message shown when the video threshold completes the lesson on its own.
+ * It is deliberately distinct from the manual one: the student clicked
+ * nothing, so telling them "concluída com sucesso" would credit an action
+ * they never took and hide that completion was automatic.
+ */
+const AUTO_COMPLETION_MESSAGE = 'Lição concluída automaticamente!';
+
+/**
+ * Consecutive progress-poll failures tolerated before the 5s interval is torn
+ * down. A single blip must not stop tracking, but a persistent failure (session
+ * expired, 5xx, enrollment cancelled mid-session) must never turn the screen
+ * into an endless queue of identical error toasts.
+ */
+const MAX_PROGRESS_FAILURES = 3;
+
 export class LessonPlayer {
     constructor(httpClient, notificationService) {
         this.httpClient = httpClient;
         this.notificationService = notificationService;
         this.videoPlayers = new Map();
         this.pollingIntervals = new Map();
+        this.completedLessons = new Set();
+        this.progressFailures = new Map();
+        this.notifiedProgressErrors = new Set();
     }
 
     init() {
@@ -37,13 +76,7 @@ export class LessonPlayer {
     }
 
     bindManualCompletion() {
-        const selectors = [
-            '[data-mark-complete-url]',
-            '[data-action="complete-lesson"]',
-            '[dusk="mark-complete-button"]',
-        ];
-
-        const buttons = document.querySelectorAll(selectors.join(','));
+        const buttons = document.querySelectorAll(MARK_COMPLETE_SELECTORS.join(','));
         buttons.forEach((button) => {
             if (button.dataset.lessonPlayerBound) return;
             button.dataset.lessonPlayerBound = 'true';
@@ -93,8 +126,8 @@ export class LessonPlayer {
 
         try {
             const response = await this.httpClient.post(url);
-            this.reflectCompletion(response.data);
-            this.notify('success', 'Lição concluída com sucesso.');
+            this.reflectCompletion(response.data, button ? button.dataset.lessonId : null);
+            this.notify('success', COMPLETION_SUCCESS_MESSAGE);
             return response.data;
         } catch (error) {
             if (button) {
@@ -171,7 +204,11 @@ export class LessonPlayer {
             const durationSeconds = Math.floor(player.getDuration());
 
             if (durationSeconds > 0) {
-                this.reportProgress(lessonId, watchedSeconds, durationSeconds);
+                // The interval is not an `await` site: swallow the rejection
+                // here so a failing poll never becomes an unhandled rejection.
+                // `reportProgress()` already notified and, past the failure
+                // budget, already cleared this interval.
+                this.reportProgress(lessonId, watchedSeconds, durationSeconds).catch(() => {});
             }
         }, 5000);
 
@@ -200,14 +237,38 @@ export class LessonPlayer {
                 duration_seconds: Number(durationSeconds),
             });
 
+            this.progressFailures.delete(String(lessonId));
+            this.notifiedProgressErrors.delete(String(lessonId));
+
             if (response.data && response.data.is_completed) {
                 this.stopPolling(lessonId);
-                this.reflectCompletion(response.data);
+                this.reflectCompletion(response.data, lessonId);
+
+                // The 90% auto-completion path announces itself instead of
+                // silently swapping the DOM, but only once per lesson.
+                if (!this.completedLessons.has(String(lessonId))) {
+                    this.completedLessons.add(String(lessonId));
+                    this.notify('success', AUTO_COMPLETION_MESSAGE);
+                }
             }
 
             return response.data;
         } catch (error) {
-            this.notify('error', `Falha ao registrar progresso: ${error.message || 'Erro inesperado'}`);
+            const key = String(lessonId);
+            const failures = (this.progressFailures.get(key) || 0) + 1;
+            this.progressFailures.set(key, failures);
+
+            // One toast per failing lesson: the poll repeats every 5s and the
+            // student does not need the same warning again on every beat.
+            if (!this.notifiedProgressErrors.has(key)) {
+                this.notifiedProgressErrors.add(key);
+                this.notify('error', `Falha ao registrar progresso: ${error.message || 'Erro inesperado'}`);
+            }
+
+            if (failures >= MAX_PROGRESS_FAILURES) {
+                this.stopPolling(lessonId);
+            }
+
             throw error;
         }
     }
@@ -229,35 +290,38 @@ export class LessonPlayer {
         return `/lessons/${lessonId}/progress`;
     }
 
-    reflectCompletion(data) {
+    /**
+     * Narrows the DOM scope of a completion update to the container that holds
+     * the given lesson, falling back to the whole document when the lesson has
+     * no anchor element on the page.
+     */
+    resolveLessonScope(lessonId) {
+        if (lessonId === undefined || lessonId === null || lessonId === '') {
+            return document;
+        }
+
+        const anchor = document.querySelector(`[data-lesson-id="${lessonId}"]`);
+        if (!anchor) return document;
+
+        return anchor.closest('[data-lesson-container], .ds-lesson-card, .card, main') || document;
+    }
+
+    reflectCompletion(data, lessonId = null) {
         if (!data || !data.is_completed) return;
 
-        // Visibility is expressed with Bootstrap's `.d-none` / `.ds-hidden` utility.
+        // Visibility is expressed with Bootstrap's `.d-none` utility class.
         // DO NOT use native HTML `hidden` attribute: Bootstrap Reboot has
         // `[hidden] { display: none !important }` which overrides author declarations.
+        const scope = this.resolveLessonScope(lessonId);
 
         // Hide mark complete buttons
-        const buttonSelectors = [
-            '[data-mark-complete-url]',
-            '[data-action="complete-lesson"]',
-            '[dusk="mark-complete-button"]',
-            '[data-element="mark-complete-button"]',
-        ];
-        document.querySelectorAll(buttonSelectors.join(',')).forEach((button) => {
+        scope.querySelectorAll(MARK_COMPLETE_SELECTORS.join(',')).forEach((button) => {
             button.classList.add('d-none');
-            button.classList.add('ds-hidden');
         });
 
         // Show completion badges
-        const badgeSelectors = [
-            '[data-completion-badge]',
-            '[data-element="completed-badge"]',
-            '[dusk="lesson-completed-badge"]',
-            '[data-element="completion-badge"]',
-        ];
-        document.querySelectorAll(badgeSelectors.join(',')).forEach((badge) => {
+        scope.querySelectorAll(COMPLETION_BADGE_SELECTORS.join(',')).forEach((badge) => {
             badge.classList.remove('d-none');
-            badge.classList.remove('ds-hidden');
         });
     }
 
