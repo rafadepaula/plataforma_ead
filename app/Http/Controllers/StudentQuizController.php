@@ -11,13 +11,10 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Validation\ValidationException;
 
 /**
- * the Aluno's quiz-taking flow, behind `student.enrolled`
- * (see `routes/web.php`) and nested under `{lesson}` (not a bare
- * `{quiz}`) so `EnsureStudentIsEnrolled`'s existing Course-resolution
- * logic keeps working unmodified. The UI is a single-page form — `show()`
- * renders every question at once, `submit()` corrects the whole attempt
- * in a single `SubmitQuizAttemptAction` call (see the
- * `quizzes-architecture` skill).
+ * Controller for the student quiz-taking flow, behind `student.enrolled`
+ * and nested under `{lesson}` so enrollment resolution works consistently.
+ * The UI is a single-page form — `show()` renders all questions at once,
+ * and `submit()` processes the attempt via `SubmitQuizAttemptAction`.
  */
 class StudentQuizController extends Controller
 {
@@ -25,10 +22,6 @@ class StudentQuizController extends Controller
 
     public function show(Lesson $lesson): View
     {
-        // Resolve the Lesson's Course bypassing `OrgScope` and set it on the
-        // `module` relation explicitly — an Aluno carries no `org_id` of
-        // their own, so a plain `$lesson->module->course` access would
-        // silently return null under the scope (see `learning-conventions`).
         $course = $lesson->module->course()->withoutGlobalScopes()->firstOrFail();
         $lesson->module->setRelation('course', $course);
 
@@ -56,10 +49,14 @@ class StudentQuizController extends Controller
             ->latest('id')
             ->first();
 
-        //  the answer key is only ever surfaced once the student has
-        // a graded attempt to show it against, and only when the Gestor
-        // opted into `show_correct_answers` for this Quiz (see
-        // `quizzes-architecture`).
+        $latestAttempt = QuizAttempt::query()
+            ->where('quiz_id', $quiz->id)
+            ->where('user_id', $user->id)
+            ->latest('id')
+            ->first();
+
+        $hasPendingGrading = $pendingAttempt !== null;
+
         $latestGradedAttempt = QuizAttempt::query()
             ->where('quiz_id', $quiz->id)
             ->where('user_id', $user->id)
@@ -68,15 +65,18 @@ class StudentQuizController extends Controller
             ->latest('id')
             ->first();
 
-        $showAnswerKey = $quiz->show_correct_answers && $latestGradedAttempt !== null;
+        $showAnswerKey = (bool) ($quiz->show_correct_answers && $latestGradedAttempt !== null);
 
         return view('student.quizzes.show', [
             'lesson' => $lesson,
+            'course' => $course,
             'quiz' => $quiz,
             'canAttempt' => $canAttempt,
             'completedAttempts' => $completedAttempts,
             'bestScore' => $bestScore,
             'pendingAttempt' => $pendingAttempt,
+            'hasPendingGrading' => $hasPendingGrading,
+            'latestAttempt' => $latestAttempt,
             'showAnswerKey' => $showAnswerKey,
             'latestGradedAttempt' => $latestGradedAttempt,
         ]);
@@ -84,13 +84,6 @@ class StudentQuizController extends Controller
 
     public function submit(SubmitQuizAttemptRequest $request, Lesson $lesson): RedirectResponse
     {
-        $lesson->quiz()->firstOrFail();
-
-        // The single-page form (see `student.quizzes.show`) posts
-        // `answers` keyed by `question_id` (no separate `question_id`
-        // field per entry) — `SubmitQuizAttemptAction::execute()` expects
-        // a plain list of `{question_id, ...}` entries, so the key is
-        // folded back in as a field here.
         $answers = collect($request->validated('answers'))
             ->map(fn (array $answer, string $questionId): array => $answer + ['question_id' => (int) $questionId])
             ->values()

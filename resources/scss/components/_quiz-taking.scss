@@ -1,0 +1,68 @@
+// =============================================================================
+// Componente: QuizTaking (Realização da Prova pelo Aluno)
+// -----------------------------------------------------------------------------
+// Cartões de opções com clique amplo (min-height 56px, raio 14px), controles de
+// rádio e checkbox de 22px, estados de seleção, foco e gabarito.
+// Regra: qualquer declaração aqui só pode consumir var(--*), nunca literal de cor.
+// =============================================================================
+
+.quiz-option-card {
+    min-height: 56px;
+    border-radius: var(--radius-md);
+    border: var(--border-width) solid var(--divider);
+    background-color: var(--surface);
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    cursor: pointer;
+    transition: var(--transition-base);
+
+    &:hover {
+        background-color: var(--blue-50);
+        border-color: var(--primary);
+    }
+
+    &.is-selected {
+        background-color: var(--primary-container);
+        border-color: var(--primary);
+        border-width: 2px;
+        color: var(--on-primary-container);
+    }
+
+    &:focus-within {
+        outline: var(--focus-ring-width) solid var(--focus-ring);
+        outline-offset: 2px;
+    }
+
+    .form-check-input {
+        width: 22px;
+        height: 22px;
+        margin-top: 0;
+        flex-shrink: 0;
+        cursor: pointer;
+    }
+}
+
+.quiz-answer-key-card {
+    border-radius: var(--radius-lg);
+    background-color: var(--surface);
+    border: var(--border-width) solid var(--divider);
+    box-shadow: var(--elev-1);
+    overflow: hidden;
+}
+
+.quiz-correct-option {
+    background-color: var(--mint-100);
+    color: var(--secondary);
+    border: 1px solid var(--secondary);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    font-weight: var(--font-weight-semibold);
+}
+
+.quiz-incorrect-option {
+    color: var(--text-secondary);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+}

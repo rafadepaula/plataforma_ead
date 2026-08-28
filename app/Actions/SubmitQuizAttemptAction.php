@@ -7,17 +7,17 @@ use App\Models\Quiz;
 use App\Models\QuizAttempt;
 use App\Models\QuizQuestion;
 use App\Models\User;
+use Carbon\CarbonInterface;
 use Illuminate\Validation\ValidationException;
 
 /**
- * the quiz correction engine. A single call corrects every
- * auto-gradable question (`single_choice`/`multiple_choice`/`true_false`)
- * and records any `essay` answer for later manual grading .
+ * The quiz correction engine. A single call corrects every
+ * auto-gradable question (single_choice, multiple_choice, true_false)
+ * and records any essay answer for later manual grading.
  *
- * The student-facing UI is a single-page form (all questions POSTed at
- * once, see the `quizzes-architecture` skill) — there is no separate
- * "start attempt" step, so this action both creates and immediately
- * corrects the `QuizAttempt` in one pass.
+ * The student-facing UI is a single-page form — there is no separate
+ * start attempt step, so this action both creates and immediately
+ * corrects the QuizAttempt in one pass.
  */
 class SubmitQuizAttemptAction
 {
@@ -95,10 +95,10 @@ class SubmitQuizAttemptAction
     }
 
     /**
-     * recomputes `score_percentage` over every question
+     * Recomputes score_percentage over every question
      * (auto-graded + manually-graded essay) once every essay answer of an
-     * `awaiting_manual_grading` attempt has been graded, then finalizes
-     * the same completion flow §2 step 5 describes.
+     * awaiting_manual_grading attempt has been graded, then finalizes
+     * the completion flow.
      */
     public function finalizeGrading(QuizAttempt $attempt): QuizAttempt
     {
@@ -115,10 +115,9 @@ class SubmitQuizAttemptAction
     }
 
     /**
-     * Shared by both the no-essay auto-grade path and
-     * {@see finalizeGrading()}: computes the percentage score, applies
-     * the §1.3 time-limit rule, persists `status = graded`, and marks the
-     * Lesson complete when passed.
+     * Shared by both the no-essay auto-grade path and finalizeGrading:
+     * computes the percentage score, applies the time-limit rule,
+     * persists status = graded, and marks the Lesson complete when passed.
      */
     protected function finalize(
         QuizAttempt $attempt,
@@ -130,7 +129,9 @@ class SubmitQuizAttemptAction
     ): void {
         $scorePercentage = $totalQuestions > 0 ? round(($correctCount / $totalQuestions) * 100, 2) : 0.0;
 
-        $timeExceeded = $this->timeExceeded($quiz, $attempt);
+        $completedAt = $attempt->completed_at ?? now();
+
+        $timeExceeded = $this->timeExceeded($quiz, $attempt, $completedAt);
 
         $isPassed = ! $timeExceeded && $scorePercentage >= $quiz->min_score_percentage;
 
@@ -138,7 +139,7 @@ class SubmitQuizAttemptAction
             'status' => 'graded',
             'score_percentage' => $scorePercentage,
             'is_passed' => $isPassed,
-            'completed_at' => $attempt->completed_at ?? now(),
+            'completed_at' => $completedAt,
         ]);
 
         if ($isPassed) {
@@ -147,25 +148,25 @@ class SubmitQuizAttemptAction
     }
 
     /**
-     * computed on read from `started_at`/`completed_at`/
-     * `time_limit_minutes` rather than persisted as text (the schema has
-     * no notes/warning column). An over-limit submission is still
-     * accepted, only `is_passed` is forced to `false`.
+     * Computed on read from started_at, completed_at, and time_limit_minutes.
+     * An over-limit submission is accepted, but is_passed is forced to false.
      */
-    protected function timeExceeded(Quiz $quiz, QuizAttempt $attempt): bool
+    protected function timeExceeded(Quiz $quiz, QuizAttempt $attempt, ?CarbonInterface $completedAt = null): bool
     {
-        if (! $quiz->time_limit_minutes || ! $attempt->completed_at) {
+        $completedAt = $completedAt ?? $attempt->completed_at;
+
+        if (! $quiz->time_limit_minutes || ! $completedAt || ! $attempt->started_at) {
             return false;
         }
 
-        return $attempt->started_at->diffInMinutes($attempt->completed_at) > $quiz->time_limit_minutes;
+        return $attempt->started_at->diffInMinutes($completedAt) > $quiz->time_limit_minutes;
     }
 
     /**
-     * `single_choice`/`true_false` require an
-     * exact 1-id match; `multiple_choice` requires the selected set to be
-     * exactly the correct set (no partial credit). An empty
-     * `selected_option_ids` is always incorrect, never a vacuous match.
+     * Checks if the selected options exactly match the correct options.
+     * Single choice and true/false require an exact 1-id match.
+     * Multiple choice requires the selected set to match the full correct set.
+     * An empty selection is always incorrect.
      *
      * @param  list<int>  $selectedOptionIds
      */
@@ -188,12 +189,7 @@ class SubmitQuizAttemptAction
     }
 
     /**
-     * the student.enrolled middleware (bucket 2) is
-     * the primary HTTP-layer guard, but this Action re-verifies at the
-     * business-rule layer too (defense in depth, and so it can be tested
-     * directly without a full HTTP stack — mirrors
-     * `ProcessSmartInvitationAction`'s convention of validating inside
-     * the Action rather than trusting the caller).
+     * Validates active or completed enrollment for the course.
      */
     protected function guardActiveEnrollment(Lesson $lesson, User $user): void
     {
@@ -207,9 +203,8 @@ class SubmitQuizAttemptAction
     }
 
     /**
-     * counts only completed submissions (`status` in
-     * `awaiting_manual_grading`/`graded`), never an abandoned
-     * `in_progress` attempt.
+     * Counts only completed submissions (awaiting_manual_grading or graded),
+     * never an abandoned in_progress attempt.
      */
     protected function guardAttemptLimits(Quiz $quiz, User $user): void
     {
