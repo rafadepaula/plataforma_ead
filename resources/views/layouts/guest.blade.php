@@ -20,9 +20,9 @@
         <x-layout.guest-panel class="col-lg-5" />
 
         {{-- Right Form Area --}}
-        <div class="col-12 col-lg-7 d-flex flex-column justify-content-center align-items-center position-relative py-5 px-4">
-            <div class="position-absolute top-0 end-0">
-                <x-help-button :key="Route::currentRouteName() ?? 'unknown'" />
+        <div class="col-12 col-lg-7 min-vh-100 d-flex flex-column justify-content-center align-items-center position-relative p-4 p-md-5">
+            <div class="position-absolute top-0 end-0 p-4">
+                <x-help-button :key="Route::currentRouteName() ?? 'login'" />
             </div>
 
             <div class="guest-form">

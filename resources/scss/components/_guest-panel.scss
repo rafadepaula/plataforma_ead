@@ -1,15 +1,17 @@
 // =============================================================================
-// Componente: Coluna de conteúdo do shell público (guest)
+// Componente: Painel e coluna de formulário do shell de visitante (guest)
 // -----------------------------------------------------------------------------
-// Largura fixa da coluna de formulário do `layouts/guest.blade.php` (login,
-// recuperação de senha, redefinição de senha, aceite de convite).
-// Conteúdo visual: diretriz de shell e navegação ("coluna de formulário centrada").
-// Regra: qualquer declaração aqui só pode consumir var(--*), nunca literal de
-// cor/raio/sombra.
+// Utilizado em layouts/guest.blade.php (login, recuperação, redefinição e convite).
+// Apenas tokens var(--*), sem valores literais.
 // =============================================================================
+
+.guest-panel {
+    background-color: var(--blue-100, var(--bs-primary-bg-subtle));
+    color: var(--text-primary, var(--bs-body-color));
+}
 
 .guest-form {
     width: 100%;
-    max-width: var(--form-max);
+    max-width: var(--form-max, 440px);
     margin-inline: auto;
 }

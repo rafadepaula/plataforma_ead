@@ -1,12 +1,7 @@
 /**
- * SmartInvitationForm - SOLID JavaScript module for  adaptive
- * `/convite/{token}` public registration form. On blur (debounced) of the
- * e-mail field it POSTs to the `check-email` endpoint via the shared
- * `HttpClient` module and toggles the visibility (and `required`-ness) of
- * the name/CPF/password-confirmation fields based on the `{ exists }`
- * response — mirrors `ModuleReorder.js`'s constructor-injection style so
- * both modules can be unit-tested with fake `httpClient`/`notificationService`
- * doubles instead of touching the network or the DOM notification tree.
+ * SmartInvitationForm - Adaptive invitation registration form module.
+ * Checks email existence asynchronously and collapses registration fields
+ * for already registered users.
  */
 export class SmartInvitationForm {
     constructor(httpClient, notificationService) {
@@ -27,28 +22,44 @@ export class SmartInvitationForm {
     }
 
     bind() {
-        const forms = document.querySelectorAll('[data-check-email-url]');
-        forms.forEach((form) => this.bindForm(form));
+        const forms = document.querySelectorAll(
+            '[data-smart-invitation], form[data-check-email-url], [data-check-email-url]'
+        );
+        const uniqueForms = new Set(forms);
+        uniqueForms.forEach((form) => this.bindForm(form));
     }
 
     bindForm(form) {
-        const emailField = form.querySelector('[data-invitation-email]');
+        if (form.dataset.smartInvitationBound === 'true') return;
+        form.dataset.smartInvitationBound = 'true';
+
+        const emailField = form.querySelector('[data-invitation-email], input[name="email"]');
         if (!emailField) return;
 
-        const handler = () => {
+        const handleDebouncedInput = () => {
             clearTimeout(this.debounceTimer);
             this.debounceTimer = setTimeout(() => this.checkEmail(form, emailField), this.debounceMs);
         };
 
-        emailField.addEventListener('blur', () => this.checkEmail(form, emailField));
-        emailField.addEventListener('input', handler);
+        const handleImmediateCheck = () => {
+            clearTimeout(this.debounceTimer);
+            this.checkEmail(form, emailField);
+        };
+
+        emailField.addEventListener('blur', handleImmediateCheck);
+        emailField.addEventListener('input', handleDebouncedInput);
+
+        if (emailField.value && emailField.value.trim() !== '') {
+            this.checkEmail(form, emailField);
+        }
     }
 
     async checkEmail(form, emailField) {
-        const url = form.getAttribute('data-check-email-url');
-        const email = emailField.value.trim();
+        const url = form.getAttribute('data-check-email-url') || form.dataset.checkEmailUrl;
+        const email = emailField ? emailField.value.trim() : '';
+        const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-        if (!url || !email) {
+        if (!url || !email || !isValidEmail) {
             this.toggleFields(form, false);
             return;
         }
@@ -58,6 +69,7 @@ export class SmartInvitationForm {
             const exists = Boolean(response.data && response.data.exists);
             this.toggleFields(form, exists);
         } catch (error) {
+            this.toggleFields(form, false);
             this.notify('error', `Não foi possível verificar o e-mail: ${error.message}`);
         }
     }
@@ -69,26 +81,55 @@ export class SmartInvitationForm {
      * lockstep so a hidden field never blocks client-side submission.
      */
     toggleFields(form, exists) {
-        const newAccountFields = form.querySelectorAll('[data-invitation-field="new-account"]');
-
-        newAccountFields.forEach((field) => {
-            field.classList.toggle('d-none', exists);
-
-            const input = field.matches('input, select, textarea') ? field : field.querySelector('input, select, textarea');
-            if (input && input.dataset.originallyRequired !== 'false') {
-                if (exists) {
-                    input.dataset.originallyRequired = String(input.required);
-                    input.required = false;
-                } else if (input.dataset.originallyRequired !== undefined) {
-                    input.required = input.dataset.originallyRequired === 'true';
-                }
-            }
+        const hintSelectors = [
+            '[data-invitation-existing-hint]',
+            '[data-invitation-field="existing-account-hint"]',
+            '[dusk="invitation-existing-account-hint"]'
+        ];
+        const hintElements = form.querySelectorAll(hintSelectors.join(', '));
+        hintElements.forEach((el) => {
+            el.classList.toggle('d-none', !exists);
         });
 
-        const existingAccountHint = form.querySelector('[data-invitation-field="existing-account-hint"]');
-        if (existingAccountHint) {
-            existingAccountHint.classList.toggle('d-none', !exists);
-        }
+        const newAccountFieldSelectors = [
+            '[data-invitation-field="new-account"]',
+            '[data-invitation-field="name"]',
+            '[data-invitation-field="cpf"]',
+            '[data-invitation-field="password_confirmation"]'
+        ];
+        const fieldWrappers = form.querySelectorAll(newAccountFieldSelectors.join(', '));
+        fieldWrappers.forEach((field) => {
+            field.classList.toggle('d-none', exists);
+        });
+
+        const inputSelectors = [
+            '[data-invitation-field="new-account"] input, [data-invitation-field="new-account"] select, [data-invitation-field="new-account"] textarea',
+            '[data-invitation-field="name"] input',
+            '[data-invitation-field="cpf"] input',
+            '[data-invitation-field="password_confirmation"] input',
+            '[data-invitation-name]',
+            '[data-invitation-cpf]',
+            '[data-invitation-password-confirmation]',
+            'input[name="name"]',
+            'input[name="cpf"]',
+            'input[name="password_confirmation"]'
+        ];
+        const inputs = form.querySelectorAll(inputSelectors.join(', '));
+        const seenInputs = new Set();
+        inputs.forEach((input) => {
+            if (seenInputs.has(input)) return;
+            seenInputs.add(input);
+
+            if (input.dataset.originallyRequired === undefined) {
+                input.dataset.originallyRequired = String(input.required);
+            }
+
+            if (exists) {
+                input.required = false;
+            } else {
+                input.required = input.dataset.originallyRequired === 'true';
+            }
+        });
     }
 
     notify(type, message) {
