@@ -1,26 +1,15 @@
 @props([
     'lesson',
-    'isCompleted' => false,
-    'completed' => null,
-    'routeUrl' => null,
+    'completed' => false,
 ])
 
 @php
-    $done = $completed ?? $isCompleted;
-    $url = $routeUrl ?? route('classroom.lesson', $lesson);
-
-    $icon = $done
-        ? 'check'
-        : match(true) {
-            $lesson->type === 'quiz' => 'clipboard',
-            filled($lesson->youtube_url ?? null) => 'play',
-            filled($lesson->pdf_path ?? null) => 'file-text',
-            default => 'book-open',
-        };
+    $done = (bool) $completed;
+    $icon = $done ? 'check' : ($lesson->glyph ?? 'book-open');
 @endphp
 
 <li {{ $attributes->merge(['class' => 'ds-lesson-row']) }} dusk="lesson-{{ $lesson->id }}">
-    <a href="{{ $url }}"
+    <a href="{{ route('classroom.lesson', $lesson) }}"
        class="ds-lesson-link {{ $done ? 'is-completed' : '' }}"
        dusk="open-lesson-{{ $lesson->id }}">
 
@@ -31,6 +20,11 @@
 
         <span class="ds-lesson-title">{{ $lesson->title }}</span>
 
+        {{--
+            Deliberate exception to the "no raw markup, use <x-ui.*>" convention:
+            <x-ui.chip> renders a <button>, and interactive content cannot be
+            nested inside this row's <a>. Keep this plain <span> chip as-is.
+        --}}
         <span class="ds-chip ds-chip-{{ $lesson->type === 'quiz' ? 'primary' : 'outline' }} ds-chip-plain">
             {{ $lesson->type === 'quiz' ? 'Prova' : 'Conteúdo' }}
         </span>

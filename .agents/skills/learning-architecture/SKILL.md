@@ -16,6 +16,7 @@ metadata:
   specs:
     - spec/specs/07-student-learning-experience-and-progress.md
     - spec/specs/26-student-course-catalog-meus-cursos.md
+    - spec/specs/27-classroom-overview-and-progression.md
     - spec/specs/00-architecture-database-and-guardrails.md
 ---
 
@@ -131,7 +132,15 @@ classroom/lesson/progress route:
   `org_id`.
 - **Aluno**: allowed only with `course_user` row in `active` **or**
   `completed` status (`User::hasActiveOrCompletedEnrollment()`).
-  `cancelled` enrollment, or no enrollment row at all, is 403.
+  `cancelled` enrollment, or no enrollment row at all, is denied.
+
+Denial shape depends on what the request can consume, and the two are NOT
+interchangeable: an Aluno page request is `redirect()->route(
+'student.courses.index')` flashing `error` = "Acesso negado. Você não
+possui matrícula ativa neste curso.", while a request that
+`expectsJson()` (the lesson progress/complete endpoints) still gets a bare
+`abort(403)` because it has nowhere to redirect to. Gestor cross-org
+denial stays a plain 403 in every case — that is tenancy, not enrollment.
 
 Middleware resolves Course from either `{course}` or `{lesson}` route
 parameter (supports both route shapes registered in `routes/web.php`),
@@ -202,12 +211,59 @@ change to this pipeline must preserve:
   student never started), so the bar never reads as a rendering bug. A
   genuinely `nao_iniciado` row still shows a true 0%.
 
+## SPEC-27: Classroom Overview View Contract (`ClassroomController::show()`)
+
+`GET courses/{course}/classroom` (`auth` + `student.enrolled`) hands
+`classroom.show` a **frozen, normalized** set of 7 keys — nothing else, and
+no alias duplicates:
+
+`course`, `modules`, `progressPercentage`, `completedLessonsCount`,
+`totalLessonsCount`, `certificate`, `nextLesson`.
+
+Per-item state travels **on the models**, so the Blade layer never performs a
+lookup or resolves media itself:
+
+- Each `Module` carries `completed_lessons_count` / `total_lessons_count`.
+- Each `Lesson` carries `is_completed` (bool) and `glyph` (string).
+- `progressPercentage` is read-only from `course_user.progress_percentage`
+  (the pivot the `RecalculateCourseProgress` listener writes). Never
+  recompute it in the controller, the view, or JS. An Admin/Gestor preview
+  has no pivot row at all: it falls back to `0`, and the progress card must
+  still render `0%` rather than blow up.
+
+### Glyph resolution is media-aware (`Lesson::pendingGlyph`)
+
+The pending-state glyph is resolved in PHP, never in Blade:
+`type === 'quiz'` → `clipboard`; `youtube_url` filled → `play`;
+`hasPdfAttachment()` → `file-text`; else `book-open`. A completed lesson
+always overrides to `check`.
+
+`hasPdfAttachment()` is the media-aware half: since the `lesson_media`
+migration, a PDF may exist ONLY as a `lesson_media` row of kind `pdf`, with
+the deprecated flat `lessons.pdf_path` column empty. Testing `pdf_path`
+alone (as the pre-SPEC-27 Blade did) mis-renders such a lesson as
+`book-open`. `show()` eager-loads `lessons.media` in the SAME `with()` call
+so the check stays N+1-free across every row of the track.
+
+### A revoked certificate is resolved, not hidden
+
+`show()` looks the certificate up by `user_id` + `course_id` **without** a
+`whereNull('revoked_at')` filter. Revocation is logical and terminal (see
+`certificates-architecture`), so a revoked record must stay resolvable and
+distinguishable from "never issued". The card branches on
+`Certificate::isRevoked()`: a revoked certificate renders the neutral
+`certificate-unavailable` surface with revocation-specific wording and
+**never** links `certificates.download`. Filtering it out in the query
+would silently regress it into the generic "not yet issued" copy.
+
 ## Related Specs
 
 - `spec/specs/07-student-learning-experience-and-progress.md` — RF13, RF14,
   RF15, RF20/RN08, RF24.
 - `spec/specs/26-student-course-catalog-meus-cursos.md` — "Meus Cursos"
   tabbed catalog, card anatomy, CTA-per-status contract.
+- `spec/specs/27-classroom-overview-and-progression.md` — classroom
+  overview 8/4 grid, view contract, glyph and certificate-state rules.
 - `spec/specs/05-courses-modules-and-content-management.md` /
   `courses-architecture` — `courses`/`modules`/`lessons` schema and
   `OrgScope`/cascade-inheritance model this feature reads from.

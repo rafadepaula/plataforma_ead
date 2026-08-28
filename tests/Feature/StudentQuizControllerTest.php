@@ -44,7 +44,7 @@ class StudentQuizControllerTest extends TestCase
             ->assertRedirect(route('login'));
     }
 
-    public function test_unenrolled_student_cannot_access_quiz(): void
+    public function test_unenrolled_student_is_sent_back_to_the_catalog_instead_of_the_quiz(): void
     {
         [$aluno, $lesson] = $this->createQuizSetup();
 
@@ -52,9 +52,10 @@ class StudentQuizControllerTest extends TestCase
         $otherAluno = User::factory()->create(['org_id' => null]);
         $otherAluno->assignRole(RolesEnum::ALUNO->value);
 
-        $this->actingAs($otherAluno)
-            ->get(route('student.quizzes.show', $lesson))
-            ->assertForbidden();
+        $response = $this->actingAs($otherAluno)->get(route('student.quizzes.show', $lesson));
+
+        $response->assertRedirect(route('student.courses.index'));
+        $response->assertSessionHas('error', 'Acesso negado. Você não possui matrícula ativa neste curso.');
     }
 
     public function test_enrolled_student_can_view_quiz_page(): void

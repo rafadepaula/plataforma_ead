@@ -15,6 +15,7 @@ metadata:
   specs:
     - spec/specs/07-student-learning-experience-and-progress.md
     - spec/specs/26-student-course-catalog-meus-cursos.md
+    - spec/specs/27-classroom-overview-and-progression.md
 ---
 
 # Learning Conventions
@@ -193,3 +194,45 @@ card. Both call sites delegate the actual tie-break rule to the single
 static `Course::resolveResumeLesson()`. Never re-implement the
 "most-recently-touched, or next-incomplete-if-already-done" rule at either
 call site directly; extend `resolveResumeLesson()` so both stay in sync.
+
+## SPEC-27 `<x-classroom.*>`: One Prop Per Value, State Comes From the Controller
+
+The 5 classroom-overview components (`module`, `lesson-row`,
+`next-lesson-card`, `progress-card`, `certificate-card`) each accept
+exactly ONE prop per value, matching `ClassroomController::show()`'s frozen
+view contract (see `learning-architecture`). Do not reintroduce the
+defensive alias props they used to carry (`isCompleted`/`completed`,
+`nextLesson`/`lesson`, `position`/`index`, five aliases for two progress
+values) — an alias is a second source of truth that silently keeps working
+after the controller stops sending one of the pair.
+
+Consequences to preserve when editing them:
+
+- `lesson-row` reads `$lesson->glyph` and the `completed` prop; it must
+  NOT re-derive the icon with a `match(true)` over `youtube_url`/
+  `pdf_path` — that path is media-blind (see `learning-architecture`).
+- `show.blade.php` renders the `col-lg-8` main track FIRST and the
+  `col-lg-4` sidebar SECOND, so the sidebar stacks below the track on
+  <1024px with no CSS ordering trick. Never reorder the two columns.
+- The `<li>` carries `dusk="lesson-{id}"` and the `<a>` inside it carries
+  `dusk="open-lesson-{id}"`. This split is the E2E contract (SPEC-27 §3):
+  never merge them onto one element.
+- The empty state is emitted in exactly ONE place — the
+  `<x-ui.empty-state dusk="no-modules">` branch in `show.blade.php`,
+  which covers both "no modules at all" and "modules but no published
+  lesson". `module.blade.php` keeps its own per-module caption for a
+  module with zero published lessons; do not add a third copy.
+- `certificate-card` renders a readable 12-char uppercase prefix of
+  `validation_hash`, not the raw 64-char hash (which overflows the 4-col
+  card). The full hash stays the only value used by the public
+  verification flow (SPEC-09) — the prefix is display-only.
+
+## SPEC-27 Chips Inside the Lesson Anchor: The Deliberate `<span>` Exception
+
+`lesson-row.blade.php` renders its "Conteúdo"/"Prova" chip as a raw
+`<span class="ds-chip ds-chip-outline|ds-chip-primary ds-chip-plain">`
+instead of `<x-ui.chip>`. That is intentional and carries an in-file
+comment: `<x-ui.chip>` renders a `<button>`, and interactive content
+cannot legally be nested inside the row's wrapping `<a>`. A conventions
+sweep that "componentizes" this back into `<x-ui.chip>` produces invalid
+HTML and breaks the row click target. See `bootstrap-conventions` §3.

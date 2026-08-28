@@ -19,7 +19,10 @@ use Symfony\Component\HttpFoundation\Response;
  *   is about enrollment, not tenant management).
  * - Gestor: allowed only when their own `org_id` matches the Course's.
  * - Aluno: allowed only with a `course_user` row in `active`/`completed`
- *   status — a `cancelled` status or no row at all is a 403.
+ *   status — a `cancelled` status or no row at all is denied. A denied
+ *   page request is sent back to the course catalog with an explanatory
+ *   alert; API-shaped requests (JSON/AJAX progress endpoints) still get a
+ *   bare 403 because they have nowhere to redirect to.
  */
 class EnsureStudentIsEnrolled
 {
@@ -40,9 +43,25 @@ class EnsureStudentIsEnrolled
             return $next($request);
         }
 
-        abort_unless($user->hasActiveOrCompletedEnrollment($course), 403);
+        if (! $user->hasActiveOrCompletedEnrollment($course)) {
+            return $this->denyEnrollment($request);
+        }
 
         return $next($request);
+    }
+
+    /**
+     * Sends an Aluno without an active enrollment back to their course
+     * catalog carrying the denial alert. Requests that expect a payload
+     * keep the plain 403 status they can actually handle.
+     */
+    protected function denyEnrollment(Request $request): Response
+    {
+        abort_if($request->expectsJson(), 403);
+
+        return redirect()
+            ->route('student.courses.index')
+            ->with('error', 'Acesso negado. Você não possui matrícula ativa neste curso.');
     }
 
     protected function resolveCourse(Request $request): Course

@@ -90,7 +90,7 @@ class EnsureStudentIsEnrolledTest extends TestCase
         $this->get("_test/courses/{$course->id}/probe")->assertOk();
     }
 
-    public function test_aluno_with_cancelled_enrollment_is_forbidden(): void
+    public function test_aluno_with_cancelled_enrollment_is_sent_back_to_the_catalog(): void
     {
         $org = Organization::factory()->create();
         [$course] = $this->courseWithLesson($org);
@@ -99,10 +99,13 @@ class EnsureStudentIsEnrolledTest extends TestCase
         $course->students()->attach($student->id, ['enrolled_at' => now(), 'status' => 'cancelled']);
         $this->actingAs($student);
 
-        $this->get("_test/courses/{$course->id}/probe")->assertForbidden();
+        $response = $this->get("_test/courses/{$course->id}/probe");
+
+        $response->assertRedirect(route('student.courses.index'));
+        $response->assertSessionHas('error', 'Acesso negado. Você não possui matrícula ativa neste curso.');
     }
 
-    public function test_aluno_with_no_enrollment_row_at_all_is_forbidden(): void
+    public function test_aluno_with_no_enrollment_row_at_all_is_sent_back_to_the_catalog(): void
     {
         $org = Organization::factory()->create();
         [$course] = $this->courseWithLesson($org);
@@ -110,7 +113,36 @@ class EnsureStudentIsEnrolledTest extends TestCase
         $student->assignRole(RolesEnum::ALUNO->value);
         $this->actingAs($student);
 
-        $this->get("_test/courses/{$course->id}/probe")->assertForbidden();
+        $response = $this->get("_test/courses/{$course->id}/probe");
+
+        $response->assertRedirect(route('student.courses.index'));
+        $response->assertSessionHas('error', 'Acesso negado. Você não possui matrícula ativa neste curso.');
+    }
+
+    public function test_the_denial_alert_reaches_the_rendered_catalog_page(): void
+    {
+        $org = Organization::factory()->create();
+        [$course] = $this->courseWithLesson($org);
+        $student = User::factory()->create();
+        $student->assignRole(RolesEnum::ALUNO->value);
+        $this->actingAs($student);
+
+        $this->get("_test/courses/{$course->id}/probe");
+
+        $this->get(route('student.courses.index'))
+            ->assertOk()
+            ->assertSee('Acesso negado. Você não possui matrícula ativa neste curso.', false);
+    }
+
+    public function test_aluno_without_enrollment_still_gets_a_bare_403_on_json_requests(): void
+    {
+        $org = Organization::factory()->create();
+        [$course] = $this->courseWithLesson($org);
+        $student = User::factory()->create();
+        $student->assignRole(RolesEnum::ALUNO->value);
+        $this->actingAs($student);
+
+        $this->getJson("_test/courses/{$course->id}/probe")->assertForbidden();
     }
 
     public function test_resolves_course_from_the_lesson_route_parameter(): void

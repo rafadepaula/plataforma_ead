@@ -644,6 +644,26 @@ screens), `KeyboardNavigationTest`, `AuditDiffModalHighlightTest`.
 Use `$browser->resize(w, h)` before `visit()`, and assert layout facts
 through `script()` rather than screenshots.
 
+## Never Click a File-Download Link — Assert Its `href`
+
+Endpoints that stream an attachment (`certificates.download` and the other
+PDF/CSV export routes in this project) give ChromeDriver nothing to
+navigate to: the click starts a background download, the page stays put,
+and the following `assertPathIs`/`waitFor` times out on a test that looks
+selector-broken. Assert the target instead:
+
+```php
+$browser->assertAttribute(
+    '@download-certificate',
+    'href',
+    route('certificates.download', $certificate),
+);
+```
+
+Authorization of those endpoints belongs in the Feature test that calls
+them directly (e.g. `tests/Feature/CertificateControllerTest.php`); the
+Dusk test only proves the UI points at the right URL.
+
 ## Notes
 
 - Laravel Dusk uses ChromeDriver by default (no Selenium/JDK required)

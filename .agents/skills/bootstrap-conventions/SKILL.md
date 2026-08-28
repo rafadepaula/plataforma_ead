@@ -217,6 +217,7 @@ Cada item = motivo de **rejeição** em review. Não é questão de gosto.
 10. **`!important`** em qualquer classe do projeto. `.org-logo` **não é mais exceção**: desde a Fase 4 do `front_redesign` (`resources/scss/components/_organizations.scss`) é uma classe real, sem `!important`, consumindo só `var(--*)`. Se algum `!important` aparecer em código novo, é violação — não há mais exceção histórica para justificá-lo.
 11. **`<table>` sem `.table-responsive`** no wrapper.
 12. **Markup Bootstrap cru em tela** quando existe (ou deveria existir) um `<x-ui.*>` — ver mandato de componentização em `bootstrap-architecture`.
+    **Exceção documentada — chip dentro de linha-link:** `<x-ui.chip>` renderiza um `<button>`, e conteúdo interativo não pode ser aninhado dentro de um `<a>`. Em linhas cuja área clicável inteira é uma âncora (`components/classroom/lesson-row.blade.php`, chips "Conteúdo"/"Prova"), o chip fica como `<span class="ds-chip ds-chip-outline|ds-chip-primary ds-chip-plain">` cru, com comentário no próprio arquivo explicando o porquê. Não "componentize" esse span numa varredura de convenções: gera HTML inválido e quebra o alvo de clique da linha.
 
 ---
 

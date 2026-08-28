@@ -161,8 +161,8 @@ Route::middleware(['auth', 'role:admin|gestor'])->group(function (): void {
 
 //  `certificates.download` sits outside the `role:admin|gestor`
 // group above: unlike `index`/`revoke`, download is also reachable by the
-// Aluno who OWNS the certificate (their "Certificado indisponível. X%"
-// classroom banner turns into a download link once issued). Plain `auth`
+// Aluno who OWNS the certificate (their "Certificado ainda não disponível"
+// classroom card turns into a download link once issued). Plain `auth`
 // here; `CertificateController::download()`'s internal check still
 // enforces staff-role-or-owner, so a non-owner Aluno remains blocked.
 Route::middleware('auth')->group(function (): void {

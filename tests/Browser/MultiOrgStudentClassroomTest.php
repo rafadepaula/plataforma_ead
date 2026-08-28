@@ -143,15 +143,18 @@ class MultiOrgStudentClassroomTest extends DuskTestCase
         $courseA->students()->attach($cancelledStudent->id, ['enrolled_at' => now(), 'status' => 'cancelled']);
 
         $this->browse(function (Browser $browser) use ($notEnrolledStudent, $cancelledStudent, $courseA): void {
-            // 1. Nunca matriculado: 403.
+            // 1. Nunca matriculado: volta ao catálogo com o alerta de acesso negado.
             $browser->loginAs($notEnrolledStudent)
                 ->visit(route('classroom.show', $courseA))
-                ->assertSee('403');
+                ->assertPathIs('/meus-cursos')
+                ->assertSee('Acesso negado. Você não possui matrícula ativa neste curso.')
+                ->assertDontSee($courseA->title);
 
-            // 2. Matrícula cancelada: também 403.
+            // 2. Matrícula cancelada: mesmo tratamento.
             $browser->loginAs($cancelledStudent)
                 ->visit(route('classroom.show', $courseA))
-                ->assertSee('403');
+                ->assertPathIs('/meus-cursos')
+                ->assertSee('Acesso negado. Você não possui matrícula ativa neste curso.');
         });
 
         $this->assertDatabaseCount('lesson_progress', 0);

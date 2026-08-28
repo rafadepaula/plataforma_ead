@@ -1,16 +1,16 @@
 @props([
     'progressPercentage' => 0,
-    'completedLessonsCount' => null,
-    'completedCount' => null,
-    'totalLessonsCount' => null,
-    'totalLessons' => null,
-    'totalCount' => null,
+    'completedCount' => 0,
+    'totalCount' => 0,
+    'certificateAvailable' => false,
 ])
 
 @php
     $pct = (int) $progressPercentage;
-    $completed = $completedCount ?? ($completedLessonsCount ?? 0);
-    $total = $totalCount ?? ($totalLessons ?? ($totalLessonsCount ?? 0));
+    $completed = (int) $completedCount;
+    $total = (int) $totalCount;
+    /** Only point the student to the certificate below when there is one to download. */
+    $hasDownloadableCertificate = (bool) $certificateAvailable;
 @endphp
 
 <x-ui.card title="Progresso do curso" {{ $attributes }}>
@@ -35,7 +35,11 @@
 
     @if($pct >= 100)
         <p class="ds-caption text-secondary mb-0 mt-2">
-            Curso concluído. O certificado fica disponível abaixo.
+            @if($hasDownloadableCertificate)
+                Curso concluído. O certificado fica disponível abaixo.
+            @else
+                Curso concluído. Acompanhe a situação do certificado abaixo.
+            @endif
         </p>
     @endif
 </x-ui.card>

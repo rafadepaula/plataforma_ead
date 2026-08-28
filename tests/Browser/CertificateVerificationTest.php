@@ -107,7 +107,8 @@ class CertificateVerificationTest extends DuskTestCase
     }
 
     /**
-     *  a sala de aula do Aluno mostra "Certificado indisponível. X%"
+     *  a sala de aula do Aluno mostra "Certificado ainda não disponível"
+     * junto do percentual concluído
      * quando ainda não existe `Certificate` para o par aluno/curso,
      * reaproveitando exatamente o `course_user.progress_percentage` que a
      * barra de progresso já exibe — nunca um valor recalculado à parte.
@@ -129,7 +130,8 @@ class CertificateVerificationTest extends DuskTestCase
             $browser->loginAs($student)
                 ->visit(route('classroom.show', $course))
                 ->waitFor('@certificate-unavailable')
-                ->assertSeeIn('@certificate-unavailable', 'Certificado indisponível. 45%')
+                ->assertSeeIn('@certificate-unavailable', 'Certificado ainda não disponível')
+                ->assertSeeIn('@certificate-unavailable', 'Você concluiu 45% do curso.')
                 ->assertMissing('@download-certificate');
         });
 

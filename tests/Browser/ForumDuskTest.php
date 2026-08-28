@@ -292,7 +292,7 @@ class ForumDuskTest extends DuskTestCase
         ]);
     }
 
-    public function test_a_student_who_is_not_enrolled_cannot_access_the_course_forum(): void
+    public function test_a_student_who_is_not_enrolled_is_sent_back_to_the_catalog_instead_of_the_forum(): void
     {
         $org = Organization::factory()->create();
         $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
@@ -304,7 +304,8 @@ class ForumDuskTest extends DuskTestCase
         $this->browse(function (Browser $browser) use ($notEnrolledStudent, $course): void {
             $browser->loginAs($notEnrolledStudent)
                 ->visit(route('forum.index', $course))
-                ->assertSee('403');
+                ->assertPathIs('/meus-cursos')
+                ->assertSee('Acesso negado. Você não possui matrícula ativa neste curso.');
         });
     }
 }

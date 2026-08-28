@@ -80,6 +80,47 @@ class Lesson extends Model
     }
 
     /**
+     *  the Lucide glyph that represents this lesson's content kind
+     * while it is still PENDING (`play` for video, `file-text` for PDF,
+     * `clipboard` for a quiz, `book-open` for plain text). Completion is a
+     * per-student fact the model knows nothing about, so the `check` glyph of
+     * a completed lesson is decided by the consumer, not here.
+     *
+     * Reads PDFs through the `media` relation (the flat `pdf_path` column is
+     * a deprecated single-file leftover, kept only as a legacy fallback), so
+     * consumers rendering many lessons MUST eager-load `media`.
+     *
+     * @return Attribute<string, never>
+     */
+    protected function pendingGlyph(): Attribute
+    {
+        return Attribute::get(fn (): string => match (true) {
+            $this->type === 'quiz' => 'clipboard',
+            filled($this->youtube_url) => 'play',
+            $this->hasPdfAttachment() => 'file-text',
+            default => 'book-open',
+        });
+    }
+
+    /**
+     *  whether the lesson carries a PDF, in `lesson_media` or in the
+     * deprecated flat `pdf_path` column. Uses the already-loaded `media`
+     * relation when present to stay N+1-free inside a lesson loop.
+     */
+    public function hasPdfAttachment(): bool
+    {
+        if (filled($this->pdf_path)) {
+            return true;
+        }
+
+        if ($this->relationLoaded('media')) {
+            return $this->media->contains(fn (LessonMedia $media): bool => $media->kind === LessonMedia::KIND_PDF);
+        }
+
+        return $this->pdfs()->exists();
+    }
+
+    /**
      * @return BelongsTo<Module, $this>
      */
     public function module(): BelongsTo

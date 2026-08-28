@@ -1,36 +1,31 @@
 @props([
     'module',
     'completedCount' => 0,
-    'totalCount' => null,
-    'position' => null,
+    'totalCount' => 0,
     'index' => null,
 ])
 
 @php
-    $total = $totalCount ?? ($module->lessons ? $module->lessons->count() : 0);
-    $pos = $position ?? ($index ?? ($module->position ?? ($module->order_index ?? null)));
+    $total = (int) $totalCount;
+    $completed = (int) $completedCount;
 @endphp
 
-<div {{ $attributes->merge(['class' => 'card ds-classroom-module mb-4']) }} dusk="module-{{ $module->id }}">
+<div {{ $attributes->merge(['class' => 'card ds-classroom-module']) }} dusk="module-{{ $module->id }}">
     <div class="ds-classroom-module-header">
-        @if($pos !== null)
-            <div class="ds-overline text-primary mb-1">Módulo {{ $pos }}</div>
-        @else
-            <div class="ds-overline text-primary mb-1">Módulo</div>
-        @endif
+        <div class="ds-overline text-primary mb-1">Módulo{{ $index !== null ? ' '.$index : '' }}</div>
         <h2 class="ds-classroom-module-title">{{ $module->title }}</h2>
-        <div class="ds-caption text-secondary mt-1">
-            @if($total === 0)
-                Nenhuma lição publicada neste módulo.
-            @elseif($completedCount === 0)
-                Nenhuma aula concluída
-            @else
-                {{ $completedCount }} de {{ $total }} {{ $total === 1 ? 'aula concluída' : 'aulas concluídas' }}
-            @endif
-        </div>
+        @if($total > 0)
+            <div class="ds-caption text-secondary mt-1">
+                @if($completed === 0)
+                    Nenhuma aula concluída
+                @else
+                    {{ $completed }} de {{ $total }} {{ $total === 1 ? 'aula concluída' : 'aulas concluídas' }}
+                @endif
+            </div>
+        @endif
     </div>
 
-    @if($total > 0 || !empty((string) $slot))
+    @if($total > 0)
         <ul class="ds-classroom-module-list">
             {{ $slot }}
         </ul>

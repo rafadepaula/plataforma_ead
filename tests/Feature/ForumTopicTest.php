@@ -66,7 +66,7 @@ class ForumTopicTest extends TestCase
         $this->assertLessThan($olderPos, $newerPos);
     }
 
-    public function test_a_non_enrolled_aluno_cannot_view_the_forum(): void
+    public function test_a_non_enrolled_aluno_is_sent_back_to_the_catalog_instead_of_the_forum(): void
     {
         $org = Organization::factory()->create();
         $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
@@ -75,7 +75,10 @@ class ForumTopicTest extends TestCase
         $outsider = User::factory()->create(['org_id' => null]);
         $outsider->assignRole(RolesEnum::ALUNO->value);
 
-        $this->actingAs($outsider)->get(route('forum.index', $course))->assertForbidden();
+        $response = $this->actingAs($outsider)->get(route('forum.index', $course));
+
+        $response->assertRedirect(route('student.courses.index'));
+        $response->assertSessionHas('error', 'Acesso negado. Você não possui matrícula ativa neste curso.');
     }
 
     public function test_an_enrolled_aluno_can_create_a_topic_and_reply_to_it(): void
