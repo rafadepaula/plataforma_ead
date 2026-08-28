@@ -20,8 +20,8 @@ use Tests\TestCase;
  * Requests: Gestor CRUD of the 1:1 Lesson<->Quiz, nested QuizQuestion
  * CRUD + reorder, and the Gestor's manual essay-grading screen. Student
  * quiz-taking  is covered at the Action level by
- * `SubmitQuizAttemptTest`/`QuizAttemptLimitsTest` and at the browser level
- * by `tests/Browser/StudentQuizAttemptTest.php`.
+ * `SubmitQuizAttemptActionTest`/`QuizAttemptLimitsTest` and at the browser
+ * level by `tests/Browser/StudentQuizTakingDuskTest.php`.
  */
 class QuizManagementTest extends TestCase
 {

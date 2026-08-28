@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use Illuminate\View\ViewException;
 use Tests\TestCase;
 
 class BladeComponentsTest extends TestCase
@@ -194,6 +195,51 @@ class BladeComponentsTest extends TestCase
         $this->assertStringContainsString('id="delete-course-1"', $html);
         $this->assertStringContainsString('action="/courses/1"', $html);
         $this->assertStringContainsString('name="_method" value="DELETE"', $html);
+    }
+
+    public function test_confirm_modal_submits_external_form_when_form_prop_is_given(): void
+    {
+        $html = $this->renderBlade(
+            '<x-ui.confirm-modal id="submit-attempt-modal"
+                                 title="Finalizar prova"
+                                 form="quiz-attempt-form"
+                                 variant="primary"
+                                 confirm-label="Finalizar prova"
+                                 confirm-dusk="quiz-attempt-confirm">
+                <p>Deseja enviar?</p>
+            </x-ui.confirm-modal>'
+        );
+
+        $this->assertStringContainsString('id="submit-attempt-modal"', $html);
+        $this->assertStringNotContainsString('<form', $html);
+        $this->assertStringContainsString('form="quiz-attempt-form"', $html);
+        $this->assertStringContainsString('type="submit"', $html);
+        $this->assertStringContainsString('dusk="quiz-attempt-confirm"', $html);
+    }
+
+    public function test_confirm_modal_fails_loudly_when_neither_action_nor_form_is_given(): void
+    {
+        $this->expectException(ViewException::class);
+        $this->expectExceptionMessage('exige `action` (form interno) ou `form`');
+
+        $this->renderBlade(
+            '<x-ui.confirm-modal id="delete-course-42" title="Excluir Curso" />'
+        );
+    }
+
+    public function test_confirm_modal_renders_optional_trigger_slot(): void
+    {
+        $html = $this->renderBlade(
+            '<x-ui.confirm-modal id="delete-course-9" title="Excluir" action="/courses/9">
+                <x-slot:trigger>
+                    <x-ui.button variant="danger" data-bs-toggle="modal" data-bs-target="#delete-course-9" dusk="delete-course-9-trigger">Excluir</x-ui.button>
+                </x-slot:trigger>
+            </x-ui.confirm-modal>'
+        );
+
+        $this->assertStringContainsString('dusk="delete-course-9-trigger"', $html);
+        $this->assertStringContainsString('data-bs-target="#delete-course-9"', $html);
+        $this->assertStringContainsString('action="/courses/9"', $html);
     }
 
     public function test_form_controls_rendering(): void

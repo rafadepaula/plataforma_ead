@@ -23,7 +23,7 @@ use Tests\TestCase;
  * the lesson-completion handoff to `MarkLessonCompleteAction` on a
  * passing grade.
  */
-class SubmitQuizAttemptTest extends TestCase
+class SubmitQuizAttemptActionTest extends TestCase
 {
     private function enrolledAlunoAndQuiz(array $quizAttributes = []): array
     {
@@ -152,6 +152,86 @@ class SubmitQuizAttemptTest extends TestCase
         ]);
     }
 
+    public function test_an_attempt_submitted_after_the_time_limit_is_graded_but_never_passes(): void
+    {
+        [$aluno, $lesson, $quiz] = $this->enrolledAlunoAndQuiz([
+            'time_limit_minutes' => 10,
+            'min_score_percentage' => 0,
+        ]);
+        [$question, $correctOption] = $this->singleChoiceQuestion($quiz);
+
+        // The student opened the page 30 minutes ago on a quiz limited to
+        // 10 minutes: the submission is still accepted and graded, only
+        // `is_passed` is forced to false.
+        QuizAttempt::factory()->for($quiz)->for($aluno)->inProgress()->create([
+            'started_at' => now()->subMinutes(30),
+        ]);
+
+        $attempt = app(SubmitQuizAttemptAction::class)->execute($lesson, $aluno, [
+            ['question_id' => $question->id, 'selected_option_ids' => [$correctOption->id]],
+        ]);
+
+        $this->assertSame('graded', $attempt->status);
+        $this->assertEquals(100.0, (float) $attempt->score_percentage);
+        $this->assertFalse($attempt->is_passed);
+        $this->assertDatabaseMissing('lesson_progress', [
+            'user_id' => $aluno->id,
+            'lesson_id' => $lesson->id,
+        ]);
+    }
+
+    /**
+     * The open attempt is resumed instead of a fresh one being opened, so
+     * the countdown cannot be restarted by reloading the quiz page.
+     */
+    public function test_an_open_attempt_is_resumed_so_its_start_time_survives_a_page_reload(): void
+    {
+        [$aluno, $lesson, $quiz] = $this->enrolledAlunoAndQuiz([
+            'time_limit_minutes' => 10,
+            'min_score_percentage' => 0,
+        ]);
+        [$question, $correctOption] = $this->singleChoiceQuestion($quiz);
+
+        $openAttempt = QuizAttempt::factory()->for($quiz)->for($aluno)->inProgress()->create([
+            'started_at' => now()->subMinutes(45),
+        ]);
+
+        $attempt = app(SubmitQuizAttemptAction::class)->execute($lesson, $aluno, [
+            ['question_id' => $question->id, 'selected_option_ids' => [$correctOption->id]],
+        ]);
+
+        $this->assertSame($openAttempt->id, $attempt->id);
+        $this->assertSame(1, QuizAttempt::query()->count());
+        $this->assertFalse($attempt->is_passed);
+    }
+
+    /**
+     * Sem tentativa aberta (quiz sem cronômetro, enviado sem passar pela
+     * tela), a tentativa nasce no envio: `started_at` é carimbado com o
+     * relógio do servidor naquele instante, e não fica nulo nem no passado.
+     */
+    public function test_without_an_open_attempt_the_submit_time_becomes_the_attempt_start(): void
+    {
+        [$aluno, $lesson, $quiz] = $this->enrolledAlunoAndQuiz([
+            'time_limit_minutes' => 10,
+            'min_score_percentage' => 0,
+        ]);
+        [$question, $correctOption] = $this->singleChoiceQuestion($quiz);
+
+        $attempt = app(SubmitQuizAttemptAction::class)->execute($lesson, $aluno, [
+            ['question_id' => $question->id, 'selected_option_ids' => [$correctOption->id]],
+        ]);
+
+        $this->assertSame('graded', $attempt->status);
+        $this->assertTrue($attempt->is_passed);
+        $this->assertNotNull($attempt->started_at);
+        $this->assertTrue(
+            $attempt->started_at->greaterThan(now()->subMinute()),
+            'A tentativa aberta no envio deve começar a contar agora.'
+        );
+        $this->assertTrue($attempt->started_at->lessThanOrEqualTo(now()));
+    }
+
     public function test_a_student_without_an_active_enrollment_cannot_submit(): void
     {
         $org = Organization::factory()->create();
@@ -175,5 +255,37 @@ class SubmitQuizAttemptTest extends TestCase
         }
 
         $this->assertSame(0, QuizAttempt::query()->count());
+    }
+
+    public function test_a_quiz_without_questions_is_graded_zero_and_still_completes_the_lesson_when_no_minimum_score(): void
+    {
+        [$aluno, $lesson, $quiz] = $this->enrolledAlunoAndQuiz(['min_score_percentage' => 0]);
+
+        $attempt = app(SubmitQuizAttemptAction::class)->execute($lesson, $aluno, []);
+
+        $this->assertSame('graded', $attempt->status);
+        $this->assertSame(0.0, (float) $attempt->score_percentage);
+        $this->assertTrue($attempt->is_passed);
+        $this->assertDatabaseHas('lesson_progress', [
+            'user_id' => $aluno->id,
+            'lesson_id' => $lesson->id,
+            'is_completed' => true,
+        ]);
+    }
+
+    public function test_an_option_belonging_to_another_quiz_is_scored_as_incorrect(): void
+    {
+        [$aluno, $lesson, $quiz] = $this->enrolledAlunoAndQuiz(['min_score_percentage' => 70]);
+        [$question] = $this->singleChoiceQuestion($quiz);
+
+        [, $foreignLesson, $foreignQuiz] = $this->enrolledAlunoAndQuiz();
+        [, $foreignCorrectOption] = $this->singleChoiceQuestion($foreignQuiz);
+
+        $attempt = app(SubmitQuizAttemptAction::class)->execute($lesson, $aluno, [
+            ['question_id' => $question->id, 'selected_option_ids' => [$foreignCorrectOption->id]],
+        ]);
+
+        $this->assertSame(0.0, (float) $attempt->score_percentage);
+        $this->assertFalse($attempt->is_passed);
     }
 }

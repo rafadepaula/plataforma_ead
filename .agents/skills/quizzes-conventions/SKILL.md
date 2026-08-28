@@ -2,7 +2,9 @@
 name: quizzes-conventions
 description: >
   Code patterns, snippets, guardrails for Quizzes/Evaluations feature
-  (SPEC-08): single-page quiz-taking form contract,
+  (SPEC-08): single-page quiz-taking form contract, server-stamped
+  `started_at` via `OpenQuizAttemptAction`, submit-confirmation modal and
+  `QuizTaking.js` selector contract,
   `QuizPolicy`/`QuizAttemptPolicy` cascade-authorize conventions,
   create-then-manage-questions redirect flow, `QuizBuilder.js`
   essay-type/single-correct-option behavior, reused `[data-reorder-url]`
@@ -19,34 +21,85 @@ metadata:
 
 # Quizzes Conventions
 
-## Student Quiz Screen Is Single-Page, Never Server-Side "In-Progress" Attempt
+## Student Quiz Screen Is Single-Page; `started_at` Is Server-Stamped
 
 `spec/docs/mockups/05-quiz-avaliacao.md` models Aluno quiz screen as
 one-question-per-page with `Anterior`/`Próxima` navigation plus
 per-question POST, but `SubmitQuizAttemptAction` corrects *whole* attempt
-in single pass (SPEC-08 §2). So `StudentQuizController::show()` never
-creates `QuizAttempt` row up front — no "start attempt" step, no
-partial-answer save, no server-persisted `started_at` to key real
-countdown off:
+in single pass (SPEC-08 §2) — no "start attempt" button, no
+partial-answer save.
+
+The one thing `show()` **does** persist is the clock, and it goes through
+`OpenQuizAttemptAction` (never `QuizAttempt::create()` inline). On a Quiz
+with `time_limit_minutes`, and only while `$canAttempt`:
 
 ```php
-public function show(Lesson $lesson): View
-{
-    $quiz = $lesson->quiz()->with(['questions' => fn ($q) => $q->orderBy('order_index')->with('options')])->firstOrFail();
-    // ...compute $canAttempt/$completedAttempts/$bestScore/$pendingAttempt...
-    return view('student.quizzes.show', [...]); // no $attempt key
-}
+$expiredAttempt = $this->openQuizAttemptAction->expireStaleAttempt($quiz, $user); // before counting
+// ...$completedAttempts / $canAttempt...
+$attemptStartedAt = $canAttempt && $quiz->time_limit_minutes
+    ? $this->openQuizAttemptAction->openOrResume($quiz, $user)->started_at
+    : null;
 ```
+
+Order matters: `expireStaleAttempt()` must run **before**
+`$completedAttempts` is counted, so an abandoned expired attempt is
+already `graded` (zero, failed) and counts toward `max_attempts` in the
+same request.
+
+`SubmitQuizAttemptAction::execute()` calls the same
+`openOrResume()` — resuming the page's open attempt, or creating one when
+an untimed quiz was submitted without ever opening the page. The client
+never sends `started_at`: `SubmitQuizAttemptRequest` has no such rule and
+the form has no hidden input. Never reintroduce one — a client-supplied
+start (or its absence) lets the student reset the countdown by reloading
+or editing the DOM.
 
 `resources/views/student/quizzes/show.blade.php` mirrors this: every
 question rendered and POSTed together
-(`answers[{question_id}][selected_option_ids][]`/`[essay_answer]`), and
-`[data-quiz-timer]` countdown seeds itself from `now()` at render time
-(`data-started-at="{{ now()->toIso8601String() }}"`) rather than any
-persisted attempt — cosmetic approximation only, gated entirely behind
-`$canAttempt` (never rendered once student out of attempts). Mockup is
-**visual reference for CSS only** — never reintroduce `page=` query param
-/ multi-request flow.
+(`answers[{question_id}][selected_option_ids][]`/`[essay_answer]`),
+`[data-quiz-timer]` seeds `data-started-at` from `$attemptStartedAt`
+gated behind `$canAttempt` (never rendered once student is out of
+attempts), and `$expiredAttempt` (nullable) drives the "tentativa
+anterior expirou" banner. Mockup is **visual reference for CSS only** —
+never reintroduce `page=` query param / multi-request flow.
+
+## Never Write `quiz_attempts.open_slot` By Hand
+
+`open_slot` is not in `$fillable` and is set exclusively by
+`QuizAttempt::booted()`'s `saving` hook from `status`
+(`in_progress` → `1`, anything else → `null`). It exists only to back the
+`quiz_attempts_open_slot_unique` index (see `quizzes-architecture`).
+Setting it in an action, factory state, or migration by hand breaks the
+one-open-attempt-per-student invariant silently.
+
+## Submission Goes Through a Confirmation Modal (`data-quiz-confirm-modal`)
+
+The `dusk="quiz-attempt-submit"` control is a `type="button"` that opens a
+Bootstrap modal; the real submit is the modal's
+`dusk="quiz-attempt-confirm"` button, wired by the `form` prop rather
+than a nested form:
+
+- `<form id="quiz-attempt-form" dusk="quiz-attempt-form">` — the modal is
+  rendered **after** `</form>`, never inside it.
+- `<x-ui.confirm-modal form="quiz-attempt-form" ...>` — when `form` is
+  passed, the component emits **no** inner `<form>` and its confirm button
+  becomes `type="submit" form="{id}"`. Passing `action` instead keeps the
+  legacy embedded-form path used by every delete flow; the two are
+  mutually exclusive.
+- Modal body carries `[data-unanswered-count]`, `[data-total-count]`,
+  `[data-unanswered-message]`, the irreversibility line, and, only when
+  `$quiz->max_attempts !== null`, "Esta é a tentativa
+  `{{ $completedAttempts + 1 }}` de `{{ $quiz->max_attempts }}`".
+
+`resources/js/modules/QuizTaking.js` recomputes that summary on every
+`show.bs.modal` (never once at bind time only), reading questions via
+`[data-question-id]` (fallback `[dusk^="quiz-question-"]`) and options via
+`.quiz-option-card`/`[data-quiz-option]`. Selection state is
+`.is-selected` **only** — no `border-primary`/`bg-body-secondary` utility
+toggling, so the look lives in `_quiz-taking.scss`. Keep these selectors
+in sync when editing either file; there is no JS test runner in this
+project, so the contract is only enforced by
+`tests/Browser/StudentQuizTakingDuskTest.php`.
 
 ## Gate Form on `$canAttempt`, Not Route Middleware
 

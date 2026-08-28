@@ -21,9 +21,18 @@ use Illuminate\Validation\ValidationException;
  */
 class SubmitQuizAttemptAction
 {
-    public function __construct(protected MarkLessonCompleteAction $markLessonCompleteAction) {}
+    public function __construct(
+        protected MarkLessonCompleteAction $markLessonCompleteAction,
+        protected OpenQuizAttemptAction $openQuizAttemptAction,
+    ) {}
 
     /**
+     * The attempt start is always resolved server-side: an `in_progress`
+     * QuizAttempt stamped when the student opened the quiz page is resumed
+     * when one exists, otherwise the submission time is used. The client
+     * never supplies `started_at`, so the time limit cannot be reset by
+     * reloading the page or tampering with the form.
+     *
      * @param  array<int, array{question_id: int, selected_option_ids?: array<int, int>|null, essay_answer?: string|null}>  $answers
      */
     public function execute(Lesson $lesson, User $user, array $answers): QuizAttempt
@@ -34,14 +43,7 @@ class SubmitQuizAttemptAction
         $this->guardActiveEnrollment($lesson, $user);
         $this->guardAttemptLimits($quiz, $user);
 
-        $startedAt = now();
-
-        $attempt = QuizAttempt::query()->create([
-            'quiz_id' => $quiz->id,
-            'user_id' => $user->id,
-            'status' => 'in_progress',
-            'started_at' => $startedAt,
-        ]);
+        $attempt = $this->openQuizAttemptAction->openOrResume($quiz, $user);
 
         $answersByQuestionId = collect($answers)->keyBy('question_id');
 

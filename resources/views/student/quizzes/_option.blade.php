@@ -6,8 +6,7 @@
 <label
     @class([
         'quiz-option-card d-flex align-items-center gap-3 p-3 border rounded-3 cursor-pointer transition-base',
-        'bg-body' => ! $isSelected,
-        'bg-body-secondary border-primary border-2 shadow-sm' => $isSelected,
+        'is-selected' => $isSelected,
     ])
     data-quiz-option
 >
@@ -19,7 +18,7 @@
         class="form-check-input flex-shrink-0 mt-0"
         dusk="quiz-option-{{ $question->id }}-{{ $option->id }}"
     />
-    <span class="flex-grow-1 text-body {{ $isSelected ? 'fw-semibold' : '' }}">
+    <span class="flex-grow-1 text-body">
         {{ $option->option_text }}
     </span>
 </label>

@@ -25,6 +25,12 @@
             São {{ $questionsLabel }}{{ $timeLabel }}.
         </p>
 
+        @if($quiz->time_limit_minutes)
+            <p class="ds-quiz-placeholder-text" dusk="quiz-timer-warning">
+                Ao iniciar, o cronômetro começa a correr e esta tentativa passa a valer, mesmo que você feche a tela antes de enviar.
+            </p>
+        @endif
+
         @if(filled($quiz->instructions))
             <p class="ds-quiz-placeholder-text">{{ Str::limit($quiz->instructions, 140) }}</p>
         @endif

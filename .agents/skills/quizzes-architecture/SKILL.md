@@ -5,7 +5,9 @@ description: >
   quizzes/quiz_questions/quiz_options/quiz_attempts/quiz_answers schema,
   cascade-inherited tenancy through Lesson, correction engine branching
   between automatic (single_choice/multiple_choice/true_false) and manual
-  (essay) grading, max_attempts/time_limit_minutes enforcement. Use when
+  (essay) grading, max_attempts/time_limit_minutes enforcement,
+  `OpenQuizAttemptAction` as sole owner of the `in_progress` attempt and
+  the `open_slot` unique-index invariant. Use when
   designing or reviewing feature touching
   Quiz/QuizQuestion/QuizOption/QuizAttempt/QuizAnswer data, before adding
   new question type, or when deciding how quiz-taking or essay-grading
@@ -39,7 +41,7 @@ here).
 | `quizzes` | `lesson_id` (**UNIQUE** — 1:1), `title`, `instructions`, `allow_retries`, `max_attempts` (nullable), `time_limit_minutes` (nullable), `show_correct_answers`, `min_score_percentage` | **Cascade-inherited** via `lessons.module_id` → `modules.course_id` → `courses.org_id` — no own `org_id`, no `OrgScope` |
 | `quiz_questions` | `quiz_id`, `question_text`, `type` (enum: `single_choice`\|`multiple_choice`\|`true_false`\|`essay`), `order_index` | Cascade-inherited one level deeper |
 | `quiz_options` | `question_id`, `option_text`, `is_correct` — **does not apply** to `type=essay` questions | Cascade-inherited two levels deeper |
-| `quiz_attempts` | `quiz_id`, `user_id`, `score_percentage` (nullable), `is_passed` (nullable), `status` (`in_progress`\|`awaiting_manual_grading`\|`graded`), `started_at`, `completed_at` | Cascade-inherited via `quiz_id` |
+| `quiz_attempts` | `quiz_id`, `user_id`, `score_percentage` (nullable), `is_passed` (nullable), `status` (`in_progress`\|`awaiting_manual_grading`\|`graded`), `open_slot` (nullable tinyint, `1` while open / `NULL` once closed, **never mass-assignable**), `started_at`, `completed_at` | Cascade-inherited via `quiz_id` |
 | `quiz_answers` | `attempt_id`, `question_id`, `selected_option_ids` (JSON array, nullable), `essay_answer` (nullable), `is_correct` (nullable — `null` means "not yet graded"), `graded_by` (nullable), `graded_at` (nullable) | Cascade-inherited via `attempt_id` |
 
 None of these five models get `OrgScope` trait — see each model docblock
@@ -73,7 +75,11 @@ answer as "skip"/"correct").
 - `allow_retries` (bool): when `false`, blocks any second submission
   outright regardless of `max_attempts`.
 - `time_limit_minutes` (nullable): timer starts at
-  `quiz_attempts.started_at`. Over-limit submission is **accepted, not
+  `quiz_attempts.started_at`, stamped server-side by
+  `OpenQuizAttemptAction::openOrResume()` when the student opens the quiz
+  page (`StudentQuizController::show()`) and resumed by the same call
+  inside `SubmitQuizAttemptAction::execute()`; never accepted from the
+  client. Over-limit submission is **accepted, not
   blocked** — network races must never cost student their answers — but
   forced `is_passed = false`. No `notes`/warning column on
   `quiz_attempts` in current schema (SPEC-00 §2.1 defines none).
@@ -85,13 +91,50 @@ answer as "skip"/"correct").
   `status = graded` attempts, not latest attempt. Every attempt still
   individually queryable in history.
 
+## The Open-Attempt Lifecycle (`OpenQuizAttemptAction`)
+
+`OpenQuizAttemptAction` is the **single owner** of the `in_progress`
+`QuizAttempt` row. Both the quiz page and the submission go through it, so
+there is exactly one definition of "an attempt is open" and one place the
+row is created, resumed or expired. Never create an `in_progress`
+`QuizAttempt` anywhere else (factories/tests aside).
+
+- `openOrResume(Quiz, User): QuizAttempt` — returns the student's open
+  attempt untouched when one exists (so reloading the page can never reset
+  the countdown), otherwise creates it with `started_at = now()`. Runs in
+  a transaction with `lockForUpdate()`.
+- `expireStaleAttempt(Quiz, User): ?QuizAttempt` — for timed quizzes only.
+  Closes an abandoned open attempt whose limit already ran out: `status =
+  graded`, `score_percentage = 0`, `is_passed = false`, `completed_at`
+  pinned to the deadline (`started_at + time_limit_minutes`). The zombie
+  row becomes a visible, counted attempt, so **letting the clock run out
+  costs an attempt** and is never a free way to earn a fresh countdown.
+  `StudentQuizController::show()` calls it *before* counting attempts.
+
+**Concurrency invariant — at most one open attempt per (quiz, user).**
+The row lock alone cannot carry it: on the very first open there is no row
+to lock, so two concurrent requests could both insert. The real guarantee
+is the partial-style unique index `quiz_attempts_open_slot_unique`
+(`quiz_id, user_id, open_slot`); `open_slot` holds `1` while open and
+`NULL` once closed, and both MySQL and SQLite treat `NULL`s as distinct,
+so completed attempts never collide. `QuizAttempt::booted()` keeps
+`open_slot` in sync from `status` on every save — application code must
+never set it directly. A racer that loses the insert catches
+`UniqueConstraintViolationException` and simply resumes the winner's row.
+
+An `in_progress` attempt carries no answers and **never** counts toward
+`max_attempts` — only `awaiting_manual_grading` and `graded` do.
+
 ## The Correction Engine (`SubmitQuizAttemptAction`, SPEC-08 §2)
 
 1. Verify student has active enrollment in Quiz's Course's Org (same
    `hasActiveOrCompletedEnrollment()` check `EnsureStudentIsEnrolled`
    uses — see `learning-architecture`).
 2. Enforce `allow_retries`/`max_attempts` (above) — block with domain
-   exception before touching `quiz_attempts` at all.
+   exception before touching `quiz_attempts` at all. Only then call
+   `OpenQuizAttemptAction::openOrResume()` to resume the page's open
+   attempt (or create one, for an untimed quiz submitted without ever
+   opening the page).
 3. Auto-grade every `single_choice`/`multiple_choice`/`true_false`
    question, persist `quiz_answers` for all of them, essay included
    (essay rows get `is_correct = null`).

@@ -9,6 +9,10 @@ use Illuminate\Foundation\Http\FormRequest;
  * (`POST /lessons/{lesson}/quiz/submit`). `answers` is keyed by `question_id`;
  * `selected_option_ids` is used for objective questions, `essay_answer`
  * for essay questions — both are optional per-question.
+
+ * The attempt's start time is never accepted from the client: it is
+ * stamped server-side on the `in_progress` QuizAttempt when the quiz page
+ * is opened.
  */
 class SubmitQuizAttemptRequest extends FormRequest
 {

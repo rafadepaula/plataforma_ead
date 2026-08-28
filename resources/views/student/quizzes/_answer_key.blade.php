@@ -3,7 +3,7 @@
 @endphp
 
 <x-ui.card
-    class="mb-4"
+    class="quiz-answer-key-card mb-4"
     dusk="quiz-answer-key"
     title="Gabarito"
     :subtitle="$latestAttempt && $latestAttempt->completed_at ? 'Referente à sua tentativa corrigida em ' . $latestAttempt->completed_at->format('d/m/Y') . '.' : null"

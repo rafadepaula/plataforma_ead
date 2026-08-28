@@ -1,8 +1,10 @@
 // =============================================================================
 // Componente: QuizTaking (Realização da Prova pelo Aluno)
 // -----------------------------------------------------------------------------
-// Cartões de opções com clique amplo (min-height 56px, raio 14px), controles de
-// rádio e checkbox de 22px, estados de seleção, foco e gabarito.
+// Cartões de opções com clique amplo (min-height 56px, raio 14px — `--radius-md`
+// resolve exatamente 14px), controles de rádio e checkbox de 22px, estados de
+// seleção, foco, cronômetro e gabarito. O estado selecionado mora aqui, e não em
+// classe utilitária ligada por JS.
 // Regra: qualquer declaração aqui só pode consumir var(--*), nunca literal de cor.
 // =============================================================================
 
@@ -19,7 +21,7 @@
     transition: var(--transition-base);
 
     &:hover {
-        background-color: var(--blue-50);
+        background-color: var(--state-hover);
         border-color: var(--primary);
     }
 
@@ -42,6 +44,23 @@
         flex-shrink: 0;
         cursor: pointer;
     }
+}
+
+// -----------------------------------------------------------------------------
+// Cronômetro (§3.1): nó único, sobrescrito por `textContent` a cada segundo.
+// `tabular-nums` evita que a largura oscile a cada tique. No estado expirado o
+// nó recebe `.ds-tone-attention`, cujo container cinza fica quase idêntico ao
+// `bg-body-secondary` da cápsula que o envolve — o contorno interno abaixo
+// devolve o contraste sem precisar de uma classe extra na cápsula.
+// -----------------------------------------------------------------------------
+[data-quiz-timer] {
+    font-variant-numeric: tabular-nums;
+}
+
+[data-quiz-timer].ds-tone-attention {
+    padding: 2px 10px;
+    border-radius: var(--radius-pill);
+    box-shadow: inset 0 0 0 var(--border-width) var(--on-attention-container);
 }
 
 .quiz-answer-key-card {

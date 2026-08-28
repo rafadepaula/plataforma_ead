@@ -664,6 +664,27 @@ Authorization of those endpoints belongs in the Feature test that calls
 them directly (e.g. `tests/Feature/CertificateControllerTest.php`); the
 Dusk test only proves the UI points at the right URL.
 
+## Every New `dusk=` Selector Must Be Added to the Snapshot Fixture (Project-Specific)
+
+`tests/Feature/DuskSelectorContractTest.php` compares the `dusk=`
+attributes found in `resources/views/` against
+`tests/fixtures/dusk-selectors-snapshot.json`. Adding a selector to a
+Blade view — or duplicating one across a new `@if`/`@else` branch of a
+component — turns that Feature test red until the fixture is updated, and
+the failure names the missing entry rather than the view, so it reads like
+an unrelated break.
+
+Rules when updating the fixture:
+
+- Add the new entries only; a removal or rename in the diff means a
+  selector some other test relies on just disappeared — fix the view
+  instead.
+- The entry key is `<view path>::<selector>`, so a selector rendered from
+  a variable is recorded with the variable expression itself (e.g.
+  `components/ui/confirm-modal.blade.php::{{ $confirmDusk ?? ... }}`).
+- Re-run `vendor/bin/sail artisan test --filter=DuskSelectorContractTest`
+  before running Dusk itself.
+
 ## Notes
 
 - Laravel Dusk uses ChromeDriver by default (no Selenium/JDK required)

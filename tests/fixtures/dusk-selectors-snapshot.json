@@ -1,5 +1,5 @@
 {
-    "count": 423,
+    "count": 427,
     "entries": [
         {
             "file": "classroom/partials/_text-image.blade.php",
@@ -1692,6 +1692,22 @@
         {
             "file": "users/index.blade.php",
             "selector": "user-status-{{ $user->id }}"
+        },
+        {
+            "file": "components/ui/confirm-modal.blade.php",
+            "selector": "{{ $confirmDusk ?? 'confirm-modal-'.$id.'-confirm' }}"
+        },
+        {
+            "file": "student/quizzes/show.blade.php",
+            "selector": "quiz-attempt-confirm"
+        },
+        {
+            "file": "student/quizzes/show.blade.php",
+            "selector": "quiz-expired-attempt"
+        },
+        {
+            "file": "classroom/partials/_quiz-placeholder.blade.php",
+            "selector": "quiz-timer-warning"
         }
     ]
 }

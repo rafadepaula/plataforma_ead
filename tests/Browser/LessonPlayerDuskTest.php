@@ -326,6 +326,13 @@ class LessonPlayerDuskTest extends DuskTestCase
         ]);
     }
 
+    /**
+     * O aviso de cronômetro é a única coisa que conta ao Aluno, ANTES do
+     * clique, que iniciar a prova já dispara a contagem e consome a
+     * tentativa mesmo se ele fechar a tela. Por isso o teste cobre os dois
+     * lados: ele aparece na prova cronometrada e não aparece na prova sem
+     * limite de tempo, onde a afirmação seria falsa.
+     */
     public function test_ready_quiz_lesson_hands_off_to_the_quiz_screen(): void
     {
         $lesson = $this->lesson([
@@ -344,12 +351,41 @@ class LessonPlayerDuskTest extends DuskTestCase
         QuizOption::factory()->for($question, 'question')->correct()->create(['option_text' => 'Opção A']);
         QuizOption::factory()->for($question, 'question')->incorrect()->create(['option_text' => 'Opção B']);
 
-        $this->browse(function (Browser $browser) use ($lesson): void {
+        $untimedLesson = $this->lesson([
+            'title' => 'Avaliação Sem Cronômetro',
+            'type' => 'quiz',
+            'order_index' => 6,
+        ]);
+        $untimedQuiz = Quiz::factory()->for($untimedLesson)->create([
+            'time_limit_minutes' => null,
+            'min_score_percentage' => 70,
+        ]);
+        $untimedQuestion = QuizQuestion::factory()->for($untimedQuiz)->singleChoice()->create([
+            'question_text' => 'Qual é a resposta correta?',
+        ]);
+        QuizOption::factory()->for($untimedQuestion, 'question')->correct()->create(['option_text' => 'Opção A']);
+        QuizOption::factory()->for($untimedQuestion, 'question')->incorrect()->create(['option_text' => 'Opção B']);
+
+        $this->browse(function (Browser $browser) use ($lesson, $untimedLesson): void {
+            // 1. Prova cronometrada: o aviso avisa antes do clique.
             $browser->loginAs($this->student)
                 ->visit(route('classroom.lesson', $lesson))
                 ->waitFor('@quiz-placeholder')
                 ->assertSeeIn('@quiz-placeholder', 'Esta aula é uma prova')
+                ->assertVisible('@quiz-timer-warning')
+                ->assertSeeIn('@quiz-timer-warning', 'o cronômetro começa a correr')
+                ->assertSeeIn('@quiz-timer-warning', 'mesmo que você feche a tela antes de enviar')
+                ->assertPresent('@start-quiz');
+
+            // 2. Prova sem limite de tempo: o aviso seria falso, então some.
+            $browser->visit(route('classroom.lesson', $untimedLesson))
+                ->waitFor('@quiz-placeholder')
                 ->assertPresent('@start-quiz')
+                ->assertMissing('@quiz-timer-warning');
+
+            // 3. O botão continua entregando o Aluno à tela da prova.
+            $browser->visit(route('classroom.lesson', $lesson))
+                ->waitFor('@start-quiz')
                 ->click('@start-quiz')
                 ->waitForLocation('/lessons/'.$lesson->id.'/quiz');
         });

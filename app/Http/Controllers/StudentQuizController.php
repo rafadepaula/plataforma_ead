@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\OpenQuizAttemptAction;
 use App\Actions\SubmitQuizAttemptAction;
 use App\Http\Requests\SubmitQuizAttemptRequest;
 use App\Models\Lesson;
@@ -18,7 +19,10 @@ use Illuminate\Validation\ValidationException;
  */
 class StudentQuizController extends Controller
 {
-    public function __construct(protected SubmitQuizAttemptAction $submitQuizAttemptAction) {}
+    public function __construct(
+        protected SubmitQuizAttemptAction $submitQuizAttemptAction,
+        protected OpenQuizAttemptAction $openQuizAttemptAction,
+    ) {}
 
     public function show(Lesson $lesson): View
     {
@@ -31,6 +35,14 @@ class StudentQuizController extends Controller
 
         $user = request()->user();
 
+        /**
+         * Uma tentativa aberta e abandonada cujo tempo já se esgotou é
+         * encerrada aqui, antes de qualquer contagem: ela vira uma
+         * tentativa corrigida (zero, reprovada) e deixa de ser uma linha
+         * invisível que impediria o Aluno de recomeçar.
+         */
+        $expiredAttempt = $this->openQuizAttemptAction->expireStaleAttempt($quiz, $user);
+
         $completedAttempts = QuizAttempt::query()
             ->where('quiz_id', $quiz->id)
             ->where('user_id', $user->id)
@@ -42,16 +54,14 @@ class StudentQuizController extends Controller
 
         $bestScore = $user->bestQuizScoreFor($quiz);
 
+        $attemptStartedAt = $canAttempt && $quiz->time_limit_minutes
+            ? $this->openQuizAttemptAction->openOrResume($quiz, $user)->started_at
+            : null;
+
         $pendingAttempt = QuizAttempt::query()
             ->where('quiz_id', $quiz->id)
             ->where('user_id', $user->id)
             ->where('status', 'awaiting_manual_grading')
-            ->latest('id')
-            ->first();
-
-        $latestAttempt = QuizAttempt::query()
-            ->where('quiz_id', $quiz->id)
-            ->where('user_id', $user->id)
             ->latest('id')
             ->first();
 
@@ -72,11 +82,12 @@ class StudentQuizController extends Controller
             'course' => $course,
             'quiz' => $quiz,
             'canAttempt' => $canAttempt,
+            'expiredAttempt' => $expiredAttempt,
+            'attemptStartedAt' => $attemptStartedAt,
             'completedAttempts' => $completedAttempts,
             'bestScore' => $bestScore,
             'pendingAttempt' => $pendingAttempt,
             'hasPendingGrading' => $hasPendingGrading,
-            'latestAttempt' => $latestAttempt,
             'showAnswerKey' => $showAnswerKey,
             'latestGradedAttempt' => $latestGradedAttempt,
         ]);
@@ -90,7 +101,11 @@ class StudentQuizController extends Controller
             ->all();
 
         try {
-            $attempt = $this->submitQuizAttemptAction->execute($lesson, $request->user(), $answers);
+            $attempt = $this->submitQuizAttemptAction->execute(
+                $lesson,
+                $request->user(),
+                $answers,
+            );
         } catch (ValidationException $e) {
             return back()->withErrors($e->errors());
         }

@@ -114,7 +114,7 @@ Mapa tela, teste Dusk (usar sempre filtro mais estreito):
 | Cursos (gestão) | `CourseManagementTest` |
 | Reorder de módulos | `ModuleReorderTest` |
 | Player de aula / vídeo | `LessonMultimediaTest`, `VideoThresholdCompletionTest` |
-| Quiz (aluno) | `StudentQuizAttemptTest` |
+| Quiz (aluno) | `StudentQuizTakingDuskTest` |
 | Correção discursiva | `EssayGradingScreenTest` |
 | Fórum | `ForumDuskTest` |
 | Certificados | `CertificateVerificationTest`, `CertificateRevocationTest`, `CourseCompletionRuleTest` |

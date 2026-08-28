@@ -31,6 +31,19 @@ class QuizAttempt extends Model
     ];
 
     /**
+     * Keeps `open_slot` in sync with `status` so the
+     * `quiz_attempts_open_slot_unique` index enforces "at most one open
+     * attempt per quiz and student" no matter which code path writes the
+     * row. The column is never mass-assignable — `status` alone drives it.
+     */
+    protected static function booted(): void
+    {
+        static::saving(function (QuizAttempt $attempt): void {
+            $attempt->open_slot = $attempt->status === 'in_progress' ? 1 : null;
+        });
+    }
+
+    /**
      * @return array<string, string>
      */
     protected function casts(): array

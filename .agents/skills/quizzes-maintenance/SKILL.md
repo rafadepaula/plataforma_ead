@@ -5,8 +5,11 @@ description: >
   mandatory PHPUnit/Dusk test files, common
   attempt-limit/time-limit/essay-grading failure modes,
   `question-list-page`/`question-form-page` vs inline-modal view split,
-  frontend-build gotcha for `QuizBuilder.js`/`QuizTimer.js`. Use when
-  `SubmitQuizAttemptTest`, `QuizAttemptLimitsTest`,
+  frontend-build gotcha for
+  `QuizBuilder.js`/`QuizTimer.js`/`QuizTaking.js`, and the
+  `OpenQuizAttemptAction` open-attempt/`open_slot` failure modes. Use when
+  `SubmitQuizAttemptActionTest`, `StudentQuizControllerTest`,
+  `QuizAttemptLimitsTest`,
   `EssayManualGradingTest`, or `QuizManagementTest` fails; quiz submission
   scores unexpectedly; essay attempt won't leave
   `awaiting_manual_grading`; or options UI doesn't hide for essay
@@ -26,7 +29,8 @@ metadata:
 
 These tests guard SPEC-08 contract, must stay green (PHPUnit, no Pest):
 
-- `tests/Feature/SubmitQuizAttemptTest.php` — correction engine:
+- `tests/Feature/SubmitQuizAttemptActionTest.php` (renamed from
+  `SubmitQuizAttemptTest.php`) — correction engine:
   auto-grading of `single_choice`/`multiple_choice`/`true_false`
   (exact-set matching, empty selection always wrong), essay answers
   routing attempt to `awaiting_manual_grading`, `lesson_progress` written
@@ -35,6 +39,11 @@ These tests guard SPEC-08 contract, must stay green (PHPUnit, no Pest):
   `allow_retries`/`max_attempts` counting only completed
   (`awaiting_manual_grading`/`graded`) attempts, never stale
   `in_progress` one; accept-but-fail time-limit rule.
+- `tests/Feature/StudentQuizControllerTest.php` — HTTP contract of the
+  quiz page: `[data-quiz-timer]` markup (`data-started-at`/
+  `data-time-limit-minutes`) seeded from the server-opened attempt,
+  confirmation-modal markup, expired-attempt banner, and the
+  accept-but-fail path exercised end-to-end through the POST route.
 - `tests/Feature/EssayManualGradingTest.php` — `GradeEssayAnswerAction`
   grading one answer at a time, `finalizeGrading()` firing only once
   every essay answer on attempt graded, using exact same score formula as
@@ -53,7 +62,8 @@ These tests guard SPEC-08 contract, must stay green (PHPUnit, no Pest):
 - `tests/Feature/QuizManagementTest.php` (Bucket 2) — Gestor CRUD of
   Quiz/QuizQuestion/QuizOption, `quizzes.lesson_id` UNIQUE
   redirect-with-error guard, cross-tenant isolation.
-- `tests/Browser/StudentQuizAttemptTest.php`,
+- `tests/Browser/StudentQuizTakingDuskTest.php` (renamed from
+  `StudentQuizAttemptTest.php`),
   `tests/Browser/EssayGradingScreenTest.php` (Bucket 2, Dusk E2E) — full
   browser flow through `student/quizzes/show.blade.php` and
   `quizzes/attempts/show.blade.php`.
@@ -74,13 +84,14 @@ These tests guard SPEC-08 contract, must stay green (PHPUnit, no Pest):
 Run narrowest of these first after touching this module:
 
 ```bash
-vendor/bin/sail artisan test --filter=SubmitQuizAttemptTest
+vendor/bin/sail artisan test --filter=SubmitQuizAttemptActionTest
+vendor/bin/sail artisan test --filter=StudentQuizControllerTest
 vendor/bin/sail artisan test --filter=QuizAttemptLimitsTest
 vendor/bin/sail artisan test --filter=EssayManualGradingTest
 vendor/bin/sail artisan test --filter=EssayGradingTest
 vendor/bin/sail artisan test --filter=QuizManagementTest
 vendor/bin/sail artisan test --filter=MultiTenantQuizManagementTest
-vendor/bin/sail dusk --filter=StudentQuizAttemptTest
+vendor/bin/sail dusk --filter=StudentQuizTakingDuskTest
 vendor/bin/sail dusk --filter=EssayGradingScreenTest
 vendor/bin/sail dusk --filter=QuizAuthoringDuskTest
 ```
@@ -153,26 +164,84 @@ two-screen design (standalone pages plus inline modals sharing one
 modals-only. Do not resurrect standalone pages/routes without updating
 this skill and `quizzes-conventions` again.
 
-## `QuizTimer.js` Cosmetic Only — Never Source of Truth
+## `QuizTimer.js` Display Only — Never Source of Truth
 
-`[data-quiz-timer]` `data-started-at` seeded from Blade view own `now()`
-at render time (no persisted `QuizAttempt.started_at` yet when student
-looks at form — see `quizzes-conventions`). Dusk test asserting
+`[data-quiz-timer]` `data-started-at` seeded from the `started_at` of the
+`in_progress` `QuizAttempt` that `StudentQuizController::show()` opens
+for a timed Quiz (see `quizzes-conventions`), so reloading the page does
+not restart the countdown. Expiry only writes "Tempo esgotado" — it never
+auto-submits (spec 29 §3.1). A Dusk test visiting a timed quiz therefore
+finds an `in_progress` row: assert absence of a *`graded`* attempt, not
+absence of any attempt. Dusk test asserting
 time-limit *enforcement* (not just visual countdown) must submit form and
 inspect resulting `QuizAttempt`/redirect message — never assert against
 `QuizTimer` on-screen text reaching zero, since that proves only cosmetic
 countdown ticked, not that server accept-but-fail rule fired.
+
+## Student Can't Start a New Attempt / "Ghost" `in_progress` Row
+
+Symptom: student still has retries left but the quiz page behaves as if an
+attempt were running, or `max_attempts` counting looks off by one.
+
+- Attempt counting deliberately ignores `in_progress` rows, so an
+  abandoned open attempt is invisible. `OpenQuizAttemptAction::
+  expireStaleAttempt()` is what converts it into a `graded`, zero-score,
+  failed attempt — and `StudentQuizController::show()` must call it
+  **before** `$completedAttempts` is counted. Moving that call after the
+  count silently reintroduces the ghost row for one request.
+- `expireStaleAttempt()` is a no-op on untimed quizzes (no
+  `time_limit_minutes` means no deadline to miss) — an untimed quiz's
+  open attempt is simply resumed forever, by design.
+- Expiring **costs** an attempt (`completed_at` pinned to the deadline).
+  If a test expects "abandon the timer, get a fresh countdown", the test
+  is wrong, not the action.
+
+## `UniqueConstraintViolationException` on `quiz_attempts`
+
+`quiz_attempts_open_slot_unique` (`quiz_id, user_id, open_slot`) enforces
+at most one open attempt per student per quiz. `OpenQuizAttemptAction::
+start()` already catches the violation and resumes the winner's row, so a
+leaking exception means the row was created **outside** the action — an
+inline `QuizAttempt::create([... 'status' => 'in_progress'])` in a
+controller, seeder, or test. Route it through `openOrResume()`, or (in a
+factory) make sure the state does not produce a second open attempt.
+Never set `open_slot` by hand: `QuizAttempt::booted()` derives it from
+`status` on every save.
+
+## Confirmation Modal Doesn't Submit / Submits Twice
+
+`student/quizzes/show.blade.php` renders `<x-ui.confirm-modal>` **after**
+`</form>` and links them with the `form="quiz-attempt-form"` prop. Two
+regressions to watch for:
+
+- Nesting the modal inside the form (or passing `action` instead of
+  `form`) emits a nested `<form>` — the browser drops it and the confirm
+  button becomes inert.
+- Leaving `dusk="quiz-attempt-submit"` as `type="submit"` submits on the
+  first click and the modal never gates anything; it must be
+  `type="button"` with `data-bs-toggle="modal"`.
+
+Both are covered by `tests/Feature/BladeComponentsTest.php` (component
+level) and `tests/Browser/StudentQuizTakingDuskTest.php` (flow level).
+The unanswered-count summary lives in `QuizTaking.js`; there is **no JS
+test runner in this project**, so any change there must be verified by
+`vendor/bin/sail npm run build` plus the Dusk test — and new `dusk=`
+selectors must be added to `tests/fixtures/dusk-selectors-snapshot.json`
+or `DuskSelectorContractTest` fails.
 
 ## Auto-Update Protocol (SPEC-03)
 
 Per `spec/specs/03-agentic-harness-and-self-updating-skills.md`: any
 change to `QuizController`/`QuizQuestionController`/
 `StudentQuizController`/`EssayGradingController`,
-`SubmitQuizAttemptAction`/`GradeEssayAnswerAction`,
+`SubmitQuizAttemptAction`/`OpenQuizAttemptAction`/
+`GradeEssayAnswerAction`, the `quiz_attempts.open_slot` column or its
+`quiz_attempts_open_slot_unique` index,
 `QuizPolicy`/`QuizAttemptPolicy`, the
 `quizzes*`/`quiz-questions*`/`quiz-attempts*`/`student.quizzes.*` routes,
 Blade views under `resources/views/quizzes/`+
-`resources/views/student/quizzes/`, or `QuizBuilder.js`/`QuizTimer.js`
+`resources/views/student/quizzes/`, or `QuizBuilder.js`/`QuizTimer.js`/
+`QuizTaking.js`
 **must** update all three quizzes skills (`quizzes-architecture`,
 `quizzes-conventions`, `quizzes-maintenance`) in same change, before task
 counts done. Also re-check:

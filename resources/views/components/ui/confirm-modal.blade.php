@@ -9,6 +9,16 @@
     (`.modal` sozinho é `display:none`) e quem adiciona `.show` é o
     `bootstrap.Modal` no momento de abrir. Ver `UiModalComponentTest`.
 
+    Quando a ação a confirmar pertence a um formulário que já existe na
+    tela (e que, por isso, não pode ser aninhado aqui dentro — HTML não
+    permite `<form>` dentro de `<form>`), passe `form="{id-do-form}"`:
+    nenhum `<form>` interno é emitido e o botão de confirmação vira
+    `type="submit" form="{id}"`. O slot opcional `trigger` renderiza o
+    gatilho (`data-bs-toggle="modal"`) logo antes do modal.
+
+    É obrigatório informar `action` ou `form` — nunca nenhum dos dois:
+    o componente lança `InvalidArgumentException` na renderização.
+
     Texto padrão calmo e explícito ("Esta ação não poderá ser desfeita...").
     Botão de confirmação da variante `danger` (default) ganha o ícone
     `trash` — cor nunca é o único sinal de ação destrutiva, a palavra do
@@ -17,7 +27,8 @@
 @props([
     'id',
     'title' => 'Confirmar ação',
-    'action',
+    'action' => null,
+    'form' => null,
     'method' => 'DELETE',
     'confirmLabel' => 'Confirmar',
     'cancelLabel' => 'Cancelar',
@@ -28,6 +39,18 @@
 ])
 
 @php
+    $submitsExternalForm = filled($form);
+
+    // Exatamente uma das duas rotas de submissão é obrigatória: `action`
+    // (form interno) ou `form` (form já existente na tela). Sem nenhuma
+    // delas o componente emitiria um `<form action="">` apontando para a
+    // própria URL da página — falha ruidosamente em vez disso.
+    if (! $submitsExternalForm && blank($action)) {
+        throw new \InvalidArgumentException(
+            'x-ui.confirm-modal exige `action` (form interno) ou `form` (id de um form existente).',
+        );
+    }
+
     $httpMethod = strtoupper($method);
     $spoofedMethod = $httpMethod === 'POST' ? null : $httpMethod;
     $bodyText = $message ?? 'Esta ação não poderá ser desfeita. Deseja continuar?';
@@ -35,6 +58,10 @@
         $formDusk ? ['dusk' => $formDusk] : [],
     );
 @endphp
+
+@isset($trigger)
+    {{ $trigger }}
+@endisset
 
 <div {{ $attributes->merge(['class' => 'modal fade', 'dusk' => 'confirm-modal-'.$id]) }}
      id="{{ $id }}"
@@ -65,17 +92,25 @@
                              data-bs-dismiss="modal"
                              dusk="confirm-modal-{{ $id }}-cancel">{{ $cancelLabel }}</x-ui.button>
 
-                <form method="POST" action="{{ $action }}" class="d-inline" {{ $formAttributes }}>
-                    @csrf
-                    @if ($spoofedMethod)
-                        @method($spoofedMethod)
-                    @endif
-
+                @if ($submitsExternalForm)
                     <x-ui.button type="submit"
+                                 form="{{ $form }}"
                                  :variant="$variant"
                                  :icon="$variant === 'danger' ? 'trash' : null"
                                  dusk="{{ $confirmDusk ?? 'confirm-modal-'.$id.'-confirm' }}">{{ $confirmLabel }}</x-ui.button>
-                </form>
+                @else
+                    <form method="POST" action="{{ $action }}" class="d-inline" {{ $formAttributes }}>
+                        @csrf
+                        @if ($spoofedMethod)
+                            @method($spoofedMethod)
+                        @endif
+
+                        <x-ui.button type="submit"
+                                     :variant="$variant"
+                                     :icon="$variant === 'danger' ? 'trash' : null"
+                                     dusk="{{ $confirmDusk ?? 'confirm-modal-'.$id.'-confirm' }}">{{ $confirmLabel }}</x-ui.button>
+                    </form>
+                @endif
             </div>
         </div>
     </div>

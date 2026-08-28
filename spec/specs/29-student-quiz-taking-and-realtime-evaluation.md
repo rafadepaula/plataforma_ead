@@ -60,6 +60,7 @@ student/quizzes/show.blade.php (Coluna centrada max 760px)
 * `dusk="quiz-best-score"`: Alerta com a melhor nota obtida.
 * `dusk="quiz-pending-grading"`: Alerta indicando prova aguardando correção manual.
 * `dusk="quiz-cannot-attempt"`: Alerta indicando bloqueio/tentativas esgotadas.
+* `dusk="quiz-expired-attempt"`: Alerta de tentativa anterior encerrada por estouro de tempo.
 * `dusk="back-to-lesson"`: Botão retornar para a aula.
 * `dusk="quiz-attempt-form"`: Formulário da tentativa.
 * `dusk="quiz-question-{id}"`: Bloco da questão.
