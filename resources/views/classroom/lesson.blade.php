@@ -1,36 +1,26 @@
 @extends('layouts.app')
 
-{{--
-    single-lesson player, dispatching by content shape.
-
-    Expected `ClassroomController@showLesson` contract (Bucket 2):
-      - `$lesson`         the bound Lesson (with `module.course` loaded).
-      - `$isCompleted`    bool, this student's `lesson_progress.is_completed`.
-      - `$watchedSeconds` int|null, this student's `lesson_progress.watched_seconds`
-                           (video lessons only, used to resume polling state).
-
-    Dispatch order matters: `type === 'quiz'` takes priority over any
-    stray `youtube_url`/`pdf_path` (edge case — malformed data
-    should never fall through to a completable player for a quiz lesson).
---}}
+@php
+    $course = $course ?? $lesson->module->course;
+@endphp
 
 @section('content')
     <x-layout.page-header
         :breadcrumb="[
-            ['label' => 'Meus Cursos', 'url' => route('student.courses.index')],
-            ['label' => $lesson->module->course->title, 'url' => route('classroom.show', $lesson->module->course)],
+            ['label' => 'Meus cursos', 'url' => route('student.courses.index')],
+            ['label' => $course->title, 'url' => route('classroom.show', $course)],
             ['label' => $lesson->title],
         ]"
-        :kicker="$lesson->module->course->title.' / '.$lesson->module->title"
+        :kicker="$course->title.' / '.$lesson->module->title"
         :title="$lesson->title"
         subtitle="Continue seus estudos e marque a lição como concluída ao terminar."
     >
         <x-slot:actions>
-            <x-ui.button variant="secondary" href="{{ route('classroom.show', $lesson->module->course) }}" dusk="back-to-classroom">Voltar à Sala de Aula</x-ui.button>
+            <x-ui.button variant="tonal" icon="chevron-left" href="{{ route('classroom.show', $course) }}" dusk="back-to-classroom">Voltar à sala de aula</x-ui.button>
         </x-slot:actions>
     </x-layout.page-header>
 
-    <x-ui.card>
+    <div class="card ds-surface border-0 shadow-sm p-4 p-md-5 rounded-4">
         @if($lesson->type === 'quiz')
             @include('classroom.partials._quiz-placeholder')
         @elseif(! empty($lesson->youtube_url))
@@ -40,5 +30,5 @@
         @else
             @include('classroom.partials._text-image')
         @endif
-    </x-ui.card>
+    </div>
 @endsection

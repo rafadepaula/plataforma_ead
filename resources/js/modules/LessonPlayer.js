@@ -1,31 +1,24 @@
 /**
- * LessonPlayer - SOLID JavaScript module for the classroom
- * lesson player.
+ * LessonPlayer - Unified classroom lesson player module.
  *
- * Two independent responsibilities, mirroring the two non-quiz completion
- * paths `MarkLessonCompleteAction` supports:
- *
- * - Video lessons: loads the YouTube IFrame API against every
- *   `[data-youtube-player]` container, polls `player.getCurrentTime()` /
- *   `player.getDuration()` every 5s and POSTs `{ watched_seconds,
- *   duration_seconds }` to `lessons.progress` (via the shared `HttpClient`
- *   module). `reportProgress()` is intentionally public: it is the seam the
- *   Dusk `VideoThresholdCompletionTest` drives directly
- *   (`window.LessonPlayer.reportProgress(lessonId, watched, duration)`) to
- *   simulate reaching the 90% auto-completion threshold without depending
- *   on YouTube's real, network-bound IFrame API inside a headless browser.
- * - Manual lessons (text/image/PDF): binds every `[data-mark-complete-url]`
- *   button to POST `lessons.complete`.
- *
- * Both paths reflect `is_completed` in the UI without a reload by toggling
- * Bootstrap's `.d-none` utility on `[data-mark-complete-url]` (hide) and
- * `[data-completion-badge]` (show).
+ * Responsibilities:
+ * - Video lessons: loads the YouTube IFrame API against every `[data-youtube-player]`
+ *   container, polls player.getCurrentTime() / player.getDuration() every 5s and
+ *   POSTs { watched_seconds, duration_seconds } to `lessons.progress`.
+ *   Provides public test hook `window.LessonPlayer.reportProgress(lessonId, watched, duration)`
+ *   for deterministic E2E test execution.
+ * - Manual completion (text, image, PDF): binds click handlers on completion buttons
+ *   (`[data-mark-complete-url]`, `[data-action="complete-lesson"]`, `[dusk="mark-complete-button"]`),
+ *   POSTs to `lessons.complete`, manages loading state ('Marcando...'), and updates UI.
+ * - UI updates: Toggles visibility using CSS classes (`.d-none` / `.ds-hidden`).
+ *   NEVER uses the HTML `hidden` attribute due to Bootstrap's `[hidden] { display: none !important }`.
  */
 export class LessonPlayer {
     constructor(httpClient, notificationService) {
         this.httpClient = httpClient;
         this.notificationService = notificationService;
         this.videoPlayers = new Map();
+        this.pollingIntervals = new Map();
     }
 
     init() {
@@ -44,24 +37,72 @@ export class LessonPlayer {
     }
 
     bindManualCompletion() {
-        document.querySelectorAll('[data-mark-complete-url]').forEach((button) => {
-            button.addEventListener('click', () => this.markComplete(button));
+        const selectors = [
+            '[data-mark-complete-url]',
+            '[data-action="complete-lesson"]',
+            '[dusk="mark-complete-button"]',
+        ];
+
+        const buttons = document.querySelectorAll(selectors.join(','));
+        buttons.forEach((button) => {
+            if (button.dataset.lessonPlayerBound) return;
+            button.dataset.lessonPlayerBound = 'true';
+
+            button.addEventListener('click', (event) => {
+                event.preventDefault();
+                this.markComplete(button);
+            });
         });
     }
 
-    async markComplete(button) {
-        const url = button.getAttribute('data-mark-complete-url');
+    async markComplete(target) {
+        let button = null;
+        let url = null;
+
+        if (target instanceof HTMLElement) {
+            button = target;
+            url = button.getAttribute('data-mark-complete-url')
+                || button.getAttribute('data-url')
+                || button.getAttribute('href')
+                || (button.dataset.lessonId ? `/lessons/${button.dataset.lessonId}/complete` : null);
+        } else if (typeof target === 'string' || typeof target === 'number') {
+            const lessonId = String(target);
+            button = document.querySelector(
+                `[data-mark-complete-url*="/lessons/${lessonId}/complete"], [data-lesson-id="${lessonId}"][dusk="mark-complete-button"], [data-lesson-id="${lessonId}"][data-action="complete-lesson"]`
+            );
+            url = button
+                ? (button.getAttribute('data-mark-complete-url') || button.getAttribute('data-url') || button.getAttribute('href'))
+                : `/lessons/${lessonId}/complete`;
+        }
+
+        if (!url && button) {
+            const form = button.closest('form');
+            if (form) {
+                url = form.getAttribute('action');
+            }
+        }
+
         if (!url) return;
 
-        button.disabled = true;
+        let originalContent = '';
+        if (button) {
+            button.disabled = true;
+            originalContent = button.innerHTML;
+            button.textContent = 'Marcando...';
+        }
 
         try {
             const response = await this.httpClient.post(url);
             this.reflectCompletion(response.data);
             this.notify('success', 'Lição concluída com sucesso.');
+            return response.data;
         } catch (error) {
-            button.disabled = false;
-            this.notify('error', `Falha ao concluir a lição: ${error.message}`);
+            if (button) {
+                button.disabled = false;
+                button.innerHTML = originalContent;
+            }
+            this.notify('error', `Falha ao concluir a lição: ${error.message || 'Erro inesperado'}`);
+            throw error;
         }
     }
 
@@ -97,9 +138,10 @@ export class LessonPlayer {
         const lessonId = container.getAttribute('data-lesson-id');
         const videoId = container.getAttribute('data-video-id');
         const progressUrl = container.getAttribute('data-progress-url');
-        if (!lessonId || !videoId || !progressUrl) return;
+        if (!lessonId || !videoId) return;
 
-        this.videoPlayers.set(String(lessonId), { progressUrl, intervalId: null });
+        const resolvedProgressUrl = progressUrl || `/lessons/${lessonId}/progress`;
+        this.videoPlayers.set(String(lessonId), { progressUrl: resolvedProgressUrl, containerId: container.id });
 
         const player = new window.YT.Player(container.id, {
             videoId,
@@ -115,6 +157,11 @@ export class LessonPlayer {
     }
 
     startPolling(lessonId, player) {
+        const key = String(lessonId);
+        if (this.pollingIntervals.has(key)) {
+            clearInterval(this.pollingIntervals.get(key));
+        }
+
         const intervalId = setInterval(() => {
             if (typeof player.getCurrentTime !== 'function' || typeof player.getDuration !== 'function') {
                 return;
@@ -122,55 +169,95 @@ export class LessonPlayer {
 
             const watchedSeconds = Math.floor(player.getCurrentTime());
             const durationSeconds = Math.floor(player.getDuration());
-            this.reportProgress(lessonId, watchedSeconds, durationSeconds);
+
+            if (durationSeconds > 0) {
+                this.reportProgress(lessonId, watchedSeconds, durationSeconds);
+            }
         }, 5000);
 
-        const entry = this.videoPlayers.get(String(lessonId)) || {};
-        entry.intervalId = intervalId;
-        this.videoPlayers.set(String(lessonId), entry);
+        this.pollingIntervals.set(key, intervalId);
+    }
+
+    stopPolling(lessonId) {
+        const key = String(lessonId);
+        if (this.pollingIntervals.has(key)) {
+            clearInterval(this.pollingIntervals.get(key));
+            this.pollingIntervals.delete(key);
+        }
     }
 
     /**
-     * POSTs watched/duration seconds to `lessons.progress` for the given
-     * lesson. Public on purpose — see the class docblock for why this is
-     * also the Dusk test hook for `VideoThresholdCompletionTest`.
+     * POSTs watched/duration seconds to `lessons.progress` for the given lesson.
+     * Public test hook and progress reporter seam for E2E tests.
      */
     async reportProgress(lessonId, watchedSeconds, durationSeconds) {
-        const entry = this.videoPlayers.get(String(lessonId));
-        const progressUrl = entry ? entry.progressUrl : this.resolveProgressUrl(lessonId);
+        const progressUrl = this.resolveProgressUrl(lessonId);
         if (!progressUrl) return;
 
         try {
             const response = await this.httpClient.post(progressUrl, {
-                watched_seconds: watchedSeconds,
-                duration_seconds: durationSeconds,
+                watched_seconds: Number(watchedSeconds),
+                duration_seconds: Number(durationSeconds),
             });
-            this.reflectCompletion(response.data);
+
+            if (response.data && response.data.is_completed) {
+                this.stopPolling(lessonId);
+                this.reflectCompletion(response.data);
+            }
+
+            return response.data;
         } catch (error) {
-            this.notify('error', `Falha ao registrar progresso: ${error.message}`);
+            this.notify('error', `Falha ao registrar progresso: ${error.message || 'Erro inesperado'}`);
+            throw error;
         }
     }
 
     resolveProgressUrl(lessonId) {
-        const container = document.querySelector(`[data-youtube-player][data-lesson-id="${lessonId}"]`);
-        return container ? container.getAttribute('data-progress-url') : null;
+        const entry = this.videoPlayers.get(String(lessonId));
+        if (entry && entry.progressUrl) {
+            return entry.progressUrl;
+        }
+
+        const container = document.querySelector(
+            `[data-youtube-player][data-lesson-id="${lessonId}"], [data-lesson-id="${lessonId}"][data-progress-url], #youtube-player-${lessonId}, [dusk="video-player-${lessonId}"]`
+        );
+
+        if (container && container.getAttribute('data-progress-url')) {
+            return container.getAttribute('data-progress-url');
+        }
+
+        return `/lessons/${lessonId}/progress`;
     }
 
     reflectCompletion(data) {
         if (!data || !data.is_completed) return;
 
-        // Visibility is expressed with Bootstrap's `.d-none` utility on both
-        // sides (Blade renders the initial state, this toggles it). Neither
-        // the native `hidden` attribute nor `style.display` works here:
-        // Bootstrap's Reboot emits `[hidden] { display: none !important }`,
-        // and an author `!important` rule beats an inline declaration that
-        // lacks it — so a `style.display` reveal would silently no-op.
-        document.querySelectorAll('[data-mark-complete-url]').forEach((button) => {
+        // Visibility is expressed with Bootstrap's `.d-none` / `.ds-hidden` utility.
+        // DO NOT use native HTML `hidden` attribute: Bootstrap Reboot has
+        // `[hidden] { display: none !important }` which overrides author declarations.
+
+        // Hide mark complete buttons
+        const buttonSelectors = [
+            '[data-mark-complete-url]',
+            '[data-action="complete-lesson"]',
+            '[dusk="mark-complete-button"]',
+            '[data-element="mark-complete-button"]',
+        ];
+        document.querySelectorAll(buttonSelectors.join(',')).forEach((button) => {
             button.classList.add('d-none');
+            button.classList.add('ds-hidden');
         });
 
-        document.querySelectorAll('[data-completion-badge]').forEach((badge) => {
+        // Show completion badges
+        const badgeSelectors = [
+            '[data-completion-badge]',
+            '[data-element="completed-badge"]',
+            '[dusk="lesson-completed-badge"]',
+            '[data-element="completion-badge"]',
+        ];
+        document.querySelectorAll(badgeSelectors.join(',')).forEach((badge) => {
             badge.classList.remove('d-none');
+            badge.classList.remove('ds-hidden');
         });
     }
 
