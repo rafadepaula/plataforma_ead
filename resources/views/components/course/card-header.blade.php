@@ -1,7 +1,6 @@
 {{--
-    x-course.card-header — 168px media band (SPEC-26 §3.1). No `cover_path`
-    column exists on `courses` yet (see the spec's open question — this
-    bucket's scope is gradient-only), so `$enrollment.coverUrl`/
+    x-course.card-header — 168px media band. No `cover_path`
+    column exists on `courses` yet, so `$enrollment.coverUrl`/
     `course.cover_url` is read defensively: whichever the controller ends up
     exposing, a null value degrades to the pastel-wash gradient rather than
     breaking. The status chip always renders — one of the 4 derived

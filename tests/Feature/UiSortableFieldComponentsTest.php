@@ -13,7 +13,7 @@ use Tests\TestCase;
  * These are pure rendering assertions (no HTTP), mirroring
  * `UiModalComponentTest`: they pin the DOM contract that
  * `ModuleReorder.js` (`[data-reorder-url]` / `[data-id]`), `LessonForm.js`
- * (`[data-file-drop]`, `[data-youtube-field]`) and the SPEC-23 §5 selector
+ * (`[data-file-drop]`, `[data-youtube-field]`) and the selector
  * contract (`delete-module-{id}` / `delete-lesson-{id}` on the modal submit)
  * are coded against.
  */
@@ -67,12 +67,12 @@ class UiSortableFieldComponentsTest extends TestCase
         $this->assertMatchesRegularExpression(
             '/data-move-up/',
             $html,
-            'Rows must ship keyboard-accessible move-up controls (SPEC-23 §4).'
+            'Rows must ship keyboard-accessible move-up controls.'
         );
         $this->assertMatchesRegularExpression(
             '/data-move-down/',
             $html,
-            'Rows must ship keyboard-accessible move-down controls (SPEC-23 §4).'
+            'Rows must ship keyboard-accessible move-down controls.'
         );
     }
 
@@ -154,7 +154,7 @@ class UiSortableFieldComponentsTest extends TestCase
         $this->assertMatchesRegularExpression(
             '/<iframe[^>]*dusk="youtube-preview"/',
             $filled,
-            'The preview iframe must carry dusk="youtube-preview" (SPEC-23 §5).'
+            'The preview iframe must carry dusk="youtube-preview".'
         );
     }
 

@@ -2,7 +2,7 @@
 
 {{--
     "Meus Cursos": the Aluno's own enrollments across every Organization
-    they belong to (SPEC-26). The controller (`StudentCourseController@index`)
+    they belong to. The controller (`StudentCourseController@index`)
     is contracted to pass:
 
       - `$rows`: a Collection of per-card view-models for the ACTIVE tab
@@ -16,7 +16,7 @@
         'em_andamento').
       - `$tabCounts`: `['em_andamento' => int, 'concluidos' => int, 'todos' => int]`,
         used only to decide whether the "Em andamento" tab shows a count
-        badge — a zero count renders no badge at all (SPEC-26 edge case).
+        badge — a zero count renders no badge at all.
 
     Tabs are plain `?status=` GET links, NOT `<x-ui.tabs>`: that component
     swaps panels client-side via `data-bs-toggle="pill"` with no server

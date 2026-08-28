@@ -1,10 +1,10 @@
 {{--
     x-course.card-body — organization overline (1-line ellipsis), clamped
-    title (3 lines) and summary (2 lines), plus the 10px progress bar
-    (SPEC-26 §3.2). `.kicker` is this codebase's existing overline class
+    title (3 lines) and summary (2 lines), plus the 10px progress bar.
+    `.kicker` is this codebase's existing overline class
     (see `_page-header.scss`) — not a new `.ds-overline`. `progressPercentage`
-    is trusted as already clamped to a 2% visual minimum by the controller
-    (SPEC-26 bucket 2); this component only renders it.
+    is trusted as already clamped to a 2% visual minimum by the controller;
+    this component only renders it.
 --}}
 @props(['enrollment'])
 

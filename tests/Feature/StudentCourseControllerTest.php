@@ -15,9 +15,8 @@ use Tests\TestCase;
 /**
  * `StudentCourseController@index` ("Meus Cursos"): tab-filtered,
  * multi-org enrollment catalog. Covers the GET `?status=` tab contract,
- * per-card status derivation/CTA resolution, and the edge cases from
- * SPEC-26 bucket 2 (cancelled exclusion, soft-deleted/unpublished
- * courses not crashing the page).
+ * per-card status derivation/CTA resolution, and the edge cases
+ * (cancelled exclusion, soft-deleted/unpublished courses not crashing the page).
  */
 class StudentCourseControllerTest extends TestCase
 {

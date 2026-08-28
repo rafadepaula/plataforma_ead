@@ -14,7 +14,7 @@ use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 
 /**
- * E2E coverage of the "Meus Cursos" Material Bootstrap catalog (SPEC-26):
+ * E2E coverage of the "Meus Cursos" Material Bootstrap catalog:
  * segmented `?status=` tabs, the `x-course.card` grid (4 status chips,
  * progress bar, contextual CTA per status), and the per-tab empty state.
  *

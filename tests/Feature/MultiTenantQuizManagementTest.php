@@ -13,12 +13,12 @@ use App\Models\QuizQuestion;
 use Tests\TestCase;
 
 /**
- * Cross-org isolation coverage for quiz authoring (SPEC-24), plus the four
+ * Cross-org isolation coverage for quiz authoring, plus the four
  * question-type CRUD happy paths and the reorder dense-reassignment rule.
  * This intentionally overlaps some scenarios already covered by
  * `QuizManagementTest.php` — that file cannot be deleted/renamed without
  * explicit approval (project rule), so this file exists purely to satisfy
- * SPEC-24's named-file acceptance criterion while staying additive.
+ * named-file acceptance criteria while staying additive.
  */
 class MultiTenantQuizManagementTest extends TestCase
 {

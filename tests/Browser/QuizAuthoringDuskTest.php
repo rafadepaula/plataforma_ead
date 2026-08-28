@@ -15,7 +15,7 @@ use Tests\DuskTestCase;
 
 /**
  * E2E coverage of the Gestor-facing question builder on
- * `quizzes/edit.blade.php` (SPEC-24): the `QuizBuilder.js` client-side
+ * `quizzes/edit.blade.php`: the `QuizBuilder.js` client-side
  * behaviors (type-driven options UI, add/remove option cloning, the
  * min-2-options guard, marking an option correct) plus the full
  * create/edit/reorder round-trip through the real HTTP endpoints.

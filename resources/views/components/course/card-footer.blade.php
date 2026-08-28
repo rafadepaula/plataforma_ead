@@ -1,12 +1,11 @@
 {{--
     x-course.card-footer — top-divider footer with one contextual primary
-    action plus the "{N} aulas · {N}h · Prazo: DD/MM/AAAA" caption
-    (SPEC-26 §3.3). `ctaHref`/`ctaLabel` are resolved by the controller
-    (SPEC-26 bucket 2: first published lesson / resume lesson / certificate
+    action plus the "{N} aulas · {N}h · Prazo: DD/MM/AAAA" caption.
+    `ctaHref`/`ctaLabel` are resolved by the controller
+    (first published lesson / resume lesson / certificate
     download / read-only classroom); when `ctaHref` is null (no published
     lessons yet, or a completed course whose certificate hasn't issued yet)
-    the button degrades to disabled instead of linking to a 404 — see the
-    plan's edge cases.
+    the button degrades to disabled instead of linking to a 404.
 --}}
 @props(['enrollment'])
 

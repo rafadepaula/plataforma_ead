@@ -17,6 +17,7 @@ import NotificationBell    from './NotificationBell';
 import NotificationService from './NotificationService';
 import PasswordToggle      from './PasswordToggle';
 import QuizBuilder         from './QuizBuilder';
+import QuizTaking          from './QuizTaking';
 import QuizTimer           from './QuizTimer';
 import SmartInvitationForm from './SmartInvitationForm';
 
@@ -41,6 +42,7 @@ export default {
     NotificationBell:    new NotificationBell(httpClient),
     PasswordToggle:      new PasswordToggle(),
     QuizBuilder:         new QuizBuilder(notifications),
+    QuizTaking:          new QuizTaking(),
     QuizTimer:           new QuizTimer(),
     SmartInvitationForm: new SmartInvitationForm(httpClient, notifications),
 };

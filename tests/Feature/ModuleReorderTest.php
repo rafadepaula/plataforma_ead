@@ -95,7 +95,7 @@ class ModuleReorderTest extends TestCase
     }
 
     /**
-     * The keyboard-accessible move-up/move-down buttons (SPEC-23 §4) swap a
+     * The keyboard-accessible move-up/move-down buttons swap a
      * single adjacent pair client-side, then POST the exact same payload the
      * drag-and-drop `drop` handler sends: the full `ordered_ids` array with
      * that one swap applied. They hit the identical endpoint, so the

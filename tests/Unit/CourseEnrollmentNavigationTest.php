@@ -14,7 +14,7 @@ use Tests\TestCase;
 /**
  * Covers `Course::firstPublishedLessonFor()`, `Course::resumeLessonFor()`,
  * and `Course::enrollmentDisplayStatusFor()` — the enrollment-navigation
- * logic student-facing "Meus cursos" (SPEC-26) resolves each card's CTA
+ * logic student-facing "Meus cursos" resolves each card's CTA
  * target and status chip from.
  */
 class CourseEnrollmentNavigationTest extends TestCase

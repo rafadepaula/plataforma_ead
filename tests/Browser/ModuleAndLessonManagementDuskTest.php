@@ -12,7 +12,7 @@ use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 
 /**
- * E2E coverage of SPEC-23 §5's full selector contract for the trail-builder
+ * E2E coverage of the full selector contract for the trail-builder
  * screens: module list (rows, "{N} lições" chip, manage/edit actions),
  * cascade-aware ConfirmModal deletion (delete-module-{id} lives on the
  * modal's confirm submit, not on a raw row submit), lesson list rows with
@@ -74,7 +74,7 @@ class ModuleAndLessonManagementDuskTest extends DuskTestCase
      * `Browser::attach()` takes exactly one path (its LocalFileDetector
      * upload cannot carry an array, and chromedriver's session cannot read
      * paths newline-joined into a single send-keys payload). The
-     * spec-compliant multi-file route is the same `DataTransfer` ->
+     * standard multi-file route is the same `DataTransfer` ->
      * `input.files` assignment `LessonForm.js` itself performs on a drop:
      * real `File` objects are built in-page from base64 bytes and a bubbling
      * `change` is dispatched so the form's own handler runs.
@@ -167,7 +167,7 @@ class ModuleAndLessonManagementDuskTest extends DuskTestCase
         // 5. Destructive delete goes through the ConfirmModal: the trigger
         //    opens the modal, the cascade warning quotes the real lesson
         //    count, and dusk="delete-module-{id}" is the modal's confirm
-        //    submit (SPEC-23 §2.3/§5).
+        //    submit.
         $this->browse(function (Browser $browser) use ($gestor, $course, $withLessons): void {
             $trigger = '@module-row-'.$withLessons->id.' [data-bs-target*="delete-module-modal-'.$withLessons->id.'"]';
 
