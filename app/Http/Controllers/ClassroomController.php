@@ -10,19 +10,6 @@ use App\Models\LessonProgress;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 
-/**
- * the student-facing classroom: a Course's module/lesson
- * tree with per-lesson completion state (`show`), and the individual
- * lesson player (`showLesson`). Both routes sit behind the
- * `student.enrolled` middleware (see `routes/web.php`) — distinct from
- * `CoursePolicy`/`LessonPolicy`, which gate Admin/Gestor management, not
- * student access, so neither action calls `Gate::authorize()`.
- *
- * `{course}` is resolved `withoutGlobalScopes()` (never a typed `Course
- * $course` implicit binding): an Aluno carries no `org_id` of their own,
- * so `OrgScope`'s query scope would otherwise filter the Course out from
- * under them (mirrors `EnsureStudentIsEnrolled::resolveCourse()`).
- */
 class ClassroomController extends Controller
 {
     public function show(Request $request, int $course): View
@@ -45,26 +32,47 @@ class ClassroomController extends Controller
             ->all();
 
         $enrollment = $user->courses()->withoutGlobalScopes()->where('courses.id', $course->id)->first();
+        $progressPercentage = (int) ($enrollment?->pivot?->progress_percentage ?? 0);
 
-        //  the "Certificado indisponível. X%" classroom banner:
-        // `null` here means the student sees the unavailable-with-progress
-        // message; a found row (issued, regardless of `rule_type`s beyond
-        // `all_lessons`) means they see the download link instead. Reuses
-        // this same `$progressPercentage` for the message — never a
-        // separately-computed aggregate of the Course's completion rules
-        // (see `IssueCertificateAction`'s docblock: rules are AND'd, not
-        // averaged into a percentage of their own).
+        $totalLessons = 0;
+        $completedLessonsCount = count($completedLessonIds);
+        $nextLesson = null;
+
+        foreach ($modules as $module) {
+            $moduleTotal = $module->lessons->count();
+            $moduleCompleted = $module->lessons->whereIn('id', $completedLessonIds)->count();
+            $module->total_lessons_count = $moduleTotal;
+            $module->completed_lessons_count = $moduleCompleted;
+            $totalLessons += $moduleTotal;
+
+            if (! $nextLesson) {
+                foreach ($module->lessons as $lesson) {
+                    if (! in_array($lesson->id, $completedLessonIds, true)) {
+                        $nextLesson = $lesson;
+                        $nextLesson->setRelation('module', $module);
+                        break;
+                    }
+                }
+            }
+        }
+
         $certificate = Certificate::query()
             ->where('user_id', $user->id)
             ->where('course_id', $course->id)
+            ->whereNull('revoked_at')
             ->first();
 
         return view('classroom.show', [
             'course' => $course,
             'modules' => $modules,
             'completedLessonIds' => $completedLessonIds,
-            'progressPercentage' => (int) ($enrollment->pivot->progress_percentage ?? 0),
+            'progressPercentage' => $progressPercentage,
             'certificate' => $certificate,
+            'nextLesson' => $nextLesson,
+            'completedCount' => $completedLessonsCount,
+            'completedLessonsCount' => $completedLessonsCount,
+            'totalLessons' => $totalLessons,
+            'totalLessonsCount' => $totalLessons,
         ]);
     }
 
@@ -72,20 +80,13 @@ class ClassroomController extends Controller
     {
         $user = $request->user();
 
-        // an unpublished/draft Lesson does not exist
-        // from the Aluno's perspective (mirrors `show()`'s `is_published`
-        // filter on the module's lessons); Admin/Gestor retain preview
-        // access for course management purposes.
         if (! $lesson->is_published && $user->hasRole(RolesEnum::ALUNO->value)) {
             abort(404);
         }
 
-        // `{course}` bypasses `OrgScope` (see `show()`'s docblock), then
-        // is cached onto the `module` relation so the view's
-        // `$lesson->module->course` access does not re-trigger a
-        // scoped (and, for an org-less Aluno, empty) query.
         $course = $lesson->module->course()->withoutGlobalScopes()->firstOrFail();
         $lesson->module->setRelation('course', $course);
+        $lesson->loadMissing(['quiz', 'media']);
 
         $progress = LessonProgress::query()
             ->where('user_id', $user->id)

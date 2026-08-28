@@ -13,8 +13,8 @@ use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 
 /**
- * E2E coverage of the student learning experience: "Meus Cursos" (SPEC-26's
- * `x-course.card` grid), the "Começar curso" CTA landing directly on the
+ * E2E coverage of the student learning experience: "Meus Cursos"
+ * `x-course.card` grid, the "Começar curso" CTA landing directly on the
  * first published lesson, manually completing a text lesson, seeing the
  * course progress bar reflect it, and the idempotency of a second
  * completion call.

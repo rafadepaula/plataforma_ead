@@ -1,0 +1,155 @@
+<?php
+
+namespace Tests\Browser;
+
+use App\Actions\MarkLessonCompleteAction;
+use App\Enums\Permissions\RolesEnum;
+use App\Models\Certificate;
+use App\Models\Course;
+use App\Models\CourseCompletionRule;
+use App\Models\Lesson;
+use App\Models\Module;
+use App\Models\Organization;
+use App\Models\User;
+use Laravel\Dusk\Browser;
+use Tests\DuskTestCase;
+
+/**
+ * End-to-end lifecycle testing of the classroom overview, module/lesson navigation,
+ * progress percentage tracking, next lesson shortcuts, and certificate download availability.
+ */
+class ClassroomOverviewDuskTest extends DuskTestCase
+{
+    public function test_student_classroom_overview_progression_and_certification_lifecycle(): void
+    {
+        $org = Organization::factory()->create(['name' => 'Acme Treinamentos']);
+        $course = Course::factory()->create([
+            'org_id' => $org->id,
+            'title' => 'Formação de Desenvolvedores',
+            'is_published' => true,
+        ]);
+        CourseCompletionRule::factory()->for($course)->create();
+
+        $module1 = Module::factory()->create([
+            'course_id' => $course->id,
+            'title' => 'Módulo 1: Fundamentos',
+            'order_index' => 0,
+        ]);
+        $module2 = Module::factory()->create([
+            'course_id' => $course->id,
+            'title' => 'Módulo 2: Avançado',
+            'order_index' => 1,
+        ]);
+
+        $lesson1 = Lesson::factory()->richText()->create([
+            'module_id' => $module1->id,
+            'title' => 'Aula 1.1 Introdução',
+            'is_published' => true,
+            'order_index' => 0,
+        ]);
+        $lesson2 = Lesson::factory()->richText()->create([
+            'module_id' => $module1->id,
+            'title' => 'Aula 1.2 Configuração',
+            'is_published' => true,
+            'order_index' => 1,
+        ]);
+        $lesson3 = Lesson::factory()->richText()->create([
+            'module_id' => $module2->id,
+            'title' => 'Aula 2.1 Banco de Dados',
+            'is_published' => true,
+            'order_index' => 0,
+        ]);
+
+        $student = User::factory()->create();
+        $student->assignRole(RolesEnum::ALUNO->value);
+
+        $course->students()->attach($student->id, [
+            'enrolled_at' => now(),
+            'status' => 'active',
+            'progress_percentage' => 0,
+        ]);
+
+        $this->browse(function (Browser $browser) use ($student, $course, $module1, $module2, $lesson1, $lesson2, $lesson3): void {
+            // 1. Initial visit: verify breadcrumbs, headers, module list, 0% progress and next lesson card
+            $browser->loginAs($student)
+                ->visit(route('classroom.show', $course))
+                ->waitFor('@course-progress-bar')
+                ->assertSeeIn('@course-progress-label', '0%')
+                ->assertVisible('@module-'.$module1->id)
+                ->assertVisible('@module-'.$module2->id)
+                ->assertVisible('@lesson-'.$lesson1->id)
+                ->assertVisible('@lesson-'.$lesson2->id)
+                ->assertVisible('@lesson-'.$lesson3->id)
+                ->assertVisible('@open-lesson-'.$lesson1->id)
+                ->assertVisible('@certificate-unavailable')
+                ->assertMissing('@download-certificate')
+                ->assertSee('Aula 1.1 Introdução');
+
+            // 2. Click through to the first lesson and mark complete
+            $browser->click('@open-lesson-'.$lesson1->id)
+                ->waitFor('@mark-complete-button')
+                ->click('@mark-complete-button')
+                ->waitUntilMissing('@mark-complete-button')
+                ->assertVisible('@lesson-completed-badge');
+
+            $this->assertDatabaseHas('lesson_progress', [
+                'user_id' => $student->id,
+                'lesson_id' => $lesson1->id,
+                'is_completed' => true,
+                'completion_source' => 'manual_click',
+            ]);
+
+            // 3. Return to classroom overview: progress is 33%, lesson 1 shows completed checkmark, next lesson is lesson 2
+            $browser->visit(route('classroom.show', $course))
+                ->waitFor('@course-progress-bar')
+                ->assertSeeIn('@course-progress-label', '33%')
+                ->assertVisible('@lesson-completed-'.$lesson1->id)
+                ->assertMissing('@lesson-completed-'.$lesson2->id)
+                ->assertSee('Aula 1.2 Configuração');
+
+            // 4. Complete remaining lessons to reach 100% course completion
+            $action = new MarkLessonCompleteAction;
+            $action->execute($lesson2, $student, 'manual_click');
+            $action->execute($lesson3, $student, 'manual_click');
+
+            $this->assertDatabaseHas('course_user', [
+                'user_id' => $student->id,
+                'course_id' => $course->id,
+                'progress_percentage' => 100,
+                'status' => 'completed',
+            ]);
+
+            // 5. Reload classroom overview: 100% progress, all checkmarks visible, next lesson card suppressed, and certificate issued
+            $browser->visit(route('classroom.show', $course))
+                ->waitFor('@course-progress-bar')
+                ->assertSeeIn('@course-progress-label', '100%')
+                ->assertVisible('@lesson-completed-'.$lesson1->id)
+                ->assertVisible('@lesson-completed-'.$lesson2->id)
+                ->assertVisible('@lesson-completed-'.$lesson3->id)
+                ->assertVisible('@download-certificate')
+                ->assertMissing('@certificate-unavailable');
+        });
+    }
+
+    public function test_empty_state_when_course_has_no_published_modules(): void
+    {
+        $org = Organization::factory()->create();
+        $course = Course::factory()->create([
+            'org_id' => $org->id,
+            'title' => 'Curso Sem Módulos',
+            'is_published' => true,
+        ]);
+
+        $student = User::factory()->create();
+        $student->assignRole(RolesEnum::ALUNO->value);
+        $course->students()->attach($student->id, ['enrolled_at' => now(), 'status' => 'active', 'progress_percentage' => 0]);
+
+        $this->browse(function (Browser $browser) use ($student, $course): void {
+            $browser->loginAs($student)
+                ->visit(route('classroom.show', $course))
+                ->waitFor('@no-modules')
+                ->assertVisible('@no-modules')
+                ->assertSeeIn('@course-progress-label', '0%');
+        });
+    }
+}

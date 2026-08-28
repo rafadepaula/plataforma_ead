@@ -1,0 +1,358 @@
+// =============================================================================
+// Componente: Classroom (Sala de aula do aluno)
+// -----------------------------------------------------------------------------
+// Estrutura de visualização da trilha do curso: módulos empilhados em cards,
+// linhas de aula em 4 zonas com ícones de estado de 44px, cards laterais
+// de progresso, certificado e atalho inteligente para a próxima aula.
+// Casca unificada de reprodução de aula: vídeo 16:9, visor de PDF, leitura
+// de texto e imagem e placeholder de handoff para prova (quiz).
+// Regra: qualquer declaração aqui só pode consumir var(--*), nunca literal de
+// cor/raio/sombra.
+// =============================================================================
+
+// Card de módulo do curso
+.ds-classroom-module {
+    border-radius: var(--radius-lg);
+    background-color: var(--surface);
+    border: var(--border-width) solid var(--divider);
+    box-shadow: var(--elev-1);
+    overflow: hidden;
+}
+
+.ds-classroom-module-header {
+    padding: 24px 28px 16px;
+}
+
+.ds-classroom-module-title {
+    font-size: 1.25rem;
+    font-weight: var(--font-weight-bold);
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.ds-classroom-module-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+// Linha de aula (72px de altura alvo de toque, 4 zonas horizontais)
+.ds-lesson-row {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.ds-lesson-link {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 28px;
+    min-height: 72px;
+    border-top: var(--border-width) solid var(--divider);
+    color: inherit;
+    text-decoration: none;
+    transition: background-color var(--duration-fast, 120ms) var(--ease-standard, ease);
+
+    &:hover {
+        background-color: var(--blue-50);
+        color: inherit;
+
+        .ds-lesson-chevron {
+            color: var(--primary);
+        }
+    }
+
+    &:focus-visible {
+        outline: var(--focus-ring-width) solid var(--focus-ring);
+        outline-offset: -2px;
+    }
+}
+
+// 1. Ícone de estado (círculo 44px)
+.ds-lesson-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    flex: none;
+    border-radius: var(--radius-pill);
+    background-color: var(--primary-container);
+    color: var(--on-primary-container);
+    transition: var(--transition-base);
+
+    &.is-completed {
+        background-color: var(--mint-100);
+        color: var(--secondary);
+    }
+}
+
+// 2. Título da aula
+.ds-lesson-title {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    .is-completed & {
+        color: var(--text-secondary);
+    }
+}
+
+// 3. Chip de tipo de aula (.ds-chip-outline ou .ds-chip-primary)
+// Utiliza as classes globais .ds-chip, .ds-chip-outline, .ds-chip-primary, .ds-chip-plain
+
+// 4. Chevron direito
+.ds-lesson-chevron {
+    flex: none;
+    color: var(--text-disabled);
+    transition: color var(--duration-fast, 120ms) var(--ease-standard, ease);
+}
+
+// Responsividade da linha de aula em telas menores
+@media (max-width: 767.98px) {
+    .ds-classroom-module-header {
+        padding: 20px 16px 12px;
+    }
+
+    .ds-lesson-link {
+        padding: 12px 16px;
+        gap: 12px;
+    }
+}
+
+// Card de progresso do curso
+.ds-progress-labels {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 8px;
+}
+
+.ds-progress-value {
+    font-weight: var(--font-weight-bold);
+    color: var(--text-primary);
+}
+
+// Card de certificado
+.ds-cert-issued {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 16px;
+}
+
+.ds-cert-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    flex: none;
+    border-radius: var(--radius-md);
+    background-color: var(--mint-100);
+    color: var(--secondary);
+}
+
+.ds-cert-pending {
+    background-color: var(--surface-sunken);
+    border-radius: var(--radius-md);
+    padding: 18px;
+    box-shadow: inset 0 0 0 1px var(--divider);
+}
+
+// Card de próxima aula
+.ds-next-lesson {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    color: inherit;
+    text-decoration: none;
+    padding: 12px;
+    margin: -12px -12px 16px;
+    border-radius: var(--radius-md);
+    transition: background-color var(--duration-fast, 120ms) var(--ease-standard, ease);
+
+    &:hover {
+        background-color: var(--state-hover);
+        color: inherit;
+
+        .ds-next-lesson-chevron {
+            color: var(--primary);
+        }
+    }
+}
+
+.ds-next-lesson-info {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.ds-next-lesson-title {
+    display: block;
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ds-next-lesson-chevron {
+    flex: none;
+    color: var(--text-disabled);
+    transition: color var(--duration-fast, 120ms) var(--ease-standard, ease);
+}
+
+// -----------------------------------------------------------------------------
+// Player de Aula & Formatos Multimídia (Vídeo, PDF, Leitura, Prova)
+// -----------------------------------------------------------------------------
+
+// 1. Proporção 16:9 para mídia (Player de vídeo e visualizador de PDF)
+.ds-ratio {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+
+    &::before {
+        display: block;
+        padding-top: 56.25%;
+        content: "";
+    }
+
+    > * {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border: 0;
+    }
+}
+
+.ds-ratio-16x9 {
+    aspect-ratio: 16 / 9;
+    border-radius: var(--radius-md);
+    background-color: var(--grey-900);
+    overflow: hidden;
+    max-width: 880px;
+
+    @supports not (aspect-ratio: 16 / 9) {
+        &::before {
+            display: block;
+            padding-top: 56.25%;
+            content: "";
+        }
+    }
+}
+
+// 2. Colunas de leitura e mídia
+.ds-reading-column,
+.ds-lesson-reading-column {
+    max-width: 760px;
+    width: 100%;
+}
+
+.ds-reading-column-media,
+.ds-lesson-media-column {
+    max-width: 880px;
+    width: 100%;
+}
+
+// 3. Visualizador de PDF
+.ds-pdf-viewer {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border: var(--border-width) solid var(--border-color);
+    border-radius: var(--radius-md);
+    background-color: var(--surface);
+    overflow: hidden;
+
+    iframe {
+        width: 100%;
+        height: 100%;
+        border: 0;
+        border-radius: inherit;
+    }
+}
+
+.ds-pdf-frame {
+    width: 100%;
+    height: 100%;
+    border: var(--border-width) solid var(--border-color);
+    border-radius: var(--radius-md);
+    background-color: var(--surface);
+}
+
+// 4. Placeholder / Handoff de Quiz (Prova)
+.ds-quiz-placeholder {
+    border: 1.5px dashed var(--divider);
+    border-radius: 16px;
+    background-color: var(--surface-sunken);
+    padding: 44px 32px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+
+    .ds-quiz-placeholder-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 56px;
+        height: 56px;
+        border-radius: var(--radius-pill);
+        background-color: var(--primary-container);
+        color: var(--on-primary-container);
+        margin-bottom: 8px;
+    }
+
+    .ds-quiz-placeholder-title {
+        font-size: 1.25rem;
+        font-weight: var(--font-weight-bold);
+        color: var(--text-primary);
+        margin: 0;
+    }
+
+    .ds-quiz-placeholder-text {
+        font-size: 0.9375rem;
+        color: var(--text-secondary);
+        margin: 0;
+        max-width: 520px;
+    }
+}
+
+// 5. Estado degradado de vídeo indisponível (tom neutro/attention)
+.ds-video-unavailable {
+    border-radius: var(--radius-md);
+    background-color: var(--attention-container);
+    color: var(--on-attention-container);
+    padding: 20px 24px;
+    border: var(--border-width) solid var(--divider);
+
+    .ds-video-unavailable-title {
+        font-weight: var(--font-weight-bold);
+        color: var(--text-primary);
+        margin-bottom: 4px;
+    }
+
+    .ds-video-unavailable-text {
+        font-size: 0.9375rem;
+        color: var(--text-secondary);
+        margin: 0;
+    }
+}
+
+// 6. Formatação de texto do conteúdo da aula
+.ds-lesson-content,
+[dusk^="lesson-content-"] {
+    white-space: pre-wrap;
+    font-size: 1.0625rem;
+    line-height: 1.7;
+    color: var(--text-primary);
+}
