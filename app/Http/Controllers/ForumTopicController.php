@@ -117,12 +117,14 @@ class ForumTopicController extends Controller
         $replies = $topicModel->replies()->with('user.roles')->orderBy('id')->get();
 
         $topicEditHistory = ForumPostEdit::query()
+            ->with('editor')
             ->where('postable_type', ForumTopic::class)
             ->where('postable_id', $topicModel->id)
             ->orderByDesc('edited_at')
             ->get();
 
         $replyEditHistories = ForumPostEdit::query()
+            ->with('editor')
             ->where('postable_type', ForumReply::class)
             ->whereIn('postable_id', $replies->pluck('id'))
             ->orderByDesc('edited_at')

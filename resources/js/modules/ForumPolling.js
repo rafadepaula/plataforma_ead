@@ -1,23 +1,21 @@
 /**
  * ForumPolling - SOLID JavaScript module for
- * `fetchNewReplies` AJAX polling: every 10s, fetches only replies newer
- * than the last one already on the page (`since_id`-based, never a full
+ * AJAX polling: every 10s, fetches only replies newer
+ * than the last one already on the page (since_id-based, never a full
  * thread refetch) and appends them to the DOM.
  *
  * Standard polling implementation without jQuery (using native fetch API)
- * dependency of this project (see `package.json` and CLAUDE.md's "don't
- * add dependencies without approval") — same rationale as
- * `ModuleReorder.js`'s native drag-and-drop fallback — so this uses the
- * shared `HttpClient` module instead of jQuery's `$.ajax`.
+ * using the shared HttpClient module.
  *
  * Binds to every `[data-forum-polling]` container (one per
  * `forum/show.blade.php` page), reading:
  *   - `data-fetch-url`  the `forum-replies.fetch` route for this topic.
  *   - `data-last-id`    the highest reply id already rendered server-side.
  *
- * Expected `forum-replies.fetch` JSON response shape (Bucket 2 contract):
+ * Expected JSON response shape:
  *   { "data": [ { "id": number, "content": string, "created_at": string,
  *                 "user": { "name": string } }, ... ] }
+ *   or { "replies": [...], "last_id": ... }
  * ordered ascending by `id`, containing only rows with `id > since_id`.
  */
 export class ForumPolling {
@@ -25,6 +23,7 @@ export class ForumPolling {
         this.httpClient = httpClient;
         this.intervalMs = intervalMs;
         this.timers = new Map();
+        this._unloadHandler = null;
     }
 
     init() {
@@ -34,6 +33,14 @@ export class ForumPolling {
             document.addEventListener('DOMContentLoaded', () => this.bind());
         } else {
             this.bind();
+        }
+
+        if (typeof window !== 'undefined') {
+            if (!this._unloadHandler) {
+                this._unloadHandler = () => this.stopAll();
+                window.addEventListener('beforeunload', this._unloadHandler);
+                window.addEventListener('pagehide', this._unloadHandler);
+            }
         }
     }
 
@@ -45,21 +52,43 @@ export class ForumPolling {
         const url = container.getAttribute('data-fetch-url');
         if (!url) return;
 
+        // Stop any existing timer for this container before creating a new one
+        this.stop(container);
+
         let lastId = Number(container.getAttribute('data-last-id') || 0);
 
         const poll = async () => {
             try {
-                const response = await this.httpClient.get(`${url}${url.includes('?') ? '&' : '?'}since_id=${lastId}`);
-                const replies = (response.data && response.data.data) || [];
+                const separator = url.includes('?') ? '&' : '?';
+                const response = await this.httpClient.get(`${url}${separator}since_id=${lastId}`);
+
+                const payload = response.data;
+                let replies = [];
+
+                if (Array.isArray(payload)) {
+                    replies = payload;
+                } else if (payload && Array.isArray(payload.data)) {
+                    replies = payload.data;
+                } else if (payload && Array.isArray(payload.replies)) {
+                    replies = payload.replies;
+                }
 
                 replies.forEach((reply) => {
                     this.appendReply(container, reply);
-                    if (reply.id > lastId) lastId = reply.id;
+                    if (reply.id > lastId) {
+                        lastId = reply.id;
+                    }
                 });
+
+                if (payload && typeof payload.last_id === 'number' && payload.last_id > lastId) {
+                    lastId = payload.last_id;
+                }
+
+                container.setAttribute('data-last-id', String(lastId));
             } catch (error) {
                 // Silently skip this poll cycle — the next one will retry.
-                // A hard failure here (e.g. throttle:60,1's 429) must never
-                // break the page or stop the interval.
+                // A hard failure here (e.g. throttle:60,1's 429 Too Many Requests)
+                // must never break the page or kill the interval loop.
             }
         };
 
@@ -68,6 +97,7 @@ export class ForumPolling {
     }
 
     appendReply(container, reply) {
+        if (!reply || !reply.id) return;
         if (container.querySelector(`[data-reply-id="${reply.id}"]`)) return;
 
         // Mirrors `forum/partials/_reply.blade.php`'s Bootstrap card markup —
@@ -81,16 +111,33 @@ export class ForumPolling {
         const body = document.createElement('div');
         body.className = 'card-body py-3';
 
-        const author = document.createElement('div');
-        author.className = 'small text-body-secondary mb-1';
-        author.textContent = `${(reply.user && reply.user.name) || 'Usuário'} — ${reply.created_at || ''}`;
+        const header = document.createElement('div');
+        header.className = 'd-flex align-items-start justify-content-between gap-3 mb-1';
+
+        const metaWrapper = document.createElement('div');
+        metaWrapper.className = 'd-flex align-items-center gap-3';
+
+        const textMeta = document.createElement('div');
+        textMeta.className = 'small text-body-secondary';
+
+        const strong = document.createElement('strong');
+        strong.className = 'text-body';
+        strong.textContent = (reply.user && reply.user.name) || 'Usuário';
+
+        const timeSpan = document.createElement('span');
+        timeSpan.textContent = reply.created_at ? ` — ${reply.created_at}` : '';
+
+        textMeta.appendChild(strong);
+        textMeta.appendChild(timeSpan);
+        metaWrapper.appendChild(textMeta);
+        header.appendChild(metaWrapper);
 
         const content = document.createElement('div');
         content.className = 'text-prewrap';
         content.setAttribute('dusk', `reply-content-${reply.id}`);
-        content.textContent = reply.content;
+        content.textContent = reply.content || '';
 
-        body.appendChild(author);
+        body.appendChild(header);
         body.appendChild(content);
         el.appendChild(body);
         container.appendChild(el);
@@ -102,6 +149,11 @@ export class ForumPolling {
             window.clearInterval(timer);
             this.timers.delete(container);
         }
+    }
+
+    stopAll() {
+        this.timers.forEach((timer) => window.clearInterval(timer));
+        this.timers.clear();
     }
 }
 
