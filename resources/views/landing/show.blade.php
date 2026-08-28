@@ -4,6 +4,15 @@
     surface="white"
     class="landing-page"
 >
+    @php
+        $dashboardRoute = auth()->check()
+            ? (auth()->user()->hasRole(\App\Enums\Permissions\RolesEnum::ALUNO->value)
+                ? (Route::has('student.courses.index') ? route('student.courses.index') : (Route::has('dashboard') ? route('dashboard') : url('/')))
+                : (Route::has('admin.dashboard') ? route('admin.dashboard') : (Route::has('dashboard') ? route('dashboard') : url('/'))))
+            : null;
+    @endphp
+
+    {{-- Band 1: Header --}}
     <header class="landing-header border-bottom">
         <div class="landing-header-inner d-flex align-items-center justify-content-between">
             <div class="d-flex align-items-center gap-3">
@@ -14,21 +23,28 @@
             <div class="d-flex align-items-center gap-3 gap-md-4">
                 <x-help-button key="landing" />
 
-                @if(Route::has('login'))
-                    <x-ui.button variant="primary" size="sm" href="{{ route('login') }}" dusk="landing-login-link">
-                        Entrar
+                @auth
+                    <x-ui.button variant="primary" size="sm" href="{{ $dashboardRoute }}" dusk="landing-login-link">
+                        Acessar plataforma
                     </x-ui.button>
-                @endif
+                @else
+                    @if (Route::has('login'))
+                        <x-ui.button variant="primary" size="sm" href="{{ route('login') }}" dusk="landing-login-link">
+                            Entrar
+                        </x-ui.button>
+                    @endif
+                @endauth
             </div>
         </div>
     </header>
 
-    <section class="landing-band landing-hero-band">
+    {{-- Band 2: Hero Band --}}
+    <section class="landing-band landing-hero-band ds-band-blue">
         <div class="landing-container">
-            <div class="landing-hero text-center">
-                <x-ui.badge size="lg">Educação a Distância</x-ui.badge>
+            <div class="ds-hero-card landing-hero text-center">
+                <x-ui.badge variant="accent" size="lg">Educação a Distância</x-ui.badge>
 
-                <h1 dusk="landing-headline" class="landing-headline">
+                <h1 class="display-5 fw-bold landing-headline" dusk="landing-headline">
                     Capacitação técnica continuada, do jeito certo
                 </h1>
 
@@ -37,44 +53,61 @@
                     pensada para organizações que levam a formação de suas equipes a sério.
                 </p>
 
-                @if(Route::has('login'))
-                    <div class="d-flex justify-content-center mt-7x">
-                        <x-ui.button variant="primary" size="lg" href="{{ route('login') }}" dusk="landing-cta-login">
+                <div class="d-flex justify-content-center mt-7x">
+                    @auth
+                        <x-ui.button variant="primary" size="lg" href="{{ $dashboardRoute }}" dusk="landing-cta-login">
                             Acessar plataforma
                         </x-ui.button>
-                    </div>
-                @endif
+                    @else
+                        @if (Route::has('login'))
+                            <x-ui.button variant="primary" size="lg" href="{{ route('login') }}" dusk="landing-cta-login">
+                                Acessar plataforma
+                            </x-ui.button>
+                        @endif
+                    @endauth
+                </div>
             </div>
         </div>
     </section>
 
+    {{-- Band 3: 3-Pillar Capabilities --}}
     <section class="landing-band">
-        <div class="landing-container landing-grid landing-grid-3">
+        <div class="landing-container landing-grid landing-grid-3 ds-grid-3">
             <x-ui.card :border="false" elevation="sm" surface="white" class="landing-card h-100">
-                <h2 class="landing-card-title">Cursos e Trilhas</h2>
-                <p class="landing-card-copy">Módulos, aulas em vídeo e materiais organizados por curso.</p>
+                <div class="ds-overline text-primary">Estrutura</div>
+                <h2 class="landing-card-title">Gestão Multitenant</h2>
+                <p class="landing-card-copy">
+                    Ambientes isolados por Organização, com controle de acesso granular para Administradores, Gestores e Alunos.
+                </p>
             </x-ui.card>
 
             <x-ui.card :border="false" elevation="sm" surface="white" class="landing-card h-100">
-                <h2 class="landing-card-title">Provas Interativas</h2>
-                <p class="landing-card-copy">Avaliações automáticas e correção manual de dissertativas.</p>
+                <div class="ds-overline text-primary">Ambiente</div>
+                <h2 class="landing-card-title">Experiência de Aprendizado</h2>
+                <p class="landing-card-copy">
+                    Aulas em vídeo, PDFs para download, provas interativas com feedback e fórum de dúvidas por curso.
+                </p>
             </x-ui.card>
 
             <x-ui.card :border="false" elevation="sm" surface="white" class="landing-card h-100">
-                <h2 class="landing-card-title">Certificados Oficiais</h2>
-                <p class="landing-card-copy">Emissão automática e validação pública por hash único.</p>
+                <div class="ds-overline text-primary">Confiabilidade</div>
+                <h2 class="landing-card-title">Certificação Confiável</h2>
+                <p class="landing-card-copy">
+                    Emissão automatizada de certificados com hash SHA-256 único e validação pública instantânea sem login.
+                </p>
             </x-ui.card>
         </div>
     </section>
 
-    <section class="landing-band landing-process-band">
+    {{-- Band 4: Como Funciona (4 Passos) --}}
+    <section class="landing-band ds-band-blue landing-process-band">
         <div class="landing-container">
             <div class="landing-section-heading text-center">
                 <div class="ds-overline text-primary">Do convite ao certificado</div>
                 <h2>Como funciona</h2>
             </div>
 
-            <div class="landing-grid landing-grid-4">
+            <div class="landing-grid landing-grid-4 ds-grid-4">
                 <x-ui.card :border="false" elevation="sm" surface="white" class="landing-card h-100">
                     <span class="landing-step" aria-hidden="true">1</span>
                     <h3 class="landing-step-title">A Organização publica</h3>
@@ -102,6 +135,7 @@
         </div>
     </section>
 
+    {{-- Band 5: Vitrine de Componentes Reais do Design System --}}
     <section class="landing-band landing-showcase-band">
         <div class="landing-container">
             <div class="landing-section-heading text-center">
@@ -110,7 +144,7 @@
                 <p class="landing-lead">Sem montagem: são os mesmos componentes que aparecem depois do login.</p>
             </div>
 
-            <div class="landing-grid landing-grid-3">
+            <div class="landing-grid landing-grid-3 ds-grid-3">
                 <x-ui.card :border="false" elevation="sm" surface="white" class="landing-card landing-showcase-card h-100">
                     <x-slot:image>
                         <div class="landing-course-status">
@@ -160,7 +194,7 @@
 
                 <x-ui.card :border="false" elevation="sm" surface="white" class="landing-card landing-showcase-card h-100">
                     <div class="d-flex align-items-center gap-3">
-                        <x-ui.avatar size="lg" initials="JR" />
+                        <x-ui.avatar size="lg" initials="JR" class="landing-avatar-52" />
                         <div>
                             <div class="fw-bold landing-body-small">Joana Ribeiro</div>
                             <div class="ds-caption">Fórum · há 2 horas</div>
@@ -181,18 +215,30 @@
         </div>
     </section>
 
-    <section id="contato" class="landing-band landing-contact-band text-center">
+    {{-- Band 6: Contato Institucional --}}
+    <section id="contato" class="landing-band ds-band-blue landing-contact-band text-center">
         <div class="landing-reading-width d-flex flex-column align-items-center gap-4">
             <h2>Deseja utilizar esta plataforma em sua organização?</h2>
-            <x-ui.button variant="tonal" href="#">Fale conosco</x-ui.button>
+            <p class="landing-lead mt-0">
+                Entre em contato com nossa equipe para saber mais sobre planos e implantação institucional.
+            </p>
+            <x-ui.button variant="primary" href="mailto:contato@plataformaead.com.br" dusk="contact-button">
+                Fale conosco
+            </x-ui.button>
         </div>
     </section>
 
+    {{-- Band 7: Rodapé Público --}}
     <x-slot:footer>
-        <div class="landing-footer-inner d-flex flex-wrap align-items-center gap-3">
+        <div class="landing-footer-inner d-flex flex-wrap align-items-center justify-content-between gap-3">
             <span>&copy; {{ date('Y') }} <strong>{{ config('app.name', 'Plataforma EAD') }}</strong>. Todos os direitos reservados.</span>
             <nav class="d-flex flex-wrap justify-content-center gap-4" aria-label="Links institucionais">
-                <a href="#" class="text-body-secondary text-decoration-none">Validar certificado</a>
+                @php
+                    $verifyRoute = Route::has('certificates.verify')
+                        ? route('certificates.verify', '0000000000000000000000000000000000000000000000000000000000000000')
+                        : (Route::has('certificates.verify.show') ? route('certificates.verify.show', '0000000000000000000000000000000000000000000000000000000000000000') : '#');
+                @endphp
+                <a href="{{ $verifyRoute }}" class="text-body-secondary text-decoration-none">Validar certificado</a>
                 <a href="#" class="text-body-secondary text-decoration-none">Termos de uso</a>
                 <a href="#" class="text-body-secondary text-decoration-none">Privacidade</a>
                 <a href="#contato" class="text-body-secondary text-decoration-none">Suporte</a>

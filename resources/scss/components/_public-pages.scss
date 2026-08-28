@@ -7,9 +7,17 @@
 // cor/raio/sombra.
 // =============================================================================
 
-// Painel de destaque do hero da landing — fundo pastel, raio grande, respiro
-// generoso. Em telas estreitas o padding de 80px é reduzido para caber sem
-// espremer o conteúdo.
+.ds-band-blue {
+    background-color: var(--blue-50, #f0f4f9);
+}
+
+.ds-hero-card {
+    background: var(--blue-50, #f0f4f9);
+    border-radius: var(--radius-2xl, 36px);
+    padding: 64px 32px;
+}
+
+// Painel de destaque do hero da landing — fundo pastel, raio grande, respiro generoso.
 .hero-panel {
     background: var(--blue-50);
     border-radius: var(--radius-2xl);
@@ -17,8 +25,9 @@
 }
 
 @media (max-width: 575.98px) {
-    .hero-panel {
-        padding: var(--space-7);
+    .hero-panel,
+    .ds-hero-card {
+        padding: var(--space-7) var(--space-5);
     }
 }
 
@@ -155,12 +164,20 @@
     align-items: stretch;
 }
 
-.landing-grid-3 {
+.landing-grid-3,
+.ds-grid-3 {
+    display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-6);
+    align-items: stretch;
 }
 
-.landing-grid-4 {
+.landing-grid-4,
+.ds-grid-4 {
+    display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--space-6);
+    align-items: stretch;
 }
 
 .landing-card {
@@ -209,7 +226,7 @@
 }
 
 .landing-process-band {
-    padding-top: 0;
+    padding-top: var(--space-8);
 }
 
 .landing-section-heading {
@@ -236,7 +253,7 @@
 }
 
 .landing-showcase-band {
-    background: var(--surface-alt);
+    background: var(--surface);
 }
 
 .landing-showcase-card .card-content {
@@ -256,9 +273,15 @@
     justify-content: center;
     width: 52px;
     height: 52px;
-    color: var(--on-secondary-container);
-    background: var(--secondary-container);
-    border-radius: var(--radius-md);
+    color: var(--on-secondary-container, #1e6a4a);
+    background: var(--secondary-container, #e4f5ec);
+    border-radius: var(--radius-md, 14px);
+}
+
+.landing-avatar-52 {
+    width: 52px;
+    height: 52px;
+    font-size: var(--font-size-body);
 }
 
 .landing-contact-band h2 {
@@ -278,7 +301,8 @@
         padding-inline: var(--space-8);
     }
 
-    .landing-grid-4 {
+    .landing-grid-4,
+    .ds-grid-4 {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
@@ -305,7 +329,8 @@
         padding-bottom: 0;
     }
 
-    .landing-hero {
+    .landing-hero,
+    .ds-hero-card {
         padding: var(--space-8) var(--space-6);
     }
 
@@ -314,12 +339,14 @@
     }
 
     .landing-grid-3,
-    .landing-grid-4 {
+    .landing-grid-4,
+    .ds-grid-3,
+    .ds-grid-4 {
         grid-template-columns: minmax(0, 1fr);
     }
 
     .landing-process-band {
-        padding-top: 0;
+        padding-top: var(--space-8);
     }
 
     .landing-footer-inner {
