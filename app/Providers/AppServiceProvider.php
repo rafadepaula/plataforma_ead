@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Http\View\Composers\ForumBreadcrumbComposer;
 use App\Http\View\Composers\NavigationComposer;
 use App\Services\Navigation\ImpersonationContext;
 use App\Services\Navigation\NavigationRegistry;
@@ -44,5 +45,9 @@ class AppServiceProvider extends ServiceProvider
         Paginator::defaultSimpleView('pagination::simple-bootstrap-5');
 
         View::composer(['components.layout.sidebar', 'components.layout.topbar'], NavigationComposer::class);
+
+        // The role-aware root breadcrumb shared by every forum screen —
+        // computed once here instead of copy-pasted into each view.
+        View::composer(['forum.index', 'forum.create', 'forum.edit', 'forum.show'], ForumBreadcrumbComposer::class);
     }
 }

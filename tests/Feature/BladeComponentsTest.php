@@ -93,6 +93,46 @@ class BladeComponentsTest extends TestCase
         $this->assertStringContainsString('aria-pressed="false"', $unpressed);
     }
 
+    public function test_avatar_derives_initials_from_name_prop(): void
+    {
+        $html = $this->renderBlade('<x-ui.avatar name="Maria Silva Souza" />');
+        $this->assertStringContainsString('ds-avatar', $html);
+        $this->assertStringContainsString('MS', $html);
+        $this->assertStringNotContainsString('name="Maria Silva Souza"', $html);
+
+        $single = $this->renderBlade('<x-ui.avatar name="Joana" />');
+        $this->assertStringContainsString('>J<', str_replace([' ', "\n"], '', $single));
+
+        $accented = $this->renderBlade('<x-ui.avatar name="ângela ríos" />');
+        $this->assertStringContainsString('ÂR', $accented);
+    }
+
+    public function test_avatar_explicit_initials_win_over_name_and_sizes_map_to_design_system(): void
+    {
+        $html = $this->renderBlade('<x-ui.avatar name="Maria Silva" initials="ZZ" />');
+        $this->assertStringContainsString('ZZ', $html);
+        $this->assertStringNotContainsString('MS', $html);
+
+        $base = $this->renderBlade('<x-ui.avatar initials="AB" />');
+        $this->assertStringNotContainsString('ds-avatar-lg', $base);
+
+        $lg = $this->renderBlade('<x-ui.avatar size="lg" initials="AB" />');
+        $this->assertStringContainsString('ds-avatar-lg', $lg);
+
+        $xl = $this->renderBlade('<x-ui.avatar size="xl" initials="AB" />');
+        $this->assertStringContainsString('ds-avatar-xl', $xl);
+    }
+
+    public function test_chip_renders_static_status_variant_without_button(): void
+    {
+        $html = $this->renderBlade('<x-ui.chip :static="true" variant="info">Fixado</x-ui.chip>');
+        $this->assertStringContainsString('ds-chip ds-chip-info', $html);
+        $this->assertStringContainsString('Fixado', $html);
+        $this->assertStringNotContainsString('<button', $html);
+        $this->assertStringNotContainsString('aria-pressed', $html);
+        $this->assertStringContainsString('<span', $html);
+    }
+
     public function test_icon_renders_svg_with_correct_attributes(): void
     {
         $html = $this->renderBlade('<x-ui.icon name="bell" size="20" class="me-2" :stroke-width="2" />');

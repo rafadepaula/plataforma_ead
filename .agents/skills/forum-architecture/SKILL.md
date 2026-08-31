@@ -17,6 +17,7 @@ metadata:
   role: architecture
   specs:
     - spec/specs/10-course-discussion-forum.md
+    - spec/specs/30-course-discussion-forum-and-realtime-polling.md
     - spec/specs/00-architecture-database-and-guardrails.md
 ---
 
@@ -124,6 +125,57 @@ SPEC-13 (Notifications) exclude "new report" from trigger list (§2.2) on
 purpose — new `forum_reports` row silent outside moderation queue itself.
 Do not wire notification for it without separate, deliberate spec change.
 
+## Incremental `since_id` Polling Replaces Websockets
+
+No broadcasting driver, no Echo, no jQuery. `forum/show.blade.php` render
+one `[data-forum-polling]` container carrying `data-fetch-url`
+(`forum-replies.fetch`) and `data-last-id` (`$lastReplyId`, the highest
+reply id rendered server-side). `ForumPolling.js` run one `setInterval`
+per container, 10s, `GET {fetch-url}?since_id={lastId}`.
+
+Layering:
+
+- **Server owns presentation data.** `fetchNew()` publish `initials` and
+  `role_label` per row plus a top-level `last_id`, all read from
+  `User::initials()`/`User::roleLabel()` accessors — the same accessors
+  `x-ui.avatar`'s `name` prop and the Blade role badge use. The JSON is
+  therefore a full-parity contract, not a thin id/content feed, and the
+  injected card cannot drift from `_reply.blade.php`.
+- **Client owns DOM assembly only.** `appendReply()` rebuild the partial's
+  markup with `createElement`/`textContent`. Alternative considered and
+  rejected for now: returning server-rendered HTML per reply (true
+  cloning, zero drift) — it would change the documented JSON contract and
+  the `fetchNew` tests. If drift ever bites twice, revisit that.
+- **Dedupe is DOM-based.** `container.querySelector('[data-reply-id=N]')`
+  guard, so a reply already rendered by Blade or by an earlier cycle is
+  never doubled.
+- **Back-pressure.** `limit(50)` per call. A tab idle for hours drain 50
+  replies per 10s cycle; `data-last-id` still advance correctly BECAUSE
+  the query order by `id`. Removing `orderBy('id')` break that invariant
+  silently.
+- **Rate limit.** `forum-replies.fetch` alone carry `throttle:60,1`; one
+  tab spend 6/min, so several tabs on one topic can trip 429. The loop
+  skip the cycle and back off, never clear its interval — ONLY a terminal
+  4xx (401/419/403/404: expired session, revoked policy, topic removed by
+  moderation) stop it, because that endpoint will never answer that page
+  again. The back-off de-escalates on the next success.
+- **No removal path.** Polling only APPEND. A reply soft-deleted
+  server-side stay visible in an open tab until reload, and a
+  polling-injected reply carry no "Apagar" (per-viewer permission is not
+  in the payload). Both are accepted limits, not bugs.
+
+## Forum Screens: Desktop Header Action vs Mobile FAB
+
+`forum/index.blade.php` expose ONE creation flow through TWO mutually
+exclusive entry points around the `lg` breakpoint: the
+`x-layout.page-header` action button (`d-none d-lg-inline-flex`) and
+`<x-ui.fab>` (`d-lg-none`). Both open the same `#new-topic-modal`, whose
+body form is bound to a footer submit button by the HTML5
+`form="new-topic-form"` attribute. `forum/create.blade.php` remain the
+full-page fallback on the identical `forum.store` contract. Selector-level
+detail and the pin-form/stretched-link sibling rule live in
+`forum-conventions`.
+
 ## `EnsureStudentIsEnrolled` (`student.enrolled`) Gates Whole Forum
 
 Every Topic/Reply route (`routes/web.php` `courses/{course}/forum/*`
@@ -139,6 +191,9 @@ instead, since Gestor/Admin never "enrolled".
 
 - `spec/specs/10-course-discussion-forum.md` — RF22, RF26, RF27, RN08,
   RN10.
+- `spec/specs/30-course-discussion-forum-and-realtime-polling.md` —
+  Material Bootstrap redesign of the forum screens plus the incremental
+  `since_id` polling contract documented above.
 - `tenancy-architecture` — general org-scoped vs cascade-inherited rule
   this module `forum_topics`/`forum_replies` split follow, and where
   pseudo-polymorphic `forum_post_edits`/`forum_reports` tables get

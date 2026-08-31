@@ -3,11 +3,13 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Enums\Permissions\RolesEnum;
 use App\Models\Traits\AuditableTrait;
 use App\Notifications\ResetPasswordNotification;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -40,6 +42,54 @@ class User extends Authenticatable
             'password' => 'hashed',
             'org_id' => 'integer',
         ];
+    }
+
+    /**
+     * Up to two uppercase letters derived from the first two words of the
+     * user's name — the source of the initials in the forum surfaces: the
+     * forum views pass it to `x-ui.avatar` and the polling endpoint ships
+     * it in the payload, so a reply injected without a page reload reads
+     * byte-identically to a server-rendered one.
+     *
+     * NOT app-wide: several screens still derive the fallback themselves
+     * from a local `$initialsFor` closure (`users/index`,
+     * `admin/users/index`, `quizzes/attempts/pending`,
+     * `certificates/index`, `audit-logs/index`, `organizations/index`,
+     * `courses/enrollments/index`), `x-ui.avatar`'s `name` prop re-derives
+     * it in Blade, and `ForumPolling.js::initialsFrom()` mirrors it for
+     * the degraded payload case. Changing the rule here means propagating
+     * it to every one of those sites or the app renders two different
+     * initials conventions for the same user.
+     *
+     * @return Attribute<string, never>
+     */
+    protected function initials(): Attribute
+    {
+        return Attribute::get(function (): string {
+            $words = array_values(array_filter(preg_split('/\s+/', trim((string) $this->name)) ?: []));
+
+            return mb_strtoupper(collect($words)
+                ->take(2)
+                ->map(fn (string $word): string => mb_substr($word, 0, 1))
+                ->implode(''));
+        });
+    }
+
+    /**
+     * Human-readable label of the user's primary role, used as the badge
+     * next to their name in forum posts and mirrored by the polling
+     * payload. A user carrying no known role reads as "Membro".
+     *
+     * @return Attribute<string, never>
+     */
+    protected function roleLabel(): Attribute
+    {
+        return Attribute::get(fn (): string => match ($this->getRoleNames()->first()) {
+            RolesEnum::ADMIN->value => 'Admin',
+            RolesEnum::GESTOR->value => 'Gestor',
+            RolesEnum::ALUNO->value => 'Aluno',
+            default => 'Membro',
+        });
     }
 
     /**

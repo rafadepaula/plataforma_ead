@@ -30,7 +30,11 @@ use Illuminate\Support\Facades\Gate;
  * `OrgScope`, and a multi-org Aluno (, `org_id === null`, no
  * impersonation session) would have every query silently filtered to
  * nothing under that scope (see `OrgScope::bootOrgScope()`) — every
- * lookup here explicitly bypasses it via `withoutGlobalScopes()`, mirrors
+ * lookup here explicitly bypasses it by name, via
+ * `withoutGlobalScope('org')` — never the blanket
+ * `withoutGlobalScopes()`, which would drop `SoftDeletingScope` too and
+ * keep a topic removed by moderation fully reachable (listed, readable,
+ * pinnable, repliable). Mirrors
  * `ClassroomController`/`StudentQuizController`'s same convention for
  * `Course`.
  */
@@ -50,7 +54,7 @@ class ForumTopicController extends Controller
         Gate::authorize('viewAny', [ForumTopic::class, $courseModel]);
 
         $topics = ForumTopic::query()
-            ->withoutGlobalScopes()
+            ->withoutGlobalScope('org')
             ->where('course_id', $courseModel->id)
             ->with('user')
             ->withCount('replies')
@@ -197,13 +201,13 @@ class ForumTopicController extends Controller
 
     protected function resolveCourse(int $course): Course
     {
-        return Course::query()->withoutGlobalScopes()->findOrFail($course);
+        return Course::query()->withoutGlobalScope('org')->findOrFail($course);
     }
 
     protected function resolveTopic(int $topic, Course $course): ForumTopic
     {
         return ForumTopic::query()
-            ->withoutGlobalScopes()
+            ->withoutGlobalScope('org')
             ->where('course_id', $course->id)
             ->findOrFail($topic);
     }

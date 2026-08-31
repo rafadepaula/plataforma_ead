@@ -644,6 +644,14 @@ screens), `KeyboardNavigationTest`, `AuditDiffModalHighlightTest`.
 Use `$browser->resize(w, h)` before `visit()`, and assert layout facts
 through `script()` rather than screenshots.
 
+**Resize back before the method ends.** One `Browser` instance is shared by
+every method in the class and files/cache/viewport are not reset between
+them, so a `resize(390, 900)` left in place leaks into the *next* method:
+its desktop-only selectors report "not visible" and the failure points at
+the wrong test. End every mobile chain with
+`->resize(...self::DESKTOP_VIEWPORT)` (a shared constant, not literals).
+See `ForumPollingAndInteractionDuskTest`'s FAB chain.
+
 ## Never Click a File-Download Link — Assert Its `href`
 
 Endpoints that stream an attachment (`certificates.download` and the other

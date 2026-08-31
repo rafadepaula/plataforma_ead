@@ -21,8 +21,9 @@ use Illuminate\Support\Facades\Gate;
  * (`store`/`update`/`destroy`) plus the AJAX `since_id` polling endpoint
  * (`fetchNew`, `throttle:60,1` — see `routes/web.php`). `ForumReply`
  * itself carries no `OrgScope` (cascade-inherited via its `ForumTopic`),
- * so only the parent `Course`/`ForumTopic` lookups need
- * `withoutGlobalScopes()` (see `ForumTopicController`'s docblock).
+ * so only the parent `Course`/`ForumTopic` lookups need the
+ * by-name `withoutGlobalScope('org')` bypass (see `ForumTopicController`'s
+ * docblock for why it must never be the blanket `withoutGlobalScopes()`).
  */
 class ForumReplyController extends Controller
 {
@@ -86,6 +87,29 @@ class ForumReplyController extends Controller
      * with `id > since_id` are ever returned, ordered ascending, capped at
      * 50 per call so a long-idle tab can't pull an unbounded backlog in
      * one request.
+     *
+     * The payload is a published contract consumed by `ForumPolling.js`,
+     * which rebuilds the same card `forum.partials._reply` renders — so
+     * every field that partial shows travels with the row, including the
+     * author's `initials` (avatar fallback) and `role_label` (badge), both
+     * read from `User`'s shared accessors, and the timestamp in BOTH of its
+     * renderings — `created_at` absolute for the `title=` tooltip and
+     * `created_at_relative` for the visible `diffForHumans()` text — so the
+     * injected card and the server-rendered one can never drift:
+     *
+     *   {
+     *     "data": [{
+     *       "id": int, "content": string, "created_at": "d/m/Y H:i",
+     *       "created_at_relative": "há 2 minutos",
+     *       "initials": string, "role_label": string,
+     *       "user": {"name": string}
+     *     }],
+     *     "last_id": int   // highest id in this batch, 0 when empty
+     *   }
+     *
+     * `user.roles` is eager-loaded because `role_label` reads the role
+     * relation for every row — without it a 10s poll would fire one
+     * extra query per reply.
      */
     public function fetchNew(Request $request, int $course, int $topic): JsonResponse
     {
@@ -97,7 +121,7 @@ class ForumReplyController extends Controller
 
         $replies = $topicModel->replies()
             ->where('id', '>', $sinceId)
-            ->with('user')
+            ->with('user.roles')
             ->orderBy('id')
             ->limit(50)
             ->get();
@@ -107,17 +131,21 @@ class ForumReplyController extends Controller
                 'id' => $reply->id,
                 'content' => $reply->content,
                 'created_at' => $reply->created_at->format('d/m/Y H:i'),
+                'created_at_relative' => $reply->created_at->diffForHumans(),
+                'initials' => $reply->user->initials,
+                'role_label' => $reply->user->role_label,
                 'user' => ['name' => $reply->user->name],
             ])->values()->all(),
+            'last_id' => (int) ($replies->max('id') ?? 0),
         ]);
     }
 
     protected function resolveTopic(int $topic, int $course): ForumTopic
     {
-        $courseModel = Course::query()->withoutGlobalScopes()->findOrFail($course);
+        $courseModel = Course::query()->withoutGlobalScope('org')->findOrFail($course);
 
         return ForumTopic::query()
-            ->withoutGlobalScopes()
+            ->withoutGlobalScope('org')
             ->where('course_id', $courseModel->id)
             ->findOrFail($topic);
     }

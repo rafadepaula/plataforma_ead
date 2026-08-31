@@ -7,7 +7,7 @@ export const meta = {
     { title: 'Tech-Refine', detail: 'Study current codebase, produce a 3-bucket implementation plan', model: 'opus' },
     { title: 'Code', detail: '3 parallel agents, each applying laravel-tdd RED-GREEN-REFACTOR in PHPUnit, using laravel-dusk for any browser-facing bucket', model: 'opus' },
     { title: 'Test', detail: 'Run the full PHPUnit + Dusk suite via Sail, verify coverage per the laravel-tdd checklist', model: 'opus' },
-    { title: 'Review', detail: 'code-reviewer, validate-test-quality & spec-usecase-test-checker loop: audit code & test efficacy, verify E2E Dusk coverage for all use cases, fix CONFIRMED findings, capped iterations', model: 'opus' },
+    { title: 'Review', detail: 'code-reviewer, validate-test-quality & spec-usecase-test-checker loop: audit code & test efficacy, verify E2E Dusk coverage for all use cases, fix CONFIRMED findings, capped iterations — strictly READ-ONLY over the code, NEVER executes any test suite: no artisan test, no dusk, no PHPUnit. Tests run ONLY in the Test phase', model: 'opus' },
     { title: 'Meta-Skill-Check', detail: 'Per SPEC-03, check the touched module skill triad for staleness against the code just merged and update it', model: 'opus' }
   ]
 }
@@ -215,7 +215,8 @@ while (iterations < MAX_REVIEW_ITERATIONS && budget.remaining() > 0) {
   lastReview = await agent(
     [
       `Review the uncommitted diff implementing task "${TASK_REF}" from ${SPEC_DIR}/${SPEC_FILE}.`,
-      `Trigger the laravel-best-practices, laravel-specialist, and laravel-verification skills as your normal process dictates (static analysis, lint, test verification, architectural audit).`,
+      `HARD CONSTRAINT — this review pass is STRICTLY READ-ONLY over the code: you MUST NOT run ANY tests. No \`vendor/bin/sail artisan test\`, no \`vendor/bin/sail artisan dusk\`, no PHPUnit, no Pest, no re-running of any unit, feature or browser suite, and no test-runner of any kind — not even to "confirm" a finding. This override takes precedence over your agent definition: skip its test-execution phases (the "Phase 3: Automated Tests & Coverage" and "Phase 3.5: Laravel Dusk Browser Testing" steps) entirely, and skip the laravel-verification skill's test-verification steps too — perform their audit portions by READING tests, code and coverage reports only. All suites were already executed in the previous Test phase (summary included below) — treat that as the only test-run evidence.`,
+      `Trigger the laravel-best-practices, laravel-specialist, and laravel-verification skills for static analysis, lint and architectural audit ONLY. Every verdict must come from READING the diff, the code and the tests — never from executing them.`,
       `Trigger the validate-test-quality skill to audit all new/modified PHPUnit and Dusk tests against the 6 Pillars of Real Test Validation: SUT Integrity (0% SUT self-mocking), Assertion Meaningfulness (no tautological/weak factory checks), Mutation Resiliency, State Verification (database & response checks), Mandatory Fail-Path Testing (403, 422, exceptions, cross-tenant leaks), and Refactor Resilience. Any test quality defect, fake assertion, or missing failure path MUST be reported as a CONFIRMED finding.`,
       `Invoke the spec-usecase-test-checker agent to audit all Use Cases (UCs) defined for ${SPEC_DIR}/${SPEC_FILE} (in spec/docs/usecases/ and ${SPEC_DIR}/${SPEC_FILE}). Revalidate in code (tests/Browser/) that EVERY Use Case has AT LEAST ONE E2E Laravel Dusk test capturing all scenarios (success and failure/exception). Any missing Use Case Dusk test or missing scenario coverage MUST be reported as a CONFIRMED finding.`,
       `Test run summary from the previous phase:`,
@@ -241,7 +242,7 @@ while (iterations < MAX_REVIEW_ITERATIONS && budget.remaining() > 0) {
     [
       `The code-reviewer agent found these CONFIRMED issues in the implementation of "${TASK_REF}" (${SPEC_DIR}/${SPEC_FILE}):`,
       JSON.stringify(confirmed),
-      `Fix every listed issue directly in the code. Re-run the relevant tests afterward to confirm nothing broke. Do not introduce new scope beyond fixing these findings.`
+      `Fix every listed issue directly in the code. You MUST NOT run any tests afterwards or at all — no \`vendor/bin/sail artisan test\`, no \`vendor/bin/sail artisan dusk\`, no PHPUnit/Pest, nothing; test execution is reserved for the dedicated Test phase and will be re-run there if needed. Do not introduce new scope beyond fixing these findings.`
     ].join('\n'),
     { label: `fix:${iterations}`, phase: 'Review', model: 'opus' }
   )

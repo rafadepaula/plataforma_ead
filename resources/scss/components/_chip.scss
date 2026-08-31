@@ -127,6 +127,19 @@
     outline-offset: 2px;
 }
 
+// Chip de STATUS (não-interativo) — `x-ui.chip :static="true"`. Renderizado
+// como `<span>`, então não pode herdar o cursor/ponteiro nem o realce de
+// pressionado do filtro; o tom vem do par container/on-container.
+.ds-chip-static {
+    cursor: default;
+}
+
+.ds-chip-info {
+    color: var(--on-info-container);
+    background-color: var(--info-container);
+    border-color: transparent;
+}
+
 .ds-chip:disabled,
 .ds-chip[aria-disabled="true"] {
     opacity: .45;

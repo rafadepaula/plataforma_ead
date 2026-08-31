@@ -13,9 +13,14 @@
 
 @section('content')
     <x-layout.page-header
-        :breadcrumb="[['label' => $course->title, 'url' => route('forum.index', $course)], ['label' => 'Novo Tópico']]"
-        kicker="{{ $course->title }} / Fórum"
-        title="Novo Tópico"
+        :breadcrumb="[
+            $coursesCrumb,
+            ['label' => $course->title, 'url' => route('classroom.show', $course)],
+            ['label' => 'Fórum', 'url' => route('forum.index', $course)],
+            ['label' => 'Novo tópico'],
+        ]"
+        kicker="Fórum"
+        title="Novo tópico"
         subtitle="Compartilhe sua dúvida ou observação com a turma." />
 
     <div class="max-w-640">
@@ -30,7 +35,7 @@
 
                 <x-ui.form-actions align="end">
                     <x-ui.button variant="ghost" href="{{ route('forum.index', $course) }}">Cancelar</x-ui.button>
-                    <x-ui.button type="submit" dusk="new-topic-submit">Publicar Tópico</x-ui.button>
+                    <x-ui.button type="submit" dusk="new-topic-submit">Publicar tópico</x-ui.button>
                 </x-ui.form-actions>
             </form>
         </x-ui.card>

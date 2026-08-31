@@ -16,9 +16,15 @@
 
 @section('content')
     <x-layout.page-header
-        :breadcrumb="[['label' => $course->title, 'url' => route('forum.index', $course)], ['label' => $topic->title, 'url' => route('forum.show', [$course, $topic])], ['label' => 'Editar']]"
-        kicker="{{ $course->title }} / Fórum"
-        title="Editar Tópico"
+        :breadcrumb="[
+            $coursesCrumb,
+            ['label' => $course->title, 'url' => route('classroom.show', $course)],
+            ['label' => 'Fórum', 'url' => route('forum.index', $course)],
+            ['label' => $topic->title, 'url' => route('forum.show', [$course, $topic])],
+            ['label' => 'Editar'],
+        ]"
+        kicker="Fórum"
+        title="Editar tópico"
         subtitle="Atualize o conteúdo do seu tópico." />
 
     <div class="max-w-640">
@@ -38,7 +44,7 @@
 
                 <x-ui.form-actions align="end">
                     <x-ui.button variant="ghost" href="{{ route('forum.show', [$course, $topic]) }}">Cancelar</x-ui.button>
-                    <x-ui.button type="submit" dusk="edit-topic-submit">Salvar Alterações</x-ui.button>
+                    <x-ui.button type="submit" dusk="edit-topic-submit">Salvar alterações</x-ui.button>
                 </x-ui.form-actions>
             </form>
         </x-ui.card>

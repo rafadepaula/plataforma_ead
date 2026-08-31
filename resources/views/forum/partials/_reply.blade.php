@@ -17,31 +17,20 @@
     $isReplyAuthor = auth()->id() === $reply->user_id;
     $replyHistory = $replyEditHistories[$reply->id] ?? collect();
 
-    $replyInitialsFor = function (string $name): string {
-        $parts = array_values(array_filter(preg_split('/\s+/', trim($name)) ?: []));
-
-        return mb_strtoupper(collect($parts)->take(2)->map(fn ($part) => mb_substr($part, 0, 1))->implode(''));
-    };
-
-    $replyAuthorRole = match ($reply->user->getRoleNames()->first()) {
-        \App\Enums\Permissions\RolesEnum::ADMIN->value => 'Admin',
-        \App\Enums\Permissions\RolesEnum::GESTOR->value => 'Gestor',
-        \App\Enums\Permissions\RolesEnum::ALUNO->value => 'Aluno',
-        default => 'Membro',
-    };
+    $replyAuthorRole = $reply->user->role_label;
 @endphp
 {{-- `forum-reply` também é gerada literalmente por
      `resources/js/modules/ForumPolling.js::appendReply()` ao injetar
      respostas via polling — mantém o nome real aqui (definido em
      `resources/scss/components/_card.scss`) para o polling continuar
-     espelhando visualmente esta marcação. O JS injeta uma versão mais
-     simples (sem avatar/chip de papel) — limitação conhecida, fora do
-     escopo desta tarefa. --}}
+     espelhando visualmente esta marcação. Qualquer mudança na estrutura
+     abaixo (avatar, badge de papel, ordem dos blocos) precisa ser
+     espelhada naquele módulo. --}}
 <div class="forum-reply card mb-2" dusk="reply-{{ $reply->id }}" data-reply-id="{{ $reply->id }}">
     <div class="card-body py-3">
     <div class="d-flex align-items-start justify-content-between gap-3 mb-1">
         <div class="d-flex align-items-center gap-3">
-            <x-ui.avatar size="lg" :initials="$replyInitialsFor($reply->user->name)" />
+            <x-ui.avatar size="lg" :initials="$reply->user->initials" />
 
             <div class="small text-body-secondary">
                 <strong class="text-body">{{ $reply->user->name }}</strong>

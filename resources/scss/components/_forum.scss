@@ -2,8 +2,10 @@
 // Componente: Forum (Fórum de discussão do curso)
 // -----------------------------------------------------------------------------
 // Estilos específicos para o fórum: largura de leitura de tópicos e thread,
-// transições e superfícies de hover para cards interativos de tópicos,
-// e espaçamento de segurança inferior para telas móveis com FAB.
+// tipografia do título do card de tópico e espaçamento de segurança inferior
+// para telas móveis com FAB. O hover/transição do card interativo NÃO mora
+// aqui — é `.ds-card-interactive` (ver `_card.scss`), compartilhada com as
+// outras listas clicáveis do produto.
 // Regra: qualquer declaração aqui só pode consumir var(--*), nunca literal de
 // cor/raio/sombra (exceto safe-area-inset nativo).
 // =============================================================================
@@ -12,22 +14,18 @@
     max-width: 880px !important;
 }
 
-// Cards de tópicos no fórum - transições suaves e estados de foco/hover
-.forum-topic-card {
-    transition: border-color var(--duration-fast, 120ms) var(--ease-standard, ease),
-                background-color var(--duration-fast, 120ms) var(--ease-standard, ease),
-                box-shadow var(--duration-fast, 120ms) var(--ease-standard, ease);
-
-    &:hover {
-        border-color: var(--border-strong, var(--divider));
-        background-color: var(--surface-sunken);
-    }
+// Título do tópico no card de listagem: 17px/700. Não reaproveita `.h6`
+// (16px) — o card pede um degrau acima do corpo sem virar um h3 de seção.
+.forum-topic-title {
+    font-size: var(--font-size-body-lg);
+    font-weight: var(--font-weight-bold);
+    line-height: var(--line-height-heading);
+    color: var(--text-primary);
 }
 
 // Respiro inferior seguro em telas mobile quando o FAB de novo tópico está presente
 @media (max-width: 991.98px) {
-    .forum-container-with-fab,
-    .forum-list-container {
+    .forum-container-with-fab {
         padding-bottom: calc(var(--space-10, 40px) + 56px + env(safe-area-inset-bottom, 0px));
     }
 }

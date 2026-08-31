@@ -16,6 +16,7 @@ metadata:
   role: maintenance
   specs:
     - spec/specs/10-course-discussion-forum.md
+    - spec/specs/30-course-discussion-forum-and-realtime-polling.md
     - spec/specs/00-architecture-database-and-guardrails.md
 ---
 
@@ -27,6 +28,17 @@ These tests guard SPEC-10 contract, must stay green (PHPUnit, no Pest):
 
 - `tests/Feature/ForumTopicTest.php` — Topic/Reply CRUD, `pinnedFirst()`
   ordering, `student.enrolled` gating, `since_id` polling contract.
+- `tests/Feature/ForumTopicControllerTest.php` — controller contract:
+  `canCreateTopic`/`canPin` flags per role, 15-per-page pagination,
+  `pinnedFirst()` ordering, store validation + sanitization, multi-org
+  Aluno store (`org_id === null`) NOT throwing
+  `UnresolvedOrgContextException`, `lastReplyId` on show, pin both ways,
+  cross-org Gestor 403, non-enrolled Aluno redirect.
+- `tests/Feature/ForumReplyControllerTest.php` — reply store/update/
+  destroy plus the `fetchNew` payload: `id > since_id` only, ascending,
+  capped at 50, and the `initials`/`role_label`/`last_id` keys.
+  Duplicate coverage with `ForumTopicTest` is intentional — the spec
+  names these two files and no test may be removed without approval.
 - `tests/Feature/XssSanitizationTest.php` — `ForumContentSanitizerService`
   strip tags from topic/reply `content` and report `reason` on every
   write path.
@@ -43,17 +55,61 @@ These tests guard SPEC-10 contract, must stay green (PHPUnit, no Pest):
   `ForumReplyPolicyTest.php` — `hasCourseAccess()`/
   `isGestorOrAdminForCourse()` cross-org/enrollment matrices.
 - `tests/Browser/ForumDuskTest.php` — full browser flow: create topic,
-  reply, polling picking up new reply, edit-history modal, report modal,
-  moderation queue dismiss/remove.
+  reply, edit-history modal, report modal, moderation queue
+  dismiss/remove, author self-delete via confirm-modal.
+- `tests/Browser/ForumPollingAndInteractionDuskTest.php` — 7 chains:
+  (1) empty state copy + desktop modal creation + listing + pin/unpin
+  lifecycle + static `ds-chip-info` chip assertions;
+  (2) below-`lg` viewport (390x900) — header button not visible, FAB
+  visible, publish through the FAB, resize BACK to 1440 at the end;
+  (3) the NATURAL 10s interval delivering a background-created reply,
+  with avatar-initials/role-badge parity, the relative-vs-absolute
+  timestamp split (visible text is `created_at_relative`, `title=` holds
+  `d/m/Y H:i`), the `textContent` XSS assertions on a raw
+  `<script>window.forumPollingXss = true;</script>` row written straight
+  into the DB, the `data-last-id` write-back, and the ACTION parity of
+  the injected card — `report-reply-{id}` present with
+  `data-postable-type="forum_reply"` + `#report-modal` wiring, and ZERO
+  `<form>` inside it (the per-viewer "Apagar" form is never cloned);
+  (4) the injected "Denunciar" is not just attributes — clicking it on a
+  polled card open the shared `#report-modal`,
+  `ForumReportModal` prefill the hidden `postable_*` fields from
+  `event.relatedTarget`, `forum-reports.store` persist a
+  `ForumReply::class` row with `status = pending`, and the moderation
+  queue list the reply content — with NO page reload in between;
+  (5) the loop surviving a `throttle:60,1` 429 — the page burns the
+  60/min budget itself, `window.__forum429` proves the limiter answered,
+  then a later reply must still land with the interval still alive;
+  (6) the terminal branch for the moderation 404 — a topic removed while
+  the tab is open answers 404 and
+  `window.ForumPolling.timers.size === 0` (the loop re-binds itself at
+  500ms first so the doomed cycle come fast, and a spy on
+  `handleTransportFailure()` pin `window.__forumTeardownStatus === 404`,
+  because a bare `timers.size === 0` would also pass for any other reason
+  the interval disappear);
+  (7) the rest of `TERMINAL_STATUSES` — 401/419/403 each end the loop,
+  while the control (502 mid-deploy) keep it alive with
+  `backoffCycles > 0`. Driven by stubbing `window.ForumPolling.httpClient`
+  and re-binding the SAME container, so the production
+  `bindContainer()`/`poll()`/`handleTransportFailure()` path run with only
+  the network faked.
+  Runtime: chain (3) ~20s, chain (5) ~70s (a full rate-limit window plus
+  the client back-off). Slow BY DESIGN — do not "fix" them by hand-firing
+  a `fetch` from `browser->script()`, which proves nothing about the
+  interval.
 
 Run narrowest of these first after touching this module:
 
 ```bash
 vendor/bin/sail artisan test --filter=ForumTopicTest
+vendor/bin/sail artisan test --filter=ForumTopicControllerTest
+vendor/bin/sail artisan test --filter=ForumReplyControllerTest
 vendor/bin/sail artisan test --filter=XssSanitizationTest
 vendor/bin/sail artisan test --filter=ForumModerationQueueTest
 vendor/bin/sail artisan test --filter=ForumEditHistoryTest
+vendor/bin/sail npm run build   # MANDATORY before Dusk after any JS edit
 vendor/bin/sail dusk --filter=ForumDuskTest
+vendor/bin/sail dusk --filter=ForumPollingAndInteractionDuskTest
 ```
 
 ## `ForumReport`/`ForumPostEdit` `postable()` Returns `null`
@@ -90,13 +146,34 @@ vendor/bin/sail dusk --filter=ForumDuskTest
 - 404 where 403 expected almost always mean controller method used typed
   `Course $course`/`ForumTopic $topic` implicit binding instead of
   `resolveCourse()`/`resolveTopic()` `int`-parameter +
-  `withoutGlobalScopes()` pattern (see `forum-conventions`).
+  `withoutGlobalScope('org')` pattern (see `forum-conventions`).
   `OrgScope`d implicit-binding query filtered row out before Policy ran.
 - 403 where enrollment access expected: check
   `hasActiveOrCompletedEnrollment($course)` not called against `Course`
   still carrying `OrgScope` (i.e. `parentCourse()` did not call
   `withoutGlobalScopes()`). Cross-org lookup there come back as if course
   do not exist, turning legitimate 200 into false 403.
+
+## Topic Removed by Moderation Still Visible / Still Accepting Replies
+
+- Symptom: a soft-deleted `ForumTopic` keep showing on `forum.index`,
+  `forum.show` render 200 instead of 404, pin and reply still work, and
+  an open tab keep receiving polled replies out of it.
+- Cause: a controller lookup regressed to bare `withoutGlobalScopes()`,
+  which drop `SoftDeletingScope` along with `OrgScope`. Fix is
+  `withoutGlobalScope('org')` in `ForumTopicController::index()`/
+  `resolveCourse()`/`resolveTopic()` and
+  `ForumReplyController::resolveTopic()` — see `forum-conventions`,
+  "Drop `OrgScope` by name".
+- Policy `parentCourse()` and `ForumReportController::resolvePostable()`
+  are the two intentional bare-`withoutGlobalScopes()` site. Do not
+  "fix" those: the first must resolve a parent even when trashed or the
+  intended 403 become a type error, the second must open a report filed
+  against an already-removed post.
+- Reply-level equivalent (a single reply soft-deleted, topic alive) is
+  already safe: `fetchNew` read `$topicModel->replies()`, which keep its
+  own `SoftDeletingScope`. Regression there would mean the relation
+  itself grew a `withTrashed()`.
 
 ## `ForumPolling.js`/`ForumReportModal.js` Dead in Browser
 
@@ -129,6 +206,99 @@ vendor/bin/sail dusk --filter=ForumDuskTest
   share the same `#report-modal` id, opened declaratively by
   `data-bs-toggle="modal"` + `data-bs-target="#report-modal"`.
 
+## Polled Reply Renders, But Looks Wrong
+
+- **Blank avatar circle / missing role badge**: `fetchNew()` stopped
+  publishing `initials`/`role_label`, or it eager-loads `with('user')`
+  instead of `with('user.roles')` so `role_label` resolve empty.
+  `appendReply()` degrade instead of breaking (client-side initials
+  fallback, badge suppressed), so the symptom is cosmetic and silent —
+  check the JSON first with
+  `curl` on `forum-replies.fetch`, not the JS.
+- **Card structurally different from a server-rendered one**: someone
+  changed `forum/partials/_reply.blade.php`, `x-ui.avatar` or
+  `x-ui.badge` without changing `appendReply()`'s hard-coded class
+  strings. Chain (3) of `ForumPollingAndInteractionDuskTest` assert
+  `.ds-avatar` text, `.ds-badge` text and the timestamp split (relative
+  text visible, absolute only in `title=`) inside
+  `[dusk="reply-{id}"]`.
+- **Injected reply shows an absolute date where server-rendered replies
+  show "há 2 minutos"**: `appendReply()` printed `created_at` instead of
+  `created_at_relative`, or `fetchNew()` stopped publishing
+  `created_at_relative`. The JS falls back to the absolute value when the
+  relative one is missing, so a payload regression degrade quietly —
+  chain (3) catch it.
+- **Raw HTML rendering inside a reply**: `appendReply()` gained an
+  `innerHTML`/`insertAdjacentHTML` call. Hard rule violation — the DB
+  content is only sanitized on the WRITE paths that go through
+  `ForumContentSanitizerService`, so a row inserted any other way is raw.
+
+## Polling Loop Dies or Spams the Console
+
+- **Loop stops after a burst of traffic**: `handleTransportFailure()` was
+  replaced by a `clearInterval`, or the `catch` swallowed the error
+  without preserving the interval. `throttle:60,1` on
+  `forum-replies.fetch` is 60/min while one tab spend 6/min — two or
+  three tabs on the same topic, or a devtools reload loop, trip 429
+  routinely. Assert with chain (5) of
+  `ForumPollingAndInteractionDuskTest`; check
+  `window.ForumPolling.timers.size > 0` in the console. The back-off
+  DE-escalates on the next successful cycle (`backoffSteps` reset to 0
+  with `backoffCycles`), so a single 429 never leave a thread skipping
+  cycles forever.
+- **Loop stops on a 404/403/419, not on a 429**: expected, by design.
+  `handleTransportFailure()` call `stop(container)` ONLY for the four
+  statuses in `TERMINAL_STATUSES` (`ForumPolling.js`) — topic removed by
+  moderation, expired session, revoked policy — because that endpoint
+  will never answer that page again. If a topic got removed while tabs
+  were open, this is the loop ending, not a bug. Everything else keeps
+  the interval alive: 429, network drops (`status === 0`) AND the 5xx
+  range (500/502 mid-deploy, 503 maintenance mode) — a deploy or a
+  maintenance window must stand the loop down for a few ticks, never
+  kill it. If live updates died during a deploy, someone widened
+  `TERMINAL_STATUSES` to "any non-429 status >= 400"; narrow it back.
+- **429 noise in the console**: the failure handler must stay silent. No
+  `console.error`/`console.warn` on a transport failure — terminal ones
+  included.
+- **Replies stop arriving but no error**: `data-last-id` advanced past
+  what the server has. It is written back only after a SUCCESSFUL cycle,
+  and it honour the payload's top-level `last_id`; a controller returning
+  a wrong `last_id` (e.g. a global max instead of this batch's max) skip
+  every reply in between forever.
+- **New replies duplicate**: the `[data-reply-id="N"]` dedupe guard was
+  dropped, or Blade stopped emitting `data-reply-id` on the reply root.
+
+## Dusk Polling Chain Fails Right After a JS Edit
+
+`public/build` is stale. Run `vendor/bin/sail npm run build` — never
+`npm run dev`, which leaves `public/hot` behind and kills the whole Dusk
+suite. This is the single most common wrong-reason failure in this
+module: the assertion that breaks is usually a parity assertion
+(`.ds-avatar` text, `.ds-badge` text), which makes it look like a Blade
+or controller bug.
+
+## Mobile FAB Chain Fails
+
+- `assertMissing('@new-topic-button')` failing at 390px: the header
+  action lost its `d-none d-lg-inline-flex` wrapper, or the breakpoint
+  moved. The two entry points must never both be visible.
+- FAB present but unclickable/clipped: an ancestor added
+  `overflow: hidden` or a `transform`, which break `.ds-fab`'s
+  `position: fixed`. Also check `.forum-container-with-fab` still sit on
+  the wrapper that holds the LAST card, or the FAB cover it.
+- Chain (2) resize back to 1440x900 at the end on purpose — the browser
+  instance is reused across methods and a leftover mobile viewport make
+  the next chain fail on `new-topic-button`.
+
+## `pin-topic-{id}` Not Clickable Though the DOM Looks Right
+
+The topic title anchor carry `stretched-link` and cover the entire card.
+The pin `<form>` stay hit-testable ONLY because its wrapper carry
+`position-relative z-2`. Any card layout or z-index change in
+`_topic.blade.php` silently reintroduce the overlap; Dusk report a click
+that navigated to the thread instead of submitting. Re-run step 4 of
+chain (1).
+
 ## `DuskSelectorContractTest` Fails After Only Adding Explanatory Comments
 
 `DuskSelectorContractTest` regex-matches `dusk="..."` literally, including
@@ -150,7 +320,9 @@ change to `ForumTopicController`/`ForumReplyController`/
 `ForumTopicPolicy`/`ForumReplyPolicy`, `ForumContentSanitizerService`,
 `forum.*`/`forum-replies.*`/`forum-reports.*`/`forum-moderation.*` routes,
 Blade views under `resources/views/forum/`, or
-`ForumPolling.js`/`ForumReportModal.js` **must**
+`ForumPolling.js`/`ForumReportModal.js`, or the `User::initials()`/
+`User::roleLabel()` accessors the polling payload and the Blade avatar/
+badge share, **must**
 update all three forum skills (`forum-architecture`, `forum-conventions`,
 `forum-maintenance`) in same change, before task counted done. Also
 re-check `tenancy-architecture` cascade-inherited table list for
@@ -161,6 +333,9 @@ table or new `postable_type` added.
 
 - `spec/specs/10-course-discussion-forum.md` — RF22, RF26, RF27, RN08,
   RN10.
+- `spec/specs/30-course-discussion-forum-and-realtime-polling.md` —
+  Material Bootstrap forum screens, FAB, and the incremental polling
+  contract these Dusk chains guard.
 - `quizzes-maintenance` — analogous `parentCourse()`-cascade Policy
   test-matrix pattern this module Policy tests copy one level shallower.
 - `certificates-maintenance` — analogous "resolve pseudo-polymorphic

@@ -5,13 +5,16 @@
     /** @var \Illuminate\Contracts\Pagination\LengthAwarePaginator $topics */
     /** @var bool $canCreateTopic */
     /** @var bool $canPin */
+
+    // `$coursesCrumb` — the role-aware root crumb — is bound by
+    // `ForumBreadcrumbComposer`, shared with the other forum screens.
 @endphp
 
 @section('content')
     <div class="mx-auto max-w-880 forum-container-with-fab">
         <x-layout.page-header
             :breadcrumb="[
-                ['label' => 'Meus cursos', 'url' => route('student.courses.index')],
+                $coursesCrumb,
                 ['label' => $course->title, 'url' => route('classroom.show', $course)],
                 ['label' => 'Fórum'],
             ]"
@@ -39,8 +42,8 @@
         @if($topics->isEmpty())
             <x-ui.empty-state
                 icon="message-square"
-                title="Nenhum tópico criado ainda"
-                description="Seja o primeiro a iniciar uma discussão sobre este curso!"
+                title="Nenhum tópico por aqui"
+                description="Abra o primeiro tópico e comece a conversa com a turma."
                 dusk="no-topics"
             >
                 @if($canCreateTopic)

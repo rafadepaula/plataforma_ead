@@ -8,22 +8,41 @@
     visual divergente.
 
     Props:
-      - size     string ('md')  sm|md|lg -> `.ds-avatar`|`.ds-avatar-lg`|`.ds-avatar-xl`.
-                                 "sm" e "md" resolvem para a mesma `.ds-avatar`
-                                 base (32px) porque o design system só define
-                                 3 tamanhos reais (base/lg/xl); "sm" existe como
-                                 alias semântico para quem já pensa em 3 portes.
+      - size     string ('md')  sm|md|lg|xl -> `.ds-avatar`|`.ds-avatar`|`.ds-avatar-lg`|`.ds-avatar-xl`.
+                                 Mapa de tamanhos deliberado (NÃO renomear sem
+                                 migrar todos os call sites): "sm"/"md" caem na
+                                 `.ds-avatar` base (32px), "lg" em 44px e "xl"
+                                 em 64px. Os três portes do design system são
+                                 32/44/64; `.ds-avatar` base é usada crua pela
+                                 app bar e pelo drawer mobile, então os valores
+                                 em px não podem ser remapeados aqui — quem
+                                 precisa do círculo de 44px (ex.: autor de
+                                 tópico/resposta no fórum) pede `size="lg"`.
+      - name     string (null)  nome completo; as iniciais (até 2 letras,
+                                 maiúsculas) são derivadas no servidor a partir
+                                 das duas primeiras palavras. Ignorado quando
+                                 `initials` é passada.
+                                 Para um `User` prefira SEMPRE
+                                 `:initials="$user->initials"`: aquele accessor
+                                 é a fonte única das iniciais e é o mesmo valor
+                                 que o endpoint de polling do fórum devolve —
+                                 derivar de novo aqui abriria espaço para as
+                                 duas implementações divergirem. Esta prop
+                                 existe para nomes que não vêm de um `User`
+                                 (texto fixo, agregações, dados de relatório).
       - initials string (null)  iniciais exibidas quando não há imagem.
       - src      string (null)  atalho para renderizar `<img src="$src">`.
       - alt      string ('')    texto alternativo da imagem.
 
     Uso:
       <x-ui.avatar initials="AB" />
+      <x-ui.avatar :initials="$user->initials" size="lg" />
       <x-ui.avatar size="lg" :src="$user->avatar_url" :alt="$user->name" />
       <x-ui.avatar size="xl"><img src="{{ $user->avatar_url }}" alt=""></x-ui.avatar>
 --}}
 @props([
     'size' => 'md',
+    'name' => null,
     'initials' => null,
     'src' => null,
     'alt' => '',
@@ -38,6 +57,16 @@
 
     $classes = collect(['ds-avatar', $sizeClass])->filter()->implode(' ');
     $hasSlot = trim($slot) !== '';
+
+    $resolvedInitials = $initials;
+
+    if ($resolvedInitials === null && is_string($name) && trim($name) !== '') {
+        $nameParts = array_values(array_filter(preg_split('/\s+/', trim($name)) ?: []));
+
+        $resolvedInitials = mb_strtoupper(
+            collect($nameParts)->take(2)->map(fn (string $part): string => mb_substr($part, 0, 1))->implode('')
+        );
+    }
 @endphp
 
 <span {{ $attributes->merge(['class' => $classes]) }}>
@@ -46,6 +75,6 @@
     @elseif ($src)
         <img src="{{ $src }}" alt="{{ $alt }}">
     @else
-        {{ $initials }}
+        {{ $resolvedInitials }}
     @endif
 </span>

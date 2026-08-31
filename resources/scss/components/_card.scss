@@ -24,11 +24,25 @@
     border-top: var(--border-width) solid var(--divider);
 }
 
+// `.ds-card` — superfície de card canônica do design system, autossuficiente:
+// serve tanto empilhada sobre o `.card` do Bootstrap (herda o mesmo raio e a
+// mesma borda, sem conflito) quanto sozinha, num elemento que não é `.card`
+// (ex.: o card de tópico do fórum, que é uma linha de lista clicável).
+.ds-card {
+    background: var(--surface);
+    border: var(--border-width) solid var(--border-color);
+    border-radius: var(--radius-lg);
+    color: var(--text-primary);
+}
+
 // Card que é, na prática, um link/gatilho de navegação inteiro (linha de
 // lista clicável) — ganha um leve estado de hover para sinalizar
 // interatividade, sem introduzir sombra nova (diretriz da biblioteca de componentes: hover discreto).
-.card-interactive {
-    transition: border-color var(--duration-fast) var(--ease-standard), background-color var(--duration-fast) var(--ease-standard);
+.card-interactive,
+.ds-card-interactive {
+    transition: border-color var(--duration-fast) var(--ease-standard),
+                background-color var(--duration-fast) var(--ease-standard),
+                box-shadow var(--duration-fast) var(--ease-standard);
 
     &:hover {
         border-color: var(--border-strong);

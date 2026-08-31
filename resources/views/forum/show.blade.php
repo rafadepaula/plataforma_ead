@@ -12,23 +12,17 @@
     /** @var bool $canModerate */
     /** @var int $lastReplyId */
 
-    $roleLabelFor = function (?string $role): string {
-        return match ($role) {
-            \App\Enums\Permissions\RolesEnum::ADMIN->value => 'Admin',
-            \App\Enums\Permissions\RolesEnum::GESTOR->value => 'Gestor',
-            \App\Enums\Permissions\RolesEnum::ALUNO->value => 'Aluno',
-            default => 'Membro',
-        };
-    };
+    $topicAuthorRole = $topic->user->role_label;
 
-    $topicAuthorRole = $roleLabelFor($topic->user->getRoleNames()->first());
+    // `$coursesCrumb` — the role-aware root crumb — is bound by
+    // `ForumBreadcrumbComposer`, shared with the other forum screens.
 @endphp
 
 @section('content')
     <div class="mx-auto max-w-880">
         <x-layout.page-header
             :breadcrumb="[
-                ['label' => 'Meus cursos', 'url' => route('student.courses.index')],
+                $coursesCrumb,
                 ['label' => $course->title, 'url' => route('classroom.show', $course)],
                 ['label' => 'Fórum', 'url' => route('forum.index', $course)],
                 ['label' => $topic->title],
@@ -49,11 +43,11 @@
             <div class="card-body p-4">
                 <div class="d-flex align-items-start justify-content-between gap-3 mb-3">
                     <div class="d-flex align-items-center gap-3">
-                        <x-ui.avatar :name="$topic->user->name" size="lg" />
+                        <x-ui.avatar :initials="$topic->user->initials" size="lg" />
 
                         <div class="small text-body-secondary">
                             @if($topic->is_pinned)
-                                <x-ui.badge variant="accent" dusk="pinned-badge-{{ $topic->id }}">Fixado</x-ui.badge>
+                                <x-ui.chip :static="true" variant="info" dusk="pinned-badge-{{ $topic->id }}">Fixado</x-ui.chip>
                             @endif
                             <strong class="text-body">{{ $topic->user->name }}</strong>
                             <x-ui.badge variant="outline">{{ $topicAuthorRole }}</x-ui.badge>
