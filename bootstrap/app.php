@@ -100,9 +100,10 @@ return Application::configure(basePath: dirname(__DIR__))
         });
 
         // A `/convite/{token}` that cannot be resolved to a usable `InvitationLink`
-        // (not found/expired/exhausted/revoked) must never surface as a raw 404/500.
+        // must never surface as a raw 404/500 — and the visitor is told which of the
+        // four states (not found/expired/revoked/exhausted) they ran into.
         $exceptions->render(function (InvitationLinkInvalidException $e, Request $request) {
-            $message = 'Este link de convite é inválido, expirou ou já atingiu o limite de usos.';
+            $message = $e->userMessage();
 
             if ($request->expectsJson()) {
                 return response()->json(['message' => $message], 404);

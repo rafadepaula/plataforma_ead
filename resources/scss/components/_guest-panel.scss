@@ -15,3 +15,27 @@
     max-width: var(--form-max, 440px);
     margin-inline: auto;
 }
+
+// -----------------------------------------------------------------------------
+// Marca do tenant no topo da coluna de formulário (abaixo de `lg`, quando o
+// painel institucional não é renderizado). Renderizada por
+// `<x-layout.guest-panel brand-only>`; o alinhamento vem de utilitários
+// Bootstrap, aqui fica só a regra que não existe como utility.
+// -----------------------------------------------------------------------------
+.guest-panel-brand {
+    width: 100%;
+}
+
+// -----------------------------------------------------------------------------
+// Dica de conta existente do convite (`convite/show.blade.php`).
+// Informação neutra, NÃO alerta: bloco chapado em `--blue-50`, sem borda e sem
+// ícone de severidade. O raio vem de `--radius-md`, o token mais próximo do
+// raio pedido pela especificação de design da tela.
+// -----------------------------------------------------------------------------
+.guest-hint {
+    background-color: var(--blue-50, var(--bs-primary-bg-subtle));
+    color: var(--text-primary, var(--bs-body-color));
+    border-radius: var(--radius-md, 14px);
+    padding: var(--space-3) var(--space-4);
+    font-size: var(--font-size-body-sm);
+}

@@ -22,6 +22,33 @@ use Tests\DuskTestCase;
  */
 class LoginTest extends DuskTestCase
 {
+    /**
+     * O painel institucional é `d-none d-lg-flex`: abaixo de `lg` ele some por
+     * completo e a marca do tenant precisa subir para o topo da coluna de
+     * formulário, senão o visitante perde a referência de quem o convidou.
+     * Só verificável no navegador, com redimensionamento de viewport.
+     */
+    public function test_guest_shell_moves_the_brand_into_the_form_column_below_lg(): void
+    {
+        $this->browse(function (Browser $browser): void {
+            $browser->resize(1920, 1080)
+                ->visit('/login')
+                ->waitFor('.guest-panel')
+                ->assertVisible('.guest-panel')
+                ->assertSeeIn('.guest-panel', 'Acesse a plataforma')
+                ->assertMissing('.guest-panel-brand');
+
+            $browser->resize(390, 844)
+                ->visit('/login')
+                ->waitFor('.guest-panel-brand')
+                ->assertVisible('.guest-panel-brand')
+                ->assertMissing('.guest-panel')
+                ->assertPresent('@login-form');
+        });
+
+        $this->browse(fn (Browser $browser) => $browser->resize(1920, 1080));
+    }
+
     public function test_login_redirects_by_role_and_logout_lifecycle(): void
     {
         $aluno = User::factory()->create([
@@ -82,9 +109,39 @@ class LoginTest extends DuskTestCase
     }
 
     /**
+     * Contrato de seletores da tela de login (spec §4) mais a garantia de
+     * que ela é uma porta SÓ de entrada: a plataforma é por convite, então
+     * nenhum caminho de auto-cadastro pode existir aqui.
+     */
+    public function test_login_screen_exposes_the_selector_contract_and_offers_no_signup_path(): void
+    {
+        $this->browse(function (Browser $browser): void {
+            $browser->visit('/login')
+                ->assertPresent('@login-form')
+                ->assertVisible('@login-email')
+                ->assertVisible('@login-password')
+                ->assertPresent('@login-remember')
+                ->assertVisible('@login-submit')
+                ->assertVisible('@forgot-password-link')
+                ->assertAttribute('@login-form', 'method', 'POST')
+                ->assertAttribute('@login-email', 'type', 'email')
+                ->assertAttribute('@login-password', 'type', 'password')
+                ->assertAttribute('@login-remember', 'type', 'checkbox')
+                ->assertNotChecked('@login-remember')
+                ->assertAttributeContains('@forgot-password-link', 'href', '/forgot-password')
+                // Nenhuma trilha de auto-cadastro: nem link, nem rótulo.
+                ->assertMissing('a[href$="/register"]')
+                ->assertDontSeeIgnoringCase('Criar conta')
+                ->assertDontSeeIgnoringCase('Cadastre-se')
+                ->assertDontSeeIgnoringCase('Criar uma conta');
+        });
+    }
+
+    /**
      * Rejeições de credencial exercitadas em sequência na MESMA tela de
-     * login: senha errada e usuário inativo (RN — `status=active` guarda o
-     * login) devolvem a mesma mensagem genérica e nunca autenticam.
+     * login: senha errada, e-mail inexistente e usuário inativo (RN —
+     * `status=active` guarda o login) devolvem a MESMA mensagem genérica
+     * — nunca autenticam e nunca revelam se o e-mail existe.
      */
     public function test_login_credential_rejections(): void
     {
@@ -100,20 +157,31 @@ class LoginTest extends DuskTestCase
         ]);
         $inactive->assignRole(RolesEnum::ALUNO->value);
 
-        $this->browse(function (Browser $browser): void {
+        $genericMessage = 'Essas credenciais não foram encontradas em nossos registros.';
+
+        $this->browse(function (Browser $browser) use ($genericMessage): void {
             // 1. Senha errada.
             $browser->visit('/login')
                 ->type('@login-email', 'aluno@example.com')
                 ->type('@login-password', 'totally-wrong-password')
                 ->press('@login-submit')
-                ->waitForText('Essas credenciais não foram encontradas em nossos registros.')
+                ->waitForText($genericMessage)
                 ->assertGuest();
 
-            // 2. Usuário inativo, senha correta, mesma tela.
+            // 2. E-mail que não existe: MESMA mensagem (asserção acima e
+            //    abaixo usam a mesma string), para que a tela não funcione
+            //    como oráculo de enumeração de contas.
+            $browser->type('@login-email', 'ninguem@example.com')
+                ->type('@login-password', 'correct-password')
+                ->press('@login-submit')
+                ->waitForText($genericMessage)
+                ->assertGuest();
+
+            // 3. Usuário inativo, senha correta, mesma tela.
             $browser->type('@login-email', 'inativo@example.com')
                 ->type('@login-password', 'correct-password')
                 ->press('@login-submit')
-                ->waitForText('Essas credenciais não foram encontradas em nossos registros.')
+                ->waitForText($genericMessage)
                 ->assertGuest();
         });
     }

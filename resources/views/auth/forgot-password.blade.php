@@ -2,6 +2,7 @@
 
 @section('content')
     <x-layout.page-header
+        level="h2"
         kicker="Recuperação de senha"
         title="Esqueceu sua senha?"
         subtitle="Informe o e-mail da sua conta e enviaremos um link de uso único para redefinir sua senha."

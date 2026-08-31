@@ -1,10 +1,12 @@
 @extends('layouts.guest')
 
 @section('content')
-    <div class="mb-4">
-        <div class="ds-overline text-primary mb-1">Acesso</div>
-        <h2 class="h3 fw-bold mb-0">Entrar na plataforma</h2>
-    </div>
+    {{-- `level="h2"`: o `h1` da página é o do painel institucional do shell. --}}
+    <x-layout.page-header
+        kicker="Acesso"
+        title="Entrar na plataforma"
+        level="h2"
+    />
 
     <form method="POST" action="{{ route('login') }}" dusk="login-form">
         @csrf
@@ -12,7 +14,7 @@
         <x-ui.input
             type="email"
             name="email"
-            label="E-mail *"
+            label="E-mail"
             :value="old('email')"
             required
             autofocus
@@ -20,17 +22,19 @@
             class="mb-3"
         />
 
-        <div class="position-relative mb-3 password-field" data-password-toggle-field>
+        <div class="password-field mb-3" data-password-toggle-field>
             <x-ui.input
                 type="password"
                 name="password"
-                label="Senha *"
+                label="Senha"
                 required
                 dusk="login-password"
             />
 
+            {{-- Dois ícones, um sempre escondido por CLASSE (`d-none`) — nunca
+                 pelo atributo `hidden`, que venceria o JS. --}}
             <button type="button"
-                    class="btn btn-sm btn-ghost ds-state-layer position-absolute end-0 top-50 translate-middle-y me-2"
+                    class="password-toggle-btn btn btn-ghost ds-state-layer"
                     data-password-toggle
                     data-password-toggle-btn
                     dusk="password-toggle"
@@ -40,6 +44,7 @@
             </button>
         </div>
 
+        {{-- Caixa de seleção, não interruptor: é preferência de sessão. --}}
         <div class="form-check mb-4">
             <input class="form-check-input" type="checkbox" name="remember" id="remember" dusk="login-remember">
             <label class="form-check-label" for="remember">Lembrar-me</label>
@@ -49,9 +54,10 @@
             Entrar
         </x-ui.button>
 
+        {{-- Não existe "criar conta" nesta tela: conta nasce por convite. --}}
         <div class="text-center">
             <a href="{{ route('password.request') }}"
-               class="text-body-secondary text-decoration-none small"
+               class="text-primary fw-semibold text-decoration-none"
                dusk="forgot-password-link">
                 Esqueceu sua senha?
             </a>

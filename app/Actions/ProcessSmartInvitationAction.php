@@ -36,8 +36,16 @@ class ProcessSmartInvitationAction
                 ->lockForUpdate()
                 ->first();
 
-            if (! $invitationLink || ! $invitationLink->isUsable()) {
-                throw new InvitationLinkInvalidException("Convite '{$token}' inválido, expirado ou já utilizado.");
+            if (! $invitationLink) {
+                throw InvitationLinkInvalidException::notFound($token);
+            }
+
+            // Re-checked *after* the lock, never before it: the reason is
+            // resolved from the freshly locked row so a link exhausted by a
+            // concurrent request reports "limite de vagas" and not the
+            // state the caller read a moment earlier.
+            if ($reason = $invitationLink->unusableReason()) {
+                throw InvitationLinkInvalidException::forReason($reason, $token);
             }
 
             $user = User::query()->where('email', $data['email'])->first();
@@ -62,6 +70,18 @@ class ProcessSmartInvitationAction
                 if (! Hash::check($data['password'], $user->password)) {
                     throw ValidationException::withMessages([
                         'password' => ['Senha incorreta para o e-mail informado.'],
+                    ]);
+                }
+
+                // A deactivated account must never obtain a session, here
+                // exactly as in `LoginRequest::authenticate()` — otherwise
+                // any usable invitation link would be a way around the
+                // deactivation. Checked *after* the password so the status
+                // of an account is never disclosed to someone who cannot
+                // authenticate into it.
+                if ($user->status !== 'active') {
+                    throw ValidationException::withMessages([
+                        'email' => ['Esta conta está inativa. Procure o gestor da sua organização.'],
                     ]);
                 }
             } else {

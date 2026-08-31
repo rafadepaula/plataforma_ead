@@ -21,6 +21,31 @@ class PasswordResetTest extends TestCase
         $this->get('/forgot-password')->assertOk()->assertSee('Esqueceu sua senha?');
     }
 
+    /**
+     * The institutional guest panel already owns the page's only `h1`, so the
+     * recovery screens must render their page headers as `h2`.
+     */
+    public function test_forgot_password_screen_renders_exactly_one_top_level_heading(): void
+    {
+        $html = $this->get('/forgot-password')->assertOk()->getContent();
+
+        $this->assertSame(1, substr_count($html, '<h1'));
+        $this->assertStringContainsString('Esqueceu sua senha?', $html);
+    }
+
+    public function test_reset_password_screen_renders_exactly_one_top_level_heading(): void
+    {
+        $user = User::factory()->create(['email' => 'user@example.com']);
+        $token = Password::createToken($user);
+
+        $html = $this->get('/reset-password/'.$token.'?email='.urlencode($user->email))
+            ->assertOk()
+            ->getContent();
+
+        $this->assertSame(1, substr_count($html, '<h1'));
+        $this->assertStringContainsString('Redefinir senha', $html);
+    }
+
     public function test_reset_password_link_can_be_requested(): void
     {
         Notification::fake();

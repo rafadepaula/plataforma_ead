@@ -4,8 +4,11 @@ description: >
   Code patterns and guardrails shared by Organization CRUD, User
   (Aluno/Gestor) CRUD, and CSV Import in the auth/orgs module. Use when
   writing a controller, Policy, or Form Request managing `Organization` or
-  `User`, handling upload to the `public` disk, or wiring an admin-only /
-  gestor-only route.
+  `User`, handling upload to the `public` disk, wiring an admin-only /
+  gestor-only route, or editing the guest-shell auth views
+  (`auth/login.blade.php`, `layouts/guest.blade.php`, `layout/guest-panel`),
+  whose heading level, password toggle, `dusk=` hooks and no-self-signup rule
+  are contract.
 license: MIT
 metadata:
   feature: auth-orgs
@@ -170,6 +173,34 @@ Route-model-binding `Organization` (not raw `org_id` + manual lookup) gives 404 
 Organization::factory()->inactive()->create();
 Organization::factory()->withCnpj()->create();
 ```
+
+## `auth/login.blade.php`: Guest Shell Markup Contract
+
+The login screen is markup over `layouts.guest` (split shell: institutional
+panel `col-lg-5`/`--blue-100`, 440px form column). Four rules a change here must
+keep:
+
+1. Heading is `<x-layout.page-header kicker="Acesso" title="Entrar na plataforma"
+   level="h2" />`. **`level="h2"` is required** — the guest panel already renders
+   the page's only `<h1>`; the default `page-header` would emit a second one.
+2. Never write a literal `*` into a label. `<x-ui.input required>` already
+   appends the required marker; a hand-typed asterisk renders it twice.
+3. The password reveal uses the existing `.password-toggle-btn` inside
+   `.password-field` (styled in `_utilities.scss`) driven by `PasswordToggle`,
+   which swaps `.d-none` on the `eye`/`eye-off` icons. No ad-hoc positioning
+   utilities, no second toggle implementation.
+4. All six `dusk=` hooks (`login-form`, `login-email`, `login-password`,
+   `login-remember`, `login-submit`, `forgot-password-link`) and the
+   `data-password-toggle-*` attributes stay on the **same** nodes — they are an
+   E2E contract asserted by `tests/Browser/Auth/LoginTest.php`, and
+   `DuskSelectorContractTest` fails on a moved or dropped selector.
+
+There is deliberately **no self-signup path** on this screen: no link to
+`/register`, no "Criar conta"/"Cadastre-se" copy. Students enter the platform
+only through an invitation link (see `invitations-architecture`) or a
+Gestor/Admin-created account. Credential rejection is a single generic message
+for both a wrong password and a non-existent e-mail (anti-enumeration), rendered
+in the `--critical` pastel alert, never red.
 
 ## Guest Middleware Override
 

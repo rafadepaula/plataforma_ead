@@ -31,12 +31,17 @@ class UpdateUserAdminRequest extends FormRequest
      * regardless of what the (possibly stale, pre-filled) `org_id` field
      * carried in the payload. This keeps the platform-wide invariant that
      * Admins are org-less even when the caller only changes the role
-     * select without clearing the Organização field.
+     * select without clearing the Organização field. Also normalises the CPF
+     * to digits only ({@see Cpf::digits()}).
      */
     protected function prepareForValidation(): void
     {
         if ($this->input('role') === RolesEnum::ADMIN->value) {
             $this->merge(['org_id' => null]);
+        }
+
+        if ($this->has('cpf')) {
+            $this->merge(['cpf' => Cpf::digits($this->input('cpf'))]);
         }
     }
 

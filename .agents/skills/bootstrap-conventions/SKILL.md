@@ -186,9 +186,16 @@ Uso na tela — gatilho declarativo, zero JS:
   diretamente com os `data-bs-*`; se um wrapper vier a ser necessário, criar
   seguindo o padrão desta seção.
 - `layout`: `topbar`, `sidebar`, `footer`, `alerts` (container de flash),
-  `page-header`, `guest-panel` (painel institucional 46%/`col-lg-5` do
-  `layouts/guest.blade.php` — Fase 1 do `front_redesign`; lê
-  `session('tenant_name')`/`config('app.name')`, então é `layout`, não `ui`),
+  `page-header` (props `title` obrigatória + `kicker`/`subtitle`/`breadcrumb`/
+  `level`; `level` default `'h1'` aceita `"h2"`/`"2"` e cai no padrão fora de
+  h1–h6 — as telas do shell de visitante passam `level="h2"` porque o `h1` da
+  página já é o do painel institucional), `guest-panel` (painel institucional
+  46%/`col-lg-5` do `layouts/guest.blade.php` — Fase 1 do `front_redesign`;
+  props `tenantName`/`headline`/`lead` (lead também aceito como slot) e
+  `brandOnly`, que renderiza só a linha de marca (iniciais + nome) para o topo
+  da coluna de formulário abaixo de `lg`, onde o painel não é renderizado; o
+  default de `tenantName` lê `session('tenant_name')`/`config('app.name')`,
+  então é `layout`, não `ui`),
   `public` (**Fase 7** — shell `<!doctype html>` standalone compartilhado por
   `landing/show.blade.php` e `public/certificates/show.blade.php`, as duas
   telas que não usam `layouts.app` nem `layouts.guest`; props `title`

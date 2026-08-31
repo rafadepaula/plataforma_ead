@@ -3,8 +3,10 @@ name: invitations-maintenance
 description: >
   Debug, test, edge-case guide for Smart Invitation & Enrollment feature
   (SPEC-06): convite/show.blade.php adaptive form, SmartInvitationForm.js
-  module, mandatory PHPUnit/Dusk test files. Use when SmartInvitationTest,
-  EnrollmentManagementTest, ProcessSmartInvitationActionTest, or
+  module (blur+debounced input, checkedEmail/sequence state, .d-none-only
+  visibility), mandatory PHPUnit/Dusk test files. Use when SmartInvitationTest,
+  EnrollmentManagementTest, ProcessSmartInvitationActionTest,
+  SmartInvitationAdaptiveDuskTest, InvitationHttpTest or
   MultiOrgEnrollmentTest fails; adaptive form does not collapse to
   password-only; or multi-org Dusk assertion cannot see "other"
   Organization data.
@@ -41,9 +43,24 @@ These tests guard SPEC-06 contract, must stay green (PHPUnit, no Pest):
   enroll, revoke (`status = 'cancelled'`), reactivating cancelled
   enrollment, double-active-enrollment 422, org-scoped 404/403 for Gestor
   outside Course Organization.
-- `tests/Browser/MultiOrgEnrollmentTest.php` — E2E: existing multi-org user
-  e-mail collapses form to password-only, and after submit they land
-  enrolled in both Organizations' courses with single `users` row.
+- `tests/Feature/InvitationHttpTest.php` — HTTP-level guards on the public
+  routes not covered above, including the consent rejection wording
+  (`É necessário concordar para concluir a matrícula.`).
+- `tests/Browser/SmartInvitationAdaptiveDuskTest.php` — **DOM contract** of the
+  adaptive form: new-account flow (a partial e-mail never toggles anything),
+  existing-account collapse (verbatim hint text, `.d-none` on
+  `[data-invitation-field="new-account"]`, `required` dropped from
+  name/CPF/confirmation, no second `users` row), incremental typing flipping
+  existing → new with `required` restored, consent blocked on both client
+  (native `required`) and server (attribute stripped via `script()`), and the
+  unusable-link screen with no `@invitation-form`.
+- `tests/Browser/MultiOrgEnrollmentTest.php` — E2E **tenancy** journey (kept
+  deliberately distinct from the DOM-contract suite above): existing multi-org
+  user e-mail collapses form to password-only, and after submit they land
+  enrolled in both Organizations' courses with single `users` row. Its
+  invalid-link assertions target the per-reason copy
+  (`Este convite expirou.` / `Este convite foi cancelado.` /
+  `Limite de vagas atingido.`), not one catch-all sentence.
 
 Run narrowest of these first after touching this module:
 
@@ -51,8 +68,14 @@ Run narrowest of these first after touching this module:
 vendor/bin/sail artisan test --filter=ProcessSmartInvitationActionTest
 vendor/bin/sail artisan test --filter=SmartInvitationTest
 vendor/bin/sail artisan test --filter=EnrollmentManagementTest
+vendor/bin/sail artisan test --filter=InvitationHttpTest
+vendor/bin/sail dusk --filter=SmartInvitationAdaptiveDuskTest
 vendor/bin/sail dusk --filter=MultiOrgEnrollmentTest
 ```
+
+Every Dusk run in this module needs a fresh `vendor/bin/sail npm run build`
+first: `SmartInvitationForm.js` is bundled, and a stale `public/build` makes the
+form look broken while the source is already correct.
 
 ## `SmartInvitationForm.js` — Contract With `convite/show.blade.php`
 
@@ -63,12 +86,32 @@ POSTs `{ email }` to that URL via shared `HttpClient`, then toggles every
 `required`-ness) from `{ exists }` JSON response:
 
 ```js
-async checkEmail(form, emailField) {
-    const response = await this.httpClient.post(url, { email });
-    const exists = Boolean(response.data && response.data.exists);
-    this.toggleFields(form, exists);
-}
+// per-form state, kept in a WeakMap: { checkedEmail, sequence }
+if (state.checkedEmail === email) return;   // same address is never re-queried
+state.checkedEmail = email;
+const sequence = ++state.sequence;
+const response = await this.httpClient.post(url, { email });
+if (sequence !== state.sequence) return;    // stale response, discarded
+this.toggleFields(form, Boolean(response.data && response.data.exists));
 ```
+
+Three invariants of that state machine, each closing a bug that was real:
+
+- **Both triggers stay.** `blur` fires immediately, `input` is debounced 400ms.
+  The design anatomy says "blur only"; SPEC §3.2 requires both and wins — the
+  `input` trigger is what makes the verdict follow incremental typing.
+- **`checkedEmail` short-circuit.** Without it a pending debounced `input` could
+  re-run `toggleFields` *after* the `blur` check had already collapsed the form,
+  restoring `required` on a now-hidden field and silently blocking submit. This
+  is the race the old `MultiOrgEnrollmentTest` papered over with `pause(700)`;
+  both pauses are gone — do not reintroduce a pause instead of fixing state.
+- **`sequence` guard.** Out-of-order responses are discarded, so the last
+  address typed always wins.
+
+An empty, partial or malformed e-mail (regex `/^[^\s@]+@[^\s@]+\.[^\s@]+$/`)
+never reaches the server and never collapses anything: the form stays in the
+new-account state. A network failure degrades to that same state **and** resets
+`checkedEmail`, so the next `blur` can retry.
 
 Add new registration-only field to `convite/show.blade.php`? Wrap it in
 `<div data-invitation-field="new-account">` exactly like
@@ -95,9 +138,13 @@ document.addEventListener('DOMContentLoaded', () => window.SmartInvitationForm.i
 - Confirm e-mail `<input>` carries bare `data-invitation-email` attribute.
   `bindForm()` looks it up with `form.querySelector(
   '[data-invitation-email]')` and does nothing at all if absent.
-- `toggleFields()` sets `field.style.display`, adds/removes no CSS class.
-  Inspecting via devtools, check inline `style` attribute, not stylesheet
-  rule.
+- `toggleFields()` toggles **only the `.d-none` class** (through
+  `applyVisibility()`); it never writes `style.display` and never sets the
+  `hidden` attribute — showing an element even clears a stray one left by other
+  code. Inspecting via devtools, check the class list, not the inline `style`.
+- The field never collapses for the *same* address twice: if you are manually
+  re-triggering a check on an unchanged e-mail, nothing will happen by design
+  (`checkedEmail` short-circuit). Change the value, or re-bind the form.
 - Dusk `waitFor('@invitation-existing-account-hint')` (see
   `MultiOrgEnrollmentTest`) waits for hint element to become *displayed*,
   not merely present. If AJAX request 422s or 500s (example:
@@ -152,7 +199,10 @@ must explicitly publish" default surfacing in new place.
 
 Per `spec/specs/03-agentic-harness-and-self-updating-skills.md`: any change
 to `InvitationController`/`InvitationLinkController`/`EnrollmentController`,
-`ProcessSmartInvitationAction`, the `convite*`/`courses.invitation-links*`/
+`ProcessSmartInvitationAction`, `InvitationLink::unusableReason()`/`isUsable()`,
+`App\Exceptions\InvitationLinkInvalidException` (or its `bootstrap/app.php`
+render hook), `ProcessInvitationRequest`, the
+`convite*`/`courses.invitation-links*`/
 `courses.enrollments*` routes, Blade views under
 `resources/views/convite/`+`resources/views/courses/invitation-links/`+
 `resources/views/courses/enrollments/`, or `SmartInvitationForm.js` **must**

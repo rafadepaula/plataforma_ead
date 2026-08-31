@@ -113,4 +113,75 @@ class BladeComponentsUnitTest extends TestCase
             }
         }
     }
+
+    public function test_page_header_renders_an_h1_by_default(): void
+    {
+        $rendered = (string) $this->blade('<x-layout.page-header title="Cursos" />');
+
+        $this->assertStringContainsString('<h1 class="h3 mb-0">Cursos</h1>', $rendered);
+    }
+
+    public function test_page_header_renders_the_requested_heading_level(): void
+    {
+        $withPrefix = (string) $this->blade('<x-layout.page-header title="Entrar na plataforma" kicker="Acesso" level="h2" />');
+        $withNumber = (string) $this->blade('<x-layout.page-header title="Entrar na plataforma" level="2" />');
+
+        foreach ([$withPrefix, $withNumber] as $rendered) {
+            $this->assertStringContainsString('<h2 class="h3 mb-0">Entrar na plataforma</h2>', $rendered);
+            $this->assertStringNotContainsString('<h1', $rendered);
+        }
+
+        $this->assertStringContainsString('Acesso', $withPrefix);
+        $this->assertStringNotContainsString('level=', $withPrefix);
+    }
+
+    public function test_guest_panel_renders_the_default_headline_lead_and_current_year(): void
+    {
+        $rendered = (string) $this->blade('<x-layout.guest-panel />');
+
+        $this->assertStringContainsString('Acesse a plataforma', $rendered);
+        $this->assertStringContainsString(
+            'Capacitação técnica continuada, provas interativas e emissão de certificados oficiais.',
+            $rendered
+        );
+        $this->assertStringContainsString('&copy; '.date('Y'), $rendered);
+        $this->assertStringNotContainsString('avaliações interativas', $rendered);
+    }
+
+    public function test_guest_panel_accepts_tenant_name_headline_and_lead_props(): void
+    {
+        $rendered = (string) $this->blade(
+            '<x-layout.guest-panel tenant-name="Conselho Regional" headline="Bem-vindo" lead="Texto institucional." />'
+        );
+
+        $this->assertStringContainsString('Conselho Regional', $rendered);
+        $this->assertStringContainsString('>CR<', $rendered);
+        $this->assertStringContainsString('Bem-vindo', $rendered);
+        $this->assertStringContainsString('Texto institucional.', $rendered);
+        $this->assertStringNotContainsString('provas interativas', $rendered);
+    }
+
+    public function test_guest_panel_falls_back_to_the_session_tenant_name(): void
+    {
+        session(['tenant_name' => 'Instituto Alfa Beta']);
+
+        $rendered = (string) $this->blade('<x-layout.guest-panel />');
+
+        $this->assertStringContainsString('Instituto Alfa Beta', $rendered);
+        $this->assertStringContainsString('>IA<', $rendered);
+    }
+
+    public function test_guest_panel_can_render_only_the_tenant_brand_for_the_mobile_column(): void
+    {
+        session(['tenant_name' => 'Conselho Regional']);
+
+        $rendered = (string) $this->blade('<x-layout.guest-panel brand-only class="d-lg-none" />');
+
+        $this->assertStringContainsString('Conselho Regional', $rendered);
+        $this->assertStringContainsString('>CR<', $rendered);
+        $this->assertStringContainsString('d-lg-none', $rendered);
+        $this->assertStringNotContainsString('Acesse a plataforma', $rendered);
+        $this->assertStringNotContainsString('<h1', $rendered);
+        $this->assertStringNotContainsString('d-lg-flex', $rendered);
+    }
 }

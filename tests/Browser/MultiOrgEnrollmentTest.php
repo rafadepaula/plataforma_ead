@@ -19,6 +19,11 @@ use Tests\DuskTestCase;
  * submitting logs them in and enrolls them in Org B's course too — without
  * ever creating a second `users` row.
  *
+ * O contrato de DOM do formulário adaptativo (quais nós ganham `.d-none`,
+ * qual campo perde `required`, o texto verbatim da dica) vive em
+ * `SmartInvitationAdaptiveDuskTest`; aqui o que está sob teste é a TENANCY
+ * do convite.
+ *
  * Agrupado por cadeia de ciclo de vida (ver `testing-conventions`): a
  * jornada do usuário multi-org (senha errada rejeitada → senha correta
  * matricula) acontece no MESMO formulário; a jornada de cadastro novo é
@@ -73,13 +78,6 @@ class MultiOrgEnrollmentTest extends DuskTestCase
                 ->click('@invitation-name') // blur the e-mail field to trigger the AJAX check
                 ->waitFor('@invitation-existing-account-hint')
                 ->waitUntilMissing('@invitation-name')
-                // `SmartInvitationForm` binds BOTH a blur handler (fires
-                // immediately) and a 400ms-debounced `input` handler, so a
-                // second `checkEmail` is still pending when the collapse
-                // completes. Submitting before it settles lets it re-run
-                // `toggleFields` mid-navigation and restore `required` on the
-                // hidden `password_confirmation`, silently blocking the submit.
-                ->pause(700)
                 ->type('@invitation-password', 'senha-errada')
                 ->check('input[name=consent]')
                 ->press('Matricular-me')
@@ -100,7 +98,6 @@ class MultiOrgEnrollmentTest extends DuskTestCase
                 ->click('@invitation-name')
                 ->waitFor('@invitation-existing-account-hint')
                 ->waitUntilMissing('@invitation-name')
-                ->pause(700)
                 ->type('@invitation-password', 'senha-correta')
                 ->check('input[name=consent]')
                 ->press('Matricular-me')
@@ -169,9 +166,9 @@ class MultiOrgEnrollmentTest extends DuskTestCase
     }
 
     /**
-     * Os três estados inválidos de link devolvem a MESMA mensagem genérica e
-     * nunca renderizam o formulário — percorridos como visitante numa única
-     * sessão de navegador.
+     * Os três estados inválidos de link nunca renderizam o formulário e
+     * cada um explica a SUA causa ao visitante — percorridos como visitante
+     * numa única sessão de navegador.
      */
     public function test_invalid_invitation_link_states_are_rejected(): void
     {
@@ -182,22 +179,20 @@ class MultiOrgEnrollmentTest extends DuskTestCase
         $revoked = $this->invitationLinkFor($orgB, $courseB, 'revoked');
         $exhausted = $this->invitationLinkFor($orgB, $courseB, 'exhausted');
 
-        $message = 'Este link de convite é inválido, expirou ou já atingiu o limite de usos.';
-
-        $this->browse(function (Browser $browser) use ($expired, $revoked, $exhausted, $message): void {
+        $this->browse(function (Browser $browser) use ($expired, $revoked, $exhausted): void {
             // 1. Expirado
             $browser->visit('/convite/'.$expired->token)
-                ->assertSee($message)
+                ->assertSee('Este convite expirou.')
                 ->assertMissing('@invitation-form');
 
             // 2. Revogado
             $browser->visit('/convite/'.$revoked->token)
-                ->assertSee($message)
+                ->assertSee('Este convite foi cancelado.')
                 ->assertMissing('@invitation-form');
 
             // 3. Esgotado
             $browser->visit('/convite/'.$exhausted->token)
-                ->assertSee($message)
+                ->assertSee('Limite de vagas atingido.')
                 ->assertMissing('@invitation-form');
         });
 

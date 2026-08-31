@@ -1,10 +1,16 @@
+{{--
+    A mensagem chega pronta do handler (`bootstrap/app.php`), com uma variação
+    por causa (não encontrado, expirado, revogado, esgotado). A view não duplica
+    o texto: duas cópias divergem e o teste passa a verificar a errada.
+--}}
 <x-layout.public surface="white" title="Convite indisponível">
     <div class="row justify-content-center">
         <div class="col-lg-6">
             <x-ui.empty-state icon="lock" title="Convite indisponível">
                 <p class="fw-semibold mb-0">
-                    {{ $message ?? 'Este convite expirou ou o limite de vagas foi atingido.' }}
+                    {{ $message ?? 'Este convite não está mais disponível.' }}
                 </p>
+
                 <p class="small mb-0 mt-1">
                     Peça um novo link ao responsável pelo curso.
                 </p>

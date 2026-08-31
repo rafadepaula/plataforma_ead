@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\Permissions\RolesEnum;
 use App\Models\User;
+use App\Rules\Cpf;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -52,7 +53,7 @@ class UserImportService
                     'org_id' => $orgId,
                     'name' => $name,
                     'email' => $email,
-                    'cpf' => $row['cpf'] ?? null,
+                    'cpf' => Cpf::digits($row['cpf'] ?? null),
                     'password' => Hash::make(Str::random(32)),
                     'status' => 'active',
                 ]);

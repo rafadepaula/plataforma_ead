@@ -13,6 +13,26 @@ use Illuminate\Contracts\Validation\ValidationRule;
  */
 class Cpf implements ValidationRule
 {
+    /**
+     * Strips a CPF down to its digits so that the same document typed with
+     * or without the `000.000.000-00` mask is one single value everywhere:
+     * the `Rule::unique('users', 'cpf')` comparison, the `users.cpf` unique
+     * index and the CPF-based dedup done by the CSV importer all compare
+     * literal strings, so a masked variant would otherwise sneak a second
+     * account past every one of them. Entry points that accept a CPF must
+     * call this before validation/persistence.
+     */
+    public static function digits(mixed $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $digits = preg_replace('/\D/', '', (string) $value) ?? '';
+
+        return $digits === '' ? null : $digits;
+    }
+
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
         $digits = preg_replace('/\D/', '', (string) $value) ?? '';

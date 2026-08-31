@@ -4,7 +4,9 @@ description: >
   Code patterns, snippets, guardrails for Smart Invitation & Enrollment
   feature (SPEC-06): ProcessSmartInvitationAction lockForUpdate
   transaction, check-email/adaptive-form contract, EnrollmentController
-  course_user upsert pattern, InvitationLinkPolicy/route conventions. Use
+  course_user upsert pattern, convite/show.blade.php guest-shell +
+  .d-none-only visibility contract, InvitationLinkPolicy/route
+  conventions. Use
   when writing controller, Form Request, Policy, or Action managing
   InvitationLink or course_user records, or wiring /convite/{token}
   endpoints.
@@ -33,12 +35,24 @@ return DB::transaction(function () use ($token, $data) {
         ->lockForUpdate()
         ->first();
 
-    if (! $invitationLink || ! $invitationLink->isUsable()) {
-        throw new InvitationLinkInvalidException(/* ... */);
+    if (! $invitationLink) {
+        throw InvitationLinkInvalidException::notFound($token);
+    }
+
+    if ($reason = $invitationLink->unusableReason()) {
+        throw InvitationLinkInvalidException::forReason($reason, $token);
     }
     // ...
 });
 ```
+
+Never construct `new InvitationLinkInvalidException('some sentence')` at a call
+site: the visitor-facing copy lives on the exception (`userMessage()`), keyed by
+reason, and is rendered once by `bootstrap/app.php` — see
+`invitations-architecture`. Call sites only pick the *reason*: `::notFound()`
+for a null row, `::forReason($link->unusableReason(), $token)` for a row that
+exists but may not be consumed. `InvitationController::show()` uses the exact
+same two-step shape, minus the lock.
 
 Never move `isUsable()` check before `lockForUpdate()` call. Never reuse
 `InvitationLink` instance caller loaded before entering transaction. Either
@@ -113,6 +127,42 @@ different channel (timing, distinct error codes, etc.). In particular
 generic validation shape whether or not account exists elsewhere in request
 lifecycle, since by time `store()` runs client already got answer via
 `check-email`.
+
+## `convite/show.blade.php`: Guest Shell + `.d-none`-Only Visibility
+
+The public invitation screen extends `layouts.guest` (the split shell: 46%
+institutional panel at `col-lg-5`, 440px form column) and opens with
+`<x-layout.page-header kicker="Convite" :title="'Matrícula em '.$courseTitle"
+level="h2" subtitle="..." />`. **`level="h2"` is mandatory here** — the guest
+shell's institutional panel already renders the page's only `<h1>`, so a
+default `page-header` would emit a second one. `InvitationController::show()`
+passes `tenantName` explicitly (`$invitationLink->organization?->name`) because
+a visitor arriving from an invite has no tenant session for
+`<x-layout.guest-panel>` to read.
+
+Visibility of the adaptive fields is **the `.d-none` class and nothing else** —
+never the `hidden` attribute, never `style.display`. The server renders the same
+screen without JavaScript and `ProcessInvitationRequest` validates
+conditionally, so the hidden state must be one single, inspectable decision.
+`SmartInvitationForm.applyVisibility()` is the module's only door to that class
+(and clears a stray `hidden`/`display:none` when showing, to keep the class
+authoritative).
+
+Field wrappers keep the contract the JS module reads: every registration-only
+field sits in `<div data-invitation-field="new-account">`, the existing-account
+hint is a neutral `<p class="guest-hint ... d-none">` (block in `--blue-50`,
+radius 12px — **not** an `.alert`) carrying
+`data-invitation-existing-hint` / `data-invitation-field="existing-account-hint"`
+/ `dusk="invitation-existing-account-hint"` on the same node, and `password`
+stays outside any wrapper (both branches need it). Consent is
+`<x-ui.switch name="consent" value="1" required label="Concordo em compartilhar
+meus dados com a organização responsável por este curso." dusk="invitation-consent" />`
+— label verbatim.
+
+`ProcessInvitationRequest::messages()` owns the consent copy:
+`'consent.accepted' => 'É necessário concordar para concluir a matrícula.'`.
+Client-side `required` on the switch is a convenience only; the rule is what
+holds when the attribute is stripped.
 
 ## `InvitationLinkPolicy`: Mirrors `CoursePolicy`, Not `ModulePolicy`
 

@@ -89,9 +89,18 @@ vendor/bin/sail artisan test --filter=LoginTest
 ```
 `tests/Feature/Auth/LoginTest.php` asserts role-specific redirect targets and catches a missed update.
 
+## Login Screen Selector/Copy Contract Lives in the Dusk `LoginTest`
+
+`tests/Browser/Auth/LoginTest.php` additionally guards the *screen*, not just the redirect:
+
+- `test_login_screen_exposes_the_selector_contract_and_offers_no_signup_path` — all six `dusk="login-*"`/`forgot-password-link` hooks, the input `type`s, the forgot-password `href`, and the **absence** of any `/register` link or "Criar conta"/"Cadastre-se" copy (see `auth-orgs-conventions`, guest shell markup contract).
+- `test_login_credential_rejections` — a wrong password **and** a non-existent e-mail must produce the *same* generic message; a failure here usually means someone "improved" the copy into an account-enumeration oracle.
+
+Failing after a Blade edit? Rebuild first (`vendor/bin/sail npm run build`), and check the selector was not moved onto a wrapper element by a component swap — `DuskSelectorContractTest` (PHPUnit) catches the moved/dropped case faster than the browser run.
+
 ## Auto-Update Protocol (SPEC-03)
 
-Per `spec/specs/03-agentic-harness-and-self-updating-skills.md`: any change to `UserController`, `Admin\UserAdminController`, `UserImportController`, `UserImportService`, `UserPolicy`, `UpdateUserAdminRequest`, `users*`/`admin.users.*` routes, or `CsvImporter.js` **must** update all three auth-orgs skills (`auth-orgs-architecture`, `auth-orgs-conventions`, `auth-orgs-maintenance`) in the same change before the task is done. Also:
+Per `spec/specs/03-agentic-harness-and-self-updating-skills.md`: any change to `UserController`, `Admin\UserAdminController`, `UserImportController`, `UserImportService`, `UserPolicy`, `UpdateUserAdminRequest`, `users*`/`admin.users.*` routes, `CsvImporter.js`, or the guest-shell auth views (`resources/views/auth/login.blade.php`, `resources/views/layouts/guest.blade.php`, `resources/views/components/layout/guest-panel.blade.php`) **must** update all three auth-orgs skills (`auth-orgs-architecture`, `auth-orgs-conventions`, `auth-orgs-maintenance`) in the same change before the task is done. Also:
 
 - `.agents/agents/code-reviewer.md` — if the change alters what a reviewer checks for this module.
 - `vendor/bin/sail artisan harness:check-skills` — fails the build if any `auth-orgs-*` skill is missing.

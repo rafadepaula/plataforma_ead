@@ -3,7 +3,8 @@ name: invitations-architecture
 description: >
   Smart Invitation & Enrollment domain (SPEC-06): invitation_links schema,
   public unauthenticated /convite/{token} flow, RN09 multi-org
-  no-duplicate-account guarantee, RF21 manual enrollment panel reusing
+  no-duplicate-account guarantee, typed
+  InvitationLinkInvalidException reason contract (one message per cause), RF21 manual enrollment panel reusing
   course_user/CoursePolicy instead of dedicated Enrollment model. Use when
   designing or reviewing feature touching InvitationLink or course_user
   data, before adding new enrollment/invitation endpoint, or when deciding
@@ -71,11 +72,16 @@ Policy to this controller. `guest` middleware itself keeps already-logged-in
 user out of this flow — they get redirected away, same as hitting `/login`
 while logged in.
 
-## `InvitationLink::scopeUsable()` / `isUsable()` — One Source of Truth, Checked Twice
+## `InvitationLink::unusableReason()` / `isUsable()` — One Source of Truth, Checked Twice
 
-"May this link still be consumed?" is `! isExpired() && ! isExhausted() &&
-! isRevoked() && courseIsAvailable()`, implemented once on model
-(`InvitationLink::isUsable()`). `courseIsAvailable()` re-queries linked
+"Why may this link no longer be consumed?" is answered once, on the model,
+by `InvitationLink::unusableReason(): ?string` — a `match (true)` in a
+**fixed precedence**: revoked > expired > exhausted > Course unavailable,
+returning `null` when the link is still usable. `isUsable()` is now literally
+`unusableReason() === null`, so the boolean and the reason can never drift
+apart. The precedence is deliberate: one row can sit in several unusable
+states at once (a revoked link that also ran past `expires_at`), and the same
+row must always report the same reason to the visitor, run after run. `courseIsAvailable()` re-queries linked
 `Course` (via `->course()->withoutGlobalScope('org')->value(
 'is_published')`, bypassing only `OrgScope` — `SoftDeletingScope` stays on
 purpose), so link pointing at soft-deleted or unpublished Course is as
@@ -87,11 +93,17 @@ single source of truth both `show()` and Action use now). Do not rely on
 in **two different places** for two different reasons:
 
 1. `InvitationController::show()` — `InvitationLink::query()
-   ->withoutGlobalScopes()->usable()->where('token', $token)->first()` —
-   pre-lock, read-only existence check, purely to render form (or throw
-   `InvitationLinkInvalidException`, mapped to 404 in `bootstrap/app.php`).
-2. `ProcessSmartInvitationAction::execute()` — re-checks `$invitationLink
-   ->isUsable()` *after* acquiring `lockForUpdate()` inside transaction.
+   ->withoutGlobalScopes()->where('token', $token)->first()`, then a
+   **two-step verdict**: a missing row throws
+   `InvitationLinkInvalidException::notFound($token)`, a present-but-unusable
+   row throws `::forReason($invitationLink->unusableReason(), $token)`. The
+   lookup deliberately no longer chains `->usable()`: filtering the row out in
+   SQL would collapse "expired" and "never existed" into the same 404 copy.
+2. `ProcessSmartInvitationAction::execute()` — repeats that same
+   null-row/`unusableReason()` split *after* acquiring `lockForUpdate()`
+   inside the transaction, so the reason is resolved from the freshly locked
+   row (a link exhausted by a concurrent request reports `REASON_EXHAUSTED`,
+   not whatever state the caller read a moment earlier).
    Second check not redundant: without it, two concurrent requests against
    link at exactly `max_uses - 1` remaining uses both pass step 1 check
    before either increments `current_uses`, both insert enrollment. Only
@@ -104,6 +116,39 @@ authenticated user (or, for Action, no *relevant* tenant context), so
 ordinary scope "no user, no filter" branch already lets this through in
 practice. Explicit call documents this must never silently start filtering
 once someone touches `OrgScope` "no authenticated user" branch.
+
+## The Reason Contract: `InvitationLinkInvalidException` Carries Copy, The View Never Does
+
+`InvitationLinkInvalidException` (`app/Exceptions/InvitationLinkInvalidException.php`)
+is no longer a bare `RuntimeException` with an ad-hoc string. It carries a typed
+reason, built through named constructors (`notFound()`, `expired()`, `revoked()`,
+`exhausted()`, `courseUnavailable()`, plus `forReason(string $reason, string $token)`
+for a verdict coming straight out of `unusableReason()`), and exposes
+`reason()` and `userMessage()`:
+
+| Reason constant | `userMessage()` (visitor-facing, verbatim) |
+| --- | --- |
+| `REASON_NOT_FOUND` | Este convite não foi encontrado. |
+| `REASON_EXPIRED` | Este convite expirou. |
+| `REASON_REVOKED` | Este convite foi cancelado. |
+| `REASON_EXHAUSTED` | Limite de vagas atingido. |
+| `REASON_COURSE_UNAVAILABLE` | Este convite não está mais disponível. |
+
+`getMessage()` keeps the operational sentence (`Convite '{token}' indisponível
+({reason}).`) for the log; only `userMessage()` ever reaches a screen. An
+unrecognised reason string degrades to `REASON_NOT_FOUND` instead of throwing a
+second error inside the 404 handler. The public constructor stays
+`RuntimeException`-compatible (`__construct(string $message = '', string $reason
+= REASON_NOT_FOUND, ...)`), so `expectException(...)` assertions written before
+this change still hold.
+
+Only `bootstrap/app.php`'s render hook turns that into a response — 404 in both
+channels, `response()->json(['message' => $e->userMessage()], 404)` for
+`expectsJson()` requests and `view('convite.invalid', ['message' => ...])`
+otherwise. `resources/views/convite/invalid.blade.php` renders `$message` and keeps a
+single neutral fallback (`Este convite não está mais disponível.`) for a render
+with no `$message` bound; it must never grow a per-reason branch of its own —
+two copies of the same sentence diverge and the test then asserts the wrong one.
 
 ## RN09: Multi-Org Adaptive Enrollment, No Duplicate Accounts
 

@@ -18,6 +18,19 @@ class LoginTest extends TestCase
         $this->get('/login')->assertOk()->assertSee('Entrar');
     }
 
+    /**
+     * The institutional guest panel already owns the page's only `h1`; the
+     * form column heading must stay an `h2` so the screen keeps a single
+     * top-level heading.
+     */
+    public function test_login_screen_renders_exactly_one_top_level_heading(): void
+    {
+        $html = $this->get('/login')->assertOk()->getContent();
+
+        $this->assertSame(1, substr_count($html, '<h1'));
+        $this->assertStringContainsString('Entrar na plataforma', $html);
+    }
+
     public function test_authenticated_admin_is_redirected_away_from_login_screen(): void
     {
         $admin = User::factory()->create(['org_id' => null]);

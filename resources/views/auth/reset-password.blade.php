@@ -1,7 +1,7 @@
 @extends('layouts.guest')
 
 @section('content')
-    <x-layout.page-header kicker="Recuperação de senha" title="Redefinir senha" />
+    <x-layout.page-header level="h2" kicker="Recuperação de senha" title="Redefinir senha" />
 
     <form method="POST" action="{{ route('password.store') }}" dusk="reset-password-form">
         @csrf

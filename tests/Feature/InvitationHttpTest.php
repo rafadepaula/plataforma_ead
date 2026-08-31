@@ -43,7 +43,8 @@ class InvitationHttpTest extends TestCase
         ]);
 
         $this->get(route('invitation.show', $invitationLink->token))
-            ->assertStatus(404);
+            ->assertStatus(404)
+            ->assertSee('Este convite expirou.');
     }
 
     public function test_show_rejects_a_revoked_invitation_link(): void
@@ -56,13 +57,15 @@ class InvitationHttpTest extends TestCase
         ]);
 
         $this->get(route('invitation.show', $invitationLink->token))
-            ->assertStatus(404);
+            ->assertStatus(404)
+            ->assertSee('Este convite foi cancelado.');
     }
 
     public function test_show_rejects_an_unknown_token(): void
     {
         $this->get(route('invitation.show', 'does-not-exist'))
-            ->assertStatus(404);
+            ->assertStatus(404)
+            ->assertSee('Este convite não foi encontrado.');
     }
 
     public function test_check_email_reports_existing_and_new_emails(): void
@@ -283,5 +286,27 @@ class InvitationHttpTest extends TestCase
         $this->post(route('courses.enrollments.store', $course), [
             'user_id' => $student->id,
         ])->assertSessionHasErrors('user_id');
+    }
+
+    public function test_store_rejects_a_missing_consent_with_the_enrollment_wording(): void
+    {
+        $org = Organization::factory()->create();
+        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $invitationLink = InvitationLink::factory()->for($course)->create([
+            'org_id' => $org->id,
+            'created_by' => User::factory()->create(['org_id' => $org->id])->id,
+        ]);
+
+        $this->from(route('invitation.show', $invitationLink->token))
+            ->post(route('invitation.store', $invitationLink->token), [
+                'name' => 'Aluno Sem Consentimento',
+                'email' => 'sem-consentimento@example.com',
+                'cpf' => '12345678909',
+                'password' => 'password123',
+                'password_confirmation' => 'password123',
+            ])
+            ->assertSessionHasErrors(['consent' => 'É necessário concordar para concluir a matrícula.']);
+
+        $this->assertDatabaseMissing('users', ['email' => 'sem-consentimento@example.com']);
     }
 }

@@ -82,19 +82,22 @@ $ds-space-steps: (
 // `.password-field` é o wrapper opt-in em torno de um único `<x-ui.input
 // type="password">`; o botão (`PasswordToggle.js`) é posicionado por CSS, sem
 // `style=` inline. Reserva de espaço à direita evita que o texto digitado
-// passe por baixo do ícone.
+// passe por baixo do ícone: o botão ocupa `--touch-min` e fica a `--space-2` da
+// borda direita, então a reserva é a soma dos dois.
 // -----------------------------------------------------------------------------
 .password-field {
     position: relative;
 }
 
 .password-field .form-control {
-    padding-right: var(--space-9);
+    padding-right: calc(var(--touch-min) + var(--space-2));
 }
 
 .password-toggle-btn {
     position: absolute;
-    top: 50%;
+    // ancorado à metade da altura do campo (e não a 50% do wrapper, que também
+    // carrega a margem inferior do `.ds-field` e a mensagem de erro).
+    top: calc(var(--field-height) / 2);
     right: var(--space-2);
     transform: translateY(-50%);
     z-index: 5;

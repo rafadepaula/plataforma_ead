@@ -21,6 +21,16 @@ class ProfileUpdateRequest extends FormRequest
     }
 
     /**
+     * @see Cpf::digits()
+     */
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('cpf')) {
+            $this->merge(['cpf' => Cpf::digits($this->input('cpf'))]);
+        }
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function rules(): array

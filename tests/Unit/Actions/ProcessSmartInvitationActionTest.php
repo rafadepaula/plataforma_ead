@@ -121,13 +121,17 @@ class ProcessSmartInvitationActionTest extends TestCase
         $invitationLink = $this->makeInvitationLink($org, $course);
         $invitationLink->forceFill(['expires_at' => now()->subDay()])->save();
 
-        $this->expectException(InvitationLinkInvalidException::class);
-
-        $this->action->execute($invitationLink->token, [
-            'name' => 'Aluno',
-            'email' => 'aluno@example.com',
-            'password' => 'password123',
-        ]);
+        try {
+            $this->action->execute($invitationLink->token, [
+                'name' => 'Aluno',
+                'email' => 'aluno@example.com',
+                'password' => 'password123',
+            ]);
+            $this->fail('Esperava InvitationLinkInvalidException.');
+        } catch (InvitationLinkInvalidException $e) {
+            $this->assertSame(InvitationLinkInvalidException::REASON_EXPIRED, $e->reason());
+            $this->assertSame('Este convite expirou.', $e->userMessage());
+        }
     }
 
     public function test_it_rejects_an_exhausted_invitation_link(): void
@@ -139,13 +143,17 @@ class ProcessSmartInvitationActionTest extends TestCase
             'current_uses' => 1,
         ]);
 
-        $this->expectException(InvitationLinkInvalidException::class);
-
-        $this->action->execute($invitationLink->token, [
-            'name' => 'Aluno',
-            'email' => 'aluno@example.com',
-            'password' => 'password123',
-        ]);
+        try {
+            $this->action->execute($invitationLink->token, [
+                'name' => 'Aluno',
+                'email' => 'aluno@example.com',
+                'password' => 'password123',
+            ]);
+            $this->fail('Esperava InvitationLinkInvalidException.');
+        } catch (InvitationLinkInvalidException $e) {
+            $this->assertSame(InvitationLinkInvalidException::REASON_EXHAUSTED, $e->reason());
+            $this->assertSame('Limite de vagas atingido.', $e->userMessage());
+        }
     }
 
     public function test_it_rejects_a_revoked_invitation_link(): void
@@ -156,24 +164,32 @@ class ProcessSmartInvitationActionTest extends TestCase
             'revoked_at' => now(),
         ]);
 
-        $this->expectException(InvitationLinkInvalidException::class);
-
-        $this->action->execute($invitationLink->token, [
-            'name' => 'Aluno',
-            'email' => 'aluno@example.com',
-            'password' => 'password123',
-        ]);
+        try {
+            $this->action->execute($invitationLink->token, [
+                'name' => 'Aluno',
+                'email' => 'aluno@example.com',
+                'password' => 'password123',
+            ]);
+            $this->fail('Esperava InvitationLinkInvalidException.');
+        } catch (InvitationLinkInvalidException $e) {
+            $this->assertSame(InvitationLinkInvalidException::REASON_REVOKED, $e->reason());
+            $this->assertSame('Este convite foi cancelado.', $e->userMessage());
+        }
     }
 
     public function test_it_rejects_an_unknown_token(): void
     {
-        $this->expectException(InvitationLinkInvalidException::class);
-
-        $this->action->execute('token-inexistente', [
-            'name' => 'Aluno',
-            'email' => 'aluno@example.com',
-            'password' => 'password123',
-        ]);
+        try {
+            $this->action->execute('token-inexistente', [
+                'name' => 'Aluno',
+                'email' => 'aluno@example.com',
+                'password' => 'password123',
+            ]);
+            $this->fail('Esperava InvitationLinkInvalidException.');
+        } catch (InvitationLinkInvalidException $e) {
+            $this->assertSame(InvitationLinkInvalidException::REASON_NOT_FOUND, $e->reason());
+            $this->assertSame('Este convite não foi encontrado.', $e->userMessage());
+        }
     }
 
     /**
@@ -286,13 +302,17 @@ class ProcessSmartInvitationActionTest extends TestCase
 
         $this->assertSame(1, $invitationLink->fresh()->current_uses);
 
-        $this->expectException(InvitationLinkInvalidException::class);
-
-        $this->action->execute($invitationLink->token, [
-            'name' => 'Segundo',
-            'email' => 'segundo@example.com',
-            'password' => 'password123',
-        ]);
+        try {
+            $this->action->execute($invitationLink->token, [
+                'name' => 'Segundo',
+                'email' => 'segundo@example.com',
+                'password' => 'password123',
+            ]);
+            $this->fail('Esperava InvitationLinkInvalidException.');
+        } catch (InvitationLinkInvalidException $e) {
+            $this->assertSame(InvitationLinkInvalidException::REASON_EXHAUSTED, $e->reason());
+            $this->assertSame('Limite de vagas atingido.', $e->userMessage());
+        }
     }
 
     /**
@@ -307,13 +327,17 @@ class ProcessSmartInvitationActionTest extends TestCase
         $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => false]);
         $invitationLink = $this->makeInvitationLink($org, $course);
 
-        $this->expectException(InvitationLinkInvalidException::class);
-
-        $this->action->execute($invitationLink->token, [
-            'name' => 'Aluno',
-            'email' => 'aluno@example.com',
-            'password' => 'password123',
-        ]);
+        try {
+            $this->action->execute($invitationLink->token, [
+                'name' => 'Aluno',
+                'email' => 'aluno@example.com',
+                'password' => 'password123',
+            ]);
+            $this->fail('Esperava InvitationLinkInvalidException.');
+        } catch (InvitationLinkInvalidException $e) {
+            $this->assertSame(InvitationLinkInvalidException::REASON_COURSE_UNAVAILABLE, $e->reason());
+            $this->assertSame('Este convite não está mais disponível.', $e->userMessage());
+        }
     }
 
     public function test_it_rejects_a_link_whose_course_is_soft_deleted(): void

@@ -25,16 +25,36 @@ class ProcessInvitationRequest extends FormRequest
     }
 
     /**
+     * Normalises the CPF to digits only before any rule runs, so the
+     * uniqueness check below (and the value later persisted by
+     * `ProcessSmartInvitationAction`) can never be defeated by the same
+     * document typed with the `000.000.000-00` mask.
+     */
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('cpf')) {
+            $this->merge(['cpf' => Cpf::digits($this->input('cpf'))]);
+        }
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function rules(): array
     {
-        $emailExists = $this->emailExists();
+        $existingUser = $this->existingUser();
+        $emailExists = $existingUser !== null;
 
         return [
             'email' => ['required', 'string', 'email', 'max:255'],
             'name' => [Rule::requiredIf(! $emailExists), 'nullable', 'string', 'max:255'],
-            'cpf' => ['nullable', 'string', 'max:14', new Cpf],
+            // The uniqueness check ignores the account that owns the
+            // submitted e-mail: without JavaScript (or when
+            // `/convite/check-email` fails and the form degrades to the
+            // new-account state) an already-registered student still posts
+            // their own CPF, and rejecting it would lock them out of the
+            // enrollment entirely.
+            'cpf' => [Rule::requiredIf(! $emailExists), 'nullable', 'string', 'max:14', new Cpf, Rule::unique('users', 'cpf')->ignore($existingUser?->id)],
             'password' => $emailExists
                 ? ['required', 'string']
                 : ['required', 'string', 'min:8', 'confirmed'],
@@ -48,18 +68,21 @@ class ProcessInvitationRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'consent.accepted' => 'É necessário concordar em compartilhar seus dados com a organização responsável por este curso.',
+            'consent.accepted' => 'É necessário concordar para concluir a matrícula.',
         ];
     }
 
-    protected function emailExists(): bool
+    /**
+     * The account that already owns the submitted e-mail, if any.
+     */
+    protected function existingUser(): ?User
     {
         $email = $this->string('email')->toString();
 
         if ($email === '') {
-            return false;
+            return null;
         }
 
-        return User::query()->where('email', $email)->exists();
+        return User::query()->where('email', $email)->first();
     }
 }

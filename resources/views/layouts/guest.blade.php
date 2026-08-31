@@ -17,7 +17,7 @@
 <body class="bg-body text-body m-0 p-0 min-vh-100 antialiased">
     <div class="row g-0 mx-0 min-vh-100 w-100">
         {{-- Left Institutional Panel (Desktop) --}}
-        <x-layout.guest-panel class="col-lg-5" />
+        <x-layout.guest-panel :tenant-name="$tenantName ?? null" class="col-lg-5" />
 
         {{-- Right Form Area --}}
         <div class="col-12 col-lg-7 min-vh-100 d-flex flex-column justify-content-center align-items-center position-relative p-4 p-md-5">
@@ -26,6 +26,10 @@
             </div>
 
             <div class="guest-form">
+                {{-- Abaixo de `lg` o painel institucional não é renderizado: a
+                     marca do tenant sobe para o topo da coluna de formulário. --}}
+                <x-layout.guest-panel brand-only :tenant-name="$tenantName ?? null" class="d-lg-none mb-4" />
+
                 <x-layout.alerts />
                 {{ $slot ?? '' }}
                 @yield('content')

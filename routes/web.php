@@ -211,8 +211,17 @@ Route::middleware(['auth', 'role:admin|gestor'])->group(function (): void {
 // `invitations-architecture` skill).
 Route::middleware('guest')->group(function (): void {
     Route::get('convite/{token}', [InvitationController::class, 'show'])->name('invitation.show');
-    Route::post('convite/check-email', [InvitationController::class, 'checkEmail'])->name('invitation.check-email');
-    Route::post('convite/{token}', [InvitationController::class, 'store'])->name('invitation.store');
+    // Both POST endpoints are throttled per IP: they are public,
+    // unauthenticated and answer questions about personal data (whether an
+    // e-mail has an account, whether a CPF is already registered), so the
+    // rate limit is what keeps them from being usable as enumeration
+    // oracles over LGPD-sensitive data.
+    Route::post('convite/check-email', [InvitationController::class, 'checkEmail'])
+        ->middleware('throttle:20,1')
+        ->name('invitation.check-email');
+    Route::post('convite/{token}', [InvitationController::class, 'store'])
+        ->middleware('throttle:10,1')
+        ->name('invitation.store');
 });
 
 // "Meus Cursos", the Aluno's own enrollments across every

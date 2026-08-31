@@ -1,7 +1,19 @@
 /**
  * SmartInvitationForm - Adaptive invitation registration form module.
- * Checks email existence asynchronously and collapses registration fields
- * for already registered users.
+ *
+ * Checks the typed e-mail against `/convite/check-email` and collapses the
+ * registration-only fields (nome/CPF/confirmação de senha) when the address
+ * already belongs to an account, leaving a password-only prompt.
+ *
+ * Contrato de disparo: `blur` (imediato) E `input` (debounce de 400ms). A
+ * anatomia de design fala em "disparo no blur"; a spec §3.2 exige os dois, e
+ * a spec vence — o `input` é o que faz o veredito acompanhar a digitação
+ * incremental (aluno que corrige o e-mail sem tirar o foco do campo).
+ *
+ * Contrato de visibilidade: mostrar/esconder é SEMPRE a classe `.d-none`.
+ * Nunca o atributo `hidden`, nunca `style.display` — o servidor renderiza a
+ * mesma tela sem JavaScript e valida condicionalmente, então o estado
+ * "escondido" precisa ser exclusivamente a decisão desta classe.
  */
 export class SmartInvitationForm {
     constructor(httpClient, notificationService) {
@@ -9,6 +21,7 @@ export class SmartInvitationForm {
         this.notificationService = notificationService;
         this.debounceTimer = null;
         this.debounceMs = 400;
+        this.formStates = new WeakMap();
     }
 
     init() {
@@ -36,6 +49,12 @@ export class SmartInvitationForm {
         const emailField = form.querySelector('[data-invitation-email], input[name="email"]');
         if (!emailField) return;
 
+        this.formStates.set(form, { checkedEmail: null, sequence: 0 });
+
+        // Estado inicial explícito: dica escondida, campos de cadastro
+        // visíveis com o `required` que o servidor renderizou.
+        this.toggleFields(form, false);
+
         const handleDebouncedInput = () => {
             clearTimeout(this.debounceTimer);
             this.debounceTimer = setTimeout(() => this.checkEmail(form, emailField), this.debounceMs);
@@ -54,21 +73,59 @@ export class SmartInvitationForm {
         }
     }
 
+    /**
+     * Estado por formulário: qual e-mail já foi consultado (ou está em voo) e
+     * o número de sequência da última consulta disparada.
+     */
+    stateFor(form) {
+        if (!this.formStates.has(form)) {
+            this.formStates.set(form, { checkedEmail: null, sequence: 0 });
+        }
+
+        return this.formStates.get(form);
+    }
+
     async checkEmail(form, emailField) {
         const url = form.getAttribute('data-check-email-url') || form.dataset.checkEmailUrl;
         const email = emailField ? emailField.value.trim() : '';
         const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        const state = this.stateFor(form);
 
+        // E-mail vazio, parcial ou malformado nunca consulta o servidor e
+        // nunca colapsa nada: o formulário fica no estado de conta nova.
         if (!url || !email || !isValidEmail) {
+            state.sequence += 1;
+            state.checkedEmail = null;
             this.toggleFields(form, false);
             return;
         }
 
+        // O mesmo endereço já foi consultado (ou está em voo): reconsultar
+        // apenas repetiria o veredito. Esse curto-circuito é o que impede o
+        // `input` com debounce de reexecutar `toggleFields` DEPOIS de o
+        // `blur` já ter colapsado o formulário — corrida que restaurava
+        // `required` num campo escondido e travava o submit.
+        if (state.checkedEmail === email) return;
+
+        state.checkedEmail = email;
+        const sequence = ++state.sequence;
+
         try {
             const response = await this.httpClient.post(url, { email });
+
+            // Resposta obsoleta (o usuário já digitou outro e-mail): descarta.
+            if (sequence !== state.sequence) return;
+
             const exists = Boolean(response.data && response.data.exists);
             this.toggleFields(form, exists);
         } catch (error) {
+            if (sequence !== state.sequence) return;
+
+            // Falha de rede degrada para o estado de conta nova — todos os
+            // campos visíveis e obrigatórios, exatamente o que o submit sem
+            // JavaScript envia. `checkedEmail` volta a nulo para que uma
+            // nova tentativa (blur seguinte) possa reconsultar.
+            state.checkedEmail = null;
             this.toggleFields(form, false);
             this.notify('error', `Não foi possível verificar o e-mail: ${error.message}`);
         }
@@ -87,9 +144,7 @@ export class SmartInvitationForm {
             '[dusk="invitation-existing-account-hint"]'
         ];
         const hintElements = form.querySelectorAll(hintSelectors.join(', '));
-        hintElements.forEach((el) => {
-            el.classList.toggle('d-none', !exists);
-        });
+        hintElements.forEach((el) => this.applyVisibility(el, !exists));
 
         const newAccountFieldSelectors = [
             '[data-invitation-field="new-account"]',
@@ -98,9 +153,7 @@ export class SmartInvitationForm {
             '[data-invitation-field="password_confirmation"]'
         ];
         const fieldWrappers = form.querySelectorAll(newAccountFieldSelectors.join(', '));
-        fieldWrappers.forEach((field) => {
-            field.classList.toggle('d-none', exists);
-        });
+        fieldWrappers.forEach((field) => this.applyVisibility(field, exists));
 
         const inputSelectors = [
             '[data-invitation-field="new-account"] input, [data-invitation-field="new-account"] select, [data-invitation-field="new-account"] textarea',
@@ -130,6 +183,24 @@ export class SmartInvitationForm {
                 input.required = input.dataset.originallyRequired === 'true';
             }
         });
+    }
+
+    /**
+     * Única porta de entrada de visibilidade do módulo: `.d-none` e nada
+     * mais. Ao mostrar, desfaz também um `hidden`/`display:none` que outro
+     * código porventura tenha deixado no nó, para que a classe permaneça a
+     * fonte de verdade do estado.
+     */
+    applyVisibility(element, shouldHide) {
+        element.classList.toggle('d-none', shouldHide);
+
+        if (!shouldHide) {
+            element.hidden = false;
+
+            if (element.style && element.style.display === 'none') {
+                element.style.removeProperty('display');
+            }
+        }
     }
 
     notify(type, message) {

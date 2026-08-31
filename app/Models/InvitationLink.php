@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Exceptions\InvitationLinkInvalidException;
 use App\Models\Traits\OrgScope;
 use Database\Factories\InvitationLinkFactory;
 use Illuminate\Database\Eloquent\Builder;
@@ -104,7 +105,29 @@ class InvitationLink extends Model
      */
     public function isUsable(): bool
     {
-        return ! $this->isExpired() && ! $this->isExhausted() && ! $this->isRevoked() && $this->courseIsAvailable();
+        return $this->unusableReason() === null;
+    }
+
+    /**
+     * Why this link may no longer be consumed, as one of
+     * {@see InvitationLinkInvalidException}'s `REASON_*` constants, or
+     * `null` when it is still usable.
+     *
+     * The order is a deliberate, deterministic precedence — revoked >
+     * expired > exhausted > unavailable Course — because a single link can
+     * sit in several of those states at once (a revoked link that also ran
+     * past `expires_at`, say) and the visitor must always be told the same
+     * reason for the same row.
+     */
+    public function unusableReason(): ?string
+    {
+        return match (true) {
+            $this->isRevoked() => InvitationLinkInvalidException::REASON_REVOKED,
+            $this->isExpired() => InvitationLinkInvalidException::REASON_EXPIRED,
+            $this->isExhausted() => InvitationLinkInvalidException::REASON_EXHAUSTED,
+            ! $this->courseIsAvailable() => InvitationLinkInvalidException::REASON_COURSE_UNAVAILABLE,
+            default => null,
+        };
     }
 
     /**

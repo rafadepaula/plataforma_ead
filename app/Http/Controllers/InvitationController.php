@@ -34,11 +34,20 @@ class InvitationController extends Controller
             ->where('token', $token)
             ->first();
 
-        if (! $invitationLink || ! $invitationLink->isUsable()) {
-            throw new InvitationLinkInvalidException("Convite '{$token}' inválido, expirado ou já utilizado.");
+        if (! $invitationLink) {
+            throw InvitationLinkInvalidException::notFound($token);
         }
 
-        return view('convite.show', ['invitationLink' => $invitationLink]);
+        if ($reason = $invitationLink->unusableReason()) {
+            throw InvitationLinkInvalidException::forReason($reason, $token);
+        }
+
+        return view('convite.show', [
+            'invitationLink' => $invitationLink,
+            // A visitor arriving from an invitation has no tenant session, so
+            // the guest panel gets the inviting organization explicitly.
+            'tenantName' => $invitationLink->organization?->name,
+        ]);
     }
 
     public function checkEmail(CheckInvitationEmailRequest $request): JsonResponse

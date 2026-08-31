@@ -14,8 +14,9 @@
     prop `kicker` não usa a classe `.kicker` — essa classe segue definida em
     `_page-header.scss` e em uso ativo por `x-ui.stat-card` e outras telas,
     não deve ser removida.
-    `subtitle` renderiza com `.ds-lead` (19px). `breadcrumb` é opcional e
-    aditivo — telas antigas sem o prop continuam funcionando sem quebra.
+    `subtitle` renderiza com `.ds-lead` (19px). `breadcrumb` e `level` são
+    opcionais e aditivos — telas antigas sem os props continuam funcionando sem
+    quebra (`level` mantém o `<h1>` histórico como padrão).
 
     Convenção de `$actions`: no máximo 1 ação `primary` + N ações tonais
     (`ghost`/`outline`) — não há enforcement em Blade, é só a convenção do
@@ -26,7 +27,21 @@
     'kicker' => null,
     'subtitle' => null,
     'breadcrumb' => null,
+    'level' => 'h1',
 ])
+
+@php
+    // O nível do título é `h1` por padrão (uma tela de aplicação tem o
+    // cabeçalho de página como seu único `h1`). O shell de visitante já
+    // carrega o `h1` no painel institucional, então essas telas passam
+    // `level="h2"` para não emitir dois `h1` na mesma página. Aceita tanto
+    // `"h2"` quanto `"2"`; qualquer valor fora de h1–h6 cai no padrão.
+    $headingTag = 'h'.ltrim((string) $level, 'hH');
+
+    if (! in_array($headingTag, ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'], true)) {
+        $headingTag = 'h1';
+    }
+@endphp
 
 <div {{ $attributes->merge(['class' => 'd-flex flex-wrap align-items-center justify-content-between gap-3 mb-4']) }}>
     <div>
@@ -50,7 +65,7 @@
             <div class="ds-overline text-primary mb-1">{{ $kicker }}</div>
         @endif
 
-        <h1 class="h3 mb-0">{{ $title }}</h1>
+        <{{ $headingTag }} class="h3 mb-0">{{ $title }}</{{ $headingTag }}>
 
         @if ($subtitle)
             <p class="ds-lead mb-0 mt-1">{{ $subtitle }}</p>
