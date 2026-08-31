@@ -37,11 +37,16 @@ Tests guard SPEC-09 contract. Must stay green (PHPUnit, no Pest):
   certificate show student/course/org/workload/issued_at + "Válido",
   revoked certificate return `200` with revoked banner + reason (never
   404), unknown hash 404, cross-org access work with zero auth/tenant
-  scoping required.
+  scoping required, plus the hash-less entry point: `/validar-certificado`
+  render the lookup form, `?hash=` (valid / revoked / unknown / blank)
+  behave exactly like the path segment.
 - `tests/Browser/CertificateVerificationTest.php` (this bucket, Dusk E2E)
   — visit `/validar-certificado/{hash}` for both valid and revoked
   certificate, assert visible banner/data; genuinely-unknown hash render
-  404 page.
+  404 page. Also the lookup journey: Landing Page footer → `Validar
+  certificado` → `/validar-certificado` form → typed hash → verification
+  page (and a wrong typed hash → 404). That test is the only driver of the
+  three `certificate-lookup-*` snapshot selectors — do not delete them.
 - `tests/Browser/CertificateRevocationTest.php` (this bucket, Dusk E2E) —
   Gestor revoke certificate via `courses/{course}/certificates` UI,
   reason textarea client-side `min:10` gate, resulting public page
@@ -86,10 +91,13 @@ instead).
   hash render certificate view).** Two distinct branches in
   `PublicCertificateController::show()` — bad merge can accidentally
   collapse "row not found" and "row found but revoked" into same 404, or
-  route-model-bind `{hash}` onto `Certificate` directly (which 404 on
+  route-model-bind `{hash?}` onto `Certificate` directly (which 404 on
   revoked rows too, since implicit binding have no concept of soft "still
   show it" state). Always look up `validation_hash` explicitly and branch
-  on `is null` vs `->isRevoked()`.
+  on `is null` vs `->isRevoked()`. Third branch to keep intact: **no**
+  hash at all (path segment omitted *or* blank `?hash=`) render
+  `public.certificates.lookup`, never 404 — otherwise the Landing Page
+  footer's only public-validation entry point dies.
 - **PDF/public page show wrong Organization (or throw) for Gestor viewing
   from different `active_org_id` session, or fully anonymous visitor.**
   `Course` have `OrgScope`; both `CertificatePdfService` and

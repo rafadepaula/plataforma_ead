@@ -331,7 +331,7 @@ Route::middleware('auth')->group(function (): void {
 // resolve identically for a fully anonymous visitor AND an already
 // -logged-in Admin/Gestor/Aluno alike, so no middleware applies at all
 // (see the `certificates-architecture` skill).
-Route::get('validar-certificado/{hash}', [PublicCertificateController::class, 'show'])
+Route::get('validar-certificado/{hash?}', [PublicCertificateController::class, 'show'])
     ->name('certificates.verify');
 
 // Authentication + Password Reset routes.

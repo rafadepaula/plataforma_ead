@@ -63,9 +63,11 @@ Tests guard SPEC-07 contract. Must stay green (PHPUnit, no Pest):
   /lessons/{lesson}/progress` persist sub-threshold `watched_seconds`
   without completing, auto-complete at/above 90%.
 - `tests/Browser/MultiOrgStudentClassroomTest.php`,
-  `tests/Browser/VideoThresholdCompletionTest.php` (Dusk E2E) — full
-  browser flow, latter drive `window.LessonPlayer.reportProgress()`
-  directly rather than real YouTube embed.
+  `tests/Browser/LessonPlayerDuskTest.php` (Dusk E2E) — full browser flow;
+  the video threshold case in `LessonPlayerDuskTest`
+  (`test_video_lesson_shows_the_player_shell_and_auto_completes_at_the_threshold`)
+  drive `window.LessonPlayer.reportProgress()` directly rather than real
+  YouTube embed.
 - `tests/Feature/StudentCourseControllerTest.php` (SPEC-26) — 19 tests:
   multi-org enrollment aggregation (including duplicate course titles
   across orgs resolving to the right org per card, N+1-free), all 3 tabs
@@ -141,7 +143,6 @@ vendor/bin/sail artisan test --filter=LessonProgressControllerTest
 vendor/bin/sail artisan test --filter=LessonMediaTest
 vendor/bin/sail artisan test --filter=DuskSelectorContractTest
 vendor/bin/sail artisan dusk --filter=MultiOrgStudentClassroomTest
-vendor/bin/sail artisan dusk --filter=VideoThresholdCompletionTest
 vendor/bin/sail artisan dusk --filter=StudentCoursesCatalogUiTest
 vendor/bin/sail dusk tests/Browser/ClassroomOverviewDuskTest.php
 vendor/bin/sail artisan dusk tests/Browser/LessonPlayerDuskTest.php

@@ -10,14 +10,28 @@
                 ? (Route::has('student.courses.index') ? route('student.courses.index') : (Route::has('dashboard') ? route('dashboard') : url('/')))
                 : (Route::has('admin.dashboard') ? route('admin.dashboard') : (Route::has('dashboard') ? route('dashboard') : url('/'))))
             : null;
+
+        // Mesma derivação de iniciais do `x-layout.topbar` e do
+        // `x-layout.guest-panel` — a marca nunca é texto fixo no template.
+        $brandName = config('app.name', 'Plataforma EAD');
+
+        $brandMark = collect(preg_split('/\s+/', trim((string) $brandName)))
+            ->filter()
+            ->take(2)
+            ->map(fn (string $word) => mb_strtoupper(mb_substr($word, 0, 1)))
+            ->implode('');
+
+        if ($brandMark === '') {
+            $brandMark = mb_strtoupper(mb_substr((string) $brandName, 0, 2));
+        }
     @endphp
 
     {{-- Band 1: Header --}}
     <header class="landing-header border-bottom">
         <div class="landing-header-inner d-flex align-items-center justify-content-between">
             <div class="d-flex align-items-center gap-3">
-                <span class="brand-mark" aria-hidden="true">PE</span>
-                <span class="landing-brand-name">{{ config('app.name', 'Plataforma EAD') }}</span>
+                <span class="brand-mark" aria-hidden="true">{{ $brandMark }}</span>
+                <span class="landing-brand-name">{{ $brandName }}</span>
             </div>
 
             <div class="d-flex align-items-center gap-3 gap-md-4">
@@ -127,7 +141,7 @@
                 </x-ui.card>
 
                 <x-ui.card :border="false" elevation="sm" surface="white" class="landing-card h-100">
-                    <span class="landing-step" aria-hidden="true">4</span>
+                    <span class="landing-step landing-step--success" aria-hidden="true">4</span>
                     <h3 class="landing-step-title">O Certificado sai na hora</h3>
                     <p class="landing-card-copy">Ao concluir, o Certificado é emitido e qualquer pessoa pode validá-lo pelo hash.</p>
                 </x-ui.card>
@@ -186,7 +200,7 @@
                     </div>
 
                     <x-slot:metaSlot>
-                        <x-ui.button variant="ghost" size="sm" icon="upload" href="#">
+                        <x-ui.button variant="ghost" size="sm" icon="download" href="#">
                             Baixar certificado
                         </x-ui.button>
                     </x-slot:metaSlot>
@@ -222,7 +236,7 @@
             <p class="landing-lead mt-0">
                 Entre em contato com nossa equipe para saber mais sobre planos e implantação institucional.
             </p>
-            <x-ui.button variant="primary" href="mailto:contato@plataformaead.com.br" dusk="contact-button">
+            <x-ui.button variant="tonal" href="mailto:contato@plataformaead.com.br" dusk="contact-button">
                 Fale conosco
             </x-ui.button>
         </div>
@@ -230,15 +244,17 @@
 
     {{-- Band 7: Rodapé Público --}}
     <x-slot:footer>
-        <div class="landing-footer-inner d-flex flex-wrap align-items-center justify-content-between gap-3">
+        <div class="landing-footer-inner d-flex flex-wrap align-items-center gap-3">
             <span>&copy; {{ date('Y') }} <strong>{{ config('app.name', 'Plataforma EAD') }}</strong>. Todos os direitos reservados.</span>
             <nav class="d-flex flex-wrap justify-content-center gap-4" aria-label="Links institucionais">
-                @php
-                    $verifyRoute = Route::has('certificates.verify')
-                        ? route('certificates.verify', '0000000000000000000000000000000000000000000000000000000000000000')
-                        : (Route::has('certificates.verify.show') ? route('certificates.verify.show', '0000000000000000000000000000000000000000000000000000000000000000') : '#');
-                @endphp
-                <a href="{{ $verifyRoute }}" class="text-body-secondary text-decoration-none">Validar certificado</a>
+                {{--
+                    Entra na validação pública pelo formulário de hash
+                    (`/validar-certificado`, sem o `{hash}` opcional): o
+                    visitante que chega pela Landing tem o código impresso,
+                    não a URL completa, então o rodapé aponta para a tela que
+                    pergunta o hash — nunca para um hash fixo, que sempre 404.
+                --}}
+                <a href="{{ route('certificates.verify') }}" class="text-body-secondary text-decoration-none">Validar certificado</a>
                 <a href="#" class="text-body-secondary text-decoration-none">Termos de uso</a>
                 <a href="#" class="text-body-secondary text-decoration-none">Privacidade</a>
                 <a href="#contato" class="text-body-secondary text-decoration-none">Suporte</a>

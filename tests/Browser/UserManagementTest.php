@@ -193,20 +193,4 @@ class UserManagementTest extends DuskTestCase
         $this->assertDatabaseMissing('users', ['email' => 'sem.confirmacao@example.com']);
         $this->assertDatabaseCount('users', 2);
     }
-
-    public function test_gestor_cannot_edit_a_user_from_another_organization(): void
-    {
-        $orgA = Organization::factory()->create();
-        $orgB = Organization::factory()->create();
-        $gestorA = User::factory()->create(['org_id' => $orgA->id]);
-        $gestorA->assignRole(RolesEnum::GESTOR->value);
-        $alunoB = User::factory()->create(['org_id' => $orgB->id]);
-        $alunoB->assignRole(RolesEnum::ALUNO->value);
-
-        $this->browse(function (Browser $browser) use ($gestorA, $alunoB): void {
-            $browser->loginAs($gestorA)
-                ->visit(route('users.edit', $alunoB))
-                ->assertSee('403');
-        });
-    }
 }

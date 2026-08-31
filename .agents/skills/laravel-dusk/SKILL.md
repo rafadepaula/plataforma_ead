@@ -198,6 +198,23 @@ class Login extends Page
             ->press('@submit');
     }
 }
+```
+
+**Project note (Plataforma EAD): shortcut values must be real CSS
+selectors.** Because every element here is targeted by `dusk="..."`, it is
+tempting to write `'@headline' => '@landing-headline'`. That breaks:
+`ElementResolver::format()` runs a single, non-recursive `str_replace` of
+the page's shortcuts and only falls back to expanding `@name` into
+`[dusk="name"]` when the selector came back unchanged - so the chained
+form reaches WebDriver as the literal, invalid selector
+`@landing-headline` and the test dies with
+`Waited N seconds for selector [@headline]`. Always store the expanded
+form:
+
+```php
+return [
+    '@headline' => '[dusk="landing-headline"]',
+];
 
 // Use in test
 $browser->visit(new Login)
@@ -637,10 +654,11 @@ flakiness that looks like a selector problem.
 ## Responsive Coverage Lives in `tests/Browser/Theme/`
 
 Mobile and accessibility guardrails are browser tests, not Feature tests:
-`ResponsiveNoHorizontalScrollTest` (compares `document.body.scrollWidth`
-with `window.innerWidth` at 320/375/768/1024/1440),
-`StudentMobileScreensTest` (`resize(375, 812)` over the four Aluno
-screens), `KeyboardNavigationTest`, `AuditDiffModalHighlightTest`.
+`ResponsiveShellTest` (desktop and mobile shell plus the drawer),
+`StudentMobileScreensTest` (`resize(375, 812)` over the Aluno screens,
+comparing `document.body.scrollWidth` with `window.innerWidth`), and
+`KeyboardNavigationTest`. The audit-log diff modal is covered outside this
+directory, by `tests/Browser/AuditLogUiTest.php`.
 Use `$browser->resize(w, h)` before `visit()`, and assert layout facts
 through `script()` rather than screenshots.
 

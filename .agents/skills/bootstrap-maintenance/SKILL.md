@@ -113,7 +113,7 @@ Mapa tela, teste Dusk (usar sempre filtro mais estreito):
 | Import CSV | `MultiTenantStudentImportTest` |
 | Cursos (gestão) | `CourseManagementTest` |
 | Reorder de módulos | `ModuleReorderTest` |
-| Player de aula / vídeo | `LessonMultimediaTest`, `VideoThresholdCompletionTest` |
+| Player de aula / vídeo | `LessonPlayerDuskTest`, `ModuleAndLessonManagementDuskTest` |
 | Quiz (aluno) | `StudentQuizTakingDuskTest` |
 | Correção discursiva | `EssayGradingScreenTest` |
 | Fórum | `ForumDuskTest` |
@@ -373,10 +373,10 @@ Fim de fase (não a cada tela): `vendor/bin/sail artisan dusk` completo.
   detalhe. **Qualquer novo item adicionado ao cluster direito da topbar
   precisa do mesmo tratamento** (ícone-only + `.visually-hidden` abaixo de
   `sm`) ou o estouro volta.
-- **Como checar:** `tests/Browser/Theme/ResponsiveNoHorizontalScrollTest.php`
-  e `StudentMobileScreensTest.php` comparam `scrollWidth`/`innerWidth` em
-  320/375/768/1024/1440 nas telas autenticadas — rode-os depois de qualquer
-  mudança na topbar ou no drawer.
+- **Como checar:** `tests/Browser/Theme/ResponsiveShellTest.php` (shell
+  desktop/mobile e drawer) e `tests/Browser/Theme/StudentMobileScreensTest.php`
+  (compara `scrollWidth`/`innerWidth` a 375px nas telas do Aluno) — rode-os
+  depois de qualquer mudança na topbar ou no drawer.
 
 ### 3.12 [Fase 8 `front_redesign`] `prefers-reduced-motion` — escopo fechado
 

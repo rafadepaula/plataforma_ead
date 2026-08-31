@@ -252,6 +252,13 @@
     border-radius: var(--radius-pill);
 }
 
+// Passo de conclusão do "Como funciona" — o último círculo vira menta (mesmo
+// par de tokens de `.icon-circle-success`), marcando o desfecho do fluxo.
+.landing-step--success {
+    color: var(--on-success-container);
+    background: var(--success-container);
+}
+
 .landing-showcase-band {
     background: var(--surface);
 }

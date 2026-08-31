@@ -191,11 +191,12 @@ const testResults = await agent(
   [
     `Task "${TASK_REF}" from ${SPEC_DIR}/${SPEC_FILE} was just implemented TDD-first across ${codeOutputs.length} bucket(s), each with its own PHPUnit tests written RED-before-GREEN per the laravel-tdd skill, and Dusk browser tests per laravel-dusk for UI-facing buckets. Summaries of what each bucket did:`,
     JSON.stringify(codeOutputs),
+    `IMPORTANTE — O USUÁRIO REMOVEU INTENCIONALMENTE VÁRIOS TESTES DUSK do repositório para otimizar performance da suíte. Você PODE e DEVE rodar as suítes e verificar se passam, mas NÃO RECOLOQUE, NÃO RECRIE e NÃO REESCREVA nenhum teste Dusk que tenha sido removido, e não trate a ausência deles como falha, regressão ou lacuna de cobertura. Só escreva teste novo para código NOVO desta task que não tenha nenhuma cobertura, e nunca para restaurar arquivo/método Dusk apagado.`,
     `Run the laravel-tdd Verification Checklist: confirm migration tests pass, model relationships are tested, controller & API integration tests pass, validation and authorization are tested, database state is verified with RefreshDatabase for Feature/Unit tests, and factories were used.`,
     `Run the laravel-dusk checklist for any browser-facing bucket: Dusk tests use DatabaseMigrations/DatabaseTruncation (not RefreshDatabase), ChromeDriver is current (\`vendor/bin/sail artisan dusk:chrome-driver --detect\` if a version mismatch is reported), and failing tests leave a screenshot in tests/Browser/screenshots for debugging.`,
     `Also cover these edge cases from the tech-refine plan, adding any missing test if a bucket didn't already cover one: ${JSON.stringify(techPlan?.edgeCases ?? [])}.`,
     `Run \`vendor/bin/sail artisan test --compact\` for the FULL Unit/Feature suite (not just this task's tests, to catch regressions across buckets), then \`vendor/bin/sail artisan dusk\` for the Browser suite, then \`php scripts/check-coverage.php\` if present.`,
-    `Report exact pass/fail counts per suite and coverage percentage. If anything fails, fix it and re-run before finishing.`
+    `Report exact pass/fail counts per suite and coverage percentage. If anything fails, fix it and re-run before finishing — corrigindo o código ou o teste existente, jamais recriando testes Dusk removidos pelo usuário.`
   ].join('\n'),
   { label: 'test', phase: 'Test', model: 'opus' }
 )
@@ -215,10 +216,10 @@ while (iterations < MAX_REVIEW_ITERATIONS && budget.remaining() > 0) {
   lastReview = await agent(
     [
       `Review the uncommitted diff implementing task "${TASK_REF}" from ${SPEC_DIR}/${SPEC_FILE}.`,
-      `HARD CONSTRAINT — this review pass is STRICTLY READ-ONLY over the code: you MUST NOT run ANY tests. No \`vendor/bin/sail artisan test\`, no \`vendor/bin/sail artisan dusk\`, no PHPUnit, no Pest, no re-running of any unit, feature or browser suite, and no test-runner of any kind — not even to "confirm" a finding. This override takes precedence over your agent definition: skip its test-execution phases (the "Phase 3: Automated Tests & Coverage" and "Phase 3.5: Laravel Dusk Browser Testing" steps) entirely, and skip the laravel-verification skill's test-verification steps too — perform their audit portions by READING tests, code and coverage reports only. All suites were already executed in the previous Test phase (summary included below) — treat that as the only test-run evidence.`,
-      `Trigger the laravel-best-practices, laravel-specialist, and laravel-verification skills for static analysis, lint and architectural audit ONLY. Every verdict must come from READING the diff, the code and the tests — never from executing them.`,
+      `You MAY run tests in this pass if it helps you confirm or dismiss a finding (\`vendor/bin/sail artisan test --compact --filter=...\`, \`vendor/bin/sail artisan dusk --filter=...\`), but you are not required to — the full suites already ran in the previous Test phase and that summary is included below. Prefer a targeted filter over a full suite run. You MUST NOT recreate, restore or rewrite Dusk tests the user deliberately removed to speed up the suite, and their absence is never a finding.`,
+      `Trigger the laravel-best-practices, laravel-specialist, and laravel-verification skills as your normal process dictates (static analysis, lint, test verification, architectural audit).`,
       `Trigger the validate-test-quality skill to audit all new/modified PHPUnit and Dusk tests against the 6 Pillars of Real Test Validation: SUT Integrity (0% SUT self-mocking), Assertion Meaningfulness (no tautological/weak factory checks), Mutation Resiliency, State Verification (database & response checks), Mandatory Fail-Path Testing (403, 422, exceptions, cross-tenant leaks), and Refactor Resilience. Any test quality defect, fake assertion, or missing failure path MUST be reported as a CONFIRMED finding.`,
-      `Invoke the spec-usecase-test-checker agent to audit all Use Cases (UCs) defined for ${SPEC_DIR}/${SPEC_FILE} (in spec/docs/usecases/ and ${SPEC_DIR}/${SPEC_FILE}). Revalidate in code (tests/Browser/) that EVERY Use Case has AT LEAST ONE E2E Laravel Dusk test capturing all scenarios (success and failure/exception). Any missing Use Case Dusk test or missing scenario coverage MUST be reported as a CONFIRMED finding.`,
+      `Invoke the spec-usecase-test-checker agent to audit all Use Cases (UCs) defined for ${SPEC_DIR}/${SPEC_FILE} (in spec/docs/usecases/ and ${SPEC_DIR}/${SPEC_FILE}). Revalidate in code (tests/Browser/) that EVERY Use Case has AT LEAST ONE E2E Laravel Dusk test capturing all scenarios (success and failure/exception). Any missing Use Case Dusk test or missing scenario coverage MUST be reported as a CONFIRMED finding — EXCETO testes Dusk que o usuário removeu de propósito para otimizar performance da suíte: a ausência de teste Dusk pré-existente que foi deletado NÃO é finding, não peça sua recriação e não gere fix para restaurá-lo.`,
       `Test run summary from the previous phase:`,
       JSON.stringify(testResults),
       `Report findings ranked most-severe first, each with a clear verdict (CONFIRMED or PLAUSIBLE). Empty findings array if the diff is clean.`
@@ -242,7 +243,7 @@ while (iterations < MAX_REVIEW_ITERATIONS && budget.remaining() > 0) {
     [
       `The code-reviewer agent found these CONFIRMED issues in the implementation of "${TASK_REF}" (${SPEC_DIR}/${SPEC_FILE}):`,
       JSON.stringify(confirmed),
-      `Fix every listed issue directly in the code. You MUST NOT run any tests afterwards or at all — no \`vendor/bin/sail artisan test\`, no \`vendor/bin/sail artisan dusk\`, no PHPUnit/Pest, nothing; test execution is reserved for the dedicated Test phase and will be re-run there if needed. Do not introduce new scope beyond fixing these findings.`
+      `Fix every listed issue directly in the code. You MAY re-run the relevant tests with a targeted filter to confirm nothing broke. Never recreate or restore Dusk tests the user deliberately removed. If you touch PHP files, run \`vendor/bin/sail bin pint --dirty --format agent\`. Do not introduce new scope beyond fixing these findings.`
     ].join('\n'),
     { label: `fix:${iterations}`, phase: 'Review', model: 'opus' }
   )

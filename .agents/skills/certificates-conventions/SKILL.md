@@ -50,8 +50,21 @@ $hash = hash('sha256', $userId.$courseId.$issuedAt->format('Y-m-d H:i:s').config
 route('courses.certificates.index', $course);          // GET  courses/{course}/certificates    — role:admin|gestor
 route('certificates.revoke', $certificate);             // PUT  certificates/{certificate}/revoke — role:admin|gestor
 route('certificates.download', $certificate);           // GET  certificates/{certificate}/download — role:admin|gestor
-route('certificates.verify', $certificate->validation_hash); // GET validar-certificado/{hash} — NO middleware at all
+route('certificates.verify', $certificate->validation_hash); // GET validar-certificado/{hash?} — NO middleware at all
+route('certificates.verify');                           // GET validar-certificado — same route, hash omitted: the public lookup form
 ```
+
+The `{hash?}` parameter is **optional**: `route('certificates.verify')`
+with no argument is a legitimate, first-class call site (the Landing Page
+footer's `Validar certificado` link uses exactly that) and must keep
+resolving. Never add a `->where('hash', ...)` constraint that would break
+the hash-less form, and never link to a placeholder hash — `firstOrFail()`
+404s any hash that was never issued.
+
+`PublicCertificateController::show(Request $request, ?string $hash = null)`
+resolves the hash from the path segment **or** from `?hash=` (what the
+lookup form's `GET` submit produces); an empty/whitespace hash renders
+`public/certificates/lookup.blade.php` instead of 404ing.
 
 `certificates.verify` route parameter is raw hash **string**, not
 route-model-bound `Certificate`. Bad/unknown hash must fall through to
@@ -104,6 +117,16 @@ Request alone.
   per **active** (non-revoked) certificate row — never single shared modal
   re-populated by JS, matching `quizzes/edit.blade.php`'s
   per-question-modal pattern. Revoked rows show no revoke trigger.
+- `public/certificates/lookup.blade.php` — the hash-less branch of the
+  same route: a `<x-layout.public>` + `.max-w-reading` page holding one
+  `<x-ui.card>` with a plain `GET` form back to
+  `route('certificates.verify')` (`dusk="certificate-lookup-form"`,
+  `dusk="certificate-lookup-hash"`, `dusk="certificate-lookup-submit"` —
+  all three frozen in `tests/fixtures/dusk-selectors-snapshot.json`). Like
+  every other screen it mounts `<x-help-button key="certificates.verify" />`
+  (UC16's 100%-coverage rule; see `help-conventions`). Any change to
+  `show.blade.php`'s public shell — layout wrapper, reading width, help key
+  — must be mirrored here, and vice versa.
 - `public/certificates/show.blade.php` — **not** `layouts.app` (no
   session) and **not** `layouts.guest` either (that layout's left panel is
   themed around login copy, wrong fit for audit page). Uses

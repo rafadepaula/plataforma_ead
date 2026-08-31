@@ -7,7 +7,7 @@ use App\Models\Course;
 use App\Models\Organization;
 use App\Models\User;
 use Laravel\Dusk\Browser;
-use Tests\Browser\Navigation\AdminSidebarScopeTest;
+use Tests\Browser\Navigation\AdminTopbarTest;
 use Tests\DuskTestCase;
 
 /**
@@ -28,8 +28,9 @@ class NavigationMenuDuskTest extends DuskTestCase
      * cadeia do Admin: em contexto global o sidebar é a
      * superfície de administração *de sistema* apenas; depois de "Entrar
      * como", o item operacional de usuários volta e realmente funciona.
-     * O detalhamento por seção do sidebar vive em
-     * {@see AdminSidebarScopeTest}.
+     * O detalhamento por seção do sidebar vive neste próprio ciclo de vida;
+     * o cluster direito da topbar tem cobertura à parte em
+     * {@see AdminTopbarTest}.
      */
     public function test_admin_navigation_lifecycle(): void
     {

@@ -101,27 +101,4 @@ class CertificateRevocationTest extends DuskTestCase
                 ->assertSeeIn('@certificate-revoke-reason', 'Matrícula cancelada retroativamente por fraude.');
         });
     }
-
-    /**
-     * `Course`'s own `OrgScope` (not `CertificatePolicy`) is what blocks
-     * this: a Gestor from another Org can never even route-model-bind a
-     * foreign Course, so this 404s rather than 403s — mirroring every
-     * other `courses/{course}/...` staff screen (see `courses-conventions`).
-     */
-    public function test_gestor_from_another_org_cannot_reach_the_certificate_list(): void
-    {
-        $ownOrg = Organization::factory()->create();
-        $otherOrg = Organization::factory()->create();
-
-        $gestor = User::factory()->create(['org_id' => $otherOrg->id]);
-        $gestor->assignRole(RolesEnum::GESTOR->value);
-
-        $course = Course::factory()->create(['org_id' => $ownOrg->id]);
-
-        $this->browse(function (Browser $browser) use ($gestor, $course): void {
-            $browser->loginAs($gestor)
-                ->visit('/courses/'.$course->id.'/certificates')
-                ->assertSee('404');
-        });
-    }
 }

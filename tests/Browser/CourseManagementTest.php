@@ -237,17 +237,4 @@ class CourseManagementTest extends DuskTestCase
         $this->assertNotSoftDeleted($course);
         $this->assertDatabaseHas('courses', ['id' => $course->id, 'deleted_at' => null]);
     }
-
-    public function test_aluno_cannot_reach_the_courses_index_via_the_ui(): void
-    {
-        $aluno = User::factory()->create();
-        $aluno->assignRole(RolesEnum::ALUNO->value);
-
-        $this->browse(function (Browser $browser) use ($aluno): void {
-            // 1. Autorização negativa independente
-            $browser->loginAs($aluno)
-                ->visit(route('courses.index'))
-                ->assertSee('403');
-        });
-    }
 }

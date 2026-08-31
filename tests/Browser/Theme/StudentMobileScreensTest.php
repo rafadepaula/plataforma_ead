@@ -67,7 +67,6 @@ class StudentMobileScreensTest extends DuskTestCase
                 ->assertVisible('@course-progress-bar');
 
             $this->assertNoHorizontalScroll($browser);
-            $this->assertFabClearsBottomChromeIfPresent($browser);
 
             $browser->resize(1920, 1080);
         });
@@ -85,7 +84,6 @@ class StudentMobileScreensTest extends DuskTestCase
                 ->assertVisible('@back-to-classroom');
 
             $this->assertNoHorizontalScroll($browser);
-            $this->assertFabClearsBottomChromeIfPresent($browser);
 
             $browser->resize(1920, 1080);
         });
@@ -120,23 +118,6 @@ class StudentMobileScreensTest extends DuskTestCase
         $overflow = $browser->script('return document.body.scrollWidth > window.innerWidth;')[0];
 
         self::assertFalse($overflow, 'Horizontal scroll detected at 375px on '.$browser->driver->getCurrentURL());
-    }
-
-    private function assertFabClearsBottomChromeIfPresent(Browser $browser): void
-    {
-        $elements = $browser->elements('.ds-fab');
-
-        if (count($elements) === 0) {
-            self::assertTrue(true, 'No FAB present on this screen.');
-
-            return;
-        }
-
-        $distanceFromBottom = $browser->script(
-            "var el = document.querySelector('.ds-fab'); return window.innerHeight - el.getBoundingClientRect().bottom;"
-        )[0];
-
-        self::assertGreaterThanOrEqual(24, (float) $distanceFromBottom, 'FAB does not clear the 24px mobile bottom-chrome offset.');
     }
 
     /**

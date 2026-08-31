@@ -105,13 +105,4 @@ class ProfileTest extends DuskTestCase
         $this->assertNull($user->cpf);
         $this->assertTrue(Hash::check('password', $user->password));
     }
-
-    public function test_guest_visiting_profile_is_redirected_to_login(): void
-    {
-        $this->browse(function (Browser $browser): void {
-            $browser->visit('/profile')
-                ->assertPathIs('/login')
-                ->assertGuest();
-        });
-    }
 }

@@ -1,5 +1,5 @@
 {
-    "count": 427,
+    "count": 430,
     "entries": [
         {
             "file": "classroom/partials/_text-image.blade.php",
@@ -1708,6 +1708,18 @@
         {
             "file": "classroom/partials/_quiz-placeholder.blade.php",
             "selector": "quiz-timer-warning"
+        },
+        {
+            "file": "public/certificates/lookup.blade.php",
+            "selector": "certificate-lookup-form"
+        },
+        {
+            "file": "public/certificates/lookup.blade.php",
+            "selector": "certificate-lookup-hash"
+        },
+        {
+            "file": "public/certificates/lookup.blade.php",
+            "selector": "certificate-lookup-submit"
         }
     ]
 }

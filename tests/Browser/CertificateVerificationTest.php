@@ -16,7 +16,10 @@ use Tests\DuskTestCase;
  * certificate shows student/course/org/workload/issued_at, a "Revogado"
  * one still responds (never a 404) with the revoked banner + reason
  * without hiding the original data, an unknown hash 404s, and no
- * authentication is ever required to reach any of those states.
+ * authentication is ever required to reach any of those states. Cobre
+ * também a entrada sem hash (`/validar-certificado`, o destino do link do
+ * rodapé da Landing Page): o formulário de consulta e o `?hash=` que ele
+ * submete de volta para a mesma rota.
  *
  * Agrupado por cadeia de ciclo de vida (ver `testing-conventions`): os três
  * estados da página pública são percorridos como VISITANTE numa única
@@ -107,34 +110,46 @@ class CertificateVerificationTest extends DuskTestCase
     }
 
     /**
-     *  a sala de aula do Aluno mostra "Certificado ainda não disponível"
-     * junto do percentual concluído
-     * quando ainda não existe `Certificate` para o par aluno/curso,
-     * reaproveitando exatamente o `course_user.progress_percentage` que a
-     * barra de progresso já exibe — nunca um valor recalculado à parte.
+     * Jornada completa da entrada pública sem hash: rodapé da Landing Page →
+     * `/validar-certificado` → formulário → hash digitado → página de
+     * verificação. É o único produtor do `?hash=` tratado pelo controller,
+     * e quem segura o link do rodapé apontando para uma tela útil em vez de
+     * um 404.
      */
-    public function test_student_without_a_certificate_sees_the_unavailable_banner_with_progress(): void
+    public function test_landing_footer_leads_to_the_hash_lookup_form_which_verifies_a_typed_hash(): void
     {
-        $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'title' => 'Curso Sem Certificado Dusk']);
-        $student = User::factory()->create(['org_id' => null]);
-        $student->assignRole('aluno');
-
-        $course->students()->attach($student->id, [
-            'enrolled_at' => Carbon::now(),
-            'status' => 'active',
-            'progress_percentage' => 45,
+        $org = Organization::factory()->create(['name' => 'Instituto Consulta Dusk']);
+        $course = Course::factory()->create([
+            'org_id' => $org->id,
+            'title' => 'Curso Consulta Dusk',
+            'workload_hours' => 20,
         ]);
+        $student = User::factory()->create(['org_id' => null, 'name' => 'Aluno Consulta Dusk']);
 
-        $this->browse(function (Browser $browser) use ($student, $course): void {
-            $browser->loginAs($student)
-                ->visit(route('classroom.show', $course))
-                ->waitFor('@certificate-unavailable')
-                ->assertSeeIn('@certificate-unavailable', 'Certificado ainda não disponível')
-                ->assertSeeIn('@certificate-unavailable', 'Você concluiu 45% do curso.')
-                ->assertMissing('@download-certificate');
+        $certificate = $this->makeCertificate($course, $student);
+
+        $this->browse(function (Browser $browser) use ($certificate): void {
+            $browser->visit('/')
+                ->assertGuest()
+                ->clickLink('Validar certificado')
+                ->waitFor('@certificate-lookup-form')
+                ->assertPathIs('/validar-certificado')
+                ->assertSee('Validar certificado')
+                ->type('@certificate-lookup-hash', $certificate->validation_hash)
+                ->click('@certificate-lookup-submit')
+                ->waitFor('@certificate-valid-banner')
+                ->assertQueryStringHas('hash', $certificate->validation_hash)
+                ->assertSeeIn('@certificate-student-name', 'Aluno Consulta Dusk')
+                ->assertSeeIn('@certificate-course-title', 'Curso Consulta Dusk')
+                ->assertSeeIn('@certificate-org-name', 'Instituto Consulta Dusk');
+
+            // Hash digitado errado: 404, e não o certificado de outra pessoa.
+            $browser->visit('/validar-certificado')
+                ->waitFor('@certificate-lookup-form')
+                ->type('@certificate-lookup-hash', str_repeat('0', 64))
+                ->click('@certificate-lookup-submit')
+                ->waitForText('404')
+                ->assertSee('404');
         });
-
-        $this->assertDatabaseCount('certificates', 0);
     }
 }

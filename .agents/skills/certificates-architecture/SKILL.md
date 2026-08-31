@@ -26,7 +26,7 @@ metadata:
 RF10 lets Gestor configure `course_completion_rules` on Course. RF16
 requires resulting certificate to be branded PDF with embedded QR code.
 RF17 exposes fully public, unauthenticated, cross-tenant
-`/validar-certificado/{hash}` route — one deliberate crack in this
+`/validar-certificado/{hash?}` route — one deliberate crack in this
 platform's otherwise strict per-Organization tenancy, because certificate
 must be verifiable by anyone (employer, another school) who was never
 user of issuing Organization. RF25 adds Gestor/Admin revocation. None of
@@ -91,10 +91,17 @@ re-completion without deliberate, separately-specified migration.
 
 ## The Public Verification Route Is the One Deliberately Unscoped Boundary
 
-`GET /validar-certificado/{hash}` (`certificates.verify`) carries **no**
+`GET /validar-certificado/{hash?}` (`certificates.verify`) carries **no**
 middleware at all — not `auth`, not `guest`, not `role:*` — because it
 must resolve identically for anonymous visitor and already-logged-in
-Admin/Gestor/Aluno of *different* Organization. Both
+Admin/Gestor/Aluno of *different* Organization. The `{hash?}` segment is
+optional so the same route doubles as the public **entry point** linked
+from the Landing Page footer: with no hash (or a blank `?hash=`) the
+controller renders the lookup form (`public/certificates/lookup.blade.php`),
+which submits the typed hash back as `?hash=…` and re-enters the same
+action. A visitor holding a printed certificate has the code, not a URL —
+so the hash-less state must never 404, and no route constraint may make
+it unreachable. Both
 `PublicCertificateController` and `CertificatePdfService` must resolve
 `$certificate->course->organization` with
 `Course::withoutGlobalScopes()`/explicit un-scoped query — normal

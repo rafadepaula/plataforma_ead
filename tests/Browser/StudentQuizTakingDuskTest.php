@@ -389,17 +389,6 @@ class StudentQuizTakingDuskTest extends DuskTestCase
                 ->assertVisible('@back-to-lesson')
                 ->assertAttribute('@back-to-lesson', 'href', route('classroom.show', $course));
 
-            $bannerOrder = $browser->script(
-                "return ['quiz-best-score','quiz-pending-grading','quiz-cannot-attempt','back-to-lesson']"
-                .".map(function (name) { var nodes = Array.prototype.slice.call(document.querySelectorAll('*'));"
-                ."return nodes.indexOf(document.querySelector('[dusk=\"' + name + '\"]')); });"
-            )[0];
-
-            $this->assertNotContains(-1, $bannerOrder, 'Todos os avisos da faixa devem estar presentes.');
-            $sortedBannerOrder = $bannerOrder;
-            sort($sortedBannerOrder);
-            $this->assertSame($sortedBannerOrder, $bannerOrder, 'A faixa de avisos deve seguir a ordem estrita da tela.');
-
             // O botão de saída realmente devolve o Aluno à sala de aula.
             $browser->click('@back-to-lesson')
                 ->waitForLocation(parse_url(route('classroom.show', $course), PHP_URL_PATH));

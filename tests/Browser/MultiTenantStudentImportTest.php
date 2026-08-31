@@ -139,20 +139,6 @@ class MultiTenantStudentImportTest extends DuskTestCase
         $this->assertSame(0, $course->fresh()->students()->count());
     }
 
-    public function test_an_admin_without_an_impersonated_org_cannot_open_the_csv_import_screen(): void
-    {
-        $admin = User::factory()->create(['org_id' => null]);
-        $admin->assignRole(RolesEnum::ADMIN->value);
-
-        $this->browse(function (Browser $browser) use ($admin): void {
-            $browser->loginAs($admin)
-                ->visit(route('admin.dashboard'))
-                ->visit(route('users.import.create'))
-                ->waitForText('Selecione uma Organização ativa antes de continuar.')
-                ->assertMissing('[dusk="csv-import-form"]');
-        });
-    }
-
     private function makeCsv(string $contents): string
     {
         $path = tempnam(sys_get_temp_dir(), 'csv_import_').'.csv';

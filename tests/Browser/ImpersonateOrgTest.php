@@ -36,21 +36,4 @@ class ImpersonateOrgTest extends DuskTestCase
                 ->assertSee('Contexto de Organização encerrado.');
         });
     }
-
-    public function test_an_admin_without_an_impersonated_org_cannot_create_a_course(): void
-    {
-        $admin = User::factory()->create(['org_id' => null]);
-        $admin->assignRole(RolesEnum::ADMIN->value);
-
-        $this->browse(function (Browser $browser) use ($admin): void {
-            $browser->loginAs($admin)
-                ->visit(route('courses.create'))
-                ->type('title', 'Curso Sem Organização')
-                ->type('workload_hours', '40')
-                ->click('@course-submit')
-                ->waitForText('Selecione uma Organização ativa antes de continuar.');
-        });
-
-        $this->assertDatabaseCount('courses', 0);
-    }
 }

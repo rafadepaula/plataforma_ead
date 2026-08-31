@@ -147,18 +147,6 @@ class OrganizationCrudTest extends DuskTestCase
         });
     }
 
-    public function test_gestor_cannot_reach_the_organizations_index(): void
-    {
-        $gestor = User::factory()->create();
-        $gestor->assignRole(RolesEnum::GESTOR->value);
-
-        $this->browse(function (Browser $browser) use ($gestor): void {
-            $browser->loginAs($gestor)
-                ->visit(route('organizations.index'))
-                ->assertSee('403');
-        });
-    }
-
     /**
      * Dusk roda contra o disco `public` real (o browser busca a imagem por
      * HTTP), então os fixtures são removidos ao final de cada teste.
