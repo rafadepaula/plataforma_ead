@@ -44,7 +44,7 @@
               action="{{ $action }}"
               role="search"
               aria-label="{{ $label }}"
-              {{ $attributes->merge(['class' => 'row g-2 align-items-end']) }}>
+              {{ $attributes->merge(['class' => 'ds-filter-form row g-2 align-items-end']) }}>
             @if ($htmlMethod === 'POST')
                 @csrf
             @endif

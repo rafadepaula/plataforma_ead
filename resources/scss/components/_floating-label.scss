@@ -43,9 +43,12 @@
 // wrapper (classe `ds-field`) para funcionar fora de um field-stack. Dentro
 // de um `<x-ui.field-stack>` (classe `ds-field-stack`, ambos os modos —
 // `.ds-stack` de 1 coluna e `.row.g-3` de 2 colunas), esse `mb-3` some para
-// não somar ao `--gap-stack`/gutter do pai.
-.ds-field-stack .ds-field {
-    margin-bottom: 0;
+// não somar ao `--gap-stack`/gutter do pai. O `!important` é obrigatório
+// porque o `.mb-3` é utility do Bootstrap (`margin-bottom: 1rem!important`)
+// e vence qualquer regra de especificidade comum.
+.ds-field-stack .ds-field,
+.ds-filter-form .ds-field {
+    margin-bottom: 0 !important;
 }
 
 // -----------------------------------------------------------------------------
