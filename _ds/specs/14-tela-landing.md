@@ -1,13 +1,13 @@
 # Tela — Landing
 
-**Kicker/título:** *—*
+**Caption/título:** *—*
 **Views de origem:** `landing/show.blade.php`
 
 ## Objetivo
-Hero em --blue-50 (raio 36px): badge, display 44px, lead, dois CTAs, três provas em número.
+Hero em `--primary-surface` (`#EFF6FF`, raio `--radius-xl`): badge, `headline-2xl`, apoio, dois CTAs, três provas em número.
 
 ## Layout e componentes
-Prova visual do produto são os próprios componentes (card de curso, certificado emitido, pergunta do fórum) — nunca fotografia. Seção "Como funciona" em 4 cards + faixa de números em --blue-50.
+Prova visual do produto são os próprios componentes (card de curso, certificado emitido, pergunta do fórum) — nunca fotografia. Seção "Como funciona" em 4 cards + faixa de números em `--primary-surface`.
 
 ## Estados
 Headline e proposta de valor preservados verbatim.
@@ -18,6 +18,6 @@ da tela) no repositório de origem — não renomear, não mover de nó.
 
 ## Critérios de aceite
 - Conteúdo e comportamento idênticos ao Blade original; só a casca visual muda.
-- Zero vermelho/laranja/amarelo, zero caixa-alta fora de overline.
+- Zero caixa-alta; imagens com lazy-load (LCP).
 - Todo texto em pt-BR, sentence case, segunda pessoa.
 - `artisan dusk` filtrado nesta tela passa.

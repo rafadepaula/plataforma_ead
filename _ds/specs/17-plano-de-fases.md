@@ -12,7 +12,7 @@
 | 7 | Polish | Componentes novos (Fab, Chip, Switch, Tabs, Avatar) + verificação final | Médio |
 
 ## Princípios de execução
-1. A camada de tokens é a fonte única de verdade de design.
+1. A camada de tokens (`DESIGN.md` na **raiz do repositório**, §6) é a fonte única de verdade de design.
 2. Zero `style=` inline no estado final.
 3. Zero JS artesanal onde a biblioteca já entrega (Modal, Toast, Dropdown).
 4. 2+ ocorrências = componente.

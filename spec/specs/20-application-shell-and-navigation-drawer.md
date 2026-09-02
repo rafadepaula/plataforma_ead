@@ -6,7 +6,7 @@
 
 * **Objetivo:** Implementar o Shell Master da aplicação (`layouts/app.blade.php`), Topbar de 76px (compacta de 60px no mobile), Drawer Lateral claro de 280px (gaveta deslizante de 264px com 220ms no mobile), Badge de Organização Ativa e Dropdown de Notificações.
 * **Roles Cobertas:** `role:admin`, `role:gestor`, `role:aluno`.
-* **Referência de Design:** `spec/new_ds/DESIGN.md` §4.1 e §4.14, `spec/new_ds/No celular - Anatomia.dc.html`.
+* **Referência de Design:** `DESIGN.md` §4.1 e §4.14, `_ds/No celular - Anatomia.dc.html`.
 
 ---
 

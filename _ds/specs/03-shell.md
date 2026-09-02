@@ -1,4 +1,4 @@
-# 03 — Shell (app bar, drawer, page header, footer)
+# 03 — Shell (topbar, drawer, page header, footer)
 
 **Views de origem:** `layouts/app.blade.php`, `components/layout/topbar.blade.php`,
 `sidebar.blade.php`, `app/Services/Navigation/NavigationRegistry.php`
@@ -8,14 +8,17 @@ Casca presente em toda tela autenticada — primeira peça a migrar (onda A,
 risco médio) porque tudo depende dela.
 
 ## Layout e componentes
-- **Topbar** 76px: marca, busca em pílula até 420px, badge da organização
-  ativa, ajuda contextual (`HelpButton`), sino com contador (`NotificationsBell`),
-  usuário com papel.
-- **Sidebar** drawer claro 280px, três seções do `NavigationRegistry` — Painel,
-  Acompanhamento, Aprendizado. Item ativo em pílula `--nav-active-bg`, badge de
-  pendência em menta, item 52px.
-- `main` com 40px de padding sobre `--surface-body`, conteúdo até 1240px.
-- **PageHeader**: breadcrumb + overline azul + h1 + lead, em toda tela.
+- **Topbar**: marca, busca, badge da organização ativa, ajuda contextual
+  (`HelpButton`), sino com contador (`NotificationsBell`), usuário com papel.
+  Sobre `--surface-container-lowest`.
+- **Sidebar** drawer claro 280px sobre `--surface-container-lowest`, três
+  seções do `NavigationRegistry` — Painel, Acompanhamento, Aprendizado. Item
+  ativo em `--primary-surface` com texto `--primary`, badge de pendência em
+  `--success`, alvo de item 48px.
+- `main` com `--space-8` (32px) de padding sobre `--background #faf8ff`,
+  conteúdo até `--container-max` (1280px).
+- **PageHeader**: breadcrumb + caption + `headline-2xl` + apoio em
+  `--on-surface-variant`, em toda tela.
 - **Footer** com a organização.
 
 ## Estados

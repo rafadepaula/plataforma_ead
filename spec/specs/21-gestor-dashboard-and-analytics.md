@@ -6,7 +6,7 @@
 
 * **Objetivo:** Refatorar a tela de Dashboard do Gestor/Admin (`dashboard/index.blade.php`) no padrão Material Bootstrap: 4 StatCards com deltas comparativos, grid 2fr/1fr, tabela de matrículas recentes com barra de progresso compacta de 8px, card de atenção a pendências, ranking de cursos mais concluídos e exportação CSV em streaming.
 * **Roles Cobertas:** `role:admin`, `role:gestor`.
-* **Referência de Design:** `spec/new_ds/DESIGN.md` §4.2, `spec/new_ds/Dashboard - Anatomia.dc.html`.
+* **Referência de Design:** `DESIGN.md` §4.2, `_ds/Dashboard - Anatomia.dc.html`.
 
 ---
 

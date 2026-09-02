@@ -6,7 +6,7 @@
 
 * **Objetivo:** Refatorar a tela de consumo da aula (`classroom/lesson.blade.php`) com o padrão Material Bootstrap: casca unificada com despacho estrito para 4 formatos de mídia (*Prova*, *Vídeo*, *PDF*, *Texto/Imagem*), rastreamento assíncrono de vídeo a cada 5 segundos com auto-conclusão a 90% via `LessonPlayer.js`, conclusão manual assíncrona para PDF e texto com transição suave para chip menta sem recarregar a tela, e estados degradados em tom neutro.
 * **Roles Cobertas:** `role:aluno` (e preview por `role:admin|gestor`), middleware `student.enrolled`.
-* **Referência de Design:** `spec/new_ds/DESIGN.md` §4.9, `spec/new_ds/Aula - Anatomia.dc.html`.
+* **Referência de Design:** `DESIGN.md` §4.9, `_ds/Aula - Anatomia.dc.html`.
 
 ---
 

@@ -6,7 +6,7 @@
 
 * **Objetivo:** Refatorar a tela de login (`auth/login.blade.php`), layout de visitante (`layouts/guest.blade.php`) e o fluxo público de convite inteligente (`convite/show.blade.php` e `convite/invalid.blade.php`) com o padrão Material Bootstrap: split layout com painel institucional em `--blue-100` (46% de largura, colapsável abaixo de `lg`), coluna de formulário de 440px, botão revelador de senha (`PasswordToggle`), formulário adaptativo de convite com verificação assíncrona de e-mail via `SmartInvitationForm.js` (colapsando campos de cadastro se o usuário já possuir conta na plataforma) e switch obrigatório de consentimento.
 * **Roles Cobertas:** Visitantes anônimos, novos alunos e usuários já cadastrados.
-* **Referência de Design:** `spec/new_ds/DESIGN.md` §4.13, `spec/new_ds/Login e convite - Anatomia.dc.html`.
+* **Referência de Design:** `DESIGN.md` §4.13, `_ds/Login e convite - Anatomia.dc.html`.
 
 ---
 

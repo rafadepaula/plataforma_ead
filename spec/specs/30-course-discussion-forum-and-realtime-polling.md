@@ -6,7 +6,7 @@
 
 * **Objetivo:** Refatorar o fórum de discussão do curso (`forum/index.blade.php`, `forum/show.blade.php`, `partials/_topic.blade.php`, `partials/_reply.blade.php`) com o padrão Material Bootstrap: cards interativos de tópicos com avatares de iniciais e badges de fixação, botão FAB flutuante de criação no mobile (<lg), modal elevado de publicação rápida, fallback de página inteira (`forum/create.blade.php`) e polling incremental assíncrono a cada 10 segundos via `ForumPolling.js` utilizando `since_id`.
 * **Roles Cobertas:** `role:aluno`, `role:gestor`, `role:admin`, middleware `student.enrolled`.
-* **Referência de Design:** `spec/new_ds/DESIGN.md` §4.11, `spec/new_ds/Forum - Anatomia.dc.html`.
+* **Referência de Design:** `DESIGN.md` §4.11, `_ds/Forum - Anatomia.dc.html`.
 
 ---
 

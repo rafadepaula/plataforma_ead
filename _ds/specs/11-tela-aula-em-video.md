@@ -1,13 +1,13 @@
 # Tela — Aula em vídeo
 
-**Kicker/título:** *Sala de aula / Aula*
+**Caption/título:** *Sala de aula / Aula*
 **Views de origem:** `classroom/lesson.blade.php`, `partials/_video.blade.php`
 
 ## Objetivo
-Player 16:9 sobre pastel wash.
+Player 16:9 sobre `--primary-surface`.
 
 ## Layout e componentes
-Barra "Tempo assistido" separada do progresso do curso — texto atual preservado: salvo a cada 5s, concluída após 90%. "Marcar como concluída" em menta; depois vira chip "Aula concluída". Materiais e próximas aulas na coluna lateral.
+Barra "Tempo assistido" separada do progresso do curso — texto atual preservado: salvo a cada 5s, concluída após 90%. "Marcar como concluída" em `--success`; depois vira chip "Aula concluída". Materiais e próximas aulas na coluna lateral.
 
 ## Estados
 Vídeo indisponível: "Vídeo indisponível — avise o responsável pelo curso." Nunca culpa o aluno.
@@ -18,6 +18,6 @@ da tela) no repositório de origem — não renomear, não mover de nó.
 
 ## Critérios de aceite
 - Conteúdo e comportamento idênticos ao Blade original; só a casca visual muda.
-- Zero vermelho/laranja/amarelo, zero caixa-alta fora de overline.
+- Chips sempre com par container / on-container; zero caixa-alta.
 - Todo texto em pt-BR, sentence case, segunda pessoa.
 - `artisan dusk` filtrado nesta tela passa.

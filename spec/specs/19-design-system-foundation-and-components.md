@@ -7,7 +7,7 @@
 * **Objetivo:** Estabelecer a fundação do novo Design System ("Material Bootstrap") substituindo integralmente o tema legado (Modernist: cinza, vermelho `#ec3013`, raio 0). Centralizar tokens CSS, pipeline SCSS/Vite, tipografia Nunito Sans e 30 micro-componentes Blade padronizados (`<x-ui.*>` e `<x-layout.*>`).
 * **Regra Fundamental de Cores:** **Vermelho, laranja e amarelo são terminantemente proibidos na interface.** Destrutivo e erros usam tom `--critical` (`#3b4a78`, azul-slate) + ícone explícito + texto calmo.
 * **Roles Cobertas:** Global (`role:admin`, `role:gestor`, `role:aluno`, visitantes públicos).
-* **Referência de Design:** `spec/new_ds/DESIGN.md`, `spec/new_ds/Novo Design System - Telas.dc.html`, `spec/new_ds/Tabelas.dc.html`.
+* **Referência de Design:** `DESIGN.md`, `_ds/Novo Design System - Telas.dc.html`, `_ds/Tabelas.dc.html`.
 
 ---
 

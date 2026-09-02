@@ -6,7 +6,7 @@
 
 * **Objetivo:** Refatorar a tela de realização de avaliação pelo aluno (`student/quizzes/show.blade.php`) com o padrão Material Bootstrap: coluna de leitura focada de 760px, cronômetro em tempo real `QuizTimer.js` no cabeçalho, faixa de avisos e gabarito, questões com cartões de clique amplo (rádio/checkbox de 22px), textarea dissertativa, diálogo de confirmação com aviso de questões não respondidas e submissão atômica única em `POST student.quizzes.submit`.
 * **Roles Cobertas:** `role:aluno`, middleware `student.enrolled`.
-* **Referência de Design:** `spec/new_ds/DESIGN.md` §4.10, `spec/new_ds/Fazer a prova - Anatomia.dc.html`.
+* **Referência de Design:** `DESIGN.md` §4.10, `_ds/Fazer a prova - Anatomia.dc.html`.
 
 ---
 

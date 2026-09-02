@@ -6,7 +6,7 @@
 
 * **Objetivo:** Refatorar a fila de pendências (`quizzes/attempts/pending.blade.php`) e a tela de correção manual de redações/dissertativas (`quizzes/attempts/show.blade.php`) com o padrão Material Bootstrap: ordenação estrita FIFO (`completed_at ASC`), coluna de leitura de 760px, resposta do aluno em superfície afundada (`--surface-sunken`), vereditos em pares de cartões rádio (*Correta* em menta e *Incorreta* em slate neutro, sem vermelho), barra dinâmica de progresso com chip *"Pronto para salvar"* e validação com foco na primeira pendência.
 * **Roles Cobertas:** `role:admin`, `role:gestor`.
-* **Referência de Design:** `spec/new_ds/DESIGN.md` §4.6, `spec/new_ds/Correcao de dissertativas - Anatomia.dc.html`.
+* **Referência de Design:** `DESIGN.md` §4.6, `_ds/Correcao de dissertativas - Anatomia.dc.html`.
 
 ---
 

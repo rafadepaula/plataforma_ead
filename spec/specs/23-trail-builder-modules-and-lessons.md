@@ -6,7 +6,7 @@
 
 * **Objetivo:** Refatorar as telas de montagem da trilha do curso (`courses/modules/index.blade.php`, `modules/lessons/index.blade.php` e `modules/lessons/_form.blade.php`) com o padrão Material Bootstrap: listas arrastáveis com `ModuleReorder.js`, alças Lucide `grip-vertical`, persistência AJAX assíncrona, formulário de lição com floating labels, dropzone de múltiplos arquivos, pré-visualização ao vivo de vídeo do YouTube em moldura 16:9 pastel wash e switch toggle para publicação.
 * **Roles Cobertas:** `role:admin`, `role:gestor`.
-* **Referência de Design:** `spec/new_ds/DESIGN.md` §4.4, `spec/new_ds/Montar a trilha - Anatomia.dc.html`.
+* **Referência de Design:** `DESIGN.md` §4.4, `_ds/Montar a trilha - Anatomia.dc.html`.
 
 ---
 

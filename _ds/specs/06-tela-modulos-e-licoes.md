@@ -1,13 +1,13 @@
 # Tela — Módulos e lições
 
-**Kicker/título:** *Gestão / Módulos*
+**Caption/título:** *Gestão / Módulos*
 **Views de origem:** `courses/modules/_list.blade.php`, `modules/lessons/_form.blade.php`
 
 ## Objetivo
 Lista arrastável mantendo `data-reorder-url` e `ModuleReorder.js` intactos.
 
 ## Layout e componentes
-Alça de arraste: ícone `grip-vertical` Lucide no lugar do caractere atual. Linha em `--surface-sunken`, elev-1, raio 14px. Formulário de lição: título, tipo de conteúdo, URL do YouTube com pré-visualização em pastel wash, upload de imagem e PDF, "Publicado" como `Switch`.
+Alça de arraste: ícone `grip-vertical` Lucide no lugar do caractere atual. Linha em `--surface-container-low`, `--shadow-card`, raio `--radius-lg`. Formulário de lição: título, tipo de conteúdo, URL do YouTube com pré-visualização sobre `--primary-surface`, upload de imagem e PDF, "Publicado" como `Switch`.
 
 ## Estados
 Hint preservado verbatim: o servidor revalida o link no envio.
@@ -18,6 +18,6 @@ da tela) no repositório de origem — não renomear, não mover de nó.
 
 ## Critérios de aceite
 - Conteúdo e comportamento idênticos ao Blade original; só a casca visual muda.
-- Zero vermelho/laranja/amarelo, zero caixa-alta fora de overline.
+- Todo valor visual via token (raiz `DESIGN.md` §6); zero caixa-alta.
 - Todo texto em pt-BR, sentence case, segunda pessoa.
 - `artisan dusk` filtrado nesta tela passa.

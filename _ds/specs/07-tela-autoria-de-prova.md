@@ -1,6 +1,6 @@
 # Tela — Autoria de prova
 
-**Kicker/título:** *Gestão / Autoria de prova*
+**Caption/título:** *Gestão / Autoria de prova*
 **Views de origem:** `quizzes/edit.blade.php`, `partials/_question-form.blade.php`, `_question-list.blade.php`
 
 ## Objetivo
@@ -18,6 +18,6 @@ da tela) no repositório de origem — não renomear, não mover de nó.
 
 ## Critérios de aceite
 - Conteúdo e comportamento idênticos ao Blade original; só a casca visual muda.
-- Zero vermelho/laranja/amarelo, zero caixa-alta fora de overline.
+- Chips sempre com par container / on-container; zero caixa-alta.
 - Todo texto em pt-BR, sentence case, segunda pessoa.
 - `artisan dusk` filtrado nesta tela passa.

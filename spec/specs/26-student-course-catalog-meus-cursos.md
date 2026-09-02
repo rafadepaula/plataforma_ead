@@ -6,7 +6,7 @@
 
 * **Objetivo:** Refatorar a área do aluno "Meus Cursos" (`student/courses/index.blade.php`) com o padrão Material Bootstrap: filtro superior exclusivo por abas segmentadas (`<x-ui.tabs>`), grid responsivo de cards ricos com cabeçalho de mídia em pastel wash de 168px (ou imagem com véu escuro), overline multiorganização, barra de progresso de 10px e botões de ação contextual (*"Começar curso"*, *"Continuar"*, *"Baixar certificado"*, *"Ver o que você fez"*).
 * **Roles Cobertas:** `role:aluno` (agrega matrículas de todas as organizações que o usuário pertence).
-* **Referência de Design:** `spec/new_ds/DESIGN.md` §4.7, `spec/new_ds/Meus cursos - Anatomia dos cards.dc.html`.
+* **Referência de Design:** `DESIGN.md` §4.7, `_ds/Meus cursos - Anatomia dos cards.dc.html`.
 
 ---
 

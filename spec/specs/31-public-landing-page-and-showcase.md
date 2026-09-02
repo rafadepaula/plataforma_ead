@@ -6,7 +6,7 @@
 
 * **Objetivo:** Refatorar a Landing Page pública da plataforma (`landing/show.blade.php`) com o padrão Material Bootstrap: layout em faixas alternadas azul (`--blue-50`) e branco (`--surface`), Hero institucional com raio de 36px (`--radius-2xl`), vitrine visual construída exclusivamente com os componentes reais do próprio Design System (cards de cursos, certificados e fórum, sem fotos stock genéricas), fluxo em 4 passos "Como funciona" e âncora de contato institucional.
 * **Roles Cobertas:** Visitantes anônimos (público) e usuários autenticados.
-* **Referência de Design:** `spec/new_ds/DESIGN.md` §4.12, `spec/new_ds/Landing Page.dc.html`, `spec/new_ds/Pagina publica - Anatomia.dc.html`.
+* **Referência de Design:** `DESIGN.md` §4.12, `_ds/Landing Page.dc.html`, `_ds/Pagina publica - Anatomia.dc.html`.
 
 ---
 

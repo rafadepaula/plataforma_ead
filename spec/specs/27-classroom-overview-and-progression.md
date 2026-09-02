@@ -6,7 +6,7 @@
 
 * **Objetivo:** Refatorar a Sala de Aula do curso (`classroom/show.blade.php`) com o padrão Material Bootstrap: layout em grade 8/4 responsiva, grupos de módulos com linhas de aula em 4 zonas horizontais, ícones circulares de estado de 44px (menta com check para concluídas; azul com ícone de mídia para pendentes), card lateral de progresso com barra compacta, card permanente de status do certificado e atalho inteligente para a próxima aula não assistida.
 * **Roles Cobertas:** `role:aluno` (e preview por `role:admin|gestor`). Protegido pelo middleware `student.enrolled`.
-* **Referência de Design:** `spec/new_ds/DESIGN.md` §4.8, `spec/new_ds/Sala de aula - Anatomia.dc.html`.
+* **Referência de Design:** `DESIGN.md` §4.8, `_ds/Sala de aula - Anatomia.dc.html`.
 
 ---
 

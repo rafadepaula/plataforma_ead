@@ -1,8 +1,9 @@
 # specs/ — índice
 
-Specs de execução da migração para o Plataforma EAD Design System. Cada
-arquivo é uma unidade de trabalho que um time pode pegar isoladamente. Todas
-partem de `DESIGN.md` (tokens e visão geral) e do código-fonte real em
+Specs de execução da migração para o LMS Core System (design system
+"Plataforma EAD"). Cada arquivo é uma unidade de trabalho que um time pode
+pegar isoladamente. Todas partem do `DESIGN.md` na **raiz do repositório**
+(fonte única de verdade dos tokens) e do código-fonte real em
 `rafadepaula/plataforma_ead`.
 
 ## Fundação

@@ -6,7 +6,7 @@
 
 * **Objetivo:** Refatorar a tela de criação e edição de provas (`quizzes/edit.blade.php`, `partials/_question-form.blade.php`, `partials/_question-list.blade.php`) com o padrão Material Bootstrap: formulário de regras da avaliação, lista arrastável de questões, modais elevados pré-renderizados para autoria rápida, 4 tipos de questões (*Única escolha*, *Múltipla escolha*, *Verdadeiro ou Falso*, *Dissertativa*), clonagem dinâmica de opções via `<template>` com `__INDEX__` e garantia de mínimo de 2 opções.
 * **Roles Cobertas:** `role:admin`, `role:gestor`.
-* **Referência de Design:** `spec/new_ds/DESIGN.md` §4.5, `spec/new_ds/Criar a prova - Anatomia.dc.html`.
+* **Referência de Design:** `DESIGN.md` §4.5, `_ds/Criar a prova - Anatomia.dc.html`.
 
 ---
 

@@ -6,7 +6,7 @@
 
 * **Objetivo:** Refatorar a listagem e gestão de cursos (`courses/index.blade.php`) do Gestor/Admin com o padrão Material Bootstrap: `DataTable` estilizada, `FilterBar` com busca e abas de status, 4 ações de linha com hierarquia visual clara, cards responsivos para mobile (<md) sem duplicação de seletores Dusk, e proteção rígida contra exclusão de cursos com matrículas ativas.
 * **Roles Cobertas:** `role:admin`, `role:gestor`.
-* **Referência de Design:** `spec/new_ds/DESIGN.md` §4.3, `spec/new_ds/Cursos - Anatomia.dc.html`, `spec/new_ds/Tabelas.dc.html`.
+* **Referência de Design:** `DESIGN.md` §4.3, `_ds/Cursos - Anatomia.dc.html`, `_ds/Tabelas.dc.html`.
 
 ---
 
