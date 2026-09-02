@@ -1,6 +1,6 @@
 @php
-    $videoId = $lesson->youtube_video_id;
-    $embedUrl = $lesson->youtube_embed_url;
+    $videoId = $lesson->video_id;
+    $embedUrl = $lesson->video_embed_url;
     /**
      * Só quem tem matrícula ativa grava progresso. Quem apenas visualiza a aula
      * (Admin/Gestor) recebe o player sem o polling: o endpoint recusaria a
@@ -9,34 +9,118 @@
     $pollsProgress = $videoId !== null && ($tracksProgress ?? true);
 @endphp
 
-<div @class(['mb-4', 'ds-ratio ds-ratio-16x9' => $videoId !== null])>
-    <div
-        id="youtube-player-{{ $lesson->id }}"
-        @if($pollsProgress)
-            data-youtube-player
-            data-lesson-id="{{ $lesson->id }}"
-            data-video-id="{{ $videoId }}"
-            data-progress-url="{{ route('lessons.progress', $lesson) }}"
-        @endif
-        dusk="video-player-{{ $lesson->id }}"
-    >
-        @if($videoId !== null)
-            <iframe
-                src="{{ $embedUrl }}?rel=0&modestbranding=1&controls=1"
-                class="w-100 h-100 border-0"
-                allow="autoplay; encrypted-media"
-                allowfullscreen
-            ></iframe>
-        @else
-            {{-- Tom neutro (`--attention-container`): o link quebrado não é culpa do aluno. --}}
-            <div class="ds-media-unavailable" dusk="video-unavailable-{{ $lesson->id }}">
-                <p class="ds-media-unavailable-title">Vídeo indisponível</p>
-                <p class="ds-media-unavailable-text">
-                    Não foi possível reconhecer o endereço do vídeo desta aula. Avise o responsável pelo curso para que o link do YouTube seja corrigido.
-                </p>
-            </div>
-        @endif
-    </div>
+<div class="ds-player ds-ratio ds-ratio-16x9 mb-4"
+     id="video-player-{{ $lesson->id }}"
+     dusk="video-player-{{ $lesson->id }}"
+     @if($videoId !== null)
+         data-video-player
+         tabindex="0"
+         role="region"
+         aria-label="Player de vídeo da aula"
+         data-lesson-id="{{ $lesson->id }}"
+         data-provider="{{ $lesson->video_provider }}"
+         data-video-id="{{ $videoId }}"
+         data-video-embed="{{ $embedUrl }}"
+         @if($pollsProgress) data-progress-url="{{ route('lessons.progress', $lesson) }}" @endif
+     @endif
+>
+    @if($videoId !== null)
+        {{-- O adapter do provedor substitui este stage pelo player real no clique. --}}
+        <div class="ds-player-stage" data-player-stage aria-hidden="true"></div>
+
+        {{--
+            Fachada click-to-load: nenhum SDK de terceiro carrega antes do
+            primeiro clique. A capa é o wash pastel do design system (a
+            thumbnail remota só entraria com uma chamada externa no render,
+            custo que o render síncrono da aula não paga).
+        --}}
+        <button type="button"
+                class="ds-player-facade"
+                data-player-facade
+                dusk="video-facade-{{ $lesson->id }}"
+                aria-label="Reproduzir vídeo">
+            <span class="ds-player-facade-icon" aria-hidden="true">
+                <x-ui.icon name="play" size="28" />
+            </span>
+        </button>
+
+        {{--
+            Controles 100% da plataforma, server-renderizados (os seletores
+            dusk entram no snapshot por viverem aqui) e inertes até o boot —
+            `LessonPlayer.js` só os revela quando o adapter fica pronto.
+        --}}
+        <div class="ds-player-controls d-none" data-player-controls>
+            <button type="button"
+                    class="ds-player-button"
+                    data-player-toggle
+                    dusk="video-play-{{ $lesson->id }}"
+                    aria-label="Reproduzir ou pausar">
+                <x-ui.icon name="play" size="18" class="ds-player-icon-play" aria-hidden="true" />
+                <x-ui.icon name="pause" size="18" class="ds-player-icon-pause" aria-hidden="true" />
+            </button>
+
+            <span class="ds-player-time" data-player-current dusk="video-time-{{ $lesson->id }}">0:00</span>
+
+            <input type="range"
+                   class="ds-player-seek"
+                   data-player-seek
+                   dusk="video-seek-{{ $lesson->id }}"
+                   min="0"
+                   max="100"
+                   step="0.1"
+                   value="0"
+                   aria-label="Posição do vídeo" />
+
+            <span class="ds-player-time" data-player-duration>0:00</span>
+
+            <button type="button"
+                    class="ds-player-button"
+                    data-player-mute
+                    dusk="video-mute-{{ $lesson->id }}"
+                    aria-label="Silenciar ou reativar o som">
+                <x-ui.icon name="volume-2" size="18" class="ds-player-icon-sound" aria-hidden="true" />
+                <x-ui.icon name="volume-x" size="18" class="ds-player-icon-muted" aria-hidden="true" />
+            </button>
+
+            <input type="range"
+                   class="ds-player-volume"
+                   data-player-volume
+                   dusk="video-volume-{{ $lesson->id }}"
+                   min="0"
+                   max="1"
+                   step="0.05"
+                   value="1"
+                   aria-label="Volume" />
+
+            <button type="button"
+                    class="ds-player-button"
+                    data-player-fullscreen
+                    dusk="video-fullscreen-{{ $lesson->id }}"
+                    aria-label="Alternar tela cheia">
+                <x-ui.icon name="maximize" size="18" class="ds-player-icon-maximize" aria-hidden="true" />
+                <x-ui.icon name="minimize" size="18" class="ds-player-icon-minimize" aria-hidden="true" />
+            </button>
+        </div>
+
+        {{--
+            Estado degradado em RUNTIME (vídeo removido/privado no provedor):
+            o adapter emite 'error' e este aviso substitui player e fachada.
+        --}}
+        <div class="ds-media-unavailable d-none" data-player-error>
+            <p class="ds-media-unavailable-title">Vídeo indisponível</p>
+            <p class="ds-media-unavailable-text">
+                Não foi possível carregar o vídeo desta aula. Avise o responsável pelo curso para que o link seja corrigido.
+            </p>
+        </div>
+    @else
+        {{-- Tom neutro (`--attention-container`): o link quebrado não é culpa do aluno. --}}
+        <div class="ds-media-unavailable" dusk="video-unavailable-{{ $lesson->id }}">
+            <p class="ds-media-unavailable-title">Vídeo indisponível</p>
+            <p class="ds-media-unavailable-text">
+                Não foi possível reconhecer o endereço do vídeo desta aula. Avise o responsável pelo curso para que o link do vídeo seja corrigido.
+            </p>
+        </div>
+    @endif
 </div>
 
 {{--

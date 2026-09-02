@@ -2,17 +2,19 @@
  * LessonPlayer - Unified classroom lesson player module.
  *
  * Responsibilities:
- * - Video lessons: loads the YouTube IFrame API against every `[data-youtube-player]`
- *   container, polls player.getCurrentTime() / player.getDuration() every 5s and
- *   POSTs { watched_seconds, duration_seconds } to `lessons.progress`.
- *   Provides public test hook `window.LessonPlayer.reportProgress(lessonId, watched, duration)`
- *   for deterministic E2E test execution.
+ * - Video lessons: mounts a {@link PlayerController} against every
+ *   `[data-video-player]` container (click-to-load facade + provider adapter
+ *   + overlay controls). The controller polls the adapter every 5s and funnels
+ *   { watched_seconds, duration_seconds } through the public test hook
+ *   `window.LessonPlayer.reportProgress(lessonId, watched, duration)` — the
+ *   deterministic E2E seam (do NOT rename or privatize).
  * - Manual completion (text, image, PDF): binds click handlers on completion buttons
  *   (`[data-mark-complete-url]`, `[data-action="complete-lesson"]`, `[dusk="mark-complete-button"]`),
  *   POSTs to `lessons.complete`, manages loading state ('Marcando...'), and updates UI.
  * - UI updates: Toggles visibility using Bootstrap's `.d-none` utility class.
  *   NEVER uses the HTML `hidden` attribute due to Bootstrap's `[hidden] { display: none !important }`.
  */
+import { PlayerController } from './lesson-player/PlayerController';
 
 /** Selectors that identify a manual completion button. */
 const MARK_COMPLETE_SELECTORS = [
@@ -41,22 +43,12 @@ const COMPLETION_SUCCESS_MESSAGE = 'Lição concluída com sucesso.';
  */
 const AUTO_COMPLETION_MESSAGE = 'Lição concluída automaticamente!';
 
-/**
- * Consecutive progress-poll failures tolerated before the 5s interval is torn
- * down. A single blip must not stop tracking, but a persistent failure (session
- * expired, 5xx, enrollment cancelled mid-session) must never turn the screen
- * into an endless queue of identical error toasts.
- */
-const MAX_PROGRESS_FAILURES = 3;
-
 export class LessonPlayer {
     constructor(httpClient, notificationService) {
         this.httpClient = httpClient;
         this.notificationService = notificationService;
-        this.videoPlayers = new Map();
-        this.pollingIntervals = new Map();
+        this.playerControllers = [];
         this.completedLessons = new Set();
-        this.progressFailures = new Map();
         this.notifiedProgressErrors = new Set();
     }
 
@@ -139,93 +131,27 @@ export class LessonPlayer {
         }
     }
 
+    /**
+     * Um `PlayerController` por container. A montagem é passiva: nada de
+     * SDK de terceiro carrega até o aluno clicar na fachada.
+     */
     bindVideoPlayers() {
-        const containers = document.querySelectorAll('[data-youtube-player]');
-        if (containers.length === 0) return;
+        document.querySelectorAll('[data-video-player]').forEach((container) => {
+            if (container.dataset.lessonPlayerBound) return;
+            container.dataset.lessonPlayerBound = 'true';
 
-        this.loadYouTubeApi(() => {
-            containers.forEach((container) => this.createPlayer(container));
+            const controller = new PlayerController(container, this);
+            controller.mount();
+            this.playerControllers.push(controller);
         });
-    }
-
-    loadYouTubeApi(onReady) {
-        if (window.YT && window.YT.Player) {
-            onReady();
-            return;
-        }
-
-        const previousCallback = window.onYouTubeIframeAPIReady;
-        window.onYouTubeIframeAPIReady = () => {
-            if (typeof previousCallback === 'function') previousCallback();
-            onReady();
-        };
-
-        if (!document.querySelector('script[src="https://www.youtube.com/iframe_api"]')) {
-            const tag = document.createElement('script');
-            tag.src = 'https://www.youtube.com/iframe_api';
-            document.head.appendChild(tag);
-        }
-    }
-
-    createPlayer(container) {
-        const lessonId = container.getAttribute('data-lesson-id');
-        const videoId = container.getAttribute('data-video-id');
-        const progressUrl = container.getAttribute('data-progress-url');
-        if (!lessonId || !videoId) return;
-
-        const resolvedProgressUrl = progressUrl || `/lessons/${lessonId}/progress`;
-        this.videoPlayers.set(String(lessonId), { progressUrl: resolvedProgressUrl, containerId: container.id });
-
-        const player = new window.YT.Player(container.id, {
-            videoId,
-            playerVars: {
-                rel: 0,
-                modestbranding: 1,
-                controls: 1,
-            },
-            events: {
-                onReady: () => this.startPolling(lessonId, player),
-            },
-        });
-    }
-
-    startPolling(lessonId, player) {
-        const key = String(lessonId);
-        if (this.pollingIntervals.has(key)) {
-            clearInterval(this.pollingIntervals.get(key));
-        }
-
-        const intervalId = setInterval(() => {
-            if (typeof player.getCurrentTime !== 'function' || typeof player.getDuration !== 'function') {
-                return;
-            }
-
-            const watchedSeconds = Math.floor(player.getCurrentTime());
-            const durationSeconds = Math.floor(player.getDuration());
-
-            if (durationSeconds > 0) {
-                // The interval is not an `await` site: swallow the rejection
-                // here so a failing poll never becomes an unhandled rejection.
-                // `reportProgress()` already notified and, past the failure
-                // budget, already cleared this interval.
-                this.reportProgress(lessonId, watchedSeconds, durationSeconds).catch(() => {});
-            }
-        }, 5000);
-
-        this.pollingIntervals.set(key, intervalId);
-    }
-
-    stopPolling(lessonId) {
-        const key = String(lessonId);
-        if (this.pollingIntervals.has(key)) {
-            clearInterval(this.pollingIntervals.get(key));
-            this.pollingIntervals.delete(key);
-        }
     }
 
     /**
      * POSTs watched/duration seconds to `lessons.progress` for the given lesson.
-     * Public test hook and progress reporter seam for E2E tests.
+     * Public test hook and progress reporter seam for E2E tests — driven
+     * directly by the 5s poll (via `PlayerController`) AND by Dusk, which
+     * calls it with no player booted at all; it must never depend on any
+     * adapter existing.
      */
     async reportProgress(lessonId, watchedSeconds, durationSeconds) {
         const progressUrl = this.resolveProgressUrl(lessonId);
@@ -237,11 +163,9 @@ export class LessonPlayer {
                 duration_seconds: Number(durationSeconds),
             });
 
-            this.progressFailures.delete(String(lessonId));
             this.notifiedProgressErrors.delete(String(lessonId));
 
             if (response.data && response.data.is_completed) {
-                this.stopPolling(lessonId);
                 this.reflectCompletion(response.data, lessonId);
 
                 // The 90% auto-completion path announces itself instead of
@@ -255,8 +179,6 @@ export class LessonPlayer {
             return response.data;
         } catch (error) {
             const key = String(lessonId);
-            const failures = (this.progressFailures.get(key) || 0) + 1;
-            this.progressFailures.set(key, failures);
 
             // One toast per failing lesson: the poll repeats every 5s and the
             // student does not need the same warning again on every beat.
@@ -265,22 +187,13 @@ export class LessonPlayer {
                 this.notify('error', `Falha ao registrar progresso: ${error.message || 'Erro inesperado'}`);
             }
 
-            if (failures >= MAX_PROGRESS_FAILURES) {
-                this.stopPolling(lessonId);
-            }
-
             throw error;
         }
     }
 
     resolveProgressUrl(lessonId) {
-        const entry = this.videoPlayers.get(String(lessonId));
-        if (entry && entry.progressUrl) {
-            return entry.progressUrl;
-        }
-
         const container = document.querySelector(
-            `[data-youtube-player][data-lesson-id="${lessonId}"], [data-lesson-id="${lessonId}"][data-progress-url], #youtube-player-${lessonId}, [dusk="video-player-${lessonId}"]`
+            `[data-video-player][data-lesson-id="${lessonId}"], [data-lesson-id="${lessonId}"][data-progress-url], #video-player-${lessonId}, [dusk="video-player-${lessonId}"]`
         );
 
         if (container && container.getAttribute('data-progress-url')) {

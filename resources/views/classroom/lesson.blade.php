@@ -23,7 +23,7 @@
     <div class="card ds-surface border-0 shadow-sm ds-lesson-card">
         @if($lesson->type === 'quiz')
             @include('classroom.partials._quiz-placeholder')
-        @elseif(! empty($lesson->youtube_url))
+        @elseif(filled($lesson->video_url))
             @include('classroom.partials._video')
         @elseif(! empty($lesson->pdf_path))
             @include('classroom.partials._pdf')
