@@ -7,6 +7,7 @@ use App\Http\View\Composers\NavigationComposer;
 use App\Services\Navigation\ImpersonationContext;
 use App\Services\Navigation\NavigationRegistry;
 use App\Services\Navigation\NavigationService;
+use App\Services\VideoUrlSanitizerManager;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\View;
@@ -25,6 +26,8 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(ImpersonationContext::class);
 
         $this->app->singleton(NavigationRegistry::class);
+
+        $this->app->singleton(VideoUrlSanitizerManager::class);
 
         $this->app->singleton(NavigationService::class, function ($app): NavigationService {
             return new NavigationService(

@@ -5,24 +5,27 @@ namespace App\Services;
 use App\Exceptions\InvalidYoutubeUrlException;
 
 /**
- * validates a Lesson's `youtube_url` input is a genuine
- * `youtube.com`/`youtu.be` link and rewrites it to the canonical
- * `https://www.youtube.com/embed/{id}` form used for the sanitized embed
- * preview. Deliberately restricted to those two domains only (rejects
- * `youtube-nocookie.com` and any other look-alike host) — anything that
- * doesn't match is treated as an XSS/embed-injection attempt
- * (`javascript:` URIs, arbitrary `<iframe>` src values, ...) and rejected
- * the same way as a simple typo.
+ * The YouTube half of the sanitizer registry: validates a Lesson's
+ * `video_url` input is a genuine `youtube.com`/`youtu.be` link and
+ * rewrites it to the canonical, privacy-enhanced
+ * `https://www.youtube-nocookie.com/embed/{id}` form. The input pattern
+ * also accepts the nocookie embed form itself — sanitize() output must
+ * re-parse as a valid id, or every accessor built on `extractVideoId`
+ * would degrade the lesson it just sanitized. Anything else (look-alike
+ * hosts beyond those two shapes, `javascript:` URIs, arbitrary `<iframe>`
+ * src values, ...) is treated as an XSS/embed-injection attempt and
+ * rejected the same way as a simple typo.
  */
-class YoutubeSanitizerService
+class YoutubeSanitizerService implements VideoUrlSanitizer
 {
     /**
      * Matches (with optional `www.` and a trailing query string):
      * - https://www.youtube.com/watch?v={11-char id}
      * - https://www.youtube.com/embed/{11-char id}
+     * - https://www.youtube-nocookie.com/embed/{11-char id}
      * - https://youtu.be/{11-char id}
      */
-    private const PATTERN = '#^https?://(?:www\.)?(?:youtube\.com/(?:watch\?v=|embed/)|youtu\.be/)([A-Za-z0-9_-]{11})(?:[&?][^\s]*)?$#i';
+    private const PATTERN = '#^https?://(?:www\.)?(?:youtube\.com/(?:watch\?v=|embed/)|youtube-nocookie\.com/embed/|youtu\.be/)([A-Za-z0-9_-]{11})(?:[&?][^\s]*)?$#i';
 
     public function sanitize(string $url): string
     {
@@ -32,7 +35,7 @@ class YoutubeSanitizerService
             throw new InvalidYoutubeUrlException("URL do YouTube inválida ou não suportada: \"{$url}\".");
         }
 
-        return 'https://www.youtube.com/embed/'.$matches[1];
+        return 'https://www.youtube-nocookie.com/embed/'.$matches[1];
     }
 
     /**
@@ -64,6 +67,6 @@ class YoutubeSanitizerService
     {
         $videoId = $this->extractVideoId($url);
 
-        return $videoId === null ? null : 'https://www.youtube.com/embed/'.$videoId;
+        return $videoId === null ? null : 'https://www.youtube-nocookie.com/embed/'.$videoId;
     }
 }

@@ -31,7 +31,7 @@ class LessonProgressController extends Controller
      * video (which must reach completion via the 90% video-threshold
      * endpoint instead) is rejected with a 422.
      *
-     * A lesson whose `youtube_url` cannot be resolved into a video id has no
+     * A lesson whose `video_url` cannot be resolved into a video id has no
      * player to drive the threshold, so it stays manually completable —
      * otherwise a single broken link would make the lesson, and with it the
      * whole course progress, impossible to finish.
@@ -47,7 +47,7 @@ class LessonProgressController extends Controller
 
         $this->abortUnlessEnrolled($request, $lesson, $request->user());
 
-        if ($lesson->type === 'quiz' || $lesson->youtube_video_id !== null) {
+        if ($lesson->type === 'quiz' || $lesson->hasPlayableVideo()) {
             return response()->json([
                 'message' => 'Esta lição não pode ser concluída manualmente.',
             ], 422);
@@ -63,10 +63,10 @@ class LessonProgressController extends Controller
 
     /**
      * POST /lessons/{lesson}/progress — the AJAX polling target hit every
-     * 5s by `LessonPlayer.js` while a video lesson plays. Only valid for
+     * 5s by the lesson player while a video lesson plays. Only valid for
      * video lessons: a `type=quiz` lesson (checked first, since quiz
      * completion is reserved for 's `SubmitQuizAttemptAction` even
-     * if malformed data also carries a `youtube_url`) or a lesson without a
+     * if malformed data also carries a `video_url`) or a lesson without a
      * resolvable video id is rejected with a 422. Below the 90%
      * threshold, persists `watched_seconds` (GREATEST) without
      * completing; at/above it, delegates to `MarkLessonCompleteAction`
@@ -83,7 +83,7 @@ class LessonProgressController extends Controller
 
         $this->abortUnlessEnrolled($request, $lesson, $request->user());
 
-        if ($lesson->type === 'quiz' || $lesson->youtube_video_id === null) {
+        if ($lesson->type === 'quiz' || ! $lesson->hasPlayableVideo()) {
             return response()->json([
                 'message' => 'Esta lição não é um vídeo.',
             ], 422);

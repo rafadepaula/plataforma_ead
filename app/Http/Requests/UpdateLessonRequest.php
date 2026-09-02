@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests;
 
-use App\Exceptions\InvalidYoutubeUrlException;
-use App\Services\YoutubeSanitizerService;
+use App\Exceptions\InvalidVideoUrlException;
+use App\Services\VideoUrlSanitizerManager;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -37,23 +37,40 @@ class UpdateLessonRequest extends FormRequest
             'pdfs.*' => ['file', 'mimes:pdf', 'max:10240'],
             'removed_media' => ['nullable', 'array'],
             'removed_media.*' => ['integer'],
-            'youtube_url' => ['nullable', 'url'],
+            'video_provider' => ['nullable', Rule::in(VideoUrlSanitizerManager::PROVIDERS)],
+            'video_url' => ['nullable', 'url'],
         ];
     }
 
+    /**
+     * Mirrors {@see StoreLessonRequest::withValidator()}: the sanitizer is
+     * chosen by `video_provider` (or detected from the URL itself when the
+     * select is empty), so a malformed/foreign link surfaces as a normal
+     * validation failure on the `video_url` field rather than an uncaught
+     * `InvalidVideoUrlException` bubbling out of the controller.
+     */
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator): void {
-            $url = $this->input('youtube_url');
+            $url = $this->input('video_url');
 
             if (! $url) {
                 return;
             }
 
+            $manager = app(VideoUrlSanitizerManager::class);
+            $provider = $this->input('video_provider') ?: $manager->providerFor($url);
+
+            if ($provider === null) {
+                $validator->errors()->add('video_url', 'Não foi possível identificar o provedor do vídeo — informe uma URL do YouTube ou do Vimeo.');
+
+                return;
+            }
+
             try {
-                app(YoutubeSanitizerService::class)->sanitize($url);
-            } catch (InvalidYoutubeUrlException $e) {
-                $validator->errors()->add('youtube_url', $e->getMessage());
+                $manager->for($provider)->sanitize($url);
+            } catch (InvalidVideoUrlException $e) {
+                $validator->errors()->add('video_url', $e->getMessage());
             }
         });
     }

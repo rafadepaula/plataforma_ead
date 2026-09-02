@@ -157,7 +157,7 @@ class ClassroomController extends Controller
      */
     protected function resolveMediaAvailability(Lesson $lesson): array
     {
-        if ($lesson->type === 'quiz' || ! empty($lesson->youtube_url)) {
+        if ($lesson->type === 'quiz' || filled($lesson->video_url)) {
             return [];
         }
 

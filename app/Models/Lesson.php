@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use App\Models\Traits\AuditableTrait;
-use App\Services\YoutubeSanitizerService;
+use App\Services\VideoUrlSanitizerManager;
 use Database\Factories\LessonFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -30,7 +30,8 @@ class Lesson extends Model
         'title',
         'type',
         'content_text',
-        'youtube_url',
+        'video_provider',
+        'video_url',
         'pdf_path',
         'image_path',
         'order_index',
@@ -49,34 +50,105 @@ class Lesson extends Model
     }
 
     /**
-     *  the 11-char YouTube video id resolved from `youtube_url`,
-     * regardless of the stored form (`embed/`, `watch?v=`, `youtu.be/`), or
-     * `null` when the column is empty or holds something that is not a
-     * recognizable YouTube link. Consumers must branch on `null` instead of
-     * assuming the stored value is already sanitized.
+     *  the provider (`youtube`|`vimeo`) that owns this lesson's
+     * `video_url`: the stored `video_provider` column when it holds a
+     * known provider, else detected from the URL itself — the drift
+     * fallback for rows saved without (or before) the column. `null` when
+     * there is neither a known provider nor a recognizable URL.
+     *
+     * @return Attribute<?string, never>
+     */
+    protected function videoProvider(): Attribute
+    {
+        return Attribute::get(function (): ?string {
+            $stored = $this->attributes['video_provider'] ?? null;
+
+            if (is_string($stored) && in_array($stored, VideoUrlSanitizerManager::PROVIDERS, true)) {
+                return $stored;
+            }
+
+            return app(VideoUrlSanitizerManager::class)->providerFor($this->attributes['video_url'] ?? null);
+        });
+    }
+
+    /**
+     *  the provider video id resolved from `video_url`, regardless of
+     * the stored form (`watch?v=`, `embed/`, `youtu.be/`, `vimeo.com/{id}`,
+     * `player.vimeo.com/video/{id}`, ...), or `null` when the column is
+     * empty or holds something no sanitizer recognizes. Consumers must
+     * branch on `null` instead of assuming the stored value is already
+     * sanitized — the `null` state is what keeps an unparseable lesson
+     * manually completable instead of freezing the course.
+     *
+     * @return Attribute<?string, never>
+     */
+    protected function videoId(): Attribute
+    {
+        return Attribute::get(function (): ?string {
+            $provider = $this->video_provider;
+
+            if ($provider === null) {
+                return null;
+            }
+
+            return app(VideoUrlSanitizerManager::class)->for($provider)->extractVideoId($this->video_url);
+        });
+    }
+
+    /**
+     *  the canonical, embeddable URL for the resolved provider
+     * (`https://www.youtube-nocookie.com/embed/{id}` or
+     * `https://player.vimeo.com/video/{id}`), or `null` when no video id
+     * can be resolved. This is the only URL form a consumer may hand a
+     * player — both providers refuse to be framed from any other form.
+     *
+     * @return Attribute<?string, never>
+     */
+    protected function videoEmbedUrl(): Attribute
+    {
+        return Attribute::get(function (): ?string {
+            $provider = $this->video_provider;
+
+            if ($provider === null) {
+                return null;
+            }
+
+            return app(VideoUrlSanitizerManager::class)->for($provider)->tryCanonicalize($this->video_url);
+        });
+    }
+
+    /**
+     * Whether the lesson carries a video whose id resolves into a player
+     * of a known provider — the server-side predicate shared by the
+     * dispatch view, the 422 shape guards of `LessonProgressController`
+     * and the completion bar's `manual` flag. A lesson whose URL cannot be
+     * parsed has no player to drive the 90% threshold, so it falls back to
+     * manual completion instead.
+     */
+    public function hasPlayableVideo(): bool
+    {
+        return $this->video_id !== null;
+    }
+
+    /**
+     * Deprecated BC alias of `video_id`; new code reads `video_id`.
      *
      * @return Attribute<?string, never>
      */
     protected function youtubeVideoId(): Attribute
     {
-        return Attribute::get(
-            fn (): ?string => app(YoutubeSanitizerService::class)->extractVideoId($this->youtube_url)
-        );
+        return Attribute::get(fn (): ?string => $this->video_id);
     }
 
     /**
-     *  the canonical, embeddable `https://www.youtube.com/embed/{id}`
-     * URL, or `null` when no video id can be resolved. YouTube refuses to be
-     * framed from any other URL form, so this is the only value a consumer may
-     * put in an `<iframe src>`.
+     * Deprecated BC alias of `video_embed_url`; new code reads
+     * `video_embed_url`.
      *
      * @return Attribute<?string, never>
      */
     protected function youtubeEmbedUrl(): Attribute
     {
-        return Attribute::get(
-            fn (): ?string => app(YoutubeSanitizerService::class)->tryCanonicalize($this->youtube_url)
-        );
+        return Attribute::get(fn (): ?string => $this->video_embed_url);
     }
 
     /**
@@ -96,7 +168,7 @@ class Lesson extends Model
     {
         return Attribute::get(fn (): string => match (true) {
             $this->type === 'quiz' => 'clipboard',
-            filled($this->youtube_url) => 'play',
+            filled($this->video_url) => 'play',
             $this->hasPdfAttachment() => 'file-text',
             default => 'book-open',
         });

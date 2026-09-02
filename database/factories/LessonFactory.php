@@ -14,8 +14,8 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  * `->for(Module::factory())` / `->create(['module_id' => $module->id])`.
  *
  * The base definition leaves all four content columns
- * (`content_text`/`image_path`/`pdf_path`/`youtube_url`) empty — 's
- * four content kinds are each opt-in via a dedicated state so a test only
+ * (`content_text`/`image_path`/`pdf_path`/`video_url`) empty — the four
+ * content kinds are each opt-in via a dedicated state so a test only
  * populates the column(s) relevant to the kind it is exercising.
  */
 class LessonFactory extends Factory
@@ -29,7 +29,8 @@ class LessonFactory extends Factory
             'title' => fake()->sentence(4),
             'type' => 'content',
             'content_text' => null,
-            'youtube_url' => null,
+            'video_provider' => null,
+            'video_url' => null,
             'pdf_path' => null,
             'image_path' => null,
             'order_index' => 0,
@@ -45,7 +46,8 @@ class LessonFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'type' => 'content',
             'content_text' => fake()->paragraphs(3, true),
-            'youtube_url' => null,
+            'video_provider' => null,
+            'video_url' => null,
             'pdf_path' => null,
             'image_path' => null,
         ]);
@@ -60,7 +62,8 @@ class LessonFactory extends Factory
             'type' => 'content',
             'image_path' => 'orgs/1/courses/1/images/'.fake()->uuid().'.jpg',
             'content_text' => null,
-            'youtube_url' => null,
+            'video_provider' => null,
+            'video_url' => null,
             'pdf_path' => null,
         ]);
     }
@@ -74,20 +77,38 @@ class LessonFactory extends Factory
             'type' => 'content',
             'pdf_path' => 'orgs/1/courses/1/pdfs/'.fake()->uuid().'.pdf',
             'content_text' => null,
-            'youtube_url' => null,
+            'video_provider' => null,
+            'video_url' => null,
             'image_path' => null,
         ]);
     }
 
     /**
-     * YouTube lesson: only `youtube_url` populated, already in the
-     * sanitized `YoutubeSanitizerService` embed form.
+     * YouTube lesson: only `video_url` populated, already in the
+     * sanitized `YoutubeSanitizerService` (privacy-enhanced) embed form.
      */
     public function withYoutube(): static
     {
         return $this->state(fn (array $attributes) => [
             'type' => 'content',
-            'youtube_url' => 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+            'video_provider' => 'youtube',
+            'video_url' => 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ',
+            'content_text' => null,
+            'pdf_path' => null,
+            'image_path' => null,
+        ]);
+    }
+
+    /**
+     * Vimeo lesson: only `video_url` populated, already in the sanitized
+     * `VimeoSanitizerService` embed form.
+     */
+    public function withVimeo(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'type' => 'content',
+            'video_provider' => 'vimeo',
+            'video_url' => 'https://player.vimeo.com/video/76979871',
             'content_text' => null,
             'pdf_path' => null,
             'image_path' => null,

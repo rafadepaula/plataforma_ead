@@ -201,7 +201,8 @@ class CourseSeeder extends Seeder
             [
                 'type' => 'content',
                 'content_text' => 'Assista à videoaula completa antes de realizar a avaliação final.',
-                'youtube_url' => app(YoutubeSanitizerService::class)->sanitize('https://www.youtube.com/watch?v=dQw4w9WgXcQ'),
+                'video_provider' => 'youtube',
+                'video_url' => app(YoutubeSanitizerService::class)->sanitize('https://www.youtube.com/watch?v=dQw4w9WgXcQ'),
                 'order_index' => 1,
                 'is_published' => true,
             ]

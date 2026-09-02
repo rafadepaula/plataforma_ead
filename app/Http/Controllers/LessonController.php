@@ -10,7 +10,7 @@ use App\Models\LessonMedia;
 use App\Models\Module;
 use App\Services\AuditService;
 use App\Services\FileUploadService;
-use App\Services\YoutubeSanitizerService;
+use App\Services\VideoUrlSanitizerManager;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -24,8 +24,8 @@ use Throwable;
  * `index`/`create`/`store` are reached via `{module}`, `edit`/`update`/
  * `destroy` via `{lesson}` alone). `Lesson` is cascade-inherited two levels
  * deep (`module -> course.org_id`), so every action is guarded by
- * `LessonPolicy`. File/YouTube fields are delegated to
- * `FileUploadService`/`YoutubeSanitizerService` rather than handled
+ * `LessonPolicy`. File/video fields are delegated to
+ * `FileUploadService`/`VideoUrlSanitizerManager` rather than handled
  * inline, keeping isolated-storage-path and embed-sanitization rules in
  * one place.
  */
@@ -33,7 +33,7 @@ class LessonController extends Controller
 {
     public function __construct(
         protected FileUploadService $fileUploadService,
-        protected YoutubeSanitizerService $youtubeSanitizerService,
+        protected VideoUrlSanitizerManager $videoUrlSanitizers,
     ) {}
 
     public function index(Module $module): View
@@ -139,8 +139,10 @@ class LessonController extends Controller
     /**
      * Strips the media-only inputs (`images[]`/`pdfs[]`/`removed_media[]` —
      * handled after the Lesson exists by `syncMedia()`) out of the validated
-     * payload and canonicalizes a non-empty `youtube_url` (via
-     * `YoutubeSanitizerService`).
+     * payload, canonicalizes a non-empty `video_url` through the sanitizer
+     * of its `video_provider` (detected from the URL itself when the select
+     * came empty) and nulls both video fields out together when the URL is
+     * cleared — a lesson never keeps a provider stamp without a URL.
      *
      * @return array<string, mixed>
      */
@@ -149,9 +151,16 @@ class LessonController extends Controller
         $data = $request->validated();
         unset($data['images'], $data['pdfs'], $data['removed_media']);
 
-        if (! empty($data['youtube_url'])) {
-            $data['youtube_url'] = $this->youtubeSanitizerService->sanitize($data['youtube_url']);
+        if (blank($data['video_url'] ?? null)) {
+            $data['video_url'] = null;
+            $data['video_provider'] = null;
+
+            return $data;
         }
+
+        $provider = $data['video_provider'] ?? $this->videoUrlSanitizers->providerFor($data['video_url']);
+        $data['video_url'] = $this->videoUrlSanitizers->for((string) $provider)->sanitize((string) $data['video_url']);
+        $data['video_provider'] = $provider;
 
         return $data;
     }
