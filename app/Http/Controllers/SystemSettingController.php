@@ -11,13 +11,17 @@ use Illuminate\Http\Request;
 
 /**
  * `GET`/`PUT /admin/settings` (route names `settings.edit`/
- * `settings.update`, see `dashboard-conventions`). Reads/writes the
+ * `settings.update`, see `dashboard-conventions`) — a
+ * system-administration surface reserved to `role:admin` (the Gestor
+ * lost the menu item AND the reachability). Reads/writes the
  * org-override SMTP/logo/signature settings via `SettingService`, which
  * already resolves the org-specific-then-global fallback — this
  * controller only resolves *which* org is acting (mirrors
  * `DashboardController`/`ReportExportController`'s resolution, never a
  * request-supplied `org_id`) and always writes to that org's row (or the
- * global row for an Admin with no active Impersonate Org).
+ * global row for an Admin with no active Impersonate Org). The non-Admin
+ * branch of `resolveViewingOrgId()` stays as defense in depth, though no
+ * route can reach it with a Gestor anymore.
  */
 class SystemSettingController extends Controller
 {

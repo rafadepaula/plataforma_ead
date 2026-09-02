@@ -178,10 +178,14 @@ final class NavigationRegistry
             new NavigationItem(
                 key: 'settings',
                 label: 'Configurações',
+                //  system settings (SMTP/logo/signature) are a
+                // system-administration surface: the route is `role:admin`
+                // and only an Admin sees the item — the Gestor lost both
+                // the link and the reachability.
                 route: 'settings.edit',
                 activePatterns: ['settings.*'],
                 icon: $this->settingsIcon(),
-                roles: self::ADMIN_GESTOR,
+                roles: ['admin'],
                 section: 'Administração',
             ),
 

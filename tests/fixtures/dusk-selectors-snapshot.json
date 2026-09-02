@@ -1,5 +1,5 @@
 {
-    "count": 450,
+    "count": 452,
     "entries": [
         {
             "file": "admin/users/edit.blade.php",
@@ -1800,6 +1800,14 @@
         {
             "file": "users/index.blade.php",
             "selector": "delete-form-{{ $user->id }}"
+        },
+        {
+            "file": "gestor/students/index.blade.php",
+            "selector": "gestor-students-filter-form"
+        },
+        {
+            "file": "gestor/students/index.blade.php",
+            "selector": "gestor-students-search"
         }
     ]
 }

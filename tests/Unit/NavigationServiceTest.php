@@ -229,7 +229,7 @@ class NavigationServiceTest extends TestCase
 
         $this->assertNotContains('Impersonate', $this->sectionTitlesFor($gestor));
         $this->assertSame(
-            ['dashboard', 'students', 'courses', 'quiz-attempts', 'forum-moderation', 'settings'],
+            ['dashboard', 'students', 'courses', 'quiz-attempts', 'forum-moderation'],
             $this->keysInSection($gestor, 'Administração'),
         );
     }
@@ -324,17 +324,17 @@ class NavigationServiceTest extends TestCase
 
         $keys = $this->keysFor($gestor);
 
-        //  `organizations`, `users` and `audit-logs` are
-        // admin-exclusive; "Meus Cursos" is Aluno-only.
+        //  `organizations`, `users`, `audit-logs` and
+        // `settings` are admin-exclusive; "Meus Cursos" is Aluno-only.
         $this->assertNotContains('organizations', $keys);
         $this->assertNotContains('users', $keys);
         $this->assertNotContains('audit-logs', $keys);
+        $this->assertNotContains('settings', $keys);
         $this->assertNotContains('student-courses', $keys);
         //  the Gestor-exclusive Aluno directory.
         $this->assertContains('students', $keys);
         $this->assertContains('dashboard', $keys);
         $this->assertContains('courses', $keys);
-        $this->assertContains('settings', $keys);
     }
 
     public function test_aluno_sees_no_administration_block_at_all(): void

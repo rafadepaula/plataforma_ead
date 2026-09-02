@@ -129,38 +129,20 @@ class DashboardDuskTest extends DuskTestCase
                 ->assertSee('Ana Costa')
                 ->assertDontSee('Marcos Silva')
                 // 2. E o resumo por Organização é exclusivo do Admin.
-                ->assertMissing('@organizations-summary-table');
+                ->assertMissing('@organizations-summary-table')
+                // 3. "Configurações" saiu do menu do Gestor (item
+                //    exclusivo do Admin) — nem no desktop nem no mobile.
+                ->assertMissing('@sidebar-settings-link')
+                ->assertMissing('@sidebar-settings-link-mobile');
 
-            // 3. Override de configuração no nível da Organização persiste...
+            // 4. A URL digitada à mão é barrada pelo `role:admin` —
+            //    403, não a tela de configurações.
             $browser->visit(route('settings.edit'))
-                ->waitFor('@settings-form')
-                ->type('signature', 'Diretoria Pedagógica — Minha Org')
-                ->type('smtp_host', 'smtp.org.example')
-                // `waitForReload()` must WRAP the action, not follow it: on its
-                // own it starts polling for the current node to go stale only
-                // after the click, so a reload that lands first is never
-                // observed and it times out. This was flaky in the full suite
-                // and passed in isolation for exactly that reason.
-                ->waitForReload(fn (Browser $b) => $b->click('@settings-submit'))
-                ->waitForText('Configurações salvas com sucesso.');
-
-            // 4. ...e sobrevive ao recarregamento da tela.
-            $browser->visit(route('settings.edit'))
-                ->waitFor('@settings-form')
-                ->assertInputValue('signature', 'Diretoria Pedagógica — Minha Org');
+                ->assertSee('403');
         });
 
-        $this->assertDatabaseHas('system_settings', [
-            'setting_key' => 'smtp_host',
-            'org_id' => $orgA->id,
-            'setting_value' => 'smtp.org.example',
-        ]);
-        $this->assertDatabaseHas('system_settings', [
-            'setting_key' => 'signature',
-            'org_id' => $orgA->id,
-            'setting_value' => 'Diretoria Pedagógica — Minha Org',
-        ]);
-        // O Gestor jamais grava na linha global.
+        // O Gestor jamais grava na linha global (nem em qualquer outra):
+        // nenhuma escrita de settings partiu dessa sessão.
         $this->assertDatabaseMissing('system_settings', [
             'setting_key' => 'smtp_host',
             'org_id' => SystemSetting::GLOBAL_ORG_ID,

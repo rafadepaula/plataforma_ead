@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\Permissions\RolesEnum;
 use App\Models\Organization;
 use App\Models\SystemSetting;
 use Illuminate\Http\UploadedFile;
@@ -10,29 +11,36 @@ use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 /**
- * `GET`/`PUT /admin/settings` (`settings.edit`/`settings.update`).
- * A Gestor reads/writes their own Organization's override row, an Admin
- * with no active Impersonate Org session reads/writes the global row, an
- * Aluno is forbidden entirely, and a blank `smtp_password` never
- * overwrites the currently stored one (see `dashboard-conventions`).
+ * `GET`/`PUT /admin/settings` (`settings.edit`/`settings.update`) —
+ * Admin-exclusive (`role:admin`). An Admin with no active Impersonate
+ * Org session reads/writes the global row, an impersonating Admin writes
+ * that org's override row, and every other role (Gestor and Aluno) is
+ * forbidden by middleware. A blank `smtp_password` never overwrites the
+ * currently stored one (see `dashboard-conventions`).
  */
 class SystemSettingControllerTest extends TestCase
 {
-    public function test_gestor_can_view_the_settings_edit_screen(): void
+    public function test_gestor_cannot_access_the_settings_screen(): void
     {
+        //  Configurações é uma superfície de administração do
+        // sistema: `role:admin` no middleware bloqueia o Gestor antes de
+        // qualquer leitura ou gravação — nem override de org, nem logo.
         $org = Organization::factory()->create();
-        $this->actingAsOrgUser($org, 'gestor');
+        $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
 
-        $response = $this->get(route('settings.edit'));
+        $this->get(route('settings.edit'))->assertForbidden();
+        $this->put(route('settings.update'), ['smtp_host' => 'smtp.hacker.com'])->assertForbidden();
 
-        $response->assertOk();
-        $response->assertSee('Configurações');
+        $this->assertDatabaseMissing('system_settings', [
+            'setting_key' => 'smtp_host',
+            'org_id' => $org->id,
+        ]);
     }
 
-    public function test_gestor_update_persists_an_org_scoped_override(): void
+    public function test_admin_impersonating_an_org_persists_an_org_scoped_override(): void
     {
         $org = Organization::factory()->create();
-        $this->actingAsOrgUser($org, 'gestor');
+        $this->actingAsAdmin($org);
 
         $response = $this->put(route('settings.update'), [
             'smtp_host' => 'smtp.minhaorg.com',
@@ -71,7 +79,7 @@ class SystemSettingControllerTest extends TestCase
     public function test_blank_smtp_password_does_not_overwrite_the_stored_one(): void
     {
         $org = Organization::factory()->create();
-        $this->actingAsOrgUser($org, 'gestor');
+        $this->actingAsAdmin($org);
 
         $this->put(route('settings.update'), ['smtp_password' => 'super-secret']);
 
@@ -98,12 +106,12 @@ class SystemSettingControllerTest extends TestCase
         );
     }
 
-    public function test_gestor_can_upload_a_logo(): void
+    public function test_admin_impersonating_an_org_can_upload_a_logo(): void
     {
         Storage::fake('public');
 
         $org = Organization::factory()->create();
-        $this->actingAsOrgUser($org, 'gestor');
+        $this->actingAsAdmin($org);
 
         $response = $this->put(route('settings.update'), [
             'logo' => UploadedFile::fake()->image('logo.png'),
@@ -117,10 +125,10 @@ class SystemSettingControllerTest extends TestCase
         Storage::disk('public')->assertExists($logoPath);
     }
 
-    public function test_aluno_cannot_access_the_settings_screen(): void
+    public function test_non_admin_roles_are_forbidden_from_the_settings_routes(): void
     {
         $org = Organization::factory()->create();
-        $this->actingAsOrgUser($org, 'aluno');
+        $this->actingAsOrgUser($org, RolesEnum::ALUNO->value);
 
         $this->get(route('settings.edit'))->assertForbidden();
         $this->put(route('settings.update'), ['smtp_host' => 'x'])->assertForbidden();

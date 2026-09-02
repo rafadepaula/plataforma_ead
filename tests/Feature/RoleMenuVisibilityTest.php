@@ -54,12 +54,14 @@ class RoleMenuVisibilityTest extends TestCase
         $response = $this->actingAs($gestor)->get(route('admin.dashboard'));
 
         $response->assertOk();
-        //  `Organizações`, `Alunos & Usuários` (`users.index`)
-        // and `Auditoria` are admin-exclusive.
+        //  `Organizações`, `Alunos & Usuários` (`users.index`),
+        // `Auditoria` and `Configurações` are admin-exclusive.
         $response->assertDontSee(route('organizations.index'), false);
         $response->assertDontSeeText('Organizações');
         $response->assertDontSee(route('users.index'), false);
         $response->assertDontSee(route('admin.audit-logs.index'), false);
+        $response->assertDontSee(route('settings.edit'), false);
+        $response->assertDontSeeText('Configurações');
         //  "Meus Cursos" is Aluno-only (`role:aluno` parity).
         $response->assertDontSee(route('student.courses.index'), false);
         // The Gestor's exclusive Aluno directory is offered instead.

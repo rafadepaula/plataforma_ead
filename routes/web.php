@@ -332,19 +332,28 @@ Route::middleware(['auth', 'role:admin|gestor'])->group(function (): void {
         ->name('forum-moderation.remove');
 });
 
-// Admin/Gestor dashboard, CSV export, and org-level system
-// settings, restricted to `role:admin|gestor` (no dedicated Policy, see
-// `dashboard-conventions`). The `admin.dashboard` route name is
-// load-bearing: `components/layout/sidebar.blade.php` checks
-// `Route::has('admin.dashboard')` and silently degrades to a dead `#`
-// link if it is ever renamed.
+// Admin/Gestor dashboard + CSV export, restricted to
+// `role:admin|gestor` (no dedicated Policy, see `dashboard-conventions`).
+// The `admin.dashboard` route name is load-bearing:
+// `components/layout/sidebar.blade.php` checks `Route::has('admin.dashboard')`
+// and silently degrades to a dead `#` link if it is ever renamed.
 Route::middleware(['auth', 'role:admin|gestor'])->group(function (): void {
     Route::get('admin/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
 
     Route::get('admin/reports/{type}/export', [ReportExportController::class, 'stream'])
         ->whereIn('type', ['enrollments', 'certificates'])
         ->name('reports.export');
+});
 
+// System settings (SMTP/logo/signature overrides) are a
+// system-administration surface reserved to `role:admin` — the Gestor
+// neither sees the menu item nor reaches the screen. An Admin without an
+// active Impersonate Org writes the GLOBAL row; impersonating an
+// Organization writes that org's override row
+// (`SystemSettingController`'s resolution is unchanged). A dedicated
+// `role:admin` group keeps the boundary enforced by middleware, not just
+// hidden in the menu.
+Route::middleware(['auth', 'role:admin'])->group(function (): void {
     Route::get('admin/settings', [SystemSettingController::class, 'edit'])->name('settings.edit');
     Route::put('admin/settings', [SystemSettingController::class, 'update'])->name('settings.update');
 });
