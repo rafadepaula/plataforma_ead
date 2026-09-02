@@ -9,7 +9,9 @@
  * `SmartInvitationForm`, e o registry em `modules/index.js`), e a suíte Dusk
  * chama `window.NotificationService.success(...)`.
  *
- * Zero `style=` gerado por JS: todo o visual vem de classes do Bootstrap.
+ * Zero `style=` gerado por JS: o tom vem das classes tonais `.ds-tone-*` do
+ * design system (mesmas de `x-ui.alert`/`x-ui.badge`) sobre o widget
+ * `bootstrap.Toast`.
  */
 export class NotificationService {
     constructor(containerId = 'notification-container') {
@@ -43,19 +45,23 @@ export class NotificationService {
     }
 
     /**
-     * Mapeia o tipo lógico para a classe de cor do Bootstrap 5.3.
+     * Mapeia o tipo lógico para o par tonal container/on-container do design
+     * system (`.ds-tone-*`, definido em `_chip.scss`). Nunca `text-bg-*`:
+     * bloco sólido com texto branco foge do sistema pastel de superfícies.
      */
     resolveVariantClass(type) {
         switch (type) {
             case 'success':
-                return 'text-bg-success';
+                return 'ds-tone-success';
             case 'error':
             case 'danger':
-                return 'text-bg-danger';
+                return 'ds-tone-critical';
             case 'warning':
-                return 'text-bg-warning';
+                return 'ds-tone-attention';
+            case 'info':
+                return 'ds-tone-info';
             default:
-                return 'text-bg-secondary';
+                return 'ds-tone-primary';
         }
     }
 
@@ -84,7 +90,9 @@ export class NotificationService {
 
         const closeBtn = document.createElement('button');
         closeBtn.type = 'button';
-        closeBtn.className = 'btn-close btn-close-white me-2 m-auto';
+        // Superfície tonal é clara: o glifo escuro padrão do `btn-close` é o
+        // correto (`btn-close-white` era par do bloco sólido `text-bg-*`).
+        closeBtn.className = 'btn-close me-2 m-auto';
         closeBtn.setAttribute('data-bs-dismiss', 'toast');
         closeBtn.setAttribute('aria-label', 'Fechar');
 

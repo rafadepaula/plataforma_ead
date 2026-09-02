@@ -81,6 +81,11 @@ $card-spacer-x: 28px; // --pad-card
 $modal-content-border-radius: 28px; // --radius-xl
 $modal-backdrop-opacity: .42; // --overlay-scrim
 
+// Toasts — snackbar flutuante; o tom vem das classes .ds-tone-* (par
+// container/on-container) aplicadas pelo NotificationService. Só o ritmo
+// interno sai do padrão Bootstrap (12px) para o grid de 4px do sistema.
+$toast-padding-x: 16px; // --space-4
+
 // Dropdowns
 $dropdown-border-radius: 20px; // --radius-lg
 $dropdown-box-shadow: 0 8px 18px rgba(27, 36, 55, .10), 0 20px 40px rgba(27, 36, 55, .10); // --elev-4
