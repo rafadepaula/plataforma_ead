@@ -81,9 +81,11 @@ class StudentQuizTakingDuskTest extends DuskTestCase
 
     /**
      * A metade "múltipla escolha" do contrato de cartões de resposta: os
-     * controles são checkboxes de seleção múltipla (não rádios), o cartão
-     * de cada opção marcada ganha `.is-selected`, e a correção só aceita o
-     * conjunto completo de opções corretas.
+     * controles são checkboxes de seleção múltipla (não rádios) e o cartão
+     * de cada opção marcada ganha `.is-selected`. Toda questão é obrigatória,
+     * então uma seleção parcial mantém o envio bloqueado em vez de valer
+     * zero — a regra de conjunto completo na correção fica na Action
+     * (`SubmitQuizAttemptActionTest`).
      */
     public function test_student_multiple_choice_question_requires_every_correct_option(): void
     {
@@ -112,26 +114,24 @@ class StudentQuizTakingDuskTest extends DuskTestCase
             $secondOptionSelector = '@quiz-option-'.$question->id.'-'.$secondCorrectOption->id;
             $incorrectOptionSelector = '@quiz-option-'.$question->id.'-'.$incorrectOption->id;
 
-            // 1. Uma resposta parcial (só uma das corretas) é reprovada: o
-            //    conjunto marcado precisa bater com o conjunto correto inteiro.
+            // 1. Sem nenhuma marcação o envio fica bloqueado: toda questão é
+            //    obrigatória. Em múltipla escolha, marcar uma opção já conta
+            //    como resposta dada — o bloqueio é por questão, não por
+            //    conjunto correto (a regra de conjunto completo na correção
+            //    fica na Action, `SubmitQuizAttemptActionTest`).
             $browser->loginAs($student)
                 ->visit(route('student.quizzes.show', $lesson))
                 ->waitFor('@quiz-attempt-form')
                 ->assertSee('Selecione todas as respostas que se aplicam')
                 ->assertAttribute($firstOptionSelector, 'type', 'checkbox')
+                ->assertPresent('[dusk="quiz-attempt-submit"][disabled]')
                 ->click($firstOptionSelector)
-                ->click('@quiz-attempt-submit')
-                ->waitFor('@quiz-attempt-confirm')
-                ->click('@quiz-attempt-confirm')
-                ->waitForText('não atingiu a nota mínima');
+                ->waitUntil('!document.querySelector(\'[dusk="quiz-attempt-submit"]\').disabled')
+                ->click($secondOptionSelector);
 
-            // 2. Nova tentativa: marcar duas opções mantém as duas marcadas
-            //    (checkbox, não rádio) e ambos os cartões destacados.
-            $browser->visit(route('student.quizzes.show', $lesson))
-                ->waitFor('@quiz-attempt-form')
-                ->click($firstOptionSelector)
-                ->click($secondOptionSelector)
-                ->assertChecked($firstOptionSelector)
+            // 2. Marcar duas opções mantém as duas marcadas (checkbox, não
+            //    rádio) e ambos os cartões destacados.
+            $browser->assertChecked($firstOptionSelector)
                 ->assertChecked($secondOptionSelector)
                 ->assertNotChecked($incorrectOptionSelector);
 
@@ -157,7 +157,6 @@ class StudentQuizTakingDuskTest extends DuskTestCase
         $this->assertSame(1, QuizAttempt::query()
             ->where('quiz_id', $quiz->id)
             ->where('user_id', $student->id)
-            ->where('is_passed', false)
             ->count());
     }
 
@@ -201,11 +200,11 @@ class StudentQuizTakingDuskTest extends DuskTestCase
     }
 
     /**
-     * O envio é sempre em duas etapas: o botão "Finalizar prova" abre a
-     * confirmação, que anuncia quantas questões ficaram sem resposta antes
-     * de o Aluno confirmar — e só a confirmação submete a prova.
+     * Toda questão é obrigatória: "Finalizar prova" nasce bloqueado e só é
+     * liberado com a última resposta marcada — e o modal de confirmação
+     * anuncia apenas a consequência do envio, sem contador de pendências.
      */
-    public function test_confirmation_dialog_announces_unanswered_questions_before_submitting(): void
+    public function test_the_finalize_button_unlocks_only_when_every_question_is_answered(): void
     {
         $org = Organization::factory()->create();
         $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
@@ -222,25 +221,31 @@ class StudentQuizTakingDuskTest extends DuskTestCase
         $skippedQuestion = QuizQuestion::factory()->for($quiz)->singleChoice()->create([
             'question_text' => 'Qual é a capital de Portugal?',
         ]);
-        QuizOption::factory()->for($skippedQuestion, 'question')->correct()->create(['option_text' => 'Lisboa']);
+        $skippedCorrectOption = QuizOption::factory()->for($skippedQuestion, 'question')->correct()->create(['option_text' => 'Lisboa']);
         QuizOption::factory()->for($skippedQuestion, 'question')->incorrect()->create(['option_text' => 'Porto']);
 
         $student = User::factory()->create(['org_id' => null]);
         $student->assignRole(RolesEnum::ALUNO->value);
         $course->students()->attach($student->id, ['enrolled_at' => now(), 'status' => 'active']);
 
-        $this->browse(function (Browser $browser) use ($student, $lesson, $correctOption): void {
+        $this->browse(function (Browser $browser) use ($student, $lesson, $answeredQuestion, $correctOption, $skippedQuestion, $skippedCorrectOption): void {
             $browser->loginAs($student)
                 ->visit(route('student.quizzes.show', $lesson))
                 ->waitFor('@quiz-attempt-form')
-                ->click('@quiz-option-'.$correctOption->question_id.'-'.$correctOption->id)
+                // Nem toda questão respondida: o envio fica bloqueado.
+                ->assertPresent('[dusk="quiz-attempt-submit"][disabled]')
+                ->click('@quiz-option-'.$answeredQuestion->id.'-'.$correctOption->id)
+                ->assertPresent('[dusk="quiz-attempt-submit"][disabled]')
+                // Última resposta dada: o botão destrava e a dica some.
+                ->click('@quiz-option-'.$skippedQuestion->id.'-'.$skippedCorrectOption->id)
+                ->waitUntil('!document.querySelector(\'[dusk="quiz-attempt-submit"]\').disabled')
+                ->assertMissing('@quiz-required-hint')
                 ->click('@quiz-attempt-submit')
                 ->waitFor('@quiz-attempt-confirm')
                 // Abrir a confirmação não submete nada por conta própria.
                 ->assertPresent('@quiz-attempt-form')
-                ->assertSeeIn('@confirm-modal-submit-attempt-modal', '1 de 2')
-                ->assertSeeIn('@confirm-modal-submit-attempt-modal', 'sem resposta')
-                ->assertSeeIn('@confirm-modal-submit-attempt-modal', 'não será possível alterar')
+                ->assertSeeIn('@confirm-modal-submit-attempt-modal', 'Depois de finalizar')
+                ->assertDontSeeIn('@confirm-modal-submit-attempt-modal', 'sem resposta')
                 ->click('@quiz-attempt-confirm')
                 ->waitForText('concluída com sucesso');
         });

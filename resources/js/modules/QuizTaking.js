@@ -19,7 +19,7 @@ export class QuizTaking {
 
         this.bindOptionCards();
         this.syncAllCardSelections();
-        this.bindSubmitConfirmation();
+        this.bindRequiredCompletion();
     }
 
     bindOptionCards() {
@@ -108,52 +108,30 @@ export class QuizTaking {
         return this.getUnansweredQuestions().length;
     }
 
-    countTotal() {
-        return this.getQuestions().length;
-    }
-
-    buildUnansweredMessage(unanswered) {
-        if (unanswered === 0) {
-            return 'Todas as questões foram respondidas.';
-        }
-
-        if (unanswered === 1) {
-            return 'Uma questão ficou sem resposta.';
-        }
-
-        return `${unanswered} questões ficaram sem resposta.`;
-    }
-
     /**
-     * O modal de confirmação relê o DOM a cada abertura (`show.bs.modal`), e não
-     * apenas no clique do gatilho, para que a contagem acompanhe qualquer
-     * resposta dada entre uma abertura e outra.
+     * Toda questão é obrigatória: "Finalizar prova" só é liberado quando a
+     * última resposta é dada, e a dica de obrigatoriedade some junto. `input`
+     * cobre a dissertativa (textarea), `change` cobre as objetivas — inclusive
+     * a marcação disparada pelo clique no cartão. A checagem também roda no
+     * bind, para um formulário repopulado por `old()` já nascer destravado.
      */
-    bindSubmitConfirmation() {
-        const modalEl = document.querySelector('[data-quiz-confirm-modal]');
-        if (!modalEl) return;
-
-        const refresh = () => this.refreshConfirmationSummary(modalEl);
-
-        modalEl.addEventListener('show.bs.modal', refresh);
-
+    bindRequiredCompletion() {
         const submitBtn = this.form.querySelector('[dusk="quiz-attempt-submit"]');
-        if (submitBtn) {
-            submitBtn.addEventListener('click', refresh);
-        }
+        if (!submitBtn) return;
 
+        const hint = document.querySelector('[data-quiz-required-hint]');
+
+        const refresh = () => {
+            const complete = this.countUnanswered() === 0;
+            submitBtn.disabled = !complete;
+            if (hint) {
+                hint.classList.toggle('d-none', complete);
+            }
+        };
+
+        this.form.addEventListener('change', refresh);
+        this.form.addEventListener('input', refresh);
         refresh();
-    }
-
-    refreshConfirmationSummary(modalEl) {
-        const unanswered = this.countUnanswered();
-        const countEl = modalEl.querySelector('[data-unanswered-count]');
-        const totalEl = modalEl.querySelector('[data-total-count]');
-        const messageEl = modalEl.querySelector('[data-unanswered-message]');
-
-        if (countEl) countEl.textContent = String(unanswered);
-        if (totalEl) totalEl.textContent = String(this.countTotal());
-        if (messageEl) messageEl.textContent = this.buildUnansweredMessage(unanswered);
     }
 }
 

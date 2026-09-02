@@ -136,9 +136,14 @@
             @endforeach
 
             <x-ui.form-actions align="end" class="mb-5">
+                {{-- Toda questão é obrigatória: o JS libera o botão só quando a última resposta é dada. --}}
+                <p class="form-text text-body-secondary mb-0 me-auto" data-quiz-required-hint dusk="quiz-required-hint">
+                    Todas as questões são obrigatórias. Responda a todas para liberar a finalização.
+                </p>
                 <x-ui.button type="button"
                              variant="primary"
                              icon="check"
+                             :disabled="$quiz->questions->isNotEmpty()"
                              data-bs-toggle="modal"
                              data-bs-target="#submit-attempt-modal"
                              dusk="quiz-attempt-submit">
@@ -159,9 +164,7 @@
             confirm-dusk="quiz-attempt-confirm"
             data-quiz-confirm-modal
         >
-            <p class="mb-2"><span data-unanswered-count>0</span> de <span data-total-count>{{ $quiz->questions->count() }}</span> questões estão sem resposta.</p>
-            <p class="mb-2 text-body-secondary" data-unanswered-message>Todas as questões foram respondidas.</p>
-            <p class="mb-0">Depois de finalizar, não será possível alterar suas respostas.</p>
+            <p class="mb-2">Depois de finalizar, não será possível alterar suas respostas.</p>
             @if($quiz->max_attempts !== null)
                 <p class="mb-0">Esta é a tentativa {{ $completedAttempts + 1 }} de {{ $quiz->max_attempts }}.</p>
             @endif

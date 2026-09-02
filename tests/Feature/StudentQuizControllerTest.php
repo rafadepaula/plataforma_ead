@@ -536,6 +536,51 @@ class StudentQuizControllerTest extends TestCase
             ->assertSessionHasErrors('quiz');
     }
 
+    /**
+     * Toda questão é obrigatória: deixar uma sem resposta devolve à prova
+     * com erro apontando a questão faltante e nenhuma tentativa é registrada —
+     * o servidor não confia no bloqueio do botão feito no navegador.
+     */
+    public function test_a_submission_missing_a_question_is_rejected_and_records_no_attempt(): void
+    {
+        [$aluno, $lesson, $quiz] = $this->createQuizSetup();
+
+        $answeredQuestion = QuizQuestion::factory()->for($quiz)->singleChoice()->create();
+        $correctOption = QuizOption::factory()->for($answeredQuestion, 'question')->correct()->create();
+        $skippedQuestion = QuizQuestion::factory()->for($quiz)->singleChoice()->create();
+
+        $this->actingAs($aluno)
+            ->from(route('student.quizzes.show', $lesson))
+            ->post(route('student.quizzes.submit', $lesson), [
+                'answers' => [
+                    $answeredQuestion->id => ['selected_option_ids' => [$correctOption->id]],
+                ],
+            ])
+            ->assertRedirect(route('student.quizzes.show', $lesson))
+            ->assertSessionHasErrors('answers.'.$skippedQuestion->id.'.selected_option_ids');
+
+        $this->assertSame(0, QuizAttempt::query()->count());
+    }
+
+    public function test_a_submission_with_a_blank_essay_answer_is_rejected_and_records_no_attempt(): void
+    {
+        [$aluno, $lesson, $quiz] = $this->createQuizSetup();
+
+        $essayQuestion = QuizQuestion::factory()->for($quiz)->essay()->create();
+
+        $this->actingAs($aluno)
+            ->from(route('student.quizzes.show', $lesson))
+            ->post(route('student.quizzes.submit', $lesson), [
+                'answers' => [
+                    $essayQuestion->id => ['essay_answer' => '   '],
+                ],
+            ])
+            ->assertRedirect(route('student.quizzes.show', $lesson))
+            ->assertSessionHasErrors('answers.'.$essayQuestion->id.'.essay_answer');
+
+        $this->assertSame(0, QuizAttempt::query()->count());
+    }
+
     public function test_the_confirmation_dialog_lives_outside_the_quiz_form_and_submits_it_by_id(): void
     {
         [$aluno, $lesson, $quiz] = $this->createQuizSetup();
@@ -555,6 +600,7 @@ class StudentQuizControllerTest extends TestCase
         $this->assertNotFalse($modalStart);
         $this->assertGreaterThan($formEnd, $modalStart, 'O modal de confirmação não pode ficar aninhado dentro do formulário da prova.');
         $this->assertStringContainsString('form="quiz-attempt-form"', $html);
+        $this->assertStringContainsString('data-quiz-required-hint', $html);
         $this->assertSame(0, substr_count(substr($html, $formStart, $formEnd - $formStart), '<form'), 'O formulário da prova não pode conter formulários aninhados.');
     }
 
