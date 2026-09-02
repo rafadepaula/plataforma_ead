@@ -80,6 +80,58 @@ class GestorStudentManagementTest extends TestCase
             ->assertSee('Aluno Formado');
     }
 
+    // ── Search ───────────────────────────────────────────────────────
+
+    public function test_search_filters_alunos_by_partial_name(): void
+    {
+        $org = Organization::factory()->create();
+        $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
+
+        $maria = $this->enrolledAluno($org, 'Maria Souza');
+        $this->enrolledAluno($org, 'João Pereira');
+
+        $response = $this->get(route('gestor.students.index', ['search' => 'Maria']));
+
+        $response->assertOk();
+        $this->assertNotNull($response->viewData('students')->firstWhere('id', $maria->id));
+        $this->assertNull($response->viewData('students')->firstWhere('name', 'João Pereira'));
+    }
+
+    public function test_search_matches_by_email_and_by_formatted_cpf(): void
+    {
+        $org = Organization::factory()->create();
+        $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
+
+        // CPF stored digits-only, searched with the formatted mask.
+        $byCpf = $this->enrolledAluno($org, 'Aluno Um');
+        $byCpf->update(['cpf' => '52998224725']);
+
+        $byEmail = $this->enrolledAluno($org, 'Aluno Dois');
+        $byEmail->update(['email' => 'aluno.dois@example.com']);
+
+        $response = $this->get(route('gestor.students.index', ['search' => '529.982.247-25']));
+        $this->assertNotNull($response->viewData('students')->firstWhere('id', $byCpf->id));
+        $this->assertNull($response->viewData('students')->firstWhere('name', 'Aluno Dois'));
+
+        $response = $this->get(route('gestor.students.index', ['search' => 'aluno.dois@example.com']));
+        $this->assertNotNull($response->viewData('students')->firstWhere('id', $byEmail->id));
+        $this->assertNull($response->viewData('students')->firstWhere('id', $byCpf->id));
+    }
+
+    public function test_search_never_reaches_beyond_the_own_orgs_enrolled_alunos(): void
+    {
+        $org = Organization::factory()->create();
+        $otherOrg = Organization::factory()->create();
+        $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
+
+        $this->enrolledAluno($otherOrg, 'Maria De Outra Org');
+
+        $response = $this->get(route('gestor.students.index', ['search' => 'Maria']));
+
+        $response->assertOk();
+        $this->assertSame(0, $response->viewData('students')->count());
+    }
+
     // ── Authorization boundaries ─────────────────────────────────────
 
     public function test_gestor_cannot_edit_or_delete_a_foreign_orgs_aluno(): void

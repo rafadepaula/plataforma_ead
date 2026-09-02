@@ -8,6 +8,7 @@ use App\Exceptions\UserHasIssuedCertificatesException;
 use App\Http\Controllers\Concerns\ResolvesOrgContext;
 use App\Http\Requests\UpdateGestorStudentRequest;
 use App\Models\User;
+use App\Rules\Cpf;
 use App\Services\AuditService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
@@ -45,6 +46,10 @@ class GestorStudentController extends Controller
 
         $orgId = $this->resolveOrgId($request);
 
+        $searchInput = $request->input('search');
+        $search = is_string($searchInput) ? trim($searchInput) : '';
+        $cpfDigits = Cpf::digits($search);
+
         $students = User::query()
             ->where('org_id', $orgId)
             ->whereHas('roles', fn (Builder $query) => $query->where('name', RolesEnum::ALUNO->value))
@@ -58,10 +63,20 @@ class GestorStudentController extends Controller
             ->with(['courses' => fn (BelongsToMany $query) => $query
                 ->where('courses.org_id', $orgId)
                 ->where('course_user.status', '!=', 'cancelled')])
+            // Same name/e-mail/CPF match as the enrollments panel's
+            // autocomplete feed: the CPF arm only fires when the typed term
+            // actually carries digits, so a plain name search never
+            // collides with the digits-only `cpf` column.
+            ->when($search !== '', fn (Builder $query): Builder => $query
+                ->where(fn (Builder $query): Builder => $query
+                    ->whereLike('name', "%{$search}%")
+                    ->orWhereLike('email', "%{$search}%")
+                    ->when($cpfDigits !== null, fn (Builder $query): Builder => $query->orWhereLike('cpf', "%{$cpfDigits}%"))))
             ->orderBy('name')
-            ->paginate(20);
+            ->paginate(20)
+            ->withQueryString();
 
-        return view('gestor.students.index', compact('students'));
+        return view('gestor.students.index', ['students' => $students, 'search' => $search]);
     }
 
     public function edit(Request $request, User $user): View

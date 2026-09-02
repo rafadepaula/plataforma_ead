@@ -23,6 +23,18 @@
             </x-slot:actions>
         </x-layout.page-header>
 
+        <x-ui.filter-bar :action="route('gestor.students.index')"
+                         :reset-url="route('gestor.students.index')"
+                         label="Filtros de alunos"
+                         dusk="gestor-students-filter-form">
+            <div class="col-12 col-lg">
+                <x-ui.input name="search"
+                            label="Buscar por nome, e-mail ou CPF"
+                            :value="$search"
+                            dusk="gestor-students-search" />
+            </div>
+        </x-ui.filter-bar>
+
         <x-ui.data-table striped hover responsive
                          :headers="['Aluno', 'CPF', 'Cursos', 'Status', 'Ações']">
             @forelse($students as $student)
