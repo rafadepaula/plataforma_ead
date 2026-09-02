@@ -3,14 +3,16 @@
 namespace Tests\Feature\Seeders;
 
 use App\Models\Certificate;
-use App\Models\ForumReply;
+use App\Models\Course;
+use App\Models\CourseCompletionRule;
 use App\Models\ForumTopic;
 use App\Models\InvitationLink;
-use Database\Seeders\CertificateSeeder;
+use App\Models\Module;
+use App\Models\Organization;
+use App\Models\Quiz;
+use App\Models\QuizQuestion;
+use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
-use Database\Seeders\ForumSeeder;
-use Database\Seeders\InvitationSeeder;
-use Database\Seeders\NotificationSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Facades\Mail;
@@ -18,16 +20,18 @@ use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 /**
- * PHPUnit Feature test verifying that running seeders in
- * development/testing environment creates all expected records across feature
- * entities (InvitationLinks, Certificates, ForumTopics, ForumReplies, DatabaseNotifications)
- * with explicit org_id binding, idempotency, and proper event/mail suppression.
+ * PHPUnit Feature test verifying that running the DatabaseSeeder in
+ * development/testing environment builds the minimal demo scenario: a
+ * single "Liga Certo" organization, one organizer and one student, one
+ * "Curso de Eletricista" with three modules (text, PDF and video), a quiz
+ * per module, the enrollment and the completion rules — with no leftover
+ * fictitious mass data (invitations, certificates, forum, notifications).
  */
 class DatabaseSeederDevelopmentTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_development_seeding_creates_all_expected_records_and_suppresses_mail_and_events(): void
+    public function test_development_seeding_creates_the_minimal_scenario_and_suppresses_mail_and_events(): void
     {
         Mail::fake();
         Notification::fake();
@@ -37,39 +41,64 @@ class DatabaseSeederDevelopmentTest extends TestCase
         Mail::assertNothingSent();
         Notification::assertNothingSent();
 
-        // 1. Invitation Links verification
-        $this->assertSame(4, InvitationLink::query()->count());
-        $activeLink = InvitationLink::query()->whereNull('revoked_at')->where('expires_at', '>', now())->first();
-        $this->assertNotNull($activeLink);
-        $this->assertNotNull($activeLink->org_id);
+        // 1. One organization, its organizer and its single student
+        //    (plus the global Super Admin from the baseline seeders).
+        $this->assertSame(1, Organization::query()->count());
+        $this->assertSame('Liga Certo', Organization::query()->first()->name);
+        $this->assertSame(3, User::query()->count());
+        $this->assertSame(1, User::query()->where('email', 'gestor.ligacerto@plataforma.com')->count());
+        $this->assertSame(1, User::query()->where('email', 'aluno.ligacerto@plataforma.com')->count());
 
-        $expiredLink = InvitationLink::query()->where('expires_at', '<=', now())->first();
-        $this->assertNotNull($expiredLink);
-        $this->assertTrue($expiredLink->isExpired());
+        // 2. One course with exactly three modules.
+        $course = Course::query()->withoutGlobalScopes()->sole();
+        $this->assertSame('Curso de Eletricista', $course->title);
+        $this->assertSame(3, Module::query()->where('course_id', $course->id)->count());
 
-        // 2. Certificates verification
-        $this->assertSame(4, Certificate::query()->count());
-        $validCert = Certificate::query()->whereNull('revoked_at')->first();
-        $this->assertNotNull($validCert);
-        $this->assertEquals(64, strlen($validCert->validation_hash));
+        // 3. Three quizzes, one per module.
+        $this->assertSame(3, Quiz::query()->count());
 
-        $revokedCert = Certificate::query()->whereNotNull('revoked_at')->first();
-        $this->assertNotNull($revokedCert);
-        $this->assertTrue($revokedCert->isRevoked());
-        $this->assertNotEmpty($revokedCert->revoke_reason);
+        // 4. The first module's quiz carries the essay question.
+        $essayCount = QuizQuestion::query()->where('type', 'essay')->count();
+        $this->assertSame(1, $essayCount);
 
-        // 3. Forum Topics & Replies verification
-        $this->assertSame(4, ForumTopic::query()->count());
-        $pinnedTopic = ForumTopic::query()->where('is_pinned', true)->first();
-        $this->assertNotNull($pinnedTopic);
-        $this->assertNotNull($pinnedTopic->org_id);
+        // 5. No fictitious leftover data.
+        $this->assertSame(0, InvitationLink::query()->count());
+        $this->assertSame(0, Certificate::query()->count());
+        $this->assertSame(0, ForumTopic::query()->count());
+        $this->assertSame(0, DatabaseNotification::query()->count());
+    }
 
-        $this->assertSame(4, ForumReply::query()->count());
+    public function test_seeded_student_is_enrolled_and_completion_rules_match_the_course_goal(): void
+    {
+        $this->seed(DatabaseSeeder::class);
 
-        // 4. Notifications verification
-        $this->assertSame(20, DatabaseNotification::query()->count());
-        $unreadNotif = DatabaseNotification::query()->whereNull('read_at')->first();
-        $this->assertNotNull($unreadNotif);
+        $aluno = User::query()->where('email', 'aluno.ligacerto@plataforma.com')->first();
+        $course = Course::query()->withoutGlobalScopes()->sole();
+
+        // The student holds a single active enrollment on the course.
+        $enrollment = $course->students()->where('users.id', $aluno->id)->first();
+        $this->assertNotNull($enrollment);
+        $this->assertSame('active', $enrollment->pivot->status);
+        $this->assertSame(0, (int) $enrollment->pivot->progress_percentage);
+
+        // Completion requires every lesson (including the video) done…
+        $allLessonsRule = $course->completionRules()->where('rule_type', 'all_lessons')->first();
+        $this->assertNotNull($allLessonsRule);
+        $this->assertNull($allLessonsRule->target_id);
+        $this->assertSame(100, $allLessonsRule->required_percentage);
+
+        // …and a 70% minimum score on the LAST quiz (module 3's quiz).
+        $lastModule = Module::query()
+            ->where('course_id', $course->id)
+            ->orderByDesc('order_index')
+            ->first();
+        $lastQuiz = Quiz::query()
+            ->whereHas('lesson', fn ($query) => $query->where('module_id', $lastModule->id))
+            ->first();
+
+        $minQuizScoreRule = $course->completionRules()->where('rule_type', 'min_quiz_score')->sole();
+        $this->assertSame($lastQuiz->id, $minQuizScoreRule->target_id);
+        $this->assertSame(70, $minQuizScoreRule->required_percentage);
     }
 
     public function test_seeding_is_idempotent_when_executed_multiple_times(): void
@@ -77,27 +106,27 @@ class DatabaseSeederDevelopmentTest extends TestCase
         Mail::fake();
         Notification::fake();
 
-        $this->seed(InvitationSeeder::class);
-        $this->seed(CertificateSeeder::class);
-        $this->seed(ForumSeeder::class);
-        $this->seed(NotificationSeeder::class);
+        $this->seed(DatabaseSeeder::class);
 
-        $invitationCount = InvitationLink::query()->count();
-        $certificateCount = Certificate::query()->count();
-        $topicCount = ForumTopic::query()->count();
-        $replyCount = ForumReply::query()->count();
-        $notificationCount = DatabaseNotification::query()->count();
+        $counts = [
+            'organizations' => Organization::query()->count(),
+            'users' => User::query()->count(),
+            'courses' => Course::query()->withoutGlobalScopes()->count(),
+            'modules' => Module::query()->count(),
+            'quizzes' => Quiz::query()->count(),
+            'questions' => QuizQuestion::query()->count(),
+            'completion_rules' => CourseCompletionRule::query()->count(),
+        ];
 
-        // Re-run seeders to assert 100% idempotency
-        $this->seed(InvitationSeeder::class);
-        $this->seed(CertificateSeeder::class);
-        $this->seed(ForumSeeder::class);
-        $this->seed(NotificationSeeder::class);
+        // Re-run the seeder to assert 100% idempotency.
+        $this->seed(DatabaseSeeder::class);
 
-        $this->assertSame($invitationCount, InvitationLink::query()->count());
-        $this->assertSame($certificateCount, Certificate::query()->count());
-        $this->assertSame($topicCount, ForumTopic::query()->count());
-        $this->assertSame($replyCount, ForumReply::query()->count());
-        $this->assertSame($notificationCount, DatabaseNotification::query()->count());
+        $this->assertSame($counts['organizations'], Organization::query()->count());
+        $this->assertSame($counts['users'], User::query()->count());
+        $this->assertSame($counts['courses'], Course::query()->withoutGlobalScopes()->count());
+        $this->assertSame($counts['modules'], Module::query()->count());
+        $this->assertSame($counts['quizzes'], Quiz::query()->count());
+        $this->assertSame($counts['questions'], QuizQuestion::query()->count());
+        $this->assertSame($counts['completion_rules'], CourseCompletionRule::query()->count());
     }
 }

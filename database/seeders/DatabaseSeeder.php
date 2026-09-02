@@ -39,20 +39,17 @@ class DatabaseSeeder extends Seeder
             return;
         }
 
-        // 3. Development / Testing / Staging Suite
+        // 3. Development / Testing / Staging Suite — a single, minimal
+        // scenario: one organization, its organizer and student, and one
+        // course with three modules, quizzes, enrollment and completion rules.
         if ($this->command) {
-            $this->command->info('Ambiente de DESENVOLVIMENTO detectado: populando massa completa de testes...');
+            $this->command->info('Ambiente de DESENVOLVIMENTO detectado: populando cenário mínimo de desenvolvimento...');
         }
 
         $nonProductionSeeders = [
             OrganizationSeeder::class,
             UserSeeder::class,
             CourseSeeder::class,
-            QuizSeeder::class,
-            InvitationSeeder::class,
-            CertificateSeeder::class,
-            ForumSeeder::class,
-            NotificationSeeder::class,
         ];
 
         // Gracefully execute only seeders that exist in the system

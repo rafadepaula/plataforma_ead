@@ -45,11 +45,11 @@ class LessonYoutubeEmbedRenderingTest extends TestCase
         }
 
         // Assert the specific known lesson has the correct embed URL
-        $introLesson = Lesson::where('title', 'Introdução à Arquitetura Multitenant')->first();
-        $this->assertNotNull($introLesson);
+        $videoLesson = Lesson::where('title', 'Videoaula — Circuito Residencial Passo a Passo')->first();
+        $this->assertNotNull($videoLesson);
         $this->assertSame(
             'https://www.youtube.com/embed/dQw4w9WgXcQ',
-            $introLesson->youtube_url
+            $videoLesson->youtube_url
         );
     }
 

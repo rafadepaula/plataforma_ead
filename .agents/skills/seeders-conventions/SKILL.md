@@ -14,7 +14,7 @@ metadata:
 
 ## Environment Isolation in DatabaseSeeder
 
-`DatabaseSeeder` MUST check `app()->environment('production')`. Production runs only safe seeders (`RolesAndPermissionsSeeder`, `SystemSettingSeeder`, `AdminSeeder`). Non-production (`local`, `staging`, `testing`) runs full domain suite.
+`DatabaseSeeder` MUST check `app()->environment('production')`. Production runs only safe seeders (`RolesAndPermissionsSeeder`, `SystemSettingSeeder`, `AdminSeeder`, `HelpArticleSeeder`). Non-production (`local`, `staging`, `testing`) runs the minimal dev scenario (`OrganizationSeeder`, `UserSeeder`, `CourseSeeder`).
 
 ```php
 if (app()->environment('production')) {
@@ -28,32 +28,32 @@ NEVER bare `Model::create()` or raw `DB::table()->insert()`. Every seeder write 
 
 ```php
 $org = Organization::firstOrCreate(
-    ['slug' => 'acme-cursos'],
+    ['slug' => 'liga-certo'],
     [
-        'name' => 'Acme Cursos',
+        'name' => 'Liga Certo',
         'cnpj' => '12.345.678/0001-90',
         'status' => 'active',
     ]
 );
 ```
 
-## Event Suppression (`Model::withoutEvents`)
+## Event Suppression (`WithoutModelEvents` trait)
 
-Stop side effects while seeding — real notifications, `AuditableTrait` listeners, mail alerts. Wrap creation:
+Stop side effects while seeding — real notifications, `AuditableTrait` listeners, mail alerts. Prefer the `WithoutModelEvents` trait on the seeder class: it suspends every model event for the whole `run()`, including nested `$this->call()`s, without nesting `Model::withoutEvents()` per model.
 
 ```php
-User::withoutEvents(function () use ($acme): void {
-    User::firstOrCreate(
-        ['email' => 'gestor.acme@plataforma.com'],
-        [
-            'name' => 'Gestor Acme',
-            'password' => Hash::make('password'),
-            'org_id' => $acme->id,
-            'status' => 'active',
-        ]
-    );
-});
+class CourseSeeder extends Seeder
+{
+    use WithoutModelEvents;
+
+    public function run(): void
+    {
+        // every creation below runs with model events suspended
+    }
+}
 ```
+
+`Model::withoutEvents(function () use ($org): void { ... })` remains the alternative for scoping suppression to one block.
 
 ## Explicit `org_id`
 
@@ -61,9 +61,9 @@ Models under `OrgScope` or direct tenant link MUST get explicit `org_id` when se
 
 ```php
 $course = Course::withoutGlobalScopes()->firstOrCreate(
-    ['org_id' => $org->id, 'title' => 'Desenvolvimento Laravel Avançado'],
+    ['org_id' => $org->id, 'title' => 'Curso de Eletricista'],
     [
-        'description' => 'Curso completo de Laravel',
+        'description' => 'Formação prática em instalações elétricas residenciais.',
         'workload_hours' => 40,
         'is_published' => true,
     ]

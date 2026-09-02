@@ -8,26 +8,17 @@ use Illuminate\Database\Seeder;
 class OrganizationSeeder extends Seeder
 {
     /**
-     * Run the database seeds.
+     * Seed the development organization: a single "Liga Certo" tenant
+     * that every other development seeder hangs off of.
      */
     public function run(): void
     {
         Organization::withoutEvents(function (): void {
             Organization::firstOrCreate(
-                ['slug' => 'acme-cursos'],
+                ['slug' => 'liga-certo'],
                 [
-                    'name' => 'Acme Cursos',
+                    'name' => 'Liga Certo',
                     'cnpj' => '12.345.678/0001-90',
-                    'logo_path' => null,
-                    'status' => 'active',
-                ]
-            );
-
-            Organization::firstOrCreate(
-                ['slug' => 'tech-academy'],
-                [
-                    'name' => 'Tech Academy',
-                    'cnpj' => '98.765.432/0001-10',
                     'logo_path' => null,
                     'status' => 'active',
                 ]

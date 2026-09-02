@@ -11,106 +11,52 @@ use Illuminate\Support\Facades\Hash;
 class UserSeeder extends Seeder
 {
     /**
-     * Run the database seeds.
+     * Seed the two development accounts of "Liga Certo": one organizer
+     * (gestor) and one student (aluno), both verified with the shared
+     * local password `password`.
      */
     public function run(): void
     {
-        $acme = Organization::where('slug', 'acme-cursos')->first();
-        $tech = Organization::where('slug', 'tech-academy')->first();
+        $ligaCerto = Organization::where('slug', 'liga-certo')->first();
 
-        if (! $acme || ! $tech) {
+        if (! $ligaCerto) {
             $this->call(OrganizationSeeder::class);
-            $acme = Organization::where('slug', 'acme-cursos')->first();
-            $tech = Organization::where('slug', 'tech-academy')->first();
+            $ligaCerto = Organization::where('slug', 'liga-certo')->first();
         }
 
-        User::withoutEvents(function () use ($acme, $tech): void {
-            // Seed Gestores
-            $gestorAcme = User::firstOrCreate(
-                ['email' => 'gestor.acme@plataforma.com'],
+        User::withoutEvents(function () use ($ligaCerto): void {
+            $gestor = User::firstOrCreate(
+                ['email' => 'gestor.ligacerto@plataforma.com'],
                 [
-                    'name' => 'Gestor Acme',
+                    'name' => 'Organizador Liga Certo',
                     'password' => Hash::make('password'),
-                    'org_id' => $acme?->id,
+                    'org_id' => $ligaCerto?->id,
                     'cpf' => '111.111.111-11',
                     'status' => 'active',
                 ]
             );
-            if (! $gestorAcme->email_verified_at) {
-                $gestorAcme->forceFill(['email_verified_at' => now()])->save();
+            if (! $gestor->email_verified_at) {
+                $gestor->forceFill(['email_verified_at' => now()])->save();
             }
-            if (! $gestorAcme->hasRole(RolesEnum::GESTOR->value)) {
-                $gestorAcme->assignRole(RolesEnum::GESTOR->value);
+            if (! $gestor->hasRole(RolesEnum::GESTOR->value)) {
+                $gestor->assignRole(RolesEnum::GESTOR->value);
             }
 
-            $gestorTech = User::firstOrCreate(
-                ['email' => 'gestor.tech@plataforma.com'],
+            $aluno = User::firstOrCreate(
+                ['email' => 'aluno.ligacerto@plataforma.com'],
                 [
-                    'name' => 'Gestor Tech',
+                    'name' => 'Aluno Liga Certo',
                     'password' => Hash::make('password'),
-                    'org_id' => $tech?->id,
+                    'org_id' => $ligaCerto?->id,
                     'cpf' => '222.222.222-22',
                     'status' => 'active',
                 ]
             );
-            if (! $gestorTech->email_verified_at) {
-                $gestorTech->forceFill(['email_verified_at' => now()])->save();
+            if (! $aluno->email_verified_at) {
+                $aluno->forceFill(['email_verified_at' => now()])->save();
             }
-            if (! $gestorTech->hasRole(RolesEnum::GESTOR->value)) {
-                $gestorTech->assignRole(RolesEnum::GESTOR->value);
-            }
-
-            // Seed Alunos
-            $alunosData = [
-                [
-                    'email' => 'aluno.alpha@plataforma.com',
-                    'name' => 'Aluno Alpha',
-                    'cpf' => '333.333.333-33',
-                    'org_id' => $acme?->id,
-                ],
-                [
-                    'email' => 'aluno.beta@plataforma.com',
-                    'name' => 'Aluno Beta',
-                    'cpf' => '444.444.444-44',
-                    'org_id' => $acme?->id,
-                ],
-                [
-                    'email' => 'aluno.gamma@plataforma.com',
-                    'name' => 'Aluno Gamma',
-                    'cpf' => '555.555.555-55',
-                    'org_id' => $tech?->id,
-                ],
-                [
-                    'email' => 'aluno.delta@plataforma.com',
-                    'name' => 'Aluno Delta',
-                    'cpf' => '666.666.666-66',
-                    'org_id' => $tech?->id,
-                ],
-                [
-                    'email' => 'aluno.epsilon@plataforma.com',
-                    'name' => 'Aluno Epsilon',
-                    'cpf' => '777.777.777-77',
-                    'org_id' => $acme?->id,
-                ],
-            ];
-
-            foreach ($alunosData as $data) {
-                $aluno = User::firstOrCreate(
-                    ['email' => $data['email']],
-                    [
-                        'name' => $data['name'],
-                        'password' => Hash::make('password'),
-                        'org_id' => $data['org_id'],
-                        'cpf' => $data['cpf'],
-                        'status' => 'active',
-                    ]
-                );
-                if (! $aluno->email_verified_at) {
-                    $aluno->forceFill(['email_verified_at' => now()])->save();
-                }
-                if (! $aluno->hasRole(RolesEnum::ALUNO->value)) {
-                    $aluno->assignRole(RolesEnum::ALUNO->value);
-                }
+            if (! $aluno->hasRole(RolesEnum::ALUNO->value)) {
+                $aluno->assignRole(RolesEnum::ALUNO->value);
             }
         });
     }

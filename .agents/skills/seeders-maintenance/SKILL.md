@@ -17,7 +17,7 @@ metadata:
 
 These PHPUnit tests guard the seeder contract. Keep green:
 
-- `tests/Feature/Seeders/DatabaseSeederDevelopmentTest.php` — seeding in local/development/testing creates all expected records (Organizations, Users, Courses, Quizzes, Invitations, Certificates, Forum, Notifications) with explicit `org_id`, no mail/events leak.
+- `tests/Feature/Seeders/DatabaseSeederDevelopmentTest.php` — seeding in local/development/testing creates the minimal dev scenario ("Liga Certo" organization, gestor + aluno, one "Curso de Eletricista" with three modules and quizzes, enrollment, completion rules) with explicit `org_id`, no mail/events leak.
 - `tests/Feature/Seeders/SeederIdempotencyTest.php` — `php artisan db:seed` run many times: no duplicate key exception, table counts identical.
 
 Run:
@@ -32,10 +32,7 @@ vendor/bin/sail artisan test --filter=DatabaseSeederDevelopmentTest
   Seeder used bare `Model::create()` or raw insert. Switch to `firstOrCreate`/`updateOrCreate` keyed on unique natural key (`token`, `validation_hash`, `email`, `slug`, `id`).
 
 - **`UnresolvedOrgContextException` while seeding:**
-  `OrgScope` models (`InvitationLink`, `ForumTopic`, `Course`, `HelpArticle`, `SystemSetting`) have no HTTP session. Pass `org_id` explicitly, or wrap in `withoutEvents()`.
+  `OrgScope` models (`Course`, `HelpArticle`, `SystemSetting`) have no HTTP session. Pass `org_id` explicitly, or wrap in `withoutEvents()`.
 
 - **Unwanted mail / event side effects:**
-  Use `Model::withoutEvents(...)`, `Mail::fake()`, `Notification::fake()` inside seeder or test setup.
-
-- **DatabaseNotification missing or duplicated:**
-  Seed with deterministic UUID (derived from user id): `firstOrCreate(['id' => $uuid], [...])`.
+  Use the `WithoutModelEvents` trait on the seeder (or `Model::withoutEvents(...)`), `Mail::fake()`, `Notification::fake()` inside seeder or test setup.
