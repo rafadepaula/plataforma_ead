@@ -1,8 +1,8 @@
 ---
 name: courses-conventions
 description: >
-  Code patterns, snippets, guardrails for Courses/Modules/Lessons feature
-  (SPEC-05): FileUploadService/YoutubeSanitizerService usage,
+  Code patterns, snippets, guardrails for Courses/Modules/Lessons feature:
+  FileUploadService/YoutubeSanitizerService usage,
   Course/Module/Lesson Policy conventions, factory conventions, AJAX reorder
   endpoint shape. Use when write controller, Policy, Form Request, or Service
   managing `Course`/`Module`/`Lesson` records, handle Lesson media upload or
@@ -11,9 +11,6 @@ license: MIT
 metadata:
   feature: courses
   role: conventions
-  specs:
-    - spec/specs/05-courses-modules-and-content-management.md
-    - spec/specs/23-trail-builder-modules-and-lessons.md
 ---
 
 # Courses Conventions
@@ -44,7 +41,7 @@ public function storeImages(array $files, Course $course): array
 }
 ```
 
-### Multi-file lesson form contract (SPEC-23 §3.1)
+### Multi-file lesson form contract
 
 Request keys are plural arrays; limits are PER FILE, validated per element:
 
@@ -199,7 +196,7 @@ Lesson::factory()->for($module)->richText()->create();
 ```
 
 `LessonFactory` base `definition()` leave all four content columns
-(`content_text`/`image_path`/`pdf_path`/`youtube_url`) `null`. Each of RF07's
+(`content_text`/`image_path`/`pdf_path`/`youtube_url`) `null`. Each of the
 four content kinds opt-in via dedicated state
 (`richText()`/`withImage()`/`withPdf()`/`withYoutube()`) that populate only own
 column(s) and clear other three, so test creating "YouTube lesson" never
@@ -269,10 +266,11 @@ Active enrollment action rule:
 Four actions stay visible here despite generic three-action guideline: catalog
 contract reserves 470px action column and requires all four.
 
-## Trail-Builder UI Composition (SPEC-23)
+## Trail-Builder UI Composition
 
 Module/lesson lists and the lesson form compose four wrapper components
-(created for SPEC-23, NOT part of SPEC-19's 30-component inventory):
+(created for the trail builder, NOT part of the core 30-component
+`<x-ui.*>` inventory):
 
 - `<x-ui.sortable-list>`: `<ul data-reorder-url="..." class="ds-sortable-list">`
   with `dusk="module-list|lesson-list"` passthrough.
@@ -289,7 +287,7 @@ Module/lesson lists and the lesson form compose four wrapper components
   valid URL is typed.
 
 Destructive deletes go through `<x-ui.confirm-modal>` with the `confirmDusk`
-prop so the modal's confirm submit carries the SPEC-23 §5 selector
+prop so the modal's confirm submit carries the frozen selector
 (`delete-module-{id}`/`delete-lesson-{id}`); the row renders only the ghost
 trash trigger, and `formDusk` keeps `delete-module-form-{id}` on the embedded
 form. Module deletion must quote the real lesson count in the cascade message

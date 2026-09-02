@@ -31,7 +31,7 @@ Guia define padrões de código, convenções de escrita, guardrails para criar 
 
 ## Agrupamento por Cadeia de Ciclo de Vida (Lifecycle Chaining) — Regra E2E
 
-**Regra**: em `tests/Browser/*`, critério de agrupamento é **cadeia de ciclo de vida / jornada do usuário**, **não** módulo, spec ou Use Case. Um método de teste Dusk cobre cadeia inteira (criar, editar, transicionar estado, excluir, verificar consequência), com asserção intermediária em cada etapa.
+**Regra**: em `tests/Browser/*`, critério de agrupamento é **cadeia de ciclo de vida / jornada do usuário**, **não** módulo. Um método de teste Dusk cobre cadeia inteira (criar, editar, transicionar estado, excluir, verificar consequência), com asserção intermediária em cada etapa.
 
 **O que muda em relação ao padrão anterior (um método por cenário atômico, um arquivo por módulo):**
 
@@ -39,7 +39,7 @@ Guia define padrões de código, convenções de escrita, guardrails para criar 
 | :--- | :--- |
 | 1 método por ação (`test_gestor_can_create_user`, `test_gestor_can_edit_user`, ...) | 1 método por cadeia (`test_gestor_user_management_full_lifecycle`) |
 | Cada método re-migra o banco, reabre navegador, refaz login, renavega | 1 truncate, 1 login, 1 navegação, N etapas encadeadas |
-| Arquivo de teste pertence a um único módulo/spec | Arquivo pertence à **jornada**; pode cruzar módulos (ex.: cadeia de usuário toca auth-orgs + matrícula + notificações) |
+| Arquivo de teste pertence a um único módulo | Arquivo pertence à **jornada**; pode cruzar módulos (ex.: cadeia de usuário toca auth-orgs + matrícula + notificações) |
 | Cenários de validação cada um com sessão própria | Rejeições de validação agrupadas na **mesma sessão de formulário**, sem recarregar do zero |
 
 **Motivo**: cada método Dusk custa migrações/truncate + boot de sessão WebDriver + login + navegação. Fragmentar ciclo de vida multiplica esse custo fixo sem ganhar cobertura. Encadear preserva cobertura e ainda testa transição real de estado que teste atômico nunca exercita.
@@ -119,7 +119,7 @@ class UserManagementTest extends DuskTestCase
 - Arquivo `tests/Browser/*` com > ~6 métodos é sinal de fragmentação: reavalie se há cadeia a unificar.
 - Ao criar teste E2E novo, primeiro procure a cadeia existente que já cobre a jornada e estenda-a. Criar arquivo novo por módulo é padrão antigo.
 
-4. **Banco de Dados Dedicado do Dusk (`testing`) — RN13/RF30 (SPEC-14)**:
+4. **Banco de Dados Dedicado do Dusk (`testing`)**:
    - `tests/Browser/*.php` **jamais** roda contra `plataforma_ead`. Isolamento vem do par `.env.dusk.local` / `.env.dusk.example`, versionado na raiz do repositório com mesmo shape do `.env.example`:
      ```ini
      APP_ENV=dusk

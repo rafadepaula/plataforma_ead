@@ -1,11 +1,11 @@
 ---
 name: help-architecture
 description: >
-  Landing Page & Contextual Help Center domain (SPEC-11): `help_articles`
+  Landing Page & Contextual Help Center domain: `help_articles`
   schema (directly org-scoped, nullable `org_id` mean global),
   `HelpArticleResolverService` org-specific-then-global fallback, why
   `<x-help-button>` resolve own `org_id` outside `OrgScope` instead of
-  relying on it, 100%-of-screens coverage requirement (RF12/RN05) spanning
+  relying on it, 100%-of-screens coverage requirement spanning
   authenticated (`layouts.app`) and public/guest screens. Use when
   designing or reviewing feature touching `HelpArticle` data, before
   adding new `target_page_key`, or when deciding how new screen (staff,
@@ -14,17 +14,15 @@ license: MIT
 metadata:
   feature: help
   role: architecture
-  specs:
-    - spec/specs/11-landing-page-and-contextual-help-center.md
-    - spec/specs/00-architecture-database-and-guardrails.md
 ---
 
 # Help Center Architecture
 
 ## Overview
 
-RF11 is standalone public Landing Page (`GET /`, `landing.show`). RF12 /
-RN05 is Contextual Help Center: every screen in platform — staff
+The domain covers the standalone public Landing Page (`GET /`,
+`landing.show`) and the Contextual Help Center: every screen in platform —
+staff
 (`layouts.app`), guest/auth (`layouts.guest`), and fully public/standalone
 documents (Landing Page, `/convite/{token}`, `/validar-certificado/{hash}`)
 — must carry `<x-help-button key="...">` that open modal with article
@@ -32,7 +30,7 @@ content, or render inert if no article authored yet for that `key`. This
 feature never mutate any other domain data. It only read `help_articles`
 and render on top of every other feature screens.
 
-## Schema (SPEC-00 §2.1.20)
+## Schema
 
 | Table | Key columns | Tenancy |
 | --- | --- | --- |
@@ -82,10 +80,10 @@ instead of throwing `UnresolvedOrgContextException`. That exception
 reserved for write paths requiring *known* tenant. Help-article
 resolution is read path, must always degrade gracefully.
 
-## 100%-of-Screens Coverage (RF12/RN05)
+## 100%-of-Screens Coverage
 
-RN05 allow content authoring to lag behind coverage — "button itself must
-always be present" even when no `HelpArticle` written yet for given
+The coverage rule allow content authoring to lag behind — "button itself
+must always be present" even when no `HelpArticle` written yet for given
 `target_page_key`. Then button render disabled/inert (see
 `help-conventions` for exact Blade branch). Every screen bucket must
 carry component:
@@ -103,7 +101,7 @@ part of the Guest row above.
 Staff and guest buckets wired **once** at layout level and key off
 current route name automatically — new screen added to either layout get
 help coverage free. Standalone-document bucket has no route-keyed shared
-layout to hook into — since the `front_redesign` Fase 7 pass both share
+layout to hook into — since the Fase 7 redesign pass both share
 `<x-layout.public>` (see `bootstrap-conventions` §2) for `<!doctype html>`
 boilerplate, but that component does not itself key or place any
 `<x-help-button>` — so every new fully-public screen must still remember

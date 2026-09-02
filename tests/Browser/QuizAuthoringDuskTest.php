@@ -195,7 +195,7 @@ class QuizAuthoringDuskTest extends DuskTestCase
     }
 
     /**
-     * UC11's exception flow 6.1 ("Questão Objetiva sem Opção Correta
+     * Exception flow ("Questão Objetiva sem Opção Correta
      * Marcada"): submitting a `single_choice` question with no option
      * checked as correct is rejected server-side (HTTP 422 /
      * `StoreQuizQuestionRequest`'s cross-field rule), and the validation

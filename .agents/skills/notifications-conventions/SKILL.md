@@ -1,7 +1,7 @@
 ---
 name: notifications-conventions
 description: >
-  Code patterns, snippets, guardrails for Notifications & Alerts (SPEC-13):
+  Code patterns, snippets, guardrails for Notifications & Alerts:
   try/catch around notify() call site for mail isolation, database-before-mail
   via() ordering, NotificationController manual $request->user()->notifications()
   scoping (no Policy/OrgScope for DatabaseNotification), role:gestor/role:aluno
@@ -12,8 +12,6 @@ license: MIT
 metadata:
   feature: notifications
   role: conventions
-  specs:
-    - spec/specs/13-notifications-and-alerts.md
 ---
 
 # Notifications Conventions
@@ -94,9 +92,9 @@ that trigger.
 ## `NotificationController` Manually Scopes Every Query. No Policy Exists
 
 `DatabaseNotification` carries no `OrgScope`, no Policy. Not even in this
-application model tree; framework model. RN12 (no cross-user leak)
-guaranteed entirely by resolving every notification through authenticated
-user own relation, never bare `DatabaseNotification::find($id)`:
+application model tree; framework model. The no-cross-user-leak guarantee is
+enforced entirely by resolving every notification through the authenticated
+user's own relation, never bare `DatabaseNotification::find($id)`:
 
 ```php
 public function read(Request $request, string $notification): JsonResponse
@@ -110,8 +108,8 @@ public function read(Request $request, string $notification): JsonResponse
 
 `{notification}` is plain `string` route parameter, never typed
 `DatabaseNotification $notification` implicit binding. Route-model binding
-resolves row regardless of ownership, silently reintroduces cross-user leak
-RN12 forbids. `findOrFail()` on scoped relation 404s identically whether
+resolves row regardless of ownership, silently reintroduces the forbidden
+cross-user leak. `findOrFail()` on scoped relation 404s identically whether
 UUID belongs to another user or does not exist at all. Intentional, not
 oversight. Indistinguishable on purpose, don't "fix" it into 403.
 
@@ -126,7 +124,7 @@ $canSeeNotifications = $notifUser
 
 Authenticated Admin (`@auth` alone would pass) must render **no** bell.
 Admin is technically a `User` (sometimes `org_id === null`) but never
-recipient of any of 4 SPEC-13 notification types. Never relax to bare
+recipient of any of this module's 4 notification types. Never relax to bare
 `@auth` check.
 
 ## Bell Dropdown Server-Rendered, No Separate "List" AJAX Endpoint
@@ -139,8 +137,8 @@ markup. `NotificationBell.js` only polls `GET notifications.unread-count`
 endpoint in module contract. Opening dropdown (`toggleDropdown()`) also
 triggers immediate `refreshUnreadCount()` so badge never visibly lags 30s
 tick, but dropdown item list only ever reflects what was rendered
-server-side on last full page load. Do not add dropdown-refetch endpoint
-without deliberate spec change. Not part of Bucket 2 contract.
+server-side on last full page load. Do not add a dropdown-refetch endpoint
+without a deliberate design change; it is not part of this module's contract.
 
 ## `NotificationBell.js` Follows `ForumPolling.js` Module Shape Exactly
 
@@ -163,10 +161,8 @@ call **before** redirecting, but redirects via `.finally(redirect)`
 regardless of whether call succeeds. Transient failure marking row read must
 never trap user on bell dropdown instead of taking them to `action_url`.
 
-## Related Specs
+## Related Skills
 
-- `spec/specs/13-notifications-and-alerts.md` — RF28, §2 4-trigger table, §3
-  mail-isolation RN.
 - `forum-conventions` — `ForumPolling.js`/`HttpClient` JS module contract
   `NotificationBell.js` mirrors.
 - `tenancy-security` — general "never trust route-bound id without manual

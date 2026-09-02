@@ -1,6 +1,6 @@
 ---
 name: skill-autoupdate
-description: Protocolo de Auto-Update e Auditoria de Skills Agenticas para Manutenção Contínua conforme SPEC-03. Inclui regra de escrita: toda skill em .agents/skills/ é escrita em caveman FULL. Use ao criar, editar ou auditar qualquer SKILL.md.
+description: Protocolo de Auto-Update e Auditoria de Skills Agenticas para Manutenção Contínua. Inclui regra de escrita: toda skill em .agents/skills/ é escrita em caveman FULL. Use ao criar, editar ou auditar qualquer SKILL.md.
 ---
 
 # Meta-Skill: Auto-Update & Auditoria de Skills (`skill-autoupdate`)
@@ -9,7 +9,7 @@ description: Protocolo de Auto-Update e Auditoria de Skills Agenticas para Manut
 
 Meta-skill **`skill-autoupdate`** define protocolo operacional e padrões obrigatórios. Agentes de IA mantêm documentação técnica acionável em `.agents/skills/` sempre sincronizada com código-fonte da Plataforma EAD.
 
-Conformidade estrita com **SPEC-03 (Agentic Harness e Auto-Update de Skills)** e **SPEC-00 §6**: **nenhuma alteração de código, esquema de banco, regra de negócio ou rota pode ser finalizada sem auditoria e atualização da tríade de skills do módulo correspondente.**
+Regra estrita deste protocolo: **nenhuma alteração de código, esquema de banco, regra de negócio ou rota pode ser finalizada sem auditoria e atualização da tríade de skills do módulo correspondente.**
 
 ---
 
@@ -55,7 +55,7 @@ Agente de IA **DEVE** acionar protocolo de auto-update sempre que fizer qualquer
 Ao implementar ou modificar funcionalidade na Plataforma EAD, agente segue rigorosamente esta sequência:
 
 ### Passo 1: Identificar o Módulo Alvo
-Determine nome representativo da feature afetada a partir do nome da especificação ou diretório (ex: `quizzes` a partir de `08-quizzes-and-evaluations-engine.md`).
+Determine nome representativo da feature afetada a partir do código e dos diretórios afetados (ex: `quizzes` a partir de controllers, models e views de quizzes).
 
 ### Passo 2: Inspecionar / Criar a Tríade
 Verifique existência dos três diretórios sob `.agents/skills/`:
@@ -113,7 +113,7 @@ php scripts/check-skills.php --dir=.agents/skills
    - Idioma do arquivo preservado — arquivo em português vira caveman em português.
    - Sem emoji decorativo em heading. Sem seta causal (→) em prosa; dentro de code block e diagrama ASCII fica como está.
    - Sem abreviação inventada (cfg/impl/req). Sigla padrão (DB, API, HTTP, UI, E2E) serve.
-   - `description` do frontmatter também em caveman, mas mantém as keywords de trigger (nome de arquivo, id de spec, nome de classe) — é o que faz o match da skill.
+   - `description` do frontmatter também em caveman, mas mantém as keywords de trigger (nome de arquivo, nome de módulo, nome de classe) — é o que faz o match da skill.
    - Exceção: passo de sequência, aviso de segurança ou ação destrutiva onde cortar artigo/conjunção deixa a ordem ou a condição ambígua. Nesses trechos, frase completa.
 
 1. **Sintaxe PHPUnit Estrita**: Todos exemplos e instruções de testes unidade/integração nas skills usam **PHPUnit** (estendendo `Tests\TestCase` ou `DuskTestCase`). Funções Pest: estritamente proibidas.

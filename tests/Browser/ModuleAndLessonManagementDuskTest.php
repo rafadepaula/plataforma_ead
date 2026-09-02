@@ -352,7 +352,7 @@ class ModuleAndLessonManagementDuskTest extends DuskTestCase
     }
 
     /**
-     * UC08 §6.1 exception-flow coverage that the happy-path lifecycle chain
+     * Exception-flow coverage that the happy-path lifecycle chain
      * above never exercises: an invalid YouTube URL rejected with a
      * validation error rendered on `error-youtube_url`, an oversized image
      * rejected client-side by `LessonForm.js` (`.is-invalid` + message on

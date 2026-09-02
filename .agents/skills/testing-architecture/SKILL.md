@@ -26,14 +26,14 @@ Infraestrutura de testes garante integridade do sistema via Test-Driven Developm
 3. **Automação E2E Laravel Dusk (`tests/Browser/`)**:
    - Roda testes End-to-End em Headless Chrome.
    - Testa interação real de UI, navegação de páginas, formulários, fluxos de usuário.
-   - **Unidade de organização = cadeia de ciclo de vida (jornada), não módulo.** Um método cobre jornada inteira de entidade/ator (criar, editar, transicionar, excluir, consequência), com asserções intermediárias de UI e banco por etapa. Arquivos podem cruzar fronteiras de módulo/spec quando jornada cruza. Regra completa em `testing-conventions`.
+   - **Unidade de organização = cadeia de ciclo de vida (jornada), não módulo.** Um método cobre jornada inteira de entidade/ator (criar, editar, transicionar, excluir, consequência), com asserções intermediárias de UI e banco por etapa. Arquivos podem cruzar fronteiras de módulo quando jornada cruza. Regra completa em `testing-conventions`.
    - **Custo fixo por método** (truncate + boot da sessão WebDriver + login + navegação) domina wall-clock da suíte. Daí encadear em vez de métodos atômicos.
 
-4. **Banco de Dados MySQL Dedicado ao Dusk (RN13 / RF30)** (SPEC-14):
+4. **Banco de Dados MySQL Dedicado ao Dusk**:
    - Suítes `tests/Browser/*` **nunca** rodam contra banco de desenvolvimento `plataforma_ead`. Apontam obrigatoriamente para base MySQL isolada `testing`.
    - Localmente (Sail), base `testing` é provisionada automática no container `mysql` via `./vendor/laravel/sail/database/mysql/create-testing-database.sh`, montado em `/docker-entrypoint-initdb.d/10-create-testing-database.sh` (ver `compose.yaml`). Ambos bancos (`plataforma_ead` e `testing`) convivem no mesmo serviço MySQL.
    - `vendor/bin/sail dusk` troca automático o `.env` ativo pelo `.env.dusk.local` (comportamento nativo do `DuskCommand`, que resolve `.env.dusk.{environment}`), aponta `DB_DATABASE=testing`, restaura `.env` original ao final.
-   - Classes em `tests/Browser/*` herdam `DatabaseTruncation` de `Tests\DuskTestCase` (`$exceptTables = ['migrations', 'roles', 'permissions', 'role_has_permissions']`), que migra/limpa **estritamente** a conexão ativa no momento do teste. Como `.env` ativo é `.env.dusk.local`, isso significa base `testing`, garantindo `plataforma_ead` intacto (RN13).
+   - Classes em `tests/Browser/*` herdam `DatabaseTruncation` de `Tests\DuskTestCase` (`$exceptTables = ['migrations', 'roles', 'permissions', 'role_has_permissions']`), que migra/limpa **estritamente** a conexão ativa no momento do teste. Como `.env` ativo é `.env.dusk.local`, isso significa base `testing`, garantindo `plataforma_ead` intacto.
    - **Por que `DatabaseTruncation` e não `DatabaseMigrations`**: `DatabaseMigrations` roda `migrate:fresh` a cada método (~30 migrações × N métodos). `DatabaseTruncation` migra uma vez por suíte, depois só executa `TRUNCATE` nas tabelas tocadas. Mesma garantia de isolamento, 60–70% menos tempo de banco. Trait fica centralizada na classe base; classes filhas não redeclaram.
 
 5. **Pipeline CI/CD em GitHub Actions (`.github/workflows/ci.yml`)**:

@@ -1,7 +1,7 @@
 ---
 name: courses-architecture
 description: >
-  Courses/Modules/Lessons domain (SPEC-05): courses/modules/lessons/course_user
+  Courses/Modules/Lessons domain: courses/modules/lessons/course_user
   schema, OrgScope-on-Course vs cascade-inherited Module/Lesson tenancy, Course
   delete guard, publication-state visibility rules. Use when design or review
   feature touching Course/Module/Lesson data, before add new column/relation to
@@ -10,24 +10,19 @@ license: MIT
 metadata:
   feature: courses
   role: architecture
-  specs:
-    - spec/specs/05-courses-modules-and-content-management.md
-    - spec/specs/23-trail-builder-modules-and-lessons.md
-    - spec/specs/26-student-course-catalog-meus-cursos.md
-    - spec/specs/00-architecture-database-and-guardrails.md
 ---
 
 # Courses Architecture
 
 ## Overview
 
-RF06/RF07 give Gestor (`role:gestor`) CRUD over own Organization's Courses, and
+Gestor (`role:gestor`) get CRUD over own Organization's Courses, and
 each Course's Modules and Lessons. Admin (`role:admin`) same abilities, scoped
 to Organization it impersonate now (see `tenancy-architecture` Impersonate Org
 section). Admin with no active impersonation manage nothing here. No fallback to
 "manage everything globally" mode for this domain.
 
-## Schema (SPEC-00 §2.1.4–2.1.6)
+## Schema
 
 | Table | Key columns | Tenancy |
 | --- | --- | --- |
@@ -39,7 +34,7 @@ section). Admin with no active impersonation manage nothing here. No fallback to
 
 All three (`courses`, `modules`, `lessons`) use `SoftDeletes`. Every delete
 action here soft-delete (`deleted_at`), never hard `DELETE`. Matter most for
-`lessons`: `lesson_progress` (SPEC-07) must survive Lesson/Module/Course
+`lessons`: `lesson_progress` must survive Lesson/Module/Course
 archived, so no controller/service here may `forceDelete()` or cascade-purge
 `lesson_progress`. See "Soft-Delete, Never Purge" below.
 
@@ -69,7 +64,7 @@ instead of real cross-tenant row, turn intended 403 into type error).
 
 ## Lesson Media: `lesson_media` Is the Read Model, Legacy Columns Are Compat
 
-SPEC-23 §3.1 (RF07) requires MULTIPLE images and MULTIPLE PDFs per lesson, so
+Lessons support MULTIPLE images and MULTIPLE PDFs per lesson, so
 attachments live in `lesson_media` rows (`LessonMedia::KIND_IMAGE`/`KIND_PDF`),
 one row per file, written by `LessonController::syncMedia()` via
 `FileUploadService::storeImages()`/`storePdfs()` (the media-only inputs are
@@ -112,8 +107,8 @@ accident:
 2. `CourseController::destroy()` independently check
    `$course->hasActiveEnrollments()` and throw
    `CourseHasActiveEnrollmentsException` (mapped to HTTP 422 with Portuguese
-   message in `bootstrap/app.php`). This defense-in-depth path, and one that
-   acceptance criteria "422" language refer to.
+   message in `bootstrap/app.php`). This defense-in-depth path is the one the
+   mapped 422 response refers to.
 
 Both checks read same `Course::hasActiveEnrollments()` method. Never duplicate
 `wherePivot('status', 'active')->exists()` query elsewhere.
@@ -122,24 +117,25 @@ Both checks read same `Course::hasActiveEnrollments()` method. Never duplicate
 
 Deleting Course, Module, or Lesson only set `deleted_at`. Do not add
 `forceDelete()`/cascade-purge path anywhere in this feature's
-controllers/services: `lesson_progress` (SPEC-07) reference `lesson_id` and must
+controllers/services: `lesson_progress` reference `lesson_id` and must
 stay queryable (example: student historical completion record) even after
 Lesson's parent chain archived.
 
-## Publication-State Visibility (cross-ref SPEC-07)
+## Publication-State Visibility
 
 `courses.is_published` / `lessons.is_published` gate what enrolled **Aluno** see
-on student-facing side (SPEC-07 own that read path entirely). This feature
-(SPEC-05) only expose toggle in Gestor-facing CRUD form. It not filter any query
+on student-facing side (the learning domain own that read path entirely). This
+feature only expose toggle in Gestor-facing CRUD form. It not filter any query
 by `is_published` itself, since every read here already authenticated
 Gestor/Admin managing own content, not student consuming it.
 
 ## `lessons.type = 'quiz'` Is Placeholder Here
 
-SPEC-08 own quiz question authoring. This feature's Lesson form only populate
-`type = content` rows (Rich Text / Imagem / PDF / YouTube — RF07's four kinds).
+The quizzes domain own quiz question authoring. This feature's Lesson form only populate
+`type = content` rows (Rich Text / Imagem / PDF / YouTube — the four content
+kinds).
 `quiz` exist as schema value and disabled/placeholder option in UI, never fully
-wired content path in this spec scope. Do not add
+wired content path in this feature. Do not add
 `content_text`/`youtube_url`/`pdf_path`/`image_path` population logic for
 `type = quiz` rows.
 
@@ -161,19 +157,15 @@ Single query supplies four aggregates:
 Never use `students_count` for delete protection. Cancelled/completed rows belong
 in displayed total but cannot disable removal.
 
-## Related Specs
+## Related
 
-- `spec/specs/05-courses-modules-and-content-management.md` — this feature's
-  full RF06/RF07 requirements.
-- `spec/specs/00-architecture-database-and-guardrails.md` §2.1.4–2.1.6 — full
-  column/index/`onDelete` definitions.
 - `tenancy-architecture` — `OrgScope`, `RolesEnum`, Impersonate Org.
-- `spec/specs/07-student-learning-experience-and-progress.md` (student-facing
-  course consumption, `lesson_progress`, publication visibility) and
-  `spec/specs/08-quizzes-and-evaluations-engine.md` (quiz authoring) — both build
-  on top of this feature's schema without modifying it.
-- `spec/specs/26-student-course-catalog-meus-cursos.md` — added
+- `learning-architecture` (student-facing course consumption,
+  `lesson_progress`, publication visibility) and `quizzes-architecture`
+  (quiz authoring) — both build on top of this feature's schema without
+  modifying it.
+- The "Meus Cursos" student catalog (see `learning-architecture`) — added
   `course_user.expires_at` (documented above) and several student-facing
   `Course` read helpers (`firstPublishedLessonFor()`/`resumeLessonFor()`/
-  `enrollmentDisplayStatusFor()`); see `learning-architecture` for those,
-  since they serve that module's read path, not this one's Gestor CRUD.
+  `enrollmentDisplayStatusFor()`), which serve that module's read path,
+  not this one's Gestor CRUD.

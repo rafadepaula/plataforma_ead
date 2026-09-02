@@ -26,7 +26,6 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 ## Conventions
 
 - You must follow all existing code conventions used in this application. When creating or editing a file, check sibling files for the correct structure, approach, and naming.
-- É ESTRITAMENTE PROIBIDO colocar qualquer referência às SPECS (como SPEC-01, SPEC-xx, menções a arquivos de spec), RF, RN, RNF ou UC (como RF01, RN02, RNF03, UC04) ao escrever código, comentários, docblocks, elementos de tela, seletores ou testes.
 - Use descriptive names for variables and methods. For example, `isRegisteredForDiscounts`, not `discount()`.
 - Check for existing components to reuse before writing a new one.
 

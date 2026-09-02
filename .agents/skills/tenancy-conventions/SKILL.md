@@ -10,8 +10,6 @@ license: MIT
 metadata:
   feature: tenancy
   role: conventions
-  specs:
-    - spec/specs/00-architecture-database-and-guardrails.md
 ---
 
 # Tenancy Conventions
@@ -48,14 +46,14 @@ Every org-scoped table `org_id` column same shape: explicit `onDelete`, always
 indexed.
 
 ```php
-$table->unsignedBigInteger('org_id')->nullable(); // nullable only where spec says so (users, help_articles, system_settings)
-$table->foreign('org_id')->references('id')->on('organizations')->restrictOnDelete(); // or ->cascadeOnDelete() per spec §2.1
+$table->unsignedBigInteger('org_id')->nullable(); // nullable only for users, help_articles, system_settings
+$table->foreign('org_id')->references('id')->on('organizations')->restrictOnDelete(); // or ->cascadeOnDelete() for tables whose rows the org owns outright
 $table->index('org_id');
 ```
 
-Use `restrictOnDelete()`, not `cascadeOnDelete()`, wherever SPEC-00 §2.1 say
-`ON DELETE RESTRICT` — most of all `users.org_id`, so Organization with existing
-users never hard-deleted under them. Only soft-delete (`deleted_at`) available
+Use `restrictOnDelete()`, not `cascadeOnDelete()`, wherever a hard delete must
+be blocked — most of all `users.org_id`, so an Organization with existing users
+is never hard-deleted under them. Only soft-delete (`deleted_at`) available
 for Organizations in that state.
 
 Never edit pre-existing base `0001_01_01_000000_create_users_table.php`

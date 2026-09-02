@@ -2,7 +2,7 @@
 name: certificates-conventions
 description: >
   Concrete code patterns, snippets, guardrails for Certificates
-  & Public Verification feature (SPEC-09): exact SHA-256 hash formula
+  & Public Verification feature: exact SHA-256 hash formula
   (fixed Carbon format string), route names/contracts between
   Domain/HTTP/View buckets, `CertificatePolicy` cascade-authorize
   conventions, `CertificatePdfService` dompdf-safe Blade template rules,
@@ -14,16 +14,14 @@ license: MIT
 metadata:
   feature: certificates
   role: conventions
-  specs:
-    - spec/specs/09-certificates-and-public-verification.md
 ---
 
 # Certificates Conventions
 
 ## The Validation Hash Formula Is Fixed — Never Recompute It Differently
 
-SPEC-09's `sha256(user_id + course_id + formatted_issued_at + APP_KEY)`
-does not pin exact Carbon format string. Formula fixed here so it computes
+The `sha256(user_id + course_id + formatted_issued_at + APP_KEY)` formula
+does not pin an exact Carbon format string. Formula fixed here so it computes
 identically everywhere needed (issuance, verification, tests, future
 backfills):
 
@@ -124,14 +122,14 @@ Request alone.
   `dusk="certificate-lookup-hash"`, `dusk="certificate-lookup-submit"` —
   all three frozen in `tests/fixtures/dusk-selectors-snapshot.json`). Like
   every other screen it mounts `<x-help-button key="certificates.verify" />`
-  (UC16's 100%-coverage rule; see `help-conventions`). Any change to
+  (the 100%-coverage rule; see `help-conventions`). Any change to
   `show.blade.php`'s public shell — layout wrapper, reading width, help key
   — must be mirrored here, and vice versa.
 - `public/certificates/show.blade.php` — **not** `layouts.app` (no
   session) and **not** `layouts.guest` either (that layout's left panel is
   themed around login copy, wrong fit for audit page). Uses
   `<x-layout.public :title="...">` (shared standalone shell added in the
-  `front_redesign` Fase 7 public-pages pass, also used by `landing/show.blade.php`
+  Fase 7 public-pages redesign pass, also used by `landing/show.blade.php`
   — see `bootstrap-conventions` §2), wrapped further in `.max-w-reading`
   (760px column). The verdict is one `<x-ui.card>` holding an
   `.icon-circle-success`/`.icon-circle-critical` (from
@@ -140,7 +138,7 @@ Request alone.
   `certificate-revoked-banner"` / `"certificate-revoke-reason"` attributes
   and their visible copy stayed put on the new markup. Always renders both
   "Válido"/"Revogado" state **and** full student/course/org/workload/issued_at
-  block. Revoked state never hides original data (SPEC-09 §2). "Baixar PDF"
+  block. Revoked state never hides original data. "Baixar PDF"
   only renders `@auth` — `certificates.download` stays `auth`-middleware +
   staff-or-owner gated server-side regardless (view-level `@auth` is UX only,
   never the authorization boundary).
@@ -186,8 +184,8 @@ No QR-code composer package installed (`barryvdh/laravel-dompdf` only).
 `certificates/pdf.blade.php` accepts nullable `$qrCodeDataUri`
 (`data:image/png;base64,...`) and degrades to printing verification URL +
 hash as plain text when `null`. This is **temporary** placeholder, not
-spec-compliant on its own (SPEC-09 §2 requires real scannable QR code),
-pending approval to add package (see `certificates-maintenance`
+the final design (the intent is a real scannable QR code), pending
+approval to add package (see `certificates-maintenance`
 open-questions note). Once package approved,
 `CertificatePdfService::generate()` should populate `$qrCodeDataUri` and
 this degraded branch becomes dead code you can delete. Do not build further

@@ -1,7 +1,7 @@
 ---
 name: courses-maintenance
 description: >
-  Debug, test, edge-case guide for Courses/Modules/Lessons feature (SPEC-05):
+  Debug, test, edge-case guide for Courses/Modules/Lessons feature:
   Blade views, `ModuleReorder.js` AJAX reorder module, mandatory PHPUnit/Dusk
   test files. Use when `MultiTenantCourseManagementTest`, `ModuleReorderTest`, or
   `LessonMultimediaTest` fail; drag-and-drop reorder not persisting; Lesson file
@@ -11,17 +11,13 @@ license: MIT
 metadata:
   feature: courses
   role: maintenance
-  specs:
-    - spec/specs/05-courses-modules-and-content-management.md
-    - spec/specs/23-trail-builder-modules-and-lessons.md
-    - spec/specs/00-architecture-database-and-guardrails.md
 ---
 
 # Courses Maintenance
 
 ## Mandatory Test Coverage for This Module
 
-These tests guard SPEC-05 contract, must stay green (PHPUnit, no Pest):
+These tests guard this module's contract, must stay green (PHPUnit, no Pest):
 
 - `tests/Feature/MultiTenantCourseManagementTest.php` — Gestor CRUD scoped to own
   org (`OrgScope` on `Course`); cross-tenant isolation (Gestor guessing other
@@ -32,7 +28,7 @@ These tests guard SPEC-05 contract, must stay green (PHPUnit, no Pest):
 - `tests/Feature/ModuleReorderTest.php` — AJAX reorder endpoint persist dense
   `0..n-1` `order_index` sequence and reject any submitted id not belonging to
   route-bound parent (another course, or another org's course/module entirely).
-- `tests/Feature/LessonMultimediaTest.php` — RF07's four content kinds (Rich
+- `tests/Feature/LessonMultimediaTest.php` — the four content kinds (Rich
   Text/Imagem/PDF/YouTube), multi-file `images[]`/`pdfs[]` contract (2 images +
   2 PDFs -> 4 `lesson_media` rows under `orgs/{org_id}/courses/{course_id}/`),
   per-file limits (image >2MB / pdf >10MB rejected atomically, no partial
@@ -46,7 +42,7 @@ These tests guard SPEC-05 contract, must stay green (PHPUnit, no Pest):
   `Lesson::media()`/`images()`/`pdfs()` relations, `LessonMediaFactory` sync,
   `lessons_count` excluding soft-deleted lessons (feeds the "{N} lições"
   chip), and classroom multi-image/multi-pdf rendering with legacy fallback.
-- `tests/Feature/UiSortableFieldComponentsTest.php` — the four SPEC-23 wrapper
+- `tests/Feature/UiSortableFieldComponentsTest.php` — the four wrapper
   components in isolation: `<x-ui.sortable-list>`/`<x-ui.sortable-row>`
   markup and dusk passthrough, `<x-ui.file-drop>` attachment list/remove
   button/`.is-invalid` convention, `<x-ui.youtube-field>` filled-vs-empty
@@ -58,14 +54,14 @@ These tests guard SPEC-05 contract, must stay green (PHPUnit, no Pest):
   Course, Module, and Lesson through UI.
 - `tests/Browser/ModuleReorderTest.php` — E2E: reorder persist across full page
   reload.
-- `tests/Browser/ModuleAndLessonManagementDuskTest.php` — E2E of SPEC-23 §5's
+- `tests/Browser/ModuleAndLessonManagementDuskTest.php` — E2E of the
   full trail-builder selector contract: module rows + "{N} lições" chip
   (zero-lesson wording included), cascade ConfirmModal deletion quoting the
   real lesson count, lesson rows with `Conteúdo`/`Não publicada` chips,
   multi-file attach on `lesson-image-input`/`lesson-pdf-input`, YouTube preview
   asserted via `src` attribute (never iframe load — network race), type-select
   quiz hiding, and reorder round-trip via `persistOrder()`. Also carries the
-  UC08 §6.1 exception-flow negatives the happy-path lifecycle never touches:
+  exception-flow negatives the happy-path lifecycle never touches:
   `test_lesson_form_validation_rejections` (invalid YouTube URL rejected with
   `error-youtube_url`, an oversized image rejected CLIENT-SIDE by
   `LessonForm.js`'s own `.is-invalid` toggle with no server round-trip, and an
@@ -89,7 +85,8 @@ vendor/bin/sail dusk --filter=ModuleAndLessonManagementDuskTest
 
 ## `ModuleReorder.js` — Why Native Drag-and-Drop, Not jQuery
 
-RF06 spec text literally say "Reordenação de módulos via AJAX/jQuery", but
+The original requirement text literally said "Reordenação de módulos via
+AJAX/jQuery", but
 jQuery/jQuery UI Sortable **not** existing dependency of this project
 (`package.json` have none, CLAUDE.md forbid adding one without approval).
 `ModuleReorder.js` instead bind browser native HTML5 drag-and-drop events
@@ -121,8 +118,7 @@ is restored on any non-2xx, otherwise the list shows an order the server never
 accepted. Two Gestors reordering concurrently is last-write-wins (acceptable,
 documented) — the dense `0..n-1` reassignment makes each write self-healing.
 
-Keyboard-accessible move-up/move-down buttons (SPEC-23 §4, WCAG AA per
-SPEC-19 §4) swap one adjacent pair in the DOM, then call the SAME
+Keyboard-accessible move-up/move-down buttons (WCAG AA) swap one adjacent pair in the DOM, then call the SAME
 `persistOrder(list)` — identical endpoint, identical payload shape, so the
 controller's cross-tenant `whereIn + count` 422 guard cannot be bypassed by
 the button path. Do not invent a second endpoint or payload for them.
@@ -174,12 +170,12 @@ failures in this codebase.
 
 ## Lesson Form: `type=quiz` Is Disabled Placeholder Only
 
-`modules/lessons/_form.blade.php` `type` select offer `quiz` as option (per RF06
-schema, `lessons.type` is `content|quiz`), but this feature's form only ever
-expose four `content`-kind fields (Rich Text/Imagem/PDF/YouTube). SPEC-08 own
-quiz question authoring. If asked to "wire up quiz creation", that out of scope
-here; extend SPEC-08's own controller/views instead of adding fields to this
-form.
+`modules/lessons/_form.blade.php` `type` select offer `quiz` as option (the
+`lessons.type` column is `content|quiz`), but this feature's form only ever
+expose four `content`-kind fields (Rich Text/Imagem/PDF/YouTube). The quizzes
+module own quiz question authoring. If asked to "wire up quiz creation", that
+out of scope here; extend the quizzes module's own controller/views instead of
+adding fields to this form.
 
 ## Client-Side YouTube Preview Best-Effort Only
 
@@ -191,7 +187,7 @@ through real `YoutubeSanitizerService` server-side; if you ever see lesson with
 non-canonical `youtube_url` stored, bug in controller/request, not preview JS.
 Never trust client-side match result for anything beyond visual preview.
 
-Dusk gotcha (SPEC-23 §5): waiting on the external YouTube iframe can hang on
+Dusk gotcha: waiting on the external YouTube iframe can hang on
 network — assert the `src` ATTRIBUTE (`assertAttributeContains('@youtube-preview',
 'src', '.../embed/...')`), never wait for the iframe to load, and never race a
 submit against a YouTube-bearing edit form.
@@ -204,7 +200,7 @@ with `orgs/{course.org_id}/courses/{course.id}/...`, check
 parent Course), not `auth()->user()`'s own org. See `courses-conventions` for why
 service resolve tenant from Course model, not session.
 
-## Multi-file Upload Gotchas (SPEC-23 §3.1)
+## Multi-file Upload Gotchas
 
 - A 10MB PDF may be rejected by PHP (`upload_max_filesize`/`post_max_size`)
   BEFORE Laravel validation runs — then the error lands on the whole request,
@@ -230,7 +226,7 @@ service resolve tenant from Course model, not session.
 
 ## ConfirmModal `confirmDusk` Selector Migration
 
-Before SPEC-23, `delete-module-{id}`/`delete-lesson-{id}` sat on raw inline
+Before the trail-builder refactor, `delete-module-{id}`/`delete-lesson-{id}` sat on raw inline
 submit buttons inside the row. After the ConfirmModal refactor, those dusk
 selectors moved to the modal's confirm submit (via `<x-ui.confirm-modal
 confirmDusk="...">`); the row only renders the trash trigger. If a Dusk test
@@ -244,9 +240,9 @@ must quote the REAL lesson
 count ("As {N} lições deste módulo também serão removidas. Esta ação não poderá
 ser desfeita."), including the N=0 wording branch.
 
-## Auto-Update Protocol (SPEC-03)
+## Auto-Update Protocol
 
-Per `spec/specs/03-agentic-harness-and-self-updating-skills.md`: any change to
+Any change to
 `CourseController`/`ModuleController`/`LessonController`, the
 `courses*`/`modules*`/`lessons*` routes, Blade views under
 `resources/views/courses/` plus `resources/views/modules/lessons/`, or
@@ -259,9 +255,8 @@ change, before task considered done. Also re-check:
 - Run `vendor/bin/sail artisan harness:check-skills`. It fail build if any of
   three `courses-*` skills missing.
 
-## Related Specs
+## Related
 
-- `spec/specs/05-courses-modules-and-content-management.md` — RF06, RF07.
 - `auth-orgs-maintenance` — analogous module this one mirror (CSV import chunking
   vs this module's AJAX reorder).
 - `tenancy-maintenance` — underlying `OrgScope` contract this module build on.
@@ -272,7 +267,7 @@ change, before task considered done. Also re-check:
 
 Browser tests in `tests/Browser/` grouped by **user journey (lifecycle chain)** —
 one method drive create, edit, state change, delete, consequence — **not** by
-module, spec, or use case. Consequences when maintaining this module:
+module or feature. Consequences when maintaining this module:
 
 - **Finding coverage**: Dusk scenarios listed above may be asserted as numbered
   steps inside chain method, possibly in file named after another module when

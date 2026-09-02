@@ -1,7 +1,7 @@
 ---
 name: seeders-maintenance
 description: >
-  Debug, test, idempotency guide for Database Seeders (SPEC-16): mandatory
+  Debug, test, idempotency guide for Database Seeders: mandatory
   PHPUnit tests (`DatabaseSeederProductionTest`, `DatabaseSeederDevelopmentTest`,
   `SeederIdempotencyTest`), duplicate key fixes via firstOrCreate/updateOrCreate,
   event/notification suppression, org_id context preservation.
@@ -9,16 +9,13 @@ license: MIT
 metadata:
   feature: seeders
   role: maintenance
-  specs:
-    - spec/specs/16-database-seeders-and-environment-seeding.md
-    - spec/specs/00-architecture-database-and-guardrails.md
 ---
 
 # Seeders Maintenance
 
 ## Mandatory Test Coverage
 
-These PHPUnit tests guard SPEC-16 contract. Keep green:
+These PHPUnit tests guard the seeder contract. Keep green:
 
 - `tests/Feature/Seeders/DatabaseSeederDevelopmentTest.php` — seeding in local/development/testing creates all expected records (Organizations, Users, Courses, Quizzes, Invitations, Certificates, Forum, Notifications) with explicit `org_id`, no mail/events leak.
 - `tests/Feature/Seeders/SeederIdempotencyTest.php` — `php artisan db:seed` run many times: no duplicate key exception, table counts identical.

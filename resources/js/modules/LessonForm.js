@@ -1,5 +1,5 @@
 /**
- * LessonForm - interatividade do formulário de lição (módulo e lição, SPEC-23 §3.1).
+ * LessonForm - interatividade do formulário de lição (módulo e lição).
  *
  * Substitui o antigo `<script>` inline da view (proibido pela convenção do
  * Bootstrap: interatividade vive em módulos JS). É puramente presenteacional

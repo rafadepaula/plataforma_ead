@@ -20,9 +20,6 @@ license: MIT
 metadata:
   feature: landing
   role: conventions
-  specs:
-    - spec/specs/31-public-landing-page-and-showcase.md
-    - spec/specs/11-landing-page-and-contextual-help-center.md
 ---
 
 # Landing Page Conventions
@@ -36,7 +33,7 @@ Exactly four selectors exist on this screen and only these may exist:
 | `landing-headline` | hero `<h1>` | exactly one |
 | `landing-cta-login` | hero primary CTA | rendered twice in source (`@auth` / guest branch), one per response |
 | `landing-login-link` | header button | same two-branch pattern |
-| `contact-button` | band 6 contact CTA | **legacy** — predates the current spec, still pinned by the snapshot and by `LandingPageDuskTest`; do not rename, do not remove |
+| `contact-button` | band 6 contact CTA | **legacy** — predates the current page design, still pinned by the snapshot and by `LandingPageDuskTest`; do not rename, do not remove |
 
 Rules:
 

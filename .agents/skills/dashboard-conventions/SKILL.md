@@ -2,12 +2,12 @@
 name: dashboard-conventions
 description: >
   Code patterns, snippets, guardrails for Admin Dashboard, Analytics & System
-  Settings feature (SPEC-12): `admin.dashboard`/`reports.export`/
+  Settings feature: `admin.dashboard`/`reports.export`/
   `settings.edit`/`settings.update` route-name contract,
   `<x-ui.stat-card>`/`<x-ui.table>`/`<x-ui.badge>`-only Blade composition (no new
   UI components), `dusk="stat-{metric}"`/`dusk="export-{type}-csv"`
   test-selector contract, Gestor-cannot-pass-`org_id` export guard, and
-  SPEC-001's `organizations-summary-table`/`organization-summary-row-{id}`/
+  the `organizations-summary-table`/`organization-summary-row-{id}`/
   `org-summary-{metric}-{id}` selector contract. Use when write controller,
   service, Blade view, or test touching Dashboard, CSV export, or
   `system_settings` org-override screen.
@@ -15,9 +15,6 @@ license: MIT
 metadata:
   feature: dashboard
   role: conventions
-  specs:
-    - spec/specs/12-admin-dashboard-analytics-and-system-settings.md
-    - spec/docs/mockups/07-dashboard-admin.md
 ---
 
 # Dashboard Conventions
@@ -55,8 +52,7 @@ All 3 route groups `role:admin|gestor`. No dedicated Policy class, mirroring
 
 `resources/views/dashboard/index.blade.php` compose exclusively from
 `<x-ui.stat-card>`, `<x-ui.table>`, and `<x-ui.badge>`. No new component needed,
-and none should be added for this screen. Follow mockup exact Blade shape
-(`spec/docs/mockups/07-dashboard-admin.md` §3):
+and none should be added for this screen. Follow this exact Blade shape:
 
 ```blade
 <x-ui.stat-card kicker="Alunos ativos" value="{{ $stats['active_students'] }}" delta="+4,2%" dusk="stat-active-students" />
@@ -135,8 +131,8 @@ each carry own **identical**
 `protected function resolveViewingOrgId(Request $request): ?int` method (Admin:
 `session('active_org_id')` or `null` for global; anyone else: `$user->org_id`).
 Deliberate 3-way duplication, **not**
-`App\Http\Controllers\Concerns\ResolvesOrgContext` (that trait RF04/RF05's
-Aluno/Gestor-CRUD helper, used by `UserController`/`UserImportController`; it
+`App\Http\Controllers\Concerns\ResolvesOrgContext` (that trait is the
+Aluno/Gestor-CRUD helper used by `UserController`/`UserImportController`; it
 `throw`s `UnresolvedOrgContextException` when unresolved instead of returning
 `null`, wrong contract for Admin's legitimate "global, no Org" dashboard view).
 If future change consolidate these 3 copies into shared trait, it must preserve
@@ -156,8 +152,8 @@ if (! $user->hasRole(RolesEnum::ADMIN->value) && $request->filled('org_id')
 ```
 
 Admin request MAY legitimately pass no `org_id` at all (global) or rely purely on
-`session('active_org_id')` set via Impersonate Org. Spec text imply Impersonate
-Org only sanctioned way for Admin to scope to one Org (no separate `?org_id=`
+`session('active_org_id')` set via Impersonate Org. Impersonate Org is the only
+sanctioned way for an Admin to scope to one Org (no separate `?org_id=`
 query-param UX), so do not add second Admin-only org-selection affordance without
 confirming against open question logged in `dashboard-maintenance`.
 

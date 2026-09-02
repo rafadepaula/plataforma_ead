@@ -15,9 +15,6 @@ license: MIT
 metadata:
   feature: landing
   role: maintenance
-  specs:
-    - spec/specs/31-public-landing-page-and-showcase.md
-    - spec/specs/11-landing-page-and-contextual-help-center.md
 ---
 
 # Landing Page Maintenance
@@ -97,8 +94,8 @@ HTTP process). See `laravel-dusk`/`testing-conventions`.
   selector (most commonly a per-showcase-card `dusk="landing-showcase-*"`
   or a selector placed on a `<x-ui.card>`/`<x-ui.badge>` wrapper) fails
   the suite until the snapshot is deliberately regenerated; so does
-  removing `contact-button`, which the spec's selector list does not
-  mention but the snapshot and the Dusk test still pin. Fix is almost
+  removing `contact-button`, which no documented selector list mentions
+  but the snapshot and the Dusk test still pin. Fix is almost
   never "regenerate the snapshot" — it is "delete the new selector" (see
   `landing-conventions`). The exception is a selector that a browser test
   genuinely drives: the three `certificate-lookup-*` entries are

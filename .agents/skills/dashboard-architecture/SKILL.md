@@ -1,13 +1,13 @@
 ---
 name: dashboard-architecture
 description: >
-  Admin Dashboard, Analytics & System Settings domain (SPEC-12):
+  Admin Dashboard, Analytics & System Settings domain:
   `admin.dashboard` route contract feeding mockup's 4 stat cards plus
   recent-enrollments table, how `DashboardMetricsService` replicate `OrgScope`
   admin-global-vs-gestor-own-org branching for models (`Certificate`,
   `course_user`, `User`) that cascade-inherited instead of directly org-scoped,
   streamed CSV export O(1)-RAM contract, `system_settings` org-then-global
-  override resolution reused from `SettingService`. Also covers SPEC-001's
+  override resolution reused from `SettingService`. Also covers the
   Admin-global-only "Resumo das Organizações" summary table
   (`organizationsSummary`/`$isGlobalAdminView`). Use when design or review
   feature touching dashboard KPIs, CSV export pipeline, or org-level
@@ -16,30 +16,25 @@ license: MIT
 metadata:
   feature: dashboard
   role: architecture
-  specs:
-    - spec/specs/12-admin-dashboard-analytics-and-system-settings.md
-    - spec/docs/mockups/07-dashboard-admin.md
-    - spec/specs/00-architecture-database-and-guardrails.md
-    - spec/to_refine/specs/SPEC-001-admin-dashboard-organizations-summary-table.md
 ---
 
 # Dashboard Architecture
 
 ## Overview
 
-SPEC-12 have 3 pieces sharing one screen and one settings screen:
+The dashboard domain have 3 pieces sharing one screen and one settings screen:
 
 1. **Admin/Gestor Dashboard** (`GET /admin/dashboard`, route name **must** be
    exactly `admin.dashboard` — `components/layout/sidebar.blade.php` already
    reference it defensively via `Route::has('admin.dashboard')` and silently
    degrade to `#` if name ever drift). Render 4 stat cards (`active_students`,
    `certificates_issued`, `completion_rate`, `courses_count`) and "Matrículas
-   recentes" table, per `spec/docs/mockups/07-dashboard-admin.md` §3/§4 exact
+   recentes" table, per the mockup's exact
    Blade/data contract.
 2. **Streamed CSV export** (`GET /admin/reports/{type}/export`, route name
    `reports.export`). Must stream via `response()->streamDownload()` plus
-   `chunk()`/`lazy()`, never buffer full dataset into memory first (SPEC-00 §1.2
-   128M shared-hosting constraint).
+   `chunk()`/`lazy()`, never buffer full dataset into memory first (128M
+   shared-hosting constraint).
 3. **`system_settings` org-override editing** (`GET`/`PUT /admin/settings`, route
    names `settings.edit`/`settings.update`) for SMTP/logo/signature, built on top
    of pre-existing `system_settings` table/model (do not recreate — see Schema
@@ -50,14 +45,14 @@ class (mirror `quiz-attempts.pending`/`forum-moderation.index` precedent of
 role-middleware-only for cross-cutting, non-resource screens — see
 `quizzes-conventions`/`forum-conventions`).
 
-## Schema (SPEC-00 §2.1.20 — already exists, do not recreate)
+## Schema (already exists, do not recreate)
 
 | Table | Key columns | Tenancy |
 | --- | --- | --- |
 | `system_settings` | composite PK `(org_id, key)`, `org_id` uses a `GLOBAL_ORG_ID` **sentinel value (not `NULL`)** for the global row, `value` (text/JSON) | **Not** `OrgScope`-scoped — model deliberately opts out (composite-PK sentinel design incompatible with global scope's implicit `WHERE org_id = ...`) |
 
-`SystemSetting::forKey()/forOrg()` query helpers already exist from prior spec
-pass. `SettingService` thin `get()`/`set()`/`forget()` wrapper around them with
+`SystemSetting::forKey()/forOrg()` query helpers already exist.
+`SettingService` thin `get()`/`set()`/`forget()` wrapper around them with
 `Cache::remember()`, mirroring `HelpArticleResolverService`
 org-specific-then-global fallback pattern (see `help-architecture`) but keyed by
 `GLOBAL_ORG_ID` sentinel instead of nullable `org_id`.
@@ -88,7 +83,7 @@ directly), and `User.org_id` plain nullable column with no scope at all.
 CSV builder (`CsvStreamExportService`/`StreamOrgReportCsvAction`) wrap
 `response()->streamDownload()` and write with `fputcsv()` inside
 `Model::query()->chunk(500, ...)` or `->lazy()` loop. Only approach keeping peak
-memory O(1) regardless of dataset size (SPEC-00 §1.2). Parameterized by same
+memory O(1) regardless of dataset size. Parameterized by same
 org-filter branching described above (mirror `DashboardMetricsService` scoping,
 not second ad-hoc implementation) and by report `type` (`enrollments`,
 `certificates`, ...). Gestor `org_id` always resolved from `$user->org_id`
@@ -96,7 +91,7 @@ server-side, never trusted from request input. Gestor passing
 `?org_id=<anotherOrg>` must 403, not silently scope to own org (see
 `dashboard-conventions` for exact guard).
 
-## Organizations Summary Table (SPEC-001, Admin-Global-Only)
+## Organizations Summary Table (Admin-Global-Only)
 
 `admin.dashboard` also renders a per-Organization "Resumo das Organizações"
 table, but **only** for an Admin viewing globally (no active Impersonate Org).
@@ -135,7 +130,7 @@ and `org-summary-students-{id}` / `org-summary-courses-{id}` /
 `org-summary-certificates-{id}` (per-metric cells) — see `dashboard-conventions`
 for the full selector table.
 
-Mandatory test coverage added by SPEC-001 (see `dashboard-maintenance` for
+Mandatory test coverage (see `dashboard-maintenance` for
 exact method names): 3 `OrgDashboardTest` cases (Admin-global sees it with
 correct counts, Gestor never receives it, Admin-impersonating never receives
 it), 4 `DashboardMetricsServiceTest` cases (counts, `OrgScope`-bypass, zero-fill,

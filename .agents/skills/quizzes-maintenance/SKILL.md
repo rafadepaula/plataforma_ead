@@ -1,7 +1,7 @@
 ---
 name: quizzes-maintenance
 description: >
-  Debug, test, edge-case guide for Quizzes/Evaluations feature (SPEC-08):
+  Debug, test, edge-case guide for Quizzes/Evaluations feature:
   mandatory PHPUnit/Dusk test files, common
   attempt-limit/time-limit/essay-grading failure modes,
   `question-list-page`/`question-form-page` vs inline-modal view split,
@@ -18,16 +18,13 @@ license: MIT
 metadata:
   feature: quizzes
   role: maintenance
-  specs:
-    - spec/specs/08-quizzes-and-evaluations-engine.md
-    - spec/specs/00-architecture-database-and-guardrails.md
 ---
 
 # Quizzes Maintenance
 
 ## Mandatory Test Coverage for This Module
 
-These tests guard SPEC-08 contract, must stay green (PHPUnit, no Pest):
+These tests guard this module's contract, must stay green (PHPUnit, no Pest):
 
 - `tests/Feature/SubmitQuizAttemptActionTest.php` (renamed from
   `SubmitQuizAttemptTest.php`) — correction engine:
@@ -59,21 +56,21 @@ These tests guard SPEC-08 contract, must stay green (PHPUnit, no Pest):
   (`score_percentage`/`is_passed`/the ungraded answer's `is_correct`
   all stay `null`); empty `grades` array fails validation with no state
   change; essay answer text is HTML-escaped on the grading screen.
-- `tests/Feature/QuizManagementTest.php` (Bucket 2) — Gestor CRUD of
+- `tests/Feature/QuizManagementTest.php` — Gestor CRUD of
   Quiz/QuizQuestion/QuizOption, `quizzes.lesson_id` UNIQUE
   redirect-with-error guard, cross-tenant isolation.
 - `tests/Browser/StudentQuizTakingDuskTest.php` (renamed from
   `StudentQuizAttemptTest.php`),
-  `tests/Browser/EssayGradingScreenTest.php` (Bucket 2, Dusk E2E) — full
+  `tests/Browser/EssayGradingScreenTest.php` (Dusk E2E) — full
   browser flow through `student/quizzes/show.blade.php` and
   `quizzes/attempts/show.blade.php`.
-- `tests/Feature/MultiTenantQuizManagementTest.php` (SPEC-24) —
+- `tests/Feature/MultiTenantQuizManagementTest.php` —
   additive cross-org isolation on Quiz/QuizQuestion (view/update/
   delete/reorder 403 on another org's records via direct route hits),
   options-payload isolation (smuggled foreign option id untouched), the
   4 question-type CRUD happy paths, and reorder dense-reassignment from
   non-contiguous `order_index`.
-- `tests/Browser/QuizAuthoringDuskTest.php` (SPEC-24) — single
+- `tests/Browser/QuizAuthoringDuskTest.php` — single
   lifecycle-chain test (per `testing-conventions` journey-grouping
   convention, not a per-module file) covering type-switch options/essay
   toggling, template-clone add-option, min-2-options guard toast, marking
@@ -170,7 +167,7 @@ this skill and `quizzes-conventions` again.
 `in_progress` `QuizAttempt` that `StudentQuizController::show()` opens
 for a timed Quiz (see `quizzes-conventions`), so reloading the page does
 not restart the countdown. Expiry only writes "Tempo esgotado" — it never
-auto-submits (spec 29 §3.1). A Dusk test visiting a timed quiz therefore
+auto-submits. A Dusk test visiting a timed quiz therefore
 finds an `in_progress` row: assert absence of a *`graded`* attempt, not
 absence of any attempt. Dusk test asserting
 time-limit *enforcement* (not just visual countdown) must submit form and
@@ -229,9 +226,9 @@ test runner in this project**, so any change there must be verified by
 selectors must be added to `tests/fixtures/dusk-selectors-snapshot.json`
 or `DuskSelectorContractTest` fails.
 
-## Auto-Update Protocol (SPEC-03)
+## Auto-Update Protocol
 
-Per `spec/specs/03-agentic-harness-and-self-updating-skills.md`: any
+Any
 change to `QuizController`/`QuizQuestionController`/
 `StudentQuizController`/`EssayGradingController`,
 `SubmitQuizAttemptAction`/`OpenQuizAttemptAction`/
@@ -251,15 +248,8 @@ counts done. Also re-check:
 - Run `vendor/bin/sail artisan harness:check-skills` — fails build if any
   of three `quizzes-*` skills missing.
 
-## Related Specs
+## Related
 
-- `spec/specs/08-quizzes-and-evaluations-engine.md` — RF08, RF09, RN02,
-  RN03, RN04, RN11.
-- `spec/specs/24-quiz-authoring-and-question-builder.md` — Material
-  Bootstrap redesign of `quizzes/edit.blade.php`/
-  `_question-form.blade.php` (two-column layout, `.is-correct` highlight,
-  radio/checkbox visual swap); UI-only, no schema or business-rule
-  change.
 - `courses-maintenance` — analogous reorder/Policy cascade-authorize
   pattern this module copies one level deeper.
 - `learning-maintenance` — `MarkLessonCompleteAction`,
@@ -272,7 +262,7 @@ counts done. Also re-check:
 
 Browser tests in `tests/Browser/` grouped by **user journey (lifecycle
 chain)** — one method drives create → edit → state change → delete →
-consequence — **not** by module, spec, or use case. Consequences when
+consequence — **not** by module or feature. Consequences when
 maintaining this module:
 
 - **Finding coverage**: Dusk scenarios listed above may be asserted as

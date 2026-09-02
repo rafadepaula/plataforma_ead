@@ -125,12 +125,6 @@ vendor/bin/sail php scripts/check-coverage.php
 
 ---
 
-## 📖 Especificações Técnicas (Developers)
-
-Para desenvolvedores que desejam entender as especificações técnicas e a arquitetura detalhada de cada módulo, a documentação encontra-se no diretório [`spec/specs/`](file:///home/rafael/projects/cursos/plataforma_ead/spec/specs/README.md).
-
----
-
 ## 🚫 Escopo Explícito (Fora de Alcance)
 
 - **Pagamentos / Billing / Assinatura**: O sistema **não inclui módulo financeiro ou processamento de pagamentos**. O campo `cnpj` da tabela `organizations` é utilizado exclusivamente para identificação cadastral e institucional na emissão de certificados.

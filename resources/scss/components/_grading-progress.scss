@@ -1,6 +1,6 @@
 // =============================================================================
 // Componente: correção de dissertativas — coluna de leitura, GradingProgress
-// e AnswerSurface (`quizzes/attempts/show.blade.php`, SPEC-25/DESIGN.md §4.6).
+// e AnswerSurface (`quizzes/attempts/show.blade.php`).
 // Regra: qualquer declaração aqui só pode consumir var(--*), nunca literal de
 // cor/raio/sombra.
 // =============================================================================

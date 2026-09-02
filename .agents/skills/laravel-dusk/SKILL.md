@@ -24,10 +24,10 @@ Trigger when:
 ## Project Rule #1 — Group by Lifecycle Chain, Not by Module
 
 **In this repo, unit of organization for Dusk test is the lifecycle chain
-(user journey), NOT module, spec, or use case.** One test method drives
+(user journey), NOT module boundaries.** One test method drives
 entity's whole journey — create, edit, change state, delete, verify
 consequence — asserting UI *and* database at every step. Test file belongs
-to journey, so it may cross module/spec boundaries when journey does.
+to journey, so it may cross module boundaries when journey does.
 
 Why: every Dusk method pays fixed cost — DB reset, WebDriver session boot,
 login, navigation — that dwarfs assertions themselves. Split one lifecycle
@@ -308,7 +308,7 @@ genuine OS-level `dragstart`/`dragover`/`drop` events, so simulating a real
 HTML5 drag-and-drop in a Dusk test is unreliable and a common source of
 flaky failures in this codebase. When the feature under test exposes its
 drop-handling logic as a plain JS function (e.g. `window.ModuleReorder
-.persistOrder(list)` in SPEC-05's `ModuleReorder.js`), reorder the DOM nodes
+.persistOrder(list)` in `ModuleReorder.js`), reorder the DOM nodes
 with `$browser->script()` and then invoke that function directly — the same
 call path a real `drop` event would trigger — rather than trying to fire
 synthetic drag events. See `courses-maintenance`'s "Diagnosing a Dusk
@@ -324,7 +324,7 @@ $browser->script('window.LessonPlayer.reportProgress(1, 540, 600)');
 $browser->waitForText('Concluída');
 ```
 
-(seen in SPEC-07's `tests/Browser/VideoThresholdCompletionTest.php`, which
+(seen in `tests/Browser/VideoThresholdCompletionTest.php`, which
 drives `window.LessonPlayer.reportProgress()` directly for the same
 "synthetic event unreliable, call the JS function directly" reason as the
 drag-and-drop note above).
@@ -597,7 +597,7 @@ php artisan dusk:chrome-driver --detect
 - Reset data in `setUp()` method
 - Check for transactions in application code
 
-**New JS module added but its behavior doesn't run in the browser (project-specific, hit in SPEC-15):**
+**New JS module added but its behavior doesn't run in the browser (project-specific):**
 
 - Dusk drives the real compiled assets in `public/build`, not a live Vite
   dev server — a newly created/edited `resources/js/modules/*.js` (and its
@@ -609,7 +609,7 @@ php artisan dusk:chrome-driver --detect
   exercises new/changed JS.
 
 **Two `artisan dusk` runs at once corrupt each other (project-specific, hit
-in `spec/front_redesign` Fase 3 parallel bucket agents):**
+by the parallel bucket agents that did the frontend redesign):**
 
 - All `tests/Browser/*` share one MySQL `testing` schema via the single
   `DatabaseTruncation` trait on `DuskTestCase` (see §8) — there is no

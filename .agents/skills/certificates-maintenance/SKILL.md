@@ -1,8 +1,8 @@
 ---
 name: certificates-maintenance
 description: >
-  Debug, test, edge-case guide for Certificates & Public Verification
-  (SPEC-09): mandatory PHPUnit/Dusk test files, common
+  Debug, test, edge-case guide for Certificates & Public Verification:
+  mandatory PHPUnit/Dusk test files, common
   eligibility/idempotency/revocation failure modes,
   never-404-a-revoked-hash contract, cross-org PDF/organization
   resolution gotchas, open QR-code dependency question. Use when
@@ -14,26 +14,23 @@ license: MIT
 metadata:
   feature: certificates
   role: maintenance
-  specs:
-    - spec/specs/09-certificates-and-public-verification.md
-    - spec/specs/00-architecture-database-and-guardrails.md
 ---
 
 # Certificates Maintenance
 
 ## Mandatory Test Coverage for This Module
 
-Tests guard SPEC-09 contract. Must stay green (PHPUnit, no Pest):
+Tests guard this module's contract. Must stay green (PHPUnit, no Pest):
 
-- `tests/Feature/CertificateEligibilityTest.php` (Bucket A) — 3
+- `tests/Feature/CertificateEligibilityTest.php` — 3
   `rule_type`s individually, multi-rule AND case, idempotency (no
   re-issue on re-fired `CourseCompletedByStudent`), no-reissue-after
   -revoke, no-rules-defined edge case (no-op, no certificate).
-- `tests/Feature/CertificateRevocationTest.php` (Bucket A) — Gestor
+- `tests/Feature/CertificateRevocationTest.php` — Gestor
   own-org success, Gestor other-org 403, Admin any-org success,
   `revoke_reason` `min:10` validation, revoked row never hard/soft
   deleted.
-- `tests/Feature/PublicVerificationTest.php` (Bucket B) — valid
+- `tests/Feature/PublicVerificationTest.php` — valid
   certificate show student/course/org/workload/issued_at + "Válido",
   revoked certificate return `200` with revoked banner + reason (never
   404), unknown hash 404, cross-org access work with zero auth/tenant
@@ -118,8 +115,8 @@ instead).
 No QR-code generation package installed — only
 `barryvdh/laravel-dompdf`. `certificates/pdf.blade.php` currently degrade
 to text-only verification URL + hash when `$qrCodeDataUri` is `null` (see
-`certificates-conventions`). This is **not** spec-compliant on its own —
-SPEC-09 §2 require actual scannable QR image. Adding package
+`certificates-conventions`). This is **not** the intended end state on its own —
+the screen contract requires an actual scannable QR image. Adding package
 (`endroid/qr-code`, `simple-qrcode`, or `bacon/bacon-qr-code` are usual
 Laravel-ecosystem choices) require explicit user approval per this
 project "no dependency changes without approval" rule (project
@@ -132,7 +129,7 @@ project "no dependency changes without approval" rule (project
 
 Browser tests in `tests/Browser/` grouped by **user journey (lifecycle
 chain)** — one method drive create → edit → state change → delete →
-consequence — **not** by module, spec, or use case. Consequences when
+consequence — **not** by module or feature. Consequences when
 maintain this module:
 
 - **Finding coverage**: Dusk scenarios listed above may be asserted as

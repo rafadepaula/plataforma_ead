@@ -13,8 +13,6 @@ license: MIT
 metadata:
   feature: auth-orgs
   role: conventions
-  specs:
-    - spec/specs/04-auth-profile-organizations-and-user-management.md
 ---
 
 # Auth/Orgs Conventions
@@ -81,7 +79,7 @@ class OrganizationPolicy
 }
 ```
 
-`UserPolicy` (Bucket C) also compares `org_id`: Gestor manages only Users in own `org_id`, resolved like `OrgScope::booted()` does (`$user->org_id ?? session('active_org_id')`). Never trust a route/request-supplied org id.
+`UserPolicy` also compares `org_id`: Gestor manages only Users in own `org_id`, resolved like `OrgScope::booted()` does (`$user->org_id ?? session('active_org_id')`). Never trust a route/request-supplied org id.
 
 ## Slug Auto-Generation with Collision Suffix
 
@@ -212,7 +210,7 @@ Authenticated user hitting `/login`, `/forgot-password`, `/reset-password/{token
 
 ## Parallel "Global" Policy Abilities Instead of Relaxing `sharesOrgContext()`
 
-When a new screen needs an Admin to act across every Organization while an existing screen must keep enforcing tenant isolation for the *same* model, add a **second set of named abilities** rather than branching inside the existing ones. SPEC-002's global Admin user-management screen added `viewAnyGlobal`/`viewGlobal`/`updateGlobal`/`deleteGlobal` to `UserPolicy` next to the untouched `viewAny`/`view`/`update`/`delete`:
+When a new screen needs an Admin to act across every Organization while an existing screen must keep enforcing tenant isolation for the *same* model, add a **second set of named abilities** rather than branching inside the existing ones. The global Admin user-management screen added `viewAnyGlobal`/`viewGlobal`/`updateGlobal`/`deleteGlobal` to `UserPolicy` next to the untouched `viewAny`/`view`/`update`/`delete`:
 
 ```php
 public function viewGlobal(User $user, User $model): bool

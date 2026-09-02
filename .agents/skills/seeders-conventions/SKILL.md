@@ -8,8 +8,6 @@ license: MIT
 metadata:
   feature: seeders
   role: conventions
-  specs:
-    - spec/specs/16-database-seeders-and-environment-seeding.md
 ---
 
 # Seeders Conventions

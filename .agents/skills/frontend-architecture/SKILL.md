@@ -12,7 +12,7 @@ description: >
 # Frontend Architecture (`frontend-architecture`)
 
 > **Este skill está obsoleto.** Descrevia o frontend anterior à migração
-> `spec/front_migration/` e ao redesign `spec/front_redesign/`. Nenhum dos
+> para Bootstrap 5.3 nativo e ao redesign Material. Nenhum dos
 > padrões abaixo existe mais no código: `ModalManager.js` e
 > `NotificationService.js` foram removidos na migração para Bootstrap 5.3
 > nativo; `.tag-*`, `.dialog`/`.dialog-backdrop`, `.field`/`.input`, `.elev-*`

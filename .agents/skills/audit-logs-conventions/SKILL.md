@@ -1,8 +1,8 @@
 ---
 name: audit-logs-conventions
 description: >
-  Code patterns and guardrails for System Audit Logging & Monitoring
-  (SPEC-15): `AuditService::log()` call-site pattern, redaction list,
+  Code patterns and guardrails for System Audit Logging & Monitoring:
+  `AuditService::log()` call-site pattern, redaction list,
   `admin.audit-logs.index`/`gestor.audit-logs.index`/`*.export` route
   contract, Blade/JS diff-modal wiring, CSV export streaming. Use when
   writing controller, service, observer, listener, Blade view, or JS that
@@ -11,8 +11,6 @@ license: MIT
 metadata:
   feature: audit-logs
   role: conventions
-  specs:
-    - spec/specs/15-system-audit-logging-and-monitoring.md
 ---
 
 # Audit Logs Conventions

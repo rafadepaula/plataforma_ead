@@ -1,8 +1,8 @@
 ---
 name: profile-maintenance
 description: >
-  Debug, test, edge-case guide for User Profile Self-Service
-  (SPEC-18/UC02): mandatory PHPUnit/Dusk test files (including
+  Debug, test, edge-case guide for User Profile Self-Service:
+  mandatory PHPUnit/Dusk test files (including
   CPF-checksum browser scenario), common
   `current_password`/`logoutOtherDevices()`/uniqueness failure modes,
   `App\Rules\Cpf` regression surface now wired into live Blade form. Use
@@ -13,9 +13,6 @@ license: MIT
 metadata:
   feature: profile
   role: maintenance
-  specs:
-    - spec/specs/18-user-profile-management.md
-    - spec/docs/usecases/UC02-gestao-de-perfil-do-usuario.md
 ---
 
 # Profile Maintenance
@@ -36,13 +33,13 @@ metadata:
   actually invalidate another session row, wrong `current_password`
   rejected and password unchanged, `Password::defaults()` policy
   enforced, `throttle:6,1` trigger 429 on 7th attempt within minute.
-- `tests/Browser/ProfileTest.php` (Dusk E2E) — all 5 UC02 scenarios: edit
+- `tests/Browser/ProfileTest.php` (Dusk E2E) — all 5 scenarios: edit
   data successfully, change password successfully, duplicate email/CPF
   rejected inline without redirecting away, wrong `current_password`
   rejected inline, guest redirected to `/login`. **Includes
-  checksum-invalid-CPF scenario** distinct from duplicate-CPF one — UC02
-  §6.2 is own exception flow (*"O CPF informado é inválido."*), must not
-  be conflated with §6.1 duplicate-value flow, which exercise different
+  checksum-invalid-CPF scenario** distinct from duplicate-CPF one —
+  *"O CPF informado é inválido."* is its own exception flow, must not
+  be conflated with the duplicate-value flow, which exercises the different
   rule (`unique`) entirely.
 
 Run narrowest first after touch module:
@@ -111,7 +108,7 @@ this module own suite.
 
 Browser tests in `tests/Browser/` grouped by **user journey (lifecycle
 chain)** — one method drive create → edit → state change → delete →
-consequence — **not** by module, spec, or use case. Consequences when
+consequence — **not** by module or feature. Consequences when
 maintain this module:
 
 - **Finding coverage**: Dusk scenarios listed above may be asserted as

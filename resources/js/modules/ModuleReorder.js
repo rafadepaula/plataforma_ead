@@ -10,12 +10,12 @@
  * the shared `HttpClient` module and surfaces a `NotificationService`
  * toast on success/failure.
  *
- * Failure contract (SPEC-23 §4): the DOM order is snapshotted BEFORE the
+ * Failure contract: the DOM order is snapshotted BEFORE the
  * POST and restored on any non-2xx response, so the UI never lies about
  * the persisted order. Concurrent reorders by two gestores resolve as
  * last-write-wins on the server — acceptable and documented.
  *
- * Accessibility (SPEC-23 §4): each row carries `data-move-up`/`data-move-down`
+ * Accessibility: each row carries `data-move-up`/`data-move-down`
  * buttons (rendered by `<x-ui.sortable-row>`) that reorder via keyboard and
  * persist through this exact same endpoint/payload — no parallel path that
  * could bypass the server's tenant guard.

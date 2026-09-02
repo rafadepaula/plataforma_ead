@@ -10,9 +10,6 @@ license: MIT
 metadata:
   feature: tenancy
   role: architecture
-  specs:
-    - spec/specs/00-architecture-database-and-guardrails.md
-    - spec/docs/multitenancy.md
 ---
 
 # Tenancy Architecture
@@ -28,8 +25,7 @@ tables carry `org_id` foreign key. Isolation enforced application-side by
 Deliberate departure from `spatie/laravel-multitenancy`: tenant
 resolution here is **not** by domain/subdomain/header, but by
 **authenticated user session** (`$user->org_id` or
-`session('active_org_id')` for Admin Impersonate Org). See
-`spec/docs/multitenancy.md` §1 for full comparison and rationale.
+`session('active_org_id')` for Admin Impersonate Org).
 
 ## The Three Roles (`RolesEnum`)
 
@@ -72,17 +68,15 @@ across multiple orgs), `forum_replies` → `forum_topics.org_id`.
 **Pseudo-polymorphic, no `org_id`, no FK at all** (integrity validated at
 application layer only — not to be confused with cascade-inherited tables
 above, which do have real parent FK): `forum_post_edits` and
-`forum_reports` (SPEC-10) both carry `postable_type`/`postable_id`
+`forum_reports` both carry `postable_type`/`postable_id`
 pointing at `ForumTopic`/`ForumReply` written as model FQCN, with no
 database foreign key on the pair; resolved exclusively via
 `$type::withTrashed()->find($id)` (see `forum-architecture`).
-`course_completion_rules.target_id` (SPEC-09) is same pattern one column
+`course_completion_rules.target_id` is same pattern one column
 deep, pointing at `modules.id`/`quizzes.id` depending on `rule_type` (see
 `certificates-architecture`).
 
-Full column/type/index/`onDelete` definitions live in
-`spec/specs/00-architecture-database-and-guardrails.md` §2.1 — this skill
-does not repeat column types, only tenancy shape.
+This skill does not repeat column types, only tenancy shape.
 
 ## `OrgScope` Trait — How It Behaves
 
@@ -111,11 +105,6 @@ Applied to org-scoped Eloquent models. Two responsibilities:
    `org_id = null`. This exception is mapped globally (see
    `tenancy-conventions` skill) to HTTP 422 response.
 
-Canonical trait implementation reproduced in
-`spec/specs/00-architecture-database-and-guardrails.md` §3 and
-`spec/docs/multitenancy.md` §4 — they must stay byte-identical; change
-trait, update both docs (see `tenancy-maintenance`).
-
 ## Impersonate Org
 
 Admin (`org_id = null`) can temporarily scope own session to one
@@ -124,11 +113,7 @@ session flag, not package feature — no `Tenant::makeCurrent()` call.
 Clearing session key (or logging out) returns Admin to global, unscoped
 view.
 
-## Related Specs
+## Related
 
-- `spec/specs/00-architecture-database-and-guardrails.md` — full schema
-  (22 tables), `OrgScope` source, `RolesEnum` source, quality guardrails.
-- `spec/specs/03-agentic-harness-and-self-updating-skills.md` — why these
-  skills exist and auto-update protocol they're subject to.
-- `spec/docs/multitenancy.md` — architecture decision record /
-  comparison against `spatie/laravel-multitenancy`.
+- `skill-autoupdate` — the auto-update protocol these skills are subject
+  to.

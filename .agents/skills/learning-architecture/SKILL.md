@@ -1,7 +1,7 @@
 ---
 name: learning-architecture
 description: >
-  Student Learning & Progress domain (SPEC-07): `lesson_progress` schema,
+  Student Learning & Progress domain: `lesson_progress` schema,
   completion-source rules per lesson type (video threshold / manual click /
   quiz), synchronous `LessonMarkedAsCompleted` -> `RecalculateCourseProgress`
   -> `CourseCompletedByStudent` event pipeline, `EnsureStudentIsEnrolled`
@@ -13,29 +13,24 @@ license: MIT
 metadata:
   feature: learning
   role: architecture
-  specs:
-    - spec/specs/07-student-learning-experience-and-progress.md
-    - spec/specs/26-student-course-catalog-meus-cursos.md
-    - spec/specs/27-classroom-overview-and-progression.md
-    - spec/specs/00-architecture-database-and-guardrails.md
 ---
 
 # Learning Architecture
 
 ## Overview
 
-SPEC-07 covers Aluno-facing side of Courses (SPEC-05): watching/reading
+This domain covers Aluno-facing side of Courses: watching/reading
 Lessons, marking them complete, resulting course-wide progress
 recalculation. Never mutates `courses`/`modules`/`lessons` themselves. Only
 writes `lesson_progress` and `course_user.progress_percentage`/`status`/
 `completed_at`.
 
-## Schema (SPEC-00 §2.1.12)
+## Schema
 
 | Table | Key columns | Tenancy |
 | --- | --- | --- |
 | `lesson_progress` | `user_id`, `lesson_id`, `is_completed`, `completion_source` (enum: `manual_click`\|`video_threshold`\|`quiz_passed`, nullable), `watched_seconds` (nullable), `completed_at` | **Cascade-inherited** via `lesson.module.course.org_id` — no own `org_id`, no `OrgScope` (see `tenancy-architecture`) |
-| `course_user` (pivot, owned by SPEC-05) | `progress_percentage`, `status`, `completed_at` | Written by this module listener, not owned by it |
+| `course_user` (pivot, owned by the courses domain) | `progress_percentage`, `status`, `completed_at` | Written by this module listener, not owned by it |
 
 `lesson_progress` has unique `(user_id, lesson_id)` constraint. One row per
 student per lesson, upserted via `firstOrNew()`, never inserted twice.
@@ -49,7 +44,7 @@ differ by lesson shape:
 | --- | --- | --- | --- |
 | Video (`youtube_url` set) | YouTube IFrame API polling reports `watched_seconds` ≥ 90% of `duration_seconds` | `video_threshold` | `POST /lessons/{lesson}/progress` |
 | Text/PDF/Image (no `youtube_url`) | Explicit "Marcar como concluída" click | `manual_click` | `POST /lessons/{lesson}/complete` |
-| Quiz (`type = quiz`) | `SubmitQuizAttemptAction` (SPEC-08) when `quiz_attempts.is_passed = true` | `quiz_passed` | none — no manual button ever renders for quiz lesson |
+| Quiz (`type = quiz`) | `SubmitQuizAttemptAction` when `quiz_attempts.is_passed = true` | `quiz_passed` | none — no manual button ever renders for quiz lesson |
 
 Both HTTP endpoints reject wrong shape with 422, never silently accept it:
 `complete()` 422s on `type=quiz` or non-empty `youtube_url`;
@@ -61,7 +56,7 @@ Both HTTP endpoints reject wrong shape with 422, never silently accept it:
 `app/Actions/MarkLessonCompleteAction.php` is only place any
 `lesson_progress` row gets written. Shared today by
 `LessonProgressController` two endpoints and, per its own docblock, meant
-for SPEC-08 `SubmitQuizAttemptAction` too. Contract:
+for `SubmitQuizAttemptAction` too. Contract:
 
 - **Idempotent**: once `is_completed = true`, calling again never flips it
   back to `false`, never re-sets `completed_at`, never re-dispatches
@@ -76,8 +71,8 @@ for SPEC-08 `SubmitQuizAttemptAction` too. Contract:
 
 ## The Progress Pipeline: `LessonMarkedAsCompleted` -> `RecalculateCourseProgress` -> `CourseCompletedByStudent`
 
-Recalculation is **synchronous**, same request (SPEC-00 §1.2
-`QUEUE_CONNECTION=sync` default). No queued job in this pipeline.
+Recalculation is **synchronous**, same request
+(`QUEUE_CONNECTION=sync` default). No queued job in this pipeline.
 `RecalculateCourseProgress::handle()` auto-discovered purely from its
 `handle(LessonMarkedAsCompleted $event)` type-hint (no explicit
 `EventServiceProvider` registration to keep in sync).
@@ -98,10 +93,10 @@ progress_percentage = ROUND(completed_published_lessons / total_published_lesson
   published/non-deleted filter, joined through
   `lesson_progress.is_completed`.
 - When resulting percentage reaches `required_percentage` of Course
-  `course_completion_rules` row where `rule_type = 'all_lessons'` (SPEC-00
-  §2.1 item 15), listener also flips `course_user.status` to `completed`,
-  stamps `completed_at`, dispatches `CourseCompletedByStudent` — event
-  SPEC-09 (Certificates) listens for. No rule row for course means no
+  `course_completion_rules` row where `rule_type = 'all_lessons'`, listener
+  also flips `course_user.status` to `completed`,
+  stamps `completed_at`, dispatches `CourseCompletedByStudent` — event the
+  certificates domain listens for. No rule row for course means no
   auto-completion, no matter how high percentage climbs.
 
 Course resolution inside listener
@@ -158,19 +153,20 @@ means "may open the screen", not "may record progress": Admin and same-org
 Gestor are allowed through so they can preview a course, while
 `LessonProgressController::abortUnlessEnrolled()` answers 403 to both write
 endpoints for anyone without an `active`/`completed` `course_user` row. The
-view side of that split is the `tracksProgress` flag described under
-SPEC-28 below. Any new endpoint that writes `lesson_progress` needs the
+view side of that split is the `tracksProgress` flag described under the
+unified lesson player below. Any new endpoint that writes `lesson_progress` needs the
 second check too — `student.enrolled` alone will let staff through.
 
-## SPEC-26: "Meus Cursos" Catalog Helpers on `Course`
+## "Meus Cursos" Catalog Helpers on `Course`
 
-SPEC-26 rebuilt the Aluno-facing "Meus Cursos" catalog
-(`StudentCourseController` + `student.courses.index`) as a tabbed grid of
-rich cards. It added no new table — only read helpers on `Course` (owned
-here, alongside `publishedLessonsCountFor()`/`completedLessonsCountFor()`,
-because they serve this module's student-facing read path, not SPEC-05's
-Gestor CRUD) and a `course_user.expires_at` column (schema itself owned by
-`courses-architecture`, since `course_user` is a SPEC-05 table):
+The "Meus Cursos" catalog (`StudentCourseController` +
+`student.courses.index`) was rebuilt as a tabbed grid of
+rich cards. That work added no new table — only read helpers on `Course`
+(owned here, alongside `publishedLessonsCountFor()`/`completedLessonsCountFor()`,
+because they serve this module's student-facing read path, not the
+courses domain's Gestor CRUD) and a `course_user.expires_at` column
+(schema itself owned by `courses-architecture`, since `course_user` is a
+courses-domain table):
 
 - **`Course::publishedLessonsInOrder(): Collection`** (private) — this
   Course's published Lessons through non-soft-deleted Modules, ordered
@@ -204,7 +200,7 @@ Gestor CRUD) and a `course_user.expires_at` column (schema itself owned by
   `expirado` is a **read** of an `active` row, never a 5th `course_user
   .status` enum value.
 
-## SPEC-26: Card View-Model Contract (`StudentCourseController` → `x-course.card`)
+## Card View-Model Contract (`StudentCourseController` → `x-course.card`)
 
 `StudentCourseController::index()` groups the Aluno's `active`/`completed`
 enrollments (never `cancelled`, see the multi-org section above) into 3
@@ -227,7 +223,7 @@ change to this pipeline must preserve:
   student never started), so the bar never reads as a rendering bug. A
   genuinely `nao_iniciado` row still shows a true 0%.
 
-## SPEC-27: Classroom Overview View Contract (`ClassroomController::show()`)
+## Classroom Overview View Contract (`ClassroomController::show()`)
 
 `GET courses/{course}/classroom` (`auth` + `student.enrolled`) hands
 `classroom.show` a **frozen, normalized** set of 7 keys — nothing else, and
@@ -257,7 +253,7 @@ always overrides to `check`.
 `hasPdfAttachment()` is the media-aware half: since the `lesson_media`
 migration, a PDF may exist ONLY as a `lesson_media` row of kind `pdf`, with
 the deprecated flat `lessons.pdf_path` column empty. Testing `pdf_path`
-alone (as the pre-SPEC-27 Blade did) mis-renders such a lesson as
+alone (as the legacy classroom Blade did) mis-renders such a lesson as
 `book-open`. `show()` eager-loads `lessons.media` in the SAME `with()` call
 so the check stays N+1-free across every row of the track.
 
@@ -272,7 +268,7 @@ distinguishable from "never issued". The card branches on
 **never** links `certificates.download`. Filtering it out in the query
 would silently regress it into the generic "not yet issued" copy.
 
-## SPEC-28: Unified Lesson Player — One Card, One Format, Exclusive Dispatch
+## Unified Lesson Player — One Card, One Format, Exclusive Dispatch
 
 `GET lessons/{lesson}` (`ClassroomController::showLesson`, `auth` +
 `student.enrolled`) hands `classroom.lesson` **6 keys** — `lesson`,
@@ -349,21 +345,12 @@ attribute is prohibited on them — Reboot's
 toggle. See `learning-conventions` for the rule and
 `LessonDispatchOrderTest` for the guardrail.
 
-## Related Specs
+## Related
 
-- `spec/specs/07-student-learning-experience-and-progress.md` — RF13, RF14,
-  RF15, RF20/RN08, RF24.
-- `spec/specs/26-student-course-catalog-meus-cursos.md` — "Meus Cursos"
-  tabbed catalog, card anatomy, CTA-per-status contract.
-- `spec/specs/27-classroom-overview-and-progression.md` — classroom
-  overview 8/4 grid, view contract, glyph and certificate-state rules.
-- `spec/specs/28-unified-lesson-player-and-multimedia.md` — lesson-player
-  shell, the 4 media partials, format-dispatch order, completion bar.
-- `spec/specs/05-courses-modules-and-content-management.md` /
-  `courses-architecture` — `courses`/`modules`/`lessons` schema and
+- `courses-architecture` — `courses`/`modules`/`lessons` schema and
   `OrgScope`/cascade-inheritance model this feature reads from.
 - `tenancy-architecture` — `OrgScope` trait and `withoutGlobalScopes()`
   cascade pattern this module relies on throughout.
-- `spec/specs/08-*` (Quizzes) — future `quiz_passed` completion source and
+- `quizzes-architecture` — future `quiz_passed` completion source and
   `SubmitQuizAttemptAction`, which reuses `MarkLessonCompleteAction`.
-- `spec/specs/09-*` (Certificates) — listens for `CourseCompletedByStudent`.
+- `certificates-architecture` — listens for `CourseCompletedByStudent`.

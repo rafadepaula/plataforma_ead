@@ -15,9 +15,6 @@ license: MIT
 metadata:
   feature: landing
   role: architecture
-  specs:
-    - spec/specs/31-public-landing-page-and-showcase.md
-    - spec/specs/11-landing-page-and-contextual-help-center.md
 ---
 
 # Landing Page Architecture

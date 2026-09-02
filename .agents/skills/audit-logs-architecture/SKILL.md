@@ -1,37 +1,35 @@
 ---
 name: audit-logs-architecture
 description: >
-  System Audit Logging & Monitoring domain (SPEC-15): dual storage (MySQL
+  System Audit Logging & Monitoring domain: dual storage (MySQL
   `audit_logs` + dedicated `audit` Monolog channel), why `AuditLog` cannot
   reuse `OrgScope`'s `creating` hook as-is (guest/Admin-global writes need
   real `null` `org_id`, no `UnresolvedOrgContextException`),
-  `AuditableTrait`/`AuditObserver` mutation interception, event taxonomy
-  from spec §3. Use when designing or reviewing anything that writes
+  `AuditableTrait`/`AuditObserver` mutation interception, event
+  taxonomy. Use when designing or reviewing anything that writes
   `audit_logs`, before adding auditable model or critical-action event, or
   when scoping `/admin/audit-logs` / `/gestor/audit-logs`.
 license: MIT
 metadata:
   feature: audit-logs
   role: architecture
-  specs:
-    - spec/specs/15-system-audit-logging-and-monitoring.md
 ---
 
 # Audit Logs Architecture
 
 ## Overview
 
-SPEC-15 = 3 layers:
+Audit logging = 3 layers:
 
-1. **Automatic mutation audit** (RF31) — `AuditableTrait` + `AuditObserver` intercept `created`/`updated`/`deleted` on opted-in models (`Organization`, `User`, `Course`, `Module`, `Lesson`, `Quiz`, `Certificate`, spec §4.1). Writes generic `{ModelFQCN}.created`/`.updated`/`.deleted` (e.g. `App\Models\User.updated` — no morph map registered, so `getMorphClass()` returns FQCN, not short alias) with `old_values`/`new_values` diffs.
-2. **Critical-action / security audit** (RF32) — explicit `AuditService::log(...)` call sites for non-Eloquent events: `login.success`, `login.failed`, `logout`, `password.reset`, `impersonate.start`/`.stop`, `user.status_changed`, `csv.import`, `essay.graded`, `certificate.issued`/`.revoked`, `content.deleted`.
-3. **Read/query UI** (RF33) — `AuditLogController` + Blade, gated `role:admin` and `role:gestor`. Two distinct route names/prefixes hitting same controller methods — not one shared `role:admin|gestor` route like `admin.dashboard`. SPEC-15 §1 names both URLs on purpose.
+1. **Automatic mutation audit** — `AuditableTrait` + `AuditObserver` intercept `created`/`updated`/`deleted` on opted-in models (`Organization`, `User`, `Course`, `Module`, `Lesson`, `Quiz`, `Certificate`). Writes generic `{ModelFQCN}.created`/`.updated`/`.deleted` (e.g. `App\Models\User.updated` — no morph map registered, so `getMorphClass()` returns FQCN, not short alias) with `old_values`/`new_values` diffs.
+2. **Critical-action / security audit** — explicit `AuditService::log(...)` call sites for non-Eloquent events: `login.success`, `login.failed`, `logout`, `password.reset`, `impersonate.start`/`.stop`, `user.status_changed`, `csv.import`, `essay.graded`, `certificate.issued`/`.revoked`, `content.deleted`.
+3. **Read/query UI** — `AuditLogController` + Blade, gated `role:admin` and `role:gestor`. Two distinct route names/prefixes hitting same controller methods — not one shared `role:admin|gestor` route like `admin.dashboard`. Both URLs are named on purpose.
 
 ## Dual Storage: MySQL + Monolog
 
 Every event written to **both**:
 
-- `audit_logs` MySQL table — queryable, paginated, filterable. RF33 UI reads this.
+- `audit_logs` MySQL table — queryable, paginated, filterable. The read/query UI reads this.
 - `audit` Monolog channel (`storage/logs/audit.log`, `config/logging.php`), independent of DB.
 
 Reason = "duplo armazenamento" guarantee: **DB outage or failed `audit_logs` INSERT must never lose the trail**, file copy written independently. `AuditService::log()` attempts both writes. DB failure must not skip or roll back Monolog write, and neither failure may bubble up and break the user-facing request the audit call rides on. Exact try/catch shape: `audit-logs-conventions`.
@@ -57,9 +55,9 @@ But `OrgScope::booted()` also registers a `creating` hook that auto-assigns `org
 2. **Redacts** `password`/`remember_token` from both arrays before persisting — required even for cast/hidden attributes, since `getChanges()`/`getOriginal()` expose them regardless of `$hidden`/casts. Exact call: `audit-logs-conventions`.
 3. Delegates to `AuditService::log()` with `event` = `$model->getMorphClass().'.'.$action`, `auditable_type`/`auditable_id` from model, `org_id`/`user_id` from model's own `org_id` (if present) and `auth()->id()`.
 
-**No double-audit on delete.** Model with manual `content.deleted` in its `destroy()` (Course, Module, Lesson — spec §3 "Gestão Conteúdo") should generally not also carry generic `AuditableTrait` `deleted` handling, else one logical delete makes two rows under two event names for same `auditable_id`. Pick the authoritative path per model before wiring both.
+**No double-audit on delete.** Model with manual `content.deleted` in its `destroy()` (Course, Module, Lesson — the "Gestão Conteúdo" category) should generally not also carry generic `AuditableTrait` `deleted` handling, else one logical delete makes two rows under two event names for same `auditable_id`. Pick the authoritative path per model before wiring both.
 
-## Event Taxonomy (spec §3)
+## Event Taxonomy
 
 | Category | Events | Trigger |
 | --- | --- | --- |
@@ -76,4 +74,4 @@ But `OrgScope::booted()` also registers a `creating` hook that auto-assigns `org
 
 ## Config
 
-`config/audit.php` `retention_days` (default 365, `env('AUDIT_LOG_RETENTION_DAYS')`) governs only the `audit-logs:prune` DB window. No effect on `audit` Monolog channel file rotation in `config/logging.php` — independent by design: DB copy obeys RF33 retention, file copy is the duplo-armazenamento fallback and may retain longer or shorter.
+`config/audit.php` `retention_days` (default 365, `env('AUDIT_LOG_RETENTION_DAYS')`) governs only the `audit-logs:prune` DB window. No effect on `audit` Monolog channel file rotation in `config/logging.php` — independent by design: DB copy obeys the `retention_days` window, file copy is the duplo-armazenamento fallback and may retain longer or shorter.

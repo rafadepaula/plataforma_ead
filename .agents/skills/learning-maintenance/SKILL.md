@@ -1,7 +1,7 @@
 ---
 name: learning-maintenance
 description: >
-  Debug, test, edge-case guide for Student Learning & Progress (SPEC-07):
+  Debug, test, edge-case guide for Student Learning & Progress:
   mandatory PHPUnit/Dusk test files, common
   `progress_percentage`/`EnsureStudentIsEnrolled` failure modes,
   frontend-build gotcha for `LessonPlayer.js`. Use when
@@ -13,18 +13,13 @@ license: MIT
 metadata:
   feature: learning
   role: maintenance
-  specs:
-    - spec/specs/07-student-learning-experience-and-progress.md
-    - spec/specs/26-student-course-catalog-meus-cursos.md
-    - spec/specs/27-classroom-overview-and-progression.md
-    - spec/specs/00-architecture-database-and-guardrails.md
 ---
 
 # Learning Maintenance
 
 ## Mandatory Test Coverage for This Module
 
-Tests guard SPEC-07 contract. Must stay green (PHPUnit, no Pest):
+Tests guard this module's contract. Must stay green (PHPUnit, no Pest):
 
 - `tests/Unit/Actions/MarkLessonCompleteActionTest.php` — idempotent
   completion, `GREATEST(watched_seconds)`, `completed_at` set only on
@@ -45,7 +40,7 @@ Tests guard SPEC-07 contract. Must stay green (PHPUnit, no Pest):
   real event/listener pipeline (`QUEUE_CONNECTION=sync`).
 - `tests/Feature/MultiOrgStudentClassroomTest.php` — 21 tests. Aluno "Meus
   Cursos" list enrollments across multiple Organizations; classroom access
-  resolve org from Course, not from (org-less) Aluno. Since SPEC-27 it also
+  resolve org from Course, not from (org-less) Aluno. It also
   owns the classroom **view DATA** contract (the rendered markup lives in
   `ClassroomOverviewRenderingTest`): the 7 frozen keys plus
   `assertArrayNotHasKey` on the three dropped aliases
@@ -68,7 +63,7 @@ Tests guard SPEC-07 contract. Must stay green (PHPUnit, no Pest):
   (`test_video_lesson_shows_the_player_shell_and_auto_completes_at_the_threshold`)
   drive `window.LessonPlayer.reportProgress()` directly rather than real
   YouTube embed.
-- `tests/Feature/StudentCourseControllerTest.php` (SPEC-26) — 19 tests:
+- `tests/Feature/StudentCourseControllerTest.php` — 19 tests:
   multi-org enrollment aggregation (including duplicate course titles
   across orgs resolving to the right org per card, N+1-free), all 3 tabs
   filtered by raw pivot `status` (never derived `displayStatus`), tab
@@ -79,7 +74,7 @@ Tests guard SPEC-07 contract. Must stay green (PHPUnit, no Pest):
   degradation, a zero-published-lesson course not crashing, soft-deleted
   Course exclusion, an unpublished-but-enrolled Course still rendering
   read-only, and a `role:gestor` 403.
-- `tests/Feature/ClassroomOverviewRenderingTest.php` (SPEC-27) — 18 tests
+- `tests/Feature/ClassroomOverviewRenderingTest.php` — 18 tests
   asserting the RENDERED MARKUP of the classroom overview, which
   `MultiOrgStudentClassroomTest` (view DATA only) never touches: verbatim
   header copy (`Sala de aula`, the subtitle, the `Meus cursos` breadcrumb,
@@ -96,7 +91,7 @@ Tests guard SPEC-07 contract. Must stay green (PHPUnit, no Pest):
   revoked-certificate copy, the staff-preview (null pivot) zero-progress
   path, a lesson unpublished after completion, the singular completion
   caption, and the real partial counts.
-- `tests/Browser/ClassroomOverviewDuskTest.php` (SPEC-27 Dusk) — 9 tests:
+- `tests/Browser/ClassroomOverviewDuskTest.php` (Dusk) — 9 tests:
   the 0% → 33% → 100% lifecycle with certificate issuance, the staff
   preview (Admin and owning Gestor at 0%, foreign Gestor 403), the
   `no-modules` empty state, the issued-certificate `href` pointing at
@@ -106,7 +101,7 @@ Tests guard SPEC-07 contract. Must stay green (PHPUnit, no Pest):
   glyph/chip rendering, a 375px stacking check asserting the sidebar sits
   below the track with no horizontal overflow, and a long-title overflow
   check.
-- `tests/Feature/LessonDispatchOrderTest.php` (SPEC-28) — 9 tests freezing
+- `tests/Feature/LessonDispatchOrderTest.php` — 9 tests freezing
   the lesson-player view contract: the exclusive `@if/@elseif` dispatch on
   conflicting rows (a `type=quiz` Lesson carrying BOTH `youtube_url` and
   `pdf_path` renders `quiz-placeholder` and neither `video-player-{id}`
@@ -117,11 +112,11 @@ Tests guard SPEC-07 contract. Must stay green (PHPUnit, no Pest):
   completion controls, the `.d-none` swap in both directions (pending vs a
   completed `lesson_progress` row), and `content_text` escaping
   (`<script>alert(1)</script>` + newlines).
-- `tests/Browser/LessonPlayerDuskTest.php` (SPEC-28 Dusk) — one lifecycle
+- `tests/Browser/LessonPlayerDuskTest.php` (Dusk) — one lifecycle
   test covering all 6 rendered states (video, PDF, text/image, quiz ready,
   quiz in preparation, degraded video), the back-to-classroom button and
   the resulting `lesson_progress` rows.
-- `tests/Browser/StudentCoursesCatalogUiTest.php` (SPEC-26 Dusk) — the
+- `tests/Browser/StudentCoursesCatalogUiTest.php` (Dusk) — the
   tabs/cards lifecycle chain (all 3 tabs, all 4 status chips, progress bar
   selector, per-status CTA target) plus a separate contextual-empty-state-
   per-tab test.
@@ -152,7 +147,7 @@ vendor/bin/sail artisan dusk tests/Browser/LessonPlayerDuskTest.php
 
 Check, in order:
 
-1. `QUEUE_CONNECTION` — must resolve to `sync` (SPEC-00 §1.2 default) or
+1. `QUEUE_CONNECTION` — must resolve to `sync` (project default) or
    `RecalculateCourseProgress` never run inline within test/request.
 2. Is `MarkLessonCompleteAction::execute()` actually completing
    transition (`false` -> `true`)? Repeat call on already-completed
@@ -164,8 +159,8 @@ Check, in order:
    still write `lesson_progress` but cannot move percentage.
 4. Is there `course_completion_rules` row with `rule_type =
    'all_lessons'` for course? Without one, course never auto-transition
-   to `completed` no matter how high percentage climb — correct per
-   SPEC-00 §2.1 item 15, not bug in listener.
+   to `completed` no matter how high percentage climb — correct by design,
+   not bug in listener.
 
 ## `EnsureStudentIsEnrolled` Returning the Wrong Status
 
@@ -200,9 +195,9 @@ state), `public/build` stale relative to
 which leave `public/hot` behind and break every Dusk run (see
 `laravel-dusk`) — before re-running Dusk.
 
-## SPEC-26 Dusk Gotchas
+## Course Catalog Dusk Gotchas
 
-- **Selector rename**: the pre-SPEC-26 catalog used
+- **Selector rename**: the pre-rebuild catalog used
   `org-group-{id}`/`student-course-{id}`/`open-classroom-{id}`. These are
   retired — current selectors are `course-card-{id}`, `course-status-
   {id}`, `course-progress-{id}`, `course-continue-{id}` (on the
@@ -222,9 +217,9 @@ which leave `public/hot` behind and break every Dusk run (see
   {id}` renders a disabled `<x-ui.button>`, not a missing element — assert
   `disabled`, don't assert the selector is absent.
 
-## Auto-Update Protocol (SPEC-03)
+## Auto-Update Protocol
 
-Per `spec/specs/03-agentic-harness-and-self-updating-skills.md`: any
+Any
 change to `MarkLessonCompleteAction`, `RecalculateCourseProgress`,
 `EnsureStudentIsEnrolled`, `LessonMarkedAsCompleted`/
 `CourseCompletedByStudent` events, `StudentCourseController`/
@@ -240,13 +235,8 @@ in same change, before task considered done. Also re-check:
 - Run `vendor/bin/sail artisan harness:check-skills` — it fail build if
   any of three `learning-*` skills missing.
 
-## Related Specs
+## Related
 
-- `spec/specs/07-student-learning-experience-and-progress.md` — RF13,
-  RF14, RF15, RF20/RN08, RF24.
-- `spec/specs/26-student-course-catalog-meus-cursos.md` — "Meus Cursos"
-  tabbed catalog rebuild, `<x-course.card>` family, CTA-per-status
-  contract.
 - `courses-maintenance` — analogous module this one read Course/Module/
   Lesson data from; mirror its `withoutGlobalScopes()` cross-tenant-lookup
   convention.
@@ -259,7 +249,7 @@ in same change, before task considered done. Also re-check:
 
 Browser tests in `tests/Browser/` grouped by **user journey (lifecycle
 chain)** — one method drive create → edit → state change → delete →
-consequence — **not** by module, spec, or use case. Consequences when
+consequence — **not** by module or feature. Consequences when
 maintain this module:
 
 - **Finding coverage**: Dusk scenarios listed above may be asserted as
@@ -281,7 +271,7 @@ maintain this module:
 
 Full rule: `testing-conventions`. Chain debugging: `testing-maintenance`.
 
-## SPEC-27 Classroom Overview Failure Modes
+## Classroom Overview Failure Modes
 
 - **A completed lesson renders no check / `@lesson-completed-{id}` is
   missing**: `ClassroomController::show()` sets `is_completed` on each
@@ -309,7 +299,7 @@ Full rule: `testing-conventions`. Chain debugging: `testing-maintenance`.
   Dusk check compares `getBoundingClientRect().top` of `@module-{id}` and
   `@course-progress-bar` and will catch it.
 
-## SPEC-28 Lesson Player Failure Modes
+## Lesson Player Failure Modes
 
 - **`DuskSelectorContractTest` fails with a count mismatch after touching
   the lesson screen**: `lesson-completed-badge`/`mark-complete-button` now
@@ -350,7 +340,7 @@ Full rule: `testing-conventions`. Chain debugging: `testing-maintenance`.
   `:tracks-progress="$tracksProgress ?? true"`. A missing forward is the
   actual bug.
 - **A media assertion fails with "material indisponível" although the
-  `lesson_media` rows exist**: since SPEC-28 the view renders from
+  `lesson_media` rows exist**: the view renders from
   `ClassroomController::resolveMediaAvailability()`, which calls
   `Storage::disk('public')->exists()` per path. A feature test must
   `Storage::fake('public')` **and** actually `put()` bytes at each

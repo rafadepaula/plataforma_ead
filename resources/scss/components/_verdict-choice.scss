@@ -8,7 +8,7 @@
 // `$answer->is_correct`; `EssayGrading.js` mantém a classe em sincronia no
 // evento `change` do rádio.
 // Regra: qualquer declaração aqui só pode consumir var(--*), nunca literal de
-// cor/raio/sombra (spec/new_ds/DESIGN.md §4.6 — "Incorreta" nunca é vermelho).
+// cor/raio/sombra ("Incorreta" nunca é vermelho).
 // =============================================================================
 
 .ds-verdict {

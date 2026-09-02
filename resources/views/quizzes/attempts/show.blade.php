@@ -17,7 +17,7 @@
         keyed by `answer_id`) for every essay `QuizAnswer` on the attempt —
         see `GradeEssayAnswerRequest` and `quizzes-conventions`.
 
-    Material Bootstrap refactor (spec/new_ds/DESIGN.md §4.6): single 760px
+    Material Bootstrap refactor: single 760px
     reading column, essay answers in a `--surface-sunken` AnswerSurface,
     two-card VerdictChoice, and a live "X de Y vereditos" progress bar +
     "Pronto para salvar" chip. The `data-grading-*` attributes below are

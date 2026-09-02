@@ -11,8 +11,6 @@ license: MIT
 metadata:
   feature: tenancy
   role: maintenance
-  specs:
-    - spec/specs/00-architecture-database-and-guardrails.md
 ---
 
 # Tenancy Maintenance
@@ -82,37 +80,28 @@ vendor/bin/sail artisan test --compact tests/Feature/Auth/RolesMiddlewareTest.ph
 - `system_settings` has composite primary key `(setting_key, org_id)` where
   `org_id` nullable for "global" settings. `PRIMARY KEY` column implicitly
   `NOT NULL` in MySQL/MariaDB, so literal nullable composite PK not achievable
-  as specified. Confirm with Bucket A resolution (sentinel `org_id = 0` for
+  as specified. Confirm the settled resolution (sentinel `org_id = 0` for
   global vs plain unique index) before writing any code assuming one behavior or
   other for global settings lookups.
 - `OrgScope` must never be applied to `User`. Doing so hide Admin/Aluno rows
   (`org_id = null`) from login and user-management queries. If future change
   make `User` need org filtering for some specific query, scope that query
   explicit (`where('org_id', ...)`), never add global scope to model.
-- Roles are **global**, not org-scoped, per spec (`spatie/laravel-permission`
+- Roles are **global**, not org-scoped (`spatie/laravel-permission`
   with `config('permission.teams') = false`). Never enable Spatie team/org-scoped
   permissions feature as shortcut for anything — it introduce second, competing
   tenancy mechanism alongside `org_id`.
 
-## Auto-Update Protocol (SPEC-03)
+## Auto-Update Protocol
 
-Per `spec/specs/03-agentic-harness-and-self-updating-skills.md`: any change to
+Any change to
 `OrgScope`, `RolesEnum`, org-scoped migrations/models, or
 `UnresolvedOrgContextException` handling **must** update all three tenancy
 skills (`tenancy-architecture`, `tenancy-conventions`, `tenancy-maintenance`) in
 same change, before task done. Also re-check:
 
-- `spec/docs/multitenancy.md` — keep its `OrgScope` code block byte-identical to
-  `spec/specs/00-architecture-database-and-guardrails.md` §3.
 - `.agents/agents/code-reviewer.md` — if change affect what reviewer must check
   for org-scoped code, update its reference to these skills.
-
-## Related Specs
-
-- `spec/specs/00-architecture-database-and-guardrails.md` §3 (`OrgScope`), §4
-  (`RolesEnum`), §5 (coverage/Dusk guardrails).
-- `spec/specs/03-agentic-harness-and-self-updating-skills.md` (this auto-update
-  protocol).
 
 ---
 
@@ -120,7 +109,7 @@ same change, before task done. Also re-check:
 
 Browser tests in `tests/Browser/` grouped by **user journey (lifecycle chain)** —
 one method drive create, edit, state change, delete, consequence — **not** by
-module, spec, or use case. Consequences when maintaining this module:
+module or feature. Consequences when maintaining this module:
 
 - **Finding coverage**: Dusk scenarios listed above may be asserted as numbered
   steps inside chain method, maybe in file named after another module when

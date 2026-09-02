@@ -1,8 +1,8 @@
 ---
 name: help-maintenance
 description: >
-  Debug, test, edge-case guide for Landing Page & Contextual Help Center
-  (SPEC-11): mandatory PHPUnit/Dusk test files, common
+  Debug, test, edge-case guide for Landing Page & Contextual Help Center:
+  mandatory PHPUnit/Dusk test files, common
   `target_page_key`/fallback/`withoutEvents()` failure modes, no-Alpine.js
   declarative `bootstrap.Modal` Dusk gotcha, 100%-coverage-vs-content-authoring
   gap. Use when `LandingPageTest`, `HelpCenterTest`, or
@@ -13,15 +13,13 @@ license: MIT
 metadata:
   feature: help
   role: maintenance
-  specs:
-    - spec/specs/11-landing-page-and-contextual-help-center.md
 ---
 
 # Help Center Maintenance
 
 ## Mandatory Test Coverage for This Module
 
-Tests guard SPEC-11 contract. Must stay green (PHPUnit, no Pest):
+Tests guard this module's contract. Must stay green (PHPUnit, no Pest):
 
 - `tests/Feature/LandingPageTest.php` — public `GET /` route render
   without session, show marketing copy, carry
@@ -92,8 +90,8 @@ HTTP process); `DatabaseMigrations` retired (per-method `migrate:fresh`)
   `vendor/bin/sail npm run build` not run) rather than a timing problem.
   Wait on the modal itself (`waitFor('@help-modal-{key}')`), never on a
   removed `.dialog-backdrop`.
-- **Inert (disabled) button asserted as error in new test.** RN05
-  explicitly allow coverage to outpace content authoring — disabled
+- **Inert (disabled) button asserted as error in new test.** Coverage is
+  explicitly allowed to outpace content authoring — disabled
   `<x-help-button>` with no `HelpArticle` yet is **correct** state, not
   bug. Fail test only on missing button entirely (`dusk="help-button-{key}"`
   element absent from response), never on disabled attribute present when
@@ -101,7 +99,7 @@ HTTP process); `DatabaseMigrations` retired (per-method `migrate:fresh`)
 
 ## Coverage Gap Tracking
 
-RN05 100%-of-screens requirement verified today only by handful of
+The 100%-of-screens requirement is verified today only by handful of
 screens exercised in `HelpCenterTest`/`LandingPageTest` plus manual code
 review of each layout/standalone-document wiring point — no automated
 "every route has help button" audit exist. When add new
@@ -115,7 +113,7 @@ assertion for it; nothing else catch omission.
 
 Browser tests in `tests/Browser/` grouped by **user journey (lifecycle
 chain)** — one method drive create → edit → state change → delete →
-consequence — **not** by module, spec, or use case. Consequences when
+consequence — **not** by module or feature. Consequences when
 maintain this module:
 
 - **Finding coverage**: Dusk scenarios listed above may be asserted as

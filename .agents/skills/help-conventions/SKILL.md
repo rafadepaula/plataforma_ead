@@ -2,7 +2,7 @@
 name: help-conventions
 description: >
   Code patterns, snippets, guardrails for Landing Page & Contextual Help
-  Center feature (SPEC-11): `<x-help-button key="...">` wiring convention,
+  Center feature: `<x-help-button key="...">` wiring convention,
   `HelpArticleFactory` `global()`/`forOrg()` states, `withoutEvents()`
   factory workaround for Admin-created global articles,
   `dusk="help-button-{key}"` / `dusk="help-article-content-{key}"`
@@ -13,8 +13,6 @@ license: MIT
 metadata:
   feature: help
   role: conventions
-  specs:
-    - spec/specs/11-landing-page-and-contextual-help-center.md
 ---
 
 # Help Center Conventions

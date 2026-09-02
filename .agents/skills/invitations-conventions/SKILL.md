@@ -2,7 +2,7 @@
 name: invitations-conventions
 description: >
   Code patterns, snippets, guardrails for Smart Invitation & Enrollment
-  feature (SPEC-06): ProcessSmartInvitationAction lockForUpdate
+  feature: ProcessSmartInvitationAction lockForUpdate
   transaction, check-email/adaptive-form contract, EnrollmentController
   course_user upsert pattern, convite/show.blade.php guest-shell +
   .d-none-only visibility contract, InvitationLinkPolicy/route
@@ -14,8 +14,6 @@ license: MIT
 metadata:
   feature: invitations
   role: conventions
-  specs:
-    - spec/specs/06-smart-invitation-and-enrollment-system.md
 ---
 
 # Invitations Conventions
@@ -99,7 +97,7 @@ if (! $enrollment) {
 
 `course_user` has real `UNIQUE(user_id, course_id)` constraint. Second
 `attach()` for pair that already has row (active, cancelled, or completed)
-throws DB integrity exception. `EnrollmentController::store()` (RF21
+throws DB integrity exception. `EnrollmentController::store()` (the
 manual-enroll form) follows identical shape:
 
 ```php
@@ -120,7 +118,7 @@ this upsert.
 
 `InvitationController::checkEmail()` is one endpoint in this feature that
 intentionally answers "does account with this e-mail exist?" to
-unauthenticated caller — whole point of adaptive form (RF03 §3). Every
+unauthenticated caller — the whole point of the adaptive form. Every
 other endpoint in this feature must **not** leak same fact through
 different channel (timing, distinct error codes, etc.). In particular
 `ProcessSmartInvitationAction` wrong-password branch above returns same
@@ -214,9 +212,7 @@ real model, `{invitation_link}` alone is enough), so those *do* use plain
 `shallow()` resource shape (`only(['index', 'create', 'store',
 'destroy'])`).
 
-## Related Specs
+## Related Skills
 
-- `spec/specs/06-smart-invitation-and-enrollment-system.md` — RF03, RF21,
-  RN09.
 - `courses-conventions` — `withoutGlobalScopes()`-for-Policy-parent pattern
   this feature `InvitationLinkPolicy` reuses verbatim.

@@ -1,8 +1,8 @@
 ---
 name: forum-conventions
 description: >
-  Code patterns, snippets, guardrails for Course Discussion Forum feature
-  (SPEC-10): ForumTopic::withoutEvents() org_id workaround,
+  Code patterns, snippets, guardrails for Course Discussion Forum feature:
+  ForumTopic::withoutEvents() org_id workaround,
   ForumTopicPolicy/ForumReplyPolicy cascade-authorize conventions,
   postable_type FQCN convention shared by
   EditForumPostAction/DeleteForumPostAction/ReportForumPostAction,
@@ -15,9 +15,6 @@ license: MIT
 metadata:
   feature: forum
   role: conventions
-  specs:
-    - spec/specs/10-course-discussion-forum.md
-    - spec/specs/30-course-discussion-forum-and-realtime-polling.md
 ---
 
 # Forum Conventions
@@ -278,8 +275,8 @@ in the code.
 
 ## JS Modules Have No jQuery/Alpine Dependency
 
-Spec text say "jQuery polling", but jQuery not installed dependency
-(`package.json`). `ForumPolling.js` use shared `HttpClient` module
+An earlier design note called for "jQuery polling", but jQuery is not an
+installed dependency (`package.json`). `ForumPolling.js` use shared `HttpClient` module
 instead, same rationale as `ModuleReorder.js` native drag-and-drop.
 The edit-history modal has **no JS module at all** since the Bootstrap
 5.3 migration: `forum/partials/_edit-history-modal.blade.php` is fully
@@ -394,17 +391,8 @@ Rules:
   `<span class="badge bg-info-subtle">` here (bootstrap-conventions
   no-raw-Bootstrap-markup guardrail).
 
-## Related Specs
+## Related Skills
 
-- `spec/specs/10-course-discussion-forum.md` — RF22, RF26, RF27.
-- `spec/specs/30-course-discussion-forum-and-realtime-polling.md` —
-  Material Bootstrap forum redesign: FAB-vs-header-button `lg` rule,
-  `form="new-topic-form"` footer-submit pattern, DOM-sibling
-  pin-form/topic-link rule, dusk selector list, enriched `fetchNew`
-  payload.
-- `spec/front_redesign/08-telas-forum.md` — Fase 6 front redesign scope
-  (breadcrumb/kicker/title/subtitle contract, component usage, phantom
-  class cleanup) for all 8 forum views.
 - `quizzes-conventions` — `parentCourse()` cascade-authorize pattern this
   module Policies mirror.
 - `courses-conventions` — `[data-reorder-url]`-style contract this

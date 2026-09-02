@@ -1,10 +1,10 @@
 ---
 name: invitations-architecture
 description: >
-  Smart Invitation & Enrollment domain (SPEC-06): invitation_links schema,
-  public unauthenticated /convite/{token} flow, RN09 multi-org
+  Smart Invitation & Enrollment domain: invitation_links schema,
+  public unauthenticated /convite/{token} flow, multi-org
   no-duplicate-account guarantee, typed
-  InvitationLinkInvalidException reason contract (one message per cause), RF21 manual enrollment panel reusing
+  InvitationLinkInvalidException reason contract (one message per cause), manual enrollment panel reusing
   course_user/CoursePolicy instead of dedicated Enrollment model. Use when
   designing or reviewing feature touching InvitationLink or course_user
   data, before adding new enrollment/invitation endpoint, or when deciding
@@ -13,25 +13,23 @@ license: MIT
 metadata:
   feature: invitations
   role: architecture
-  specs:
-    - spec/specs/06-smart-invitation-and-enrollment-system.md
-    - spec/specs/00-architecture-database-and-guardrails.md
 ---
 
 # Invitations Architecture
 
 ## Overview
 
-RF03 gives every Course shareable `/convite/{token}` link. Unauthenticated
+Every Course has a shareable `/convite/{token}` link. Unauthenticated
 visitor self-registers (or authenticates into existing account) and gets
-enrolled in that one Course, one step, no admin. RF21 gives Gestor
-(`role:gestor`)/Admin manual enroll-or-revoke panel over same `course_user`
-rows, for cases with no invite link. RN09 is constraint binding both:
+enrolled in that one Course, one step, no admin. Gestor
+(`role:gestor`)/Admin get a manual enroll-or-revoke panel over same
+`course_user` rows, for cases with no invite link. The
+no-duplicate-account guarantee binds both:
 student who already has account (maybe tied to different Organization)
 must never get second `users` row just because they used different Org's
 invite link.
 
-## Schema (SPEC-00 §2.1, SPEC-06 §2)
+## Schema
 
 | Table | Key columns | Tenancy |
 | --- | --- | --- |
@@ -54,7 +52,7 @@ ability) — same "no policy of its own, authorize against parent" pattern
   created through it. Revoked link is statement about URL, not about
   students who already joined.
 - **Enrollment-level revocation** (`course_user.status = 'cancelled'`, set
-  by `EnrollmentController::destroy()`, RF21): cancels one student's
+  by `EnrollmentController::destroy()`): cancels one student's
   membership in one Course. No effect on any `InvitationLink` row.
 
 Change to one must never write to other. Future requirement "revoking link
@@ -150,7 +148,7 @@ single neutral fallback (`Este convite não está mais disponível.`) for a rend
 with no `$message` bound; it must never grow a per-reason branch of its own —
 two copies of the same sentence diverge and the test then asserts the wrong one.
 
-## RN09: Multi-Org Adaptive Enrollment, No Duplicate Accounts
+## Multi-Org Adaptive Enrollment, No Duplicate Accounts
 
 `ProcessSmartInvitationAction` branches once, on whether `email` already
 belongs to `User` row:
@@ -185,12 +183,8 @@ course-access UI) meant for students, of Course they may not administer.
 Distinct rejection from wrong-password case (`errors.password`) — check
 `errors.email` to diagnose which branch fired.
 
-## Related Specs
+## Related
 
-- `spec/specs/06-smart-invitation-and-enrollment-system.md` — RF03, RF21,
-  RN09.
-- `spec/specs/00-architecture-database-and-guardrails.md` §2.1 — full
-  `invitation_links`/`course_user` column/index definitions.
 - `courses-architecture` — `Course::students()`/`User::courses()`, pivot
   shape, why `Module`/`Lesson` authorize against parent instead of owning
   Policy (same pattern `EnrollmentController` follows for `course_user`).

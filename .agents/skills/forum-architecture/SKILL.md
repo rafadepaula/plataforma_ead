@@ -1,7 +1,7 @@
 ---
 name: forum-architecture
 description: >
-  Course Discussion Forum domain (SPEC-10):
+  Course Discussion Forum domain:
   forum_topics/forum_replies/forum_post_edits/forum_reports schema,
   OrgScope-on-ForumTopic vs cascade-inherited ForumReply tenancy,
   pseudo-polymorphic postable_type/postable_id pattern shared by
@@ -15,26 +15,22 @@ license: MIT
 metadata:
   feature: forum
   role: architecture
-  specs:
-    - spec/specs/10-course-discussion-forum.md
-    - spec/specs/30-course-discussion-forum-and-realtime-polling.md
-    - spec/specs/00-architecture-database-and-guardrails.md
 ---
 
 # Forum Architecture
 
 ## Overview
 
-RF22 give every Course discussion forum. Alunos with active/completed
-enrollment (RN10) and same-org Gestores/Admins create `forum_topics` and
+Every Course has a discussion forum. Alunos with active/completed
+enrollment and same-org Gestores/Admins create `forum_topics` and
 `forum_replies`. jQuery-free `since_id` AJAX polling stand in for
-websockets (§2). RF27 require **any** viewer with topic access — not only
-author — to open public "ver histórico" edit history for post (§2.1).
-RF26 add "Denunciar" report queue reviewed by Gestor (§2.2). That queue is
+websockets. Any viewer with topic access — not only
+author — can open the public "ver histórico" edit history for a post.
+A "Denunciar" report queue reviewed by Gestor also exists. That queue is
 *second* moderation channel, not only one — Gestor/Admin also pin/edit/
 delete any post directly, report or no report.
 
-## Schema (SPEC-00 §2.1.16–2.1.19)
+## Schema
 
 | Table | Key columns | Tenancy |
 | --- | --- | --- |
@@ -90,7 +86,7 @@ Both actions shared between `ForumTopic` and `ForumReply` (typed
 
 - `EditForumPostAction` write `forum_post_edits` row with **pre-edit**
   `content`, then update post `content`/`edited_at`. No edit-window,
-  no deadline (§2.1 — "a qualquer momento"). Resubmission with identical
+  no deadline ("a qualquer momento"). Resubmission with identical
   content still write history row (no no-op special case).
 - `DeleteForumPostAction` write `forum_post_edits` row with post last
   content before soft-deleting it — "apagar" always logical removal
@@ -107,7 +103,7 @@ Gestor direct-delete button, plus flipping `forum_reports.status` to
 
 ## Two Independent Moderation Paths
 
-1. **Report queue (RF26)**: any enrolled Aluno or same-org Gestor create
+1. **Report queue**: any enrolled Aluno or same-org Gestor create
    `pending` `forum_reports` row via `ReportForumPostAction`. Gestor/
    Admin review `GET /forum/moderation` (own-org rows only, filtered by
    resolving each report `postable()` and reusing
@@ -121,13 +117,14 @@ Gestor direct-delete button, plus flipping `forum_reports.status` to
    `update`/`delete` Policy abilities author use. Independent of whether
    report exist at all.
 
-SPEC-13 (Notifications) exclude "new report" from trigger list (§2.2) on
+Notifications exclude "new report" from the trigger list on
 purpose — new `forum_reports` row silent outside moderation queue itself.
-Do not wire notification for it without separate, deliberate spec change.
+Do not wire notification for it without separate, deliberate change.
 
 ## Incremental `since_id` Polling Replaces Websockets
 
-No broadcasting driver, no Echo, no jQuery. `forum/show.blade.php` render
+No broadcasting driver, no Echo, no jQuery — the forum screens follow the
+Material Bootstrap redesign. `forum/show.blade.php` render
 one `[data-forum-polling]` container carrying `data-fetch-url`
 (`forum-replies.fetch`) and `data-last-id` (`$lastReplyId`, the highest
 reply id rendered server-side). `ForumPolling.js` run one `setInterval`
@@ -180,20 +177,15 @@ detail and the pin-form/stretched-link sibling rule live in
 
 Every Topic/Reply route (`routes/web.php` `courses/{course}/forum/*`
 group) sit behind `['auth', 'student.enrolled']`, not only role
-middleware — RN10 require *active or completed enrollment*, which
+middleware — access require *active or completed enrollment*, which
 `ForumTopicPolicy`/`ForumReplyPolicy::hasCourseAccess()` re-check via
 `$user->hasActiveOrCompletedEnrollment($course)` at Policy layer
 (defense in depth: middleware gate route, Policy gate individual model
 action). Gestor/Admin-only pin/moderation routes use `role:admin|gestor`
 instead, since Gestor/Admin never "enrolled".
 
-## Related Specs
+## Related
 
-- `spec/specs/10-course-discussion-forum.md` — RF22, RF26, RF27, RN08,
-  RN10.
-- `spec/specs/30-course-discussion-forum-and-realtime-polling.md` —
-  Material Bootstrap redesign of the forum screens plus the incremental
-  `since_id` polling contract documented above.
 - `tenancy-architecture` — general org-scoped vs cascade-inherited rule
   this module `forum_topics`/`forum_replies` split follow, and where
   pseudo-polymorphic `forum_post_edits`/`forum_reports` tables get

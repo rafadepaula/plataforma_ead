@@ -256,7 +256,7 @@ never does.
 
 ## Project Note: Testing a "Mail Failure Must Not Roll Back the Transaction" Boundary
 
-Several modules (e.g. SPEC-13 notifications) wrap `->notify()`/
+Several modules (e.g. the notifications module) wrap `->notify()`/
 `Notification::send()` call site in `try/catch (Throwable) { Log::error(...) }`
 so mail transport failure never rolls back DB write already committed, never
 500s request. `Mail::fake()`/`Notification::fake()` cannot exercise this branch
@@ -282,7 +282,7 @@ asserted without `->once()` since called once per recipient in loop).
 
 Some existing tests (e.g. two in `tests/Feature/NotificationTriggersTest.php`)
 fully mock `Log` facade (`Log::shouldReceive(...)`, no fallback) to assert on
-specific log call. `AuditService::log()` (SPEC-15) unconditionally calls
+specific log call. `AuditService::log()` unconditionally calls
 `Log::channel('audit')->info(...)` on every `AuditLog`-observed model mutation
 and every explicit audit call site. So any pre-existing test that fully mocks
 `Log` then exercises code path now also triggering audit write (e.g.

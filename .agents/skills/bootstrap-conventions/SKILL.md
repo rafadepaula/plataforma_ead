@@ -14,12 +14,6 @@ license: MIT
 metadata:
   feature: bootstrap
   role: conventions
-  specs:
-    - spec/front_migration/06-skills-and-agents.md
-    - spec/specs/00-architecture-database-and-guardrails.md
-    - spec/front_redesign/01-direcao-visual-e-tokens.md
-    - spec/front_redesign/02-camada-de-tema-e-build.md
-    - spec/front_redesign/14-contrato-dusk-e-testes.md
 ---
 
 # Bootstrap Conventions
@@ -30,7 +24,7 @@ Todo componente de UI é **componente anônimo** (só `.blade.php`, sem classe P
 
 ```blade
 {{-- resources/views/components/ui/button.blade.php — atualizado na Fase 2 do
-     front_redesign: `tonal`/`success` são valores novos (par
+     redesign: `tonal`/`success` são valores novos (par
      container/on-container e menta), `ghost` ganha borda real via
      `btn-ghost` (a versão antiga sem borda, `btn-link`, violava a regra de
      que nenhum botão fica sem contorno detectável), `danger` supre um ícone
@@ -173,7 +167,7 @@ Uso na tela — gatilho declarativo, zero JS:
 | `<x-layout.*>` | `resources/views/components/layout/` | Peça do chrome da aplicação, singular por página, ciente de `auth()`, `route()`, roles Spatie, `session('active_org_id')`. | Chama `auth()->user()`, `request()->routeIs()` ou `@role` = `layout`. |
 
 - `ui` (26 componentes em `resources/views/components/ui/`, biblioteca fechada
-  desde a Fase 2 do `front_redesign`): `alert`, `avatar`, `badge`, `button`,
+  desde a Fase 2 do redesign): `alert`, `avatar`, `badge`, `button`,
   `card`, `checkbox`, `chip`, `confirm-modal`, `data-table`, `delete-button`,
   `empty-state`, `fab`, `field-stack`, `filter-bar`, `form-actions`, `icon`,
   `input`, `modal`, `pagination`, `progress`, `select`, `stat-card`, `switch`,
@@ -190,7 +184,7 @@ Uso na tela — gatilho declarativo, zero JS:
   `level`; `level` default `'h1'` aceita `"h2"`/`"2"` e cai no padrão fora de
   h1–h6 — as telas do shell de visitante passam `level="h2"` porque o `h1` da
   página já é o do painel institucional), `guest-panel` (painel institucional
-  46%/`col-lg-5` do `layouts/guest.blade.php` — Fase 1 do `front_redesign`;
+  46%/`col-lg-5` do `layouts/guest.blade.php` — Fase 1 do redesign;
   props `tenantName`/`headline`/`lead` (lead também aceito como slot) e
   `brandOnly`, que renderiza só a linha de marca (iniciais + nome) para o topo
   da coluna de formulário abaixo de `lg`, onde o painel não é renderizado; o
@@ -215,13 +209,13 @@ Cada item = motivo de **rejeição** em review. Não é questão de gosto.
 2. **JS artesanal de modal, toast ou dropdown.** Nada de `ModalManager`, `NotificationService` artesanal, `document.addEventListener('click', …)` para abrir menu. Use `bootstrap.Modal`, `bootstrap.Toast`, `bootstrap.Dropdown` ou os `data-bs-*`.
 3. **Classe Tailwind.** `flex`, `grid`, `gap-4`, `text-sm`, `bg-white`, `rounded-lg`, `px-4`, `hidden`, `space-y-*`, `w-full`. Tailwind está morto no projeto e será removido. Cuidado com colisão: `gap-4` e `border` existem nos dois mundos com semântica diferente; `d-none` (Bootstrap) ≠ `hidden`; `w-100` ≠ `w-full`.
 4. **Classe CSS inventada onde existe utility.** Nada de `.mt-large`, `.flex-center`, `.text-muted-custom`. Use `mt-4`, `d-flex align-items-center justify-content-center`, `text-body-secondary`.
-5. **Classe fantasma do sistema antigo.** `.btn-block`, `.btn-icon`, `.dialog`, `.dialog-backdrop`, `.dialog-title`, `.tag-accent`, `.tag-outline`, `.tag-neutral`, `.tag-accent-2`, `.field`, `.input`, `.elev-sm|md|lg`, `.grayscale` (removida em definitivo na Fase 2 do `front_redesign` — a última sobrevivente estava na faixa de mídia de `components/ui/card.blade.php`, substituída por `.ds-pastel-wash`). Nenhuma existe em CSS algum — resíduo. Mapeamento em §4.
+5. **Classe fantasma do sistema antigo.** `.btn-block`, `.btn-icon`, `.dialog`, `.dialog-backdrop`, `.dialog-title`, `.tag-accent`, `.tag-outline`, `.tag-neutral`, `.tag-accent-2`, `.field`, `.input`, `.elev-sm|md|lg`, `.grayscale` (removida em definitivo na Fase 2 do redesign — a última sobrevivente estava na faixa de mídia de `components/ui/card.blade.php`, substituída por `.ds-pastel-wash`). Nenhuma existe em CSS algum — resíduo. Mapeamento em §4.
    **Exceção histórica que virou classe real:** `.btn-ghost` **existe** desde a Fase 2 (`resources/scss/components/_state-layer.scss`) e é a classe correta para `<x-ui.button variant="ghost">` — não é mais fantasma, não confundir com o `.btn-link` que ela substituiu.
-6. **[Fase 0 `front_redesign`] `var(--color-*)` inventado à mão em código novo.** As custom properties de marca vêm de `_ds/plataforma-ead-design-system/tokens/*.css` (fonte de design) e `_bridge.scss` (fonte de implementação Sass) — não crie um terceiro set paralelo. CSS de componente novo consome `var(--*)` dos tokens publicados ou `$variáveis`/`--bs-*` já alimentados pela ponte.
-7. **[Fase 0 `front_redesign`] Hex hardcoded** em view ou SCSS de componente. Só `_bridge.scss` (e os arquivos de `_ds/.../tokens/`) têm literal de cor/raio/sombra — ver `spec/front_redesign/15-plano-de-fases.md` "Critério de saída".
-8. **[Fase 0 `front_redesign`] `border-radius: 0` forçado onde o token pede canto suave.** O mandato mudou: Modernist (canto reto sistêmico, `$enable-rounded: false`) foi **substituído** pelo novo sistema pastel de cantos suaves (`$border-radius: 14px`, botões pílula `999px`). Em tela já migrada para o redesign, zerar radius é a violação — use o valor que vem da ponte. Em tela ainda não migrada, o `border-radius: 0` antigo continua o comportamento visual até a fase de migração daquela tela.
+6. **[Fase 0 do redesign] `var(--color-*)` inventado à mão em código novo.** As custom properties de marca vêm de `_ds/plataforma-ead-design-system/tokens/*.css` (fonte de design) e `_bridge.scss` (fonte de implementação Sass) — não crie um terceiro set paralelo. CSS de componente novo consome `var(--*)` dos tokens publicados ou `$variáveis`/`--bs-*` já alimentados pela ponte.
+7. **[Fase 0 do redesign] Hex hardcoded** em view ou SCSS de componente. Só `_bridge.scss` (e os arquivos de `_ds/.../tokens/`) têm literal de cor/raio/sombra.
+8. **[Fase 0 do redesign] `border-radius: 0` forçado onde o token pede canto suave.** O mandato mudou: Modernist (canto reto sistêmico, `$enable-rounded: false`) foi **substituído** pelo novo sistema pastel de cantos suaves (`$border-radius: 14px`, botões pílula `999px`). Em tela já migrada para o redesign, zerar radius é a violação — use o valor que vem da ponte. Em tela ainda não migrada, o `border-radius: 0` antigo continua o comportamento visual até a fase de migração daquela tela.
 9. **Bootstrap Icons / CDN externo.** Ícone continua Lucide inline via `<x-ui.icon name="..."/>`.
-10. **`!important`** em qualquer classe do projeto. `.org-logo` **não é mais exceção**: desde a Fase 4 do `front_redesign` (`resources/scss/components/_organizations.scss`) é uma classe real, sem `!important`, consumindo só `var(--*)`. Se algum `!important` aparecer em código novo, é violação — não há mais exceção histórica para justificá-lo.
+10. **`!important`** em qualquer classe do projeto. `.org-logo` **não é mais exceção**: desde a Fase 4 do redesign (`resources/scss/components/_organizations.scss`) é uma classe real, sem `!important`, consumindo só `var(--*)`. Se algum `!important` aparecer em código novo, é violação — não há mais exceção histórica para justificá-lo.
 11. **`<table>` sem `.table-responsive`** no wrapper.
 12. **Markup Bootstrap cru em tela** quando existe (ou deveria existir) um `<x-ui.*>` — ver mandato de componentização em `bootstrap-architecture`.
     **Exceção documentada — chip dentro de linha-link:** `<x-ui.chip>` renderiza um `<button>`, e conteúdo interativo não pode ser aninhado dentro de um `<a>`. Em linhas cuja área clicável inteira é uma âncora (`components/classroom/lesson-row.blade.php`, chips "Conteúdo"/"Prova"), o chip fica como `<span class="ds-chip ds-chip-outline|ds-chip-primary ds-chip-plain">` cru, com comentário no próprio arquivo explicando o porquê. Não "componentize" esse span numa varredura de convenções: gera HTML inválido e quebra o alvo de clique da linha.
@@ -376,7 +370,7 @@ Mesma armadilha no espaçamento: a escala do Bootstrap não tem passo de
 32px (`p-4` = 24px, `p-5` = 48px). Quando o design fixa 32px, é classe de
 componente (ou utility `*-Nx` do design system, §7), nunca `p-4 p-md-5`.
 
-## 5.2 Família `.ds-*` da tela de aula (SPEC-28)
+## 5.2 Família `.ds-*` da tela de aula
 
 Definidas em `resources/scss/components/_classroom.scss` (bloco "Player de
 Aula & Formatos Multimídia"), só consomem `var(--*)`:
@@ -458,12 +452,11 @@ Regras:
 
 ## 7. O bloco exato de override SCSS
 
-> **[SUBSTITUÍDO — Fase 0 do `spec/front_redesign/`]** O bloco Modernist
+> **[SUBSTITUÍDO — Fase 0 do redesign]** O bloco Modernist
 > abaixo é **histórico**: descreve a ponte anterior (accent vermelho, canto
 > reto, Archivo). A ponte real hoje é **`resources/scss/_bridge.scss`**,
 > alimentada pelos tokens de `_ds/plataforma-ead-design-system/tokens/*.css`
-> (ver `spec/front_redesign/01-direcao-visual-e-tokens.md` e
-> `bootstrap-architecture`). Pontos que mudam o que você escreve na Blade:
+> (ver `bootstrap-architecture`). Pontos que mudam o que você escreve na Blade:
 >
 > 1. **`$spacers` continua o mapa PADRÃO do Bootstrap** (`0..5`, `$spacer: 1rem`) — `_bridge.scss` não o sobrescreve. `mb-4` vale 1.5rem (24px) como no Bootstrap stock; não existe escala `Nx` custom.
 > 2. **Cantos são suaves, não retos**: `$border-radius: 14px` (não 0), com `$border-radius-sm/-lg/-xl/-pill` próprios por componente (`$card-border-radius: 20px`, `$modal-content-border-radius: 28px`, `$btn-border-radius*: 999px` — botões são pílula). Não zere radius em componente novo.

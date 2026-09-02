@@ -1,8 +1,8 @@
 ---
 name: quizzes-conventions
 description: >
-  Code patterns, snippets, guardrails for Quizzes/Evaluations feature
-  (SPEC-08): single-page quiz-taking form contract, server-stamped
+  Code patterns, snippets, guardrails for Quizzes/Evaluations feature:
+  single-page quiz-taking form contract, server-stamped
   `started_at` via `OpenQuizAttemptAction`, submit-confirmation modal and
   `QuizTaking.js` selector contract,
   `QuizPolicy`/`QuizAttemptPolicy` cascade-authorize conventions,
@@ -15,19 +15,17 @@ license: MIT
 metadata:
   feature: quizzes
   role: conventions
-  specs:
-    - spec/specs/08-quizzes-and-evaluations-engine.md
 ---
 
 # Quizzes Conventions
 
 ## Student Quiz Screen Is Single-Page; `started_at` Is Server-Stamped
 
-`spec/docs/mockups/05-quiz-avaliacao.md` models Aluno quiz screen as
+The original quiz-screen mockup modeled the Aluno quiz screen as
 one-question-per-page with `Anterior`/`Próxima` navigation plus
-per-question POST, but `SubmitQuizAttemptAction` corrects *whole* attempt
-in single pass (SPEC-08 §2) — no "start attempt" button, no
-partial-answer save.
+per-question POST, but `SubmitQuizAttemptAction` corrects the *whole*
+attempt in a single pass — no "start attempt" button, no partial-answer
+save.
 
 The one thing `show()` **does** persist is the clock, and it goes through
 `OpenQuizAttemptAction` (never `QuizAttempt::create()` inline). On a Quiz
@@ -221,11 +219,11 @@ whatever persisted option ids no longer present in submitted `options[]`
 array; everything else present in `options[]` is upsert (matched by
 `options[{i}][id]`, blank for brand-new row).
 
-## `quizzes/edit.blade.php` Is a Two-Column Grid (Material Bootstrap, SPEC-24)
+## `quizzes/edit.blade.php` Is a Two-Column Grid (Material Bootstrap)
 
 Rules form and questions section sit in a Bootstrap `row g-4`: rules
 `x-ui.card` in `col-lg-5` (left), questions header/list in `col-lg-7`
-(right), per `spec/new_ds/DESIGN.md` §4.5. Below `lg` it stacks to a
+(right). Below `lg` it stacks to a
 single full-width column automatically (no bespoke breakpoint CSS) — do
 not reintroduce a fixed-width layout or hardcode desktop-only widths.
 

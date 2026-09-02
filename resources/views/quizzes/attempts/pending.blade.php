@@ -9,7 +9,7 @@
                      so the queue is worked FIFO.
       - route: `GET route('quiz-attempts.pending')`.
 
-    Material Bootstrap refactor (spec/new_ds/DESIGN.md §4.6): header count
+    Material Bootstrap refactor: header count
     chip reuses `$attempts->total()` (the paginator's total, not a fresh
     un-paginated count query), avatar keeps the shared `x-ui.avatar`
     "sm" (32px) size — the design mock asks for 36px but the avatar

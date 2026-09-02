@@ -1,28 +1,25 @@
 ---
 name: navigation-architecture
 description: >
-  Dynamic Navigation Menu & Access-Control domain (SPEC-17):
+  Dynamic Navigation Menu & Access-Control domain:
   `NavigationRegistry` -> `NavigationService` -> `NavigationComposer`
   pipeline that killed hardcoded Blade sidebar/topbar. Three-gate access
   filter (roles, permissions, route resolver) = menu/route-middleware
-  parity (RN40). Active-pattern sub-route highlight (RF37). Org-scoped
-  pending badges (RF38, RN41). Contextual Aluno forum URL (RF39). Use when
+  parity. Active-pattern sub-route highlight. Org-scoped
+  pending badges. Contextual Aluno forum URL. Use when
   adding/changing sidebar or topbar entry, wiring role-gated screen into
   menu, auditing link/permission parity.
 license: MIT
 metadata:
   feature: navigation
   role: architecture
-  specs:
-    - spec/specs/17-dynamic-navigation-menu-and-access-control.md
-    - spec/specs/00-architecture-database-and-guardrails.md
 ---
 
 # Navigation Architecture
 
 ## Overview
 
-SPEC-17 killed imperative role-guarded Blade sidebar/topbar. Old code hardcoded route names that did not exist (`admin.students.index`, `admin.courses.index`, `student.forum.index`) and degraded to dead `#` links. New pipeline is declarative and centralized:
+Dynamic navigation replaced the imperative role-guarded Blade sidebar/topbar. Old code hardcoded route names that did not exist (`admin.students.index`, `admin.courses.index`, `student.forum.index`) and degraded to dead `#` links. New pipeline is declarative and centralized:
 
 1. **`App\Services\Navigation\NavigationRegistry`** — single read-only declaration of every menu item. `NavigationItem` value object: `key`, `label`, `route`, `activePatterns`, `icon`, `roles`, `permissions`, `section`, optional `routeResolver`/`badgeCallback`.
 2. **`App\Services\Navigation\NavigationService`** — stateless filter. Reads registry, runs three-gate pipeline per item for acting user, resolves URLs and badges, drops empty sections, returns `NavigationSection` list.
@@ -30,30 +27,30 @@ SPEC-17 killed imperative role-guarded Blade sidebar/topbar. Old code hardcoded 
 
 Blade only does `@foreach($navigationSections as $section)` then `@foreach($section->items as $item)`. **No role check, no `Route::has()` guard, no `route()` call in Blade.** Adding them back brings dead links and link leaks straight back.
 
-## Three-Gate Access Pipeline (RN38/RN40)
+## Three-Gate Access Pipeline
 
 `NavigationService::resolve()` hides item unless ALL gates pass:
 
 1. **`roles` allow-list** — `passesRoleGate()`: non-empty array intersected with `$user->hasRole(...)`. Empty array = any authenticated user. Mirrors route's own `role:admin|gestor` / `role:aluno` middleware.
 2. **`permissions`** — `passesPermissionGate()`: optional `$user->can(...)` checks, AND-ed. Empty = no extra gate.
-3. **`routeResolver` / `Route::has()`** — `resolveUrl()`: resolver closure's non-null return = URL; null hides item (RF39 forum link). No resolver: `route` name MUST be registered or item hides (RF36 — never dead `#`).
+3. **`routeResolver` / `Route::has()`** — `resolveUrl()`: resolver closure's non-null return = URL; null hides item (forum link). No resolver: `route` name MUST be registered or item hides — never dead `#`.
 
-Parity rule (RN40): `roles` on a `NavigationItem` MUST match `role:` middleware of its route. Route 403s for a role, that role stays out of `roles`.
+Parity rule: `roles` on a `NavigationItem` MUST match `role:` middleware of its route. Route 403s for a role, that role stays out of `roles`.
 
-## Active-Pattern Highlight (RF37)
+## Active-Pattern Highlight
 
 Item declares `activePatterns` — `routeIs()` wildcards. Parent "Alunos & Usuários" uses `['users.*']`, stays highlighted on `users.create`/`users.edit`. `NavigationService::isActive()` reads acting `Request` (constructor-injected), true if any pattern matches. **Do not** narrow pattern to single route name — sub-pages lose parent highlight.
 
-## Org-Scoped Badges (RF38/RN41)
+## Org-Scoped Badges
 
 `NavigationBadges` holds two pending-count resolvers, wired via `badgeCallback`:
 
 - **`pendingEssayCount()`** — `QuizAttempt` where `status = awaiting_manual_grading` AND `whereHas('quiz.lesson.module.course')`. `whereHas` triggers `Course`'s `OrgScope`, so count is org-scoped for Gestor and follows `session('active_org_id')` for Admin impersonating Org.
-- **`pendingForumReportCount()`** — `ForumReport` has **no** `OrgScope` (pseudo-polymorphic, no `org_id` column). Scope by resolving each pending report's `postable()`, keep only those the user can `view` via `ForumTopicPolicy`/`ForumReplyPolicy` same-org gate — same gate `ForumModerationController::index()` uses on the linked page. **Never** use bare `ForumReport::where('status','pending')->count()` — cross-tenant leak (original RN41 violation).
+- **`pendingForumReportCount()`** — `ForumReport` has **no** `OrgScope` (pseudo-polymorphic, no `org_id` column). Scope by resolving each pending report's `postable()`, keep only those the user can `view` via `ForumTopicPolicy`/`ForumReplyPolicy` same-org gate — same gate `ForumModerationController::index()` uses on the linked page. **Never** use bare `ForumReport::where('status','pending')->count()` — cross-tenant leak.
 
 Zero count renders no badge (`resolveBadge()` returns null).
 
-## Contextual Aluno Forum URL (RF39)
+## Contextual Aluno Forum URL
 
 Forum lives at `courses/{course}/forum` — no canonical URL. `NavigationRegistry::resolveForumRoute()` picks most recently updated active enrollment's course, links to its `forum.index`. No active enrollment = `null`, item hidden. `route` field on resolver-driven item is inert; resolver is sole href source.
 

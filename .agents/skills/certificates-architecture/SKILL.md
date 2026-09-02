@@ -1,7 +1,7 @@
 ---
 name: certificates-architecture
 description: >
-  Certificates & Public Verification domain (SPEC-09):
+  Certificates & Public Verification domain:
   certificates/course_completion_rules schema, cascade-inherited (no
   `OrgScope`) tenancy of both tables, `IssueCertificateAction`
   eligibility engine (AND across all 3 `rule_type`s), SHA-256
@@ -14,27 +14,25 @@ license: MIT
 metadata:
   feature: certificates
   role: architecture
-  specs:
-    - spec/specs/09-certificates-and-public-verification.md
-    - spec/specs/00-architecture-database-and-guardrails.md
 ---
 
 # Certificates Architecture
 
 ## Overview
 
-RF10 lets Gestor configure `course_completion_rules` on Course. RF16
-requires resulting certificate to be branded PDF with embedded QR code.
-RF17 exposes fully public, unauthenticated, cross-tenant
-`/validar-certificado/{hash?}` route — one deliberate crack in this
-platform's otherwise strict per-Organization tenancy, because certificate
-must be verifiable by anyone (employer, another school) who was never
-user of issuing Organization. RF25 adds Gestor/Admin revocation. None of
+Gestor configures `course_completion_rules` on Course. The resulting
+certificate is a branded PDF with embedded QR code. A fully public,
+unauthenticated, cross-tenant
+`/validar-certificado/{hash?}` route exposes verification — one deliberate
+crack in this platform's otherwise strict per-Organization tenancy, because
+certificate must be verifiable by anyone (employer, another school) who was
+never user of issuing Organization. Gestor/Admin can revoke certificates.
+None of
 this feature ever mutates `courses`/`modules`/`lessons`/`course_user` — it
 only *reads* them (plus `quiz_attempts` for `min_quiz_score` rules) and
 writes `certificates` rows.
 
-## Schema (SPEC-00 §2.1.14–2.1.15)
+## Schema
 
 | Table | Key columns | Tenancy |
 | --- | --- | --- |
@@ -50,7 +48,7 @@ revoked (`revoked_at`/`revoked_by`/`revoke_reason`). See
 
 ## The Eligibility Engine (`IssueCertificateAction`)
 
-Triggered by Listener on `CourseCompletedByStudent` (SPEC-07 §1.2, fired
+Triggered by Listener on `CourseCompletedByStudent` (fired
 by `RecalculateCourseProgress` when `course_user.status` transitions to
 `completed`), executed **synchronously** in same request
 (`QUEUE_CONNECTION=sync`, no job) — whole eligibility check and
@@ -67,7 +65,7 @@ Rules exist: **every** row must pass (AND, never OR):
 | `rule_type` | Eligible when |
 | --- | --- |
 | `all_lessons` | `course_user.progress_percentage >= required_percentage` (default 100) |
-| `min_quiz_score` | `User::bestQuizScoreFor(Quiz::find($rule->target_id))` (SPEC-08's best-attempt lookup, reused, never re-derived) `>= required_percentage` |
+| `min_quiz_score` | `User::bestQuizScoreFor(Quiz::find($rule->target_id))` (the quizzes domain's best-attempt lookup, reused, never re-derived) `>= required_percentage` |
 | `specific_module` | every `Lesson` of `Module::find($rule->target_id)` has a `LessonProgress.is_completed = true` row for this user |
 
 `target_id` pointing at soft-deleted or missing Module/Quiz is **not
@@ -85,9 +83,9 @@ listener throwing on re-fired event would be 500-class bug on
 otherwise-benign re-completion. Unique key has no `revoked_at` component,
 so **revocation is terminal state per enrollment**: once revoked, pair can
 never receive fresh row, even if student re-completes course after
-reopened attempt. Explicit, current-version limitation (see SPEC-09 §1.1's
-own note) — do not "fix" it by adding new row or by un-revoking on
-re-completion without deliberate, separately-specified migration.
+reopened attempt. Explicit, current-version limitation — do not "fix" it
+by adding new row or by un-revoking on re-completion without a deliberate,
+separately-approved migration.
 
 ## The Public Verification Route Is the One Deliberately Unscoped Boundary
 
@@ -108,11 +106,11 @@ it unreachable. Both
 `OrgScope` on `Course` would otherwise silently filter out Course
 belonging to Org current viewer (if any) isn't scoped to. See
 `tenancy-architecture` for general cascade-inherited-model rule this route
-is the one deliberate, spec-mandated exception to.
+is the one deliberate exception to.
 
 Hash that never existed 404s. Hash resolving to **revoked** certificate
 must still return `200 OK` — public auditability of revocation is
-intentional (SPEC-09 §2), so `PublicCertificateController` must
+intentional, so `PublicCertificateController` must
 distinguish "row not found" (404) from "row found, `revoked_at` set"
 (200, revoked-state view) as two genuinely different code paths, never
 conflate them.

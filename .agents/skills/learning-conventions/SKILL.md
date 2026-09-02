@@ -1,8 +1,8 @@
 ---
 name: learning-conventions
 description: >
-  Concrete code patterns for Student Learning & Progress feature
-  (SPEC-07): `MarkLessonCompleteAction` usage, `LessonProgressController`
+  Concrete code patterns for Student Learning & Progress feature:
+  `MarkLessonCompleteAction` usage, `LessonProgressController`
   422-shape-guard pattern, `withoutGlobalScopes()` Course resolution,
   `LessonPlayer.js` video-polling/manual-completion conventions. Use
   whenever write controller, action, or JS module touching
@@ -12,10 +12,6 @@ license: MIT
 metadata:
   feature: learning
   role: conventions
-  specs:
-    - spec/specs/07-student-learning-experience-and-progress.md
-    - spec/specs/26-student-course-catalog-meus-cursos.md
-    - spec/specs/27-classroom-overview-and-progression.md
 ---
 
 # Learning Conventions
@@ -48,7 +44,7 @@ calling Action. Do not route that branch through
 
 Both `LessonProgressController` actions validate lesson **shape** before
 touching `lesson_progress`, checking `type === 'quiz'` first (quiz
-completion reserved for SPEC-08's `SubmitQuizAttemptAction`), so malformed
+completion goes through `SubmitQuizAttemptAction`), so malformed
 data carrying both `type=quiz` and `youtube_url` still 422s as quiz. The
 video half of the guard tests the **resolved** `youtube_video_id`
 accessor, never the raw `youtube_url` column:
@@ -188,14 +184,14 @@ Bootstrap's Reboot emits `[hidden] { display: none !important }`, and an
 author rule without `!important` cannot beat that — so do not reintroduce
 either approach. Never rename/replace `.d-none` with another hide utility
 on these two selectors without updating `LessonPlayer.js` in lockstep.
-Since SPEC-28 the markup itself lives in exactly one file —
+Since the classroom component pass, the markup itself lives in exactly one file —
 `resources/views/components/classroom/completion-bar.blade.php` — so this
 rule has a single enforcement point, and
 `tests/Feature/LessonDispatchOrderTest.php` asserts, on rendered HTML, that
 neither control ever carries a ` hidden` attribute and that `isCompleted`
 flips `.d-none` from the badge to the button.
 
-## SPEC-28 `<x-classroom.completion-bar>`: One Emitter for Two Frozen Selectors
+## `<x-classroom.completion-bar>`: One Emitter for Two Frozen Selectors
 
 `resources/views/components/classroom/completion-bar.blade.php` takes **4**
 props (`lesson`, `isCompleted` = false, `manual` = true,
@@ -238,7 +234,7 @@ Do not re-inline this markup into a partial: `lesson-completed-badge` and
 `DuskSelectorContractTest` (and gives `LessonPlayer.js` two nodes to
 toggle).
 
-## SPEC-28 Lesson Partials: `.ds-*` Classes, Suffixed Media Selectors, Escaped Text
+## Classroom Lesson Partials: `.ds-*` Classes, Suffixed Media Selectors, Escaped Text
 
 - The content card in `classroom/lesson.blade.php` is `card ds-surface
   border-0 shadow-sm ds-lesson-card` — **no `rounded-4`**. `_bridge.scss`
@@ -263,7 +259,7 @@ toggle).
   `dusk="lesson-empty-{id}"` note plus the completion bar, never an empty
   card.
 
-## SPEC-26 `<x-course.card>`: 4 Sub-Components, One View Model, No Extra Query
+## `<x-course.card>`: 4 Sub-Components, One View Model, No Extra Query
 
 The "Meus Cursos" card is a shell (`resources/views/components/course/
 card.blade.php`) that forwards `$attributes` (the `dusk="course-card-{id}"`
@@ -289,7 +285,7 @@ Keep that branching inside `card-footer.blade.php` — do not move it into
 the controller's view model, which only supplies `ctaLabel`/`ctaHref`, not
 button styling.
 
-## SPEC-26 `resolveResumeLesson()`: One Algorithm, Two Callers
+## `resolveResumeLesson()`: One Algorithm, Two Callers
 
 `StudentCourseController::resumeLessonFor()` is an **in-memory port** of
 `Course::resumeLessonFor(User $user)` — it builds `$publishedLessons` and
@@ -303,7 +299,7 @@ static `Course::resolveResumeLesson()`. Never re-implement the
 "most-recently-touched, or next-incomplete-if-already-done" rule at either
 call site directly; extend `resolveResumeLesson()` so both stay in sync.
 
-## SPEC-27 `<x-classroom.*>`: One Prop Per Value, State Comes From the Controller
+## `<x-classroom.*>`: One Prop Per Value, State Comes From the Controller
 
 The 5 classroom-overview components (`module`, `lesson-row`,
 `next-lesson-card`, `progress-card`, `certificate-card`) each accept
@@ -323,7 +319,7 @@ Consequences to preserve when editing them:
   `col-lg-4` sidebar SECOND, so the sidebar stacks below the track on
   <1024px with no CSS ordering trick. Never reorder the two columns.
 - The `<li>` carries `dusk="lesson-{id}"` and the `<a>` inside it carries
-  `dusk="open-lesson-{id}"`. This split is the E2E contract (SPEC-27 §3):
+  `dusk="open-lesson-{id}"`. This split is the E2E contract:
   never merge them onto one element.
 - The empty state is emitted in exactly ONE place — the
   `<x-ui.empty-state dusk="no-modules">` branch in `show.blade.php`,
@@ -333,9 +329,9 @@ Consequences to preserve when editing them:
 - `certificate-card` renders a readable 12-char uppercase prefix of
   `validation_hash`, not the raw 64-char hash (which overflows the 4-col
   card). The full hash stays the only value used by the public
-  verification flow (SPEC-09) — the prefix is display-only.
+  verification flow — the prefix is display-only.
 
-## SPEC-27 Chips Inside the Lesson Anchor: The Deliberate `<span>` Exception
+## Chips Inside the Lesson Anchor: The Deliberate `<span>` Exception
 
 `lesson-row.blade.php` renders its "Conteúdo"/"Prova" chip as a raw
 `<span class="ds-chip ds-chip-outline|ds-chip-primary ds-chip-plain">`

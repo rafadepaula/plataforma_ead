@@ -1,10 +1,10 @@
 ---
 name: profile-architecture
 description: >
-  User Profile Self-Service domain (SPEC-18/UC02): why
+  User Profile Self-Service domain: why
   `ProfileController`/`PasswordController` act only on `$request->user()`,
   no `{user}` route parameter, no Policy. How `org_id`/`status` stay
-  immutable through this endpoint even under Impersonate Org (RN12).
+  immutable through this endpoint even under Impersonate Org.
   `Auth::logoutOtherDevices()` session-invalidation contract. Why
   `App\Rules\Cpf` is shared, uniformly applied Rule, not profile-only
   validation. Use when designing or reviewing feature touching self-service
@@ -14,19 +14,16 @@ license: MIT
 metadata:
   feature: profile
   role: architecture
-  specs:
-    - spec/specs/18-user-profile-management.md
-    - spec/docs/usecases/UC02-gestao-de-perfil-do-usuario.md
 ---
 
 # Profile Architecture
 
 ## Overview
 
-UC02 closes gap open since project first auth work: authenticated user (any
+This feature closes the gap open since project first auth work: authenticated user (any
 role) had no way to change own name, e-mail, CPF, or password. Only
-Gestor/Admin editing them through `UserController` (RF04) could, which is
-unacceptable for password. SPEC-18 adds two controllers, two Form Requests,
+Gestor/Admin editing them through `UserController` could, which is
+unacceptable for password. The feature adds two controllers, two Form Requests,
 one shared validation Rule, two-block Blade screen. No migration. Every
 column already exists on `users`.
 
@@ -53,8 +50,8 @@ public function update(ProfileUpdateRequest $request): RedirectResponse
 Neither `ProfileUpdateRequest` nor `PasswordUpdateRequest` declares `org_id`
 or `status` rule, and controllers only ever pass explicit allow-list
 (`only(['name', 'email', 'cpf'])`) to `update()`. Same defensive pattern
-`UpdateUserRequest`/`UserController` use. Matters under RN12 (Impersonate
-Org): Admin impersonating Org and visiting `/profile` edits own **global**
+`UpdateUserRequest`/`UserController` use. Matters under Impersonate
+Org: Admin impersonating Org and visiting `/profile` edits own **global**
 Admin row, never impersonated Org data. Controller never reads or writes
 `org_id`/`session('active_org_id')` at all, so impersonation state is
 irrelevant to this feature, not something it defends against explicitly.
@@ -72,7 +69,7 @@ session password.
 
 ## `App\Rules\Cpf` Is Shared Primitive, Not Profile-Only Rule
 
-RN17 requires uniform CPF checksum validation everywhere CPF accepted, not
+CPF checksum validation must be uniform everywhere CPF accepted, not
 just here. `App\Rules\Cpf` is pure, DB-free `ValidationRule` (mod-11
 checksum + identical-digit-sequence rejection) reused by
 `ProfileUpdateRequest`, `StoreUserRequest`, `UpdateUserRequest`,
@@ -89,4 +86,4 @@ Project has no `MustVerifyEmail` flow (commented out on `User`) and no
 verification-link infrastructure anywhere. Changing `email` here
 deliberately leaves `email_verified_at` untouched. Wiring verification only
 for this one entry point would create orphaned, half-built flow. If e-mail
-re-verification ever wanted, it is new use case, not extension of this one.
+re-verification ever wanted, it is a new feature, not extension of this one.

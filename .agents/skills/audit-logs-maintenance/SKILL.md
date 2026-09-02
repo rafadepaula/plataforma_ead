@@ -1,8 +1,8 @@
 ---
 name: audit-logs-maintenance
 description: >
-  Debug, test, edge-case guide for System Audit Logging & Monitoring
-  (SPEC-15): mandatory PHPUnit/Dusk files, `org_id`-null /
+  Debug, test, edge-case guide for System Audit Logging & Monitoring:
+  mandatory PHPUnit/Dusk files, `org_id`-null /
   `UnresolvedOrgContextException` / prune-scope failure modes, retention
   config, Dusk gotchas for diff modal. Use when `AuditLogTest` or
   `AuditLogUiTest` fails, guest login-failure 500s instead of logging,
@@ -12,15 +12,13 @@ license: MIT
 metadata:
   feature: audit-logs
   role: maintenance
-  specs:
-    - spec/specs/15-system-audit-logging-and-monitoring.md
 ---
 
 # Audit Logs Maintenance
 
 ## Mandatory Test Coverage
 
-- `tests/Feature/AuditLogTest.php` — `AuditableTrait` firing on `created`/`updated`/`deleted` with redaction; `AuditService` dual-writing DB + `audit` Monolog channel; 4 auth listeners firing with `password: '[REDACTED]'`; `OrgScope` isolation on `index()` (Gestor own Org only, Admin all); **no** `UnresolvedOrgContextException` on null-org write (guest `login.failed`); every spec §3 critical-action event (`csv.import`, `essay.graded`, `certificate.issued`/`.revoked`, `impersonate.start`/`.stop`, `content.deleted`, `user.status_changed`) with documented payload; `audit-logs:prune` deleting only rows older than `retention_days` and bypassing `OrgScope`; `index()` filters (date range, event category, user search, org) scoped right; CSV export streaming full filtered set.
+- `tests/Feature/AuditLogTest.php` — `AuditableTrait` firing on `created`/`updated`/`deleted` with redaction; `AuditService` dual-writing DB + `audit` Monolog channel; 4 auth listeners firing with `password: '[REDACTED]'`; `OrgScope` isolation on `index()` (Gestor own Org only, Admin all); **no** `UnresolvedOrgContextException` on null-org write (guest `login.failed`); every documented critical-action event (`csv.import`, `essay.graded`, `certificate.issued`/`.revoked`, `impersonate.start`/`.stop`, `content.deleted`, `user.status_changed`) with documented payload; `audit-logs:prune` deleting only rows older than `retention_days` and bypassing `OrgScope`; `index()` filters (date range, event category, user search, org) scoped right; CSV export streaming full filtered set.
 - `tests/Browser/AuditLogUiTest.php` (Dusk) — Admin and Gestor loading their screens, filtering, opening diff modal and seeing old/new JSON, paginating, CSV export, Gestor never seeing another Org's rows or the Org dropdown.
 
 Run narrowest first:
@@ -54,18 +52,18 @@ Dusk classes declare no DB trait — `DatabaseTruncation` inherited from `Tests\
 
 ## Open Questions
 
-From SPEC-15 tech-refine. Not resolved by this bucket:
+Not yet resolved:
 
-1. **`csv.import` granularity.** `UserImportService::importChunk()` runs once per 50-row browser chunk. Spec payload (`total_processed`, `file_name`) implies one event per logical import — needs an import-session/finalization step not yet designed.
+1. **`csv.import` granularity.** `UserImportService::importChunk()` runs once per 50-row browser chunk. The documented payload (`total_processed`, `file_name`) implies one event per logical import — needs an import-session/finalization step not yet designed.
 2. **`password.reset` scope.** Only completed reset (`NewPasswordController`'s `PasswordReset` event), or also request stage (`PasswordResetLinkController::store()`, which fires no stock Illuminate event today)?
-3. **Exact "Mutação Geral" model list.** Spec §4.1 names 7 models plus "etc.". Confirm whether `InvitationLink`, `ForumTopic`, `SystemSetting`, `HelpArticle` are in scope before treating list as closed.
-4. **Event-category to event-name mapping for RF33 dropdown.** 3 labels named in spec §5, no per-category enum given. The 3-key array in `audit-logs-conventions` is a working assumption, not settled.
+3. **Exact "Mutação Geral" model list.** The documented list names 7 models plus "etc.". Confirm whether `InvitationLink`, `ForumTopic`, `SystemSetting`, `HelpArticle` are in scope before treating list as closed.
+4. **Event-category to event-name mapping for the filter dropdown.** 3 labels named, no per-category enum given. The 3-key array in `audit-logs-conventions` is a working assumption, not settled.
 
 ---
 
 ## E2E Coverage Lives in Lifecycle Chains
 
-`tests/Browser/` groups by **user journey (lifecycle chain)** — one method drives create, edit, state change, delete, consequence. Not by module, spec, or use case.
+`tests/Browser/` groups by **user journey (lifecycle chain)** — one method drives create, edit, state change, delete, consequence. Not by module or feature.
 
 - **Find coverage**: chain methods may sit in a file named after another module when the journey crosses boundaries. Search `grep -rn "<route name|dusk selector>" tests/Browser/`, not by file name. Missing per-module file is **not** a gap.
 - **Add coverage**: extend the journey's chain with a numbered step carrying UI **and** DB assertion. New method only for independent negatives (403, cross-tenant, other actor). New file only for genuinely new journey.

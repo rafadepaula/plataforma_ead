@@ -15,12 +15,6 @@ license: MIT
 metadata:
   feature: bootstrap
   role: maintenance
-  specs:
-    - spec/front_migration/06-skills-and-agents.md
-    - spec/specs/00-architecture-database-and-guardrails.md
-    - spec/front_redesign/01-direcao-visual-e-tokens.md
-    - spec/front_redesign/02-camada-de-tema-e-build.md
-    - spec/front_redesign/14-contrato-dusk-e-testes.md
 ---
 
 # Bootstrap Maintenance
@@ -184,7 +178,7 @@ Fim de fase (não a cada tela): `vendor/bin/sail artisan dusk` completo.
   3. Modal renderizado **dentro** de container com `transform`, `filter` ou
      `overflow: hidden` — cria containing block, quebra `position: fixed`.
      (A antiga `.grayscale` fazia `filter` e era o exemplo clássico; foi
-     removida do projeto na Fase 2 do `front_redesign`, substituída por
+     removida do projeto, substituída por
      `.ds-pastel-wash` — que usa `background: linear-gradient(...)`, não
      `filter`, então não sofre mais deste bug. O guardrail continua valendo
      para qualquer outra classe de camada 3 que aplique `transform`/`filter`
@@ -282,10 +276,10 @@ Fim de fase (não a cada tela): `vendor/bin/sail artisan dusk` completo.
 - **Verificação:** `vendor/bin/sail artisan test --filter=CertificateEligibilityTest`
   e Dusk `CertificateVerificationTest`; inspeção visual, gerar PDF e abrir.
 
-### 3.7 [SUBSTITUÍDO — Fase 0 `front_redesign`] Radius indo para 0 "sozinho"
+### 3.7 [SUBSTITUÍDO] Radius indo para 0 "sozinho"
 
 - Esta seção descrevia o mandato Modernist antigo (canto reto, `$enable-rounded: false`).
-  **Invertido**: o sistema atual (`spec/front_redesign/01-direcao-visual-e-tokens.md`)
+  **Invertido**: o sistema atual
   quer canto **suave** (`$border-radius: 14px`, botões pílula `999px`), vindo
   de `_bridge.scss`.
 - **Sintoma agora:** elemento renderiza com canto reto (`0px`) numa tela já
@@ -297,7 +291,7 @@ Fim de fase (não a cada tela): `vendor/bin/sail artisan dusk` completo.
 - **Solução:** conferir ordem dos 4 imports de `app.scss` (tokens → `bridge`
   → `bootstrap` → `components/index`, ver `bootstrap-architecture`); nunca
   hardcodar radius em componente — deixar a variável Sass da ponte resolver.
-- Em tela **ainda não migrada** (Fases 1–8 pendentes), o canto reto antigo é
+- Em tela **ainda não migrada**, o canto reto antigo é
   esperado até a migração daquela tela — não é regressão.
 
 ### 3.8 Fonte errada (não é Nunito Sans)
@@ -308,7 +302,7 @@ Fim de fase (não a cada tela): `vendor/bin/sail artisan dusk` completo.
   Fonts `<link>` de Nunito Sans ausente do layout.
 - **Nota histórica:** a fonte antiga era Archivo self-hosted
   (`public/fonts/archivo/*.woff2`); esse diretório e todo `@font-face`
-  específico foram **removidos** na Fase 0 do redesign — não recriar.
+  específico foram **removidos** no redesign — não recriar.
 - **Solução:** conferir `$font-family-base` em `_bridge.scss` e a tag de
   import da fonte no `<head>`.
 
@@ -316,7 +310,7 @@ Fim de fase (não a cada tela): `vendor/bin/sail artisan dusk` completo.
 
 - **Sintoma:** botão primário no azul stock do Bootstrap, ou alerta/badge
   vermelho/amarelo puro (nunca deveria — vermelho, laranja e amarelo são
-  **proibidos** no sistema, ver doc 01).
+  **proibidos** no sistema).
 - **Causa:** `_bridge.scss` importado **depois** de `bootstrap/scss/bootstrap`
   em `app.scss` (variáveis `!default` já resolveram); ou só `$danger`/`$warning`
   foram remapeados e `$red`/`$orange`/`$yellow` de base ficaram no padrão do
@@ -326,7 +320,7 @@ Fim de fase (não a cada tela): `vendor/bin/sail artisan dusk` completo.
   Confirmar que `_bridge.scss` remapeia `$red`/`$orange`/`$yellow` também,
   não só `$danger`/`$warning`.
 
-### 3.10b [Fase 1 `front_redesign`] Classe com cara de utility mas sem CSS nenhum por trás
+### 3.10b Classe com cara de utility mas sem CSS nenhum por trás
 
 - **Sintoma:** elemento renderiza sem estilo algum (não é "canto reto",
   simplesmente **nenhuma** regra bate) mesmo depois de build fresco; a
@@ -338,7 +332,7 @@ Fim de fase (não a cada tela): `vendor/bin/sail artisan dusk` completo.
   **nunca existiram** em nenhum `.scss` — igual às classes fantasma do
   Modernist, só que sem estar na lista fechada porque foram inventadas
   depois. Achadas ao migrar `notifications-bell.blade.php` e
-  `guest.blade.php` na Fase 1.
+  `guest.blade.php`.
 - **Solução:** não reusar uma classe só porque ela já aparece em outra
   Blade — confirmar que existe em `resources/scss/components/*.scss`,
   `_bridge.scss`, ou é utility real do Bootstrap
@@ -357,7 +351,7 @@ Fim de fase (não a cada tela): `vendor/bin/sail artisan dusk` completo.
 - **Solução:** rodar diff de `dusk=` do §2 passo 3; garantir cada valor de
   `dusk` único por página.
 
-### 3.11 [Fase 8 `front_redesign`] Cluster direito da app bar estoura em 320–375px
+### 3.11 Cluster direito da app bar estoura em 320–375px
 
 - **Sintoma:** `document.body.scrollWidth > window.innerWidth` em qualquer
   tela autenticada abaixo de ~450px, mesmo em telas que não têm tabela nem
@@ -378,14 +372,14 @@ Fim de fase (não a cada tela): `vendor/bin/sail artisan dusk` completo.
   (compara `scrollWidth`/`innerWidth` a 375px nas telas do Aluno) — rode-os
   depois de qualquer mudança na topbar ou no drawer.
 
-### 3.12 [Fase 8 `front_redesign`] `prefers-reduced-motion` — escopo fechado
+### 3.12 `prefers-reduced-motion` — escopo fechado
 
 - **Só** `.modal.fade .modal-dialog` e `.offcanvas.fade` (o drawer mobile)
   perdem transição/transform sob `@media (prefers-reduced-motion: reduce)`
   (`_reduced-motion.scss`). **Não** generalize para outros componentes
-  animados (dropdown, toast, `.ds-state-layer`, `collapse`) — o doc 13 pede
+  animados (dropdown, toast, `.ds-state-layer`, `collapse`) — a regra pede
   redução só nesses dois, não "desligar toda animação do site". Se um review
-  pedir para ampliar o escopo, é sinal de leitura errada do doc, não de
+  pedir para ampliar o escopo, é sinal de leitura errada da regra, não de
   lacuna real.
 
 ---
@@ -400,16 +394,16 @@ Marque tudo antes de considerar tela concluída:
 - [ ] `diff` dos `dusk="..."` antes/depois vazio (ou divergência justificada por
       escrito no receipt).
 - [ ] Nenhum markup Bootstrap cru que deveria ser `<x-ui.*>`.
-- [ ] **[Fase 0+ `front_redesign`]** Canto suave visualmente em botões
+- [ ] Canto suave visualmente em botões
       (pílula), cards (`20px`), inputs (`14px`), modais (`28px`), badges —
       **não** `border-radius: 0` (mandato antigo, substituído).
 - [ ] Fonte Nunito Sans; sem resíduo de Archivo.
 - [ ] Primário `--blue-600 #4c6fe7`; nenhum vermelho/laranja/amarelo puro em
-      elemento novo (proibidos no sistema — ver doc 01 do redesign).
+      elemento novo (proibidos no sistema).
 - [ ] Faixas de mídia (curso/pessoa) usam `.ds-pastel-wash` — **não**
-      `.grayscale`, que foi removida do projeto inteiro na Fase 2 do
-      `front_redesign`; logo da organização com `.org-logo`, real desde a
-      Fase 4 (`resources/scss/components/_organizations.scss`), não mais
+      `.grayscale`, que foi removida do projeto inteiro;
+      logo da organização com `.org-logo`
+      (`resources/scss/components/_organizations.scss`), não mais
       isenta da varredura de classe fantasma.
 - [ ] Formulários: cada campo com `<label for>`; erros via `.is-invalid` +
       `.invalid-feedback`; `dusk="error-{campo}"` presente.
@@ -422,16 +416,16 @@ Marque tudo antes de considerar tela concluída:
       sem `display:none`/`aria-hidden`; rótulo `::before` visível.
 - [ ] Máximo 3 ações visíveis. Quarta+ no dropdown “Mais”, com id único,
       `aria-label`, `aria-labelledby`, ArrowDown e Escape funcionais.
-- [ ] **[Fase 8]** Sem scroll horizontal em 320/375/768/1024/1440px de
+- [ ] Sem scroll horizontal em 320/375/768/1024/1440px de
       largura (`document.body.scrollWidth === window.innerWidth`).
-- [ ] **[Fase 8]** Todo controle interativo ≥ 48px de alvo de toque
+- [ ] Todo controle interativo ≥ 48px de alvo de toque
       (`--touch-min`); exceção única: `<x-ui.button size="sm">` (40px)
       **dentro** de `<tr>` de tabela.
-- [ ] **[Fase 8]** Cor nunca é o único sinal: status tem rótulo em texto além
+- [ ] Cor nunca é o único sinal: status tem rótulo em texto além
       do chip; ação destrutiva tem ícone **e** palavra.
 - [ ] `vendor/bin/sail npm run build && vendor/bin/sail artisan dusk --filter=<Teste>` verde.
 - [ ] `vendor/bin/sail bin pint --dirty --format agent` limpo (se tocou PHP).
-- [ ] `<x-help-button>` da tela continua presente e funcional (RF12/RN05).
+- [ ] `<x-help-button>` da tela continua presente e funcional.
 
 ## 5. Comandos de auditoria global (fim de fase)
 
@@ -439,7 +433,7 @@ Marque tudo antes de considerar tela concluída:
 # style= inline restantes (alvo: 0, exceto certificates/pdf.blade.php)
 grep -rn 'style="' resources/views --include='*.blade.php' | grep -vc 'certificates/pdf'
 
-# classes fantasma restantes (btn-ghost NÃO entra aqui — é classe real desde a Fase 2, ver _state-layer.scss)
+# classes fantasma restantes (btn-ghost NÃO entra aqui — é classe real, ver _state-layer.scss)
 grep -rnE 'btn-block|btn-icon|dialog-backdrop|tag-(accent|outline|neutral)|elev-(sm|md|lg)|\bgrayscale\b' resources/views
 
 # resíduo Tailwind
@@ -463,9 +457,9 @@ vendor/bin/sail npm run build && vendor/bin/sail artisan dusk
 vendor/bin/sail artisan test --compact
 ```
 
-### 5.1 [Fase 0 `front_redesign`] Testes de regressão automática do tema
+### 5.1 Testes de regressão automática do tema
 
-`tests/Feature/Theme/` (criados na Fase 0) automatizam parte da auditoria
+`tests/Feature/Theme/` automatizam parte da auditoria
 acima — rode-os antes do gate manual:
 
 - `CompiledCssTokenRegressionTest` — lê `public/build/assets/*.css`
@@ -540,5 +534,5 @@ Sintoma: um card fica visivelmente mais arredondado que os vizinhos. Causa:
 (raio de modal), então `rounded-4` **não** entrega os 20px de card.
 Correção: apagar `rounded-4` — `.card` já traz `$card-border-radius: 20px`.
 Não adicione outra classe de raio por cima. Ver `bootstrap-conventions`
-§5.1, e §5.2 para a família `.ds-*` da tela de aula (SPEC-28), incluindo a
+§5.1, e §5.2 para a família `.ds-*` da tela de aula, incluindo a
 proibição do atributo `hidden` nos controles de conclusão.

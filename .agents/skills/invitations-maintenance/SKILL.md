@@ -1,8 +1,8 @@
 ---
 name: invitations-maintenance
 description: >
-  Debug, test, edge-case guide for Smart Invitation & Enrollment feature
-  (SPEC-06): convite/show.blade.php adaptive form, SmartInvitationForm.js
+  Debug, test, edge-case guide for Smart Invitation & Enrollment feature:
+  convite/show.blade.php adaptive form, SmartInvitationForm.js
   module (blur+debounced input, checkedEmail/sequence state, .d-none-only
   visibility), mandatory PHPUnit/Dusk test files. Use when SmartInvitationTest,
   EnrollmentManagementTest, ProcessSmartInvitationActionTest,
@@ -14,22 +14,19 @@ license: MIT
 metadata:
   feature: invitations
   role: maintenance
-  specs:
-    - spec/specs/06-smart-invitation-and-enrollment-system.md
-    - spec/specs/00-architecture-database-and-guardrails.md
 ---
 
 # Invitations Maintenance
 
 ## Mandatory Test Coverage for This Module
 
-These tests guard SPEC-06 contract, must stay green (PHPUnit, no Pest):
+These tests guard this module's contract, must stay green (PHPUnit, no Pest):
 
 - `tests/Unit/Actions/ProcessSmartInvitationActionTest.php` —
   transaction-level coverage of `ProcessSmartInvitationAction`:
   new/existing-account branches, wrong password,
   expired/exhausted/revoked/unknown-token/unpublished/soft-deleted-course
-  link states, staff-account (gestor/admin) rejection, RN09
+  link states, staff-account (gestor/admin) rejection, the
   no-duplicate-account/no-`org_id`-overwrite guarantee, reactivating
   `cancelled` enrollment, `lockForUpdate` over-consumption guard.
 - `tests/Feature/SmartInvitationTest.php` — HTTP-level coverage of public
@@ -39,7 +36,7 @@ These tests guard SPEC-06 contract, must stay green (PHPUnit, no Pest):
   requires name/CPF/password-confirmation, existing e-mail requires only
   matching password; staff e-mail rejected on `errors.email` regardless of
   password).
-- `tests/Feature/EnrollmentManagementTest.php` — RF21 Gestor panel: manual
+- `tests/Feature/EnrollmentManagementTest.php` — Gestor enrollment panel: manual
   enroll, revoke (`status = 'cancelled'`), reactivating cancelled
   enrollment, double-active-enrollment 422, org-scoped 404/403 for Gestor
   outside Course Organization.
@@ -98,7 +95,8 @@ this.toggleFields(form, Boolean(response.data && response.data.exists));
 Three invariants of that state machine, each closing a bug that was real:
 
 - **Both triggers stay.** `blur` fires immediately, `input` is debounced 400ms.
-  The design anatomy says "blur only"; SPEC §3.2 requires both and wins — the
+  The original design sketch said "blur only"; the shipped contract requires
+  both — the
   `input` trigger is what makes the verdict follow incremental typing.
 - **`checkedEmail` short-circuit.** Without it a pending debounced `input` could
   re-run `toggleFields` *after* the `blur` check had already collapsed the form,
@@ -170,8 +168,8 @@ document.addEventListener('DOMContentLoaded', () => window.SmartInvitationForm.i
   correctly report `exists: false`. Test not wrong, fixture data wrong.
 - `org_id` comes back overwritten instead of pinned to original Org? Bug is
   in `ProcessSmartInvitationAction` existing-account branch — must never
-  assign `org_id` on that path (see `invitations-architecture` RN09
-  section). New-account branch legitimately does.
+  assign `org_id` on that path (see `invitations-architecture`). New-account
+  branch legitimately does.
 
 ## Diagnosing `EnrollmentController::destroy()` Not Revoking Anything
 
@@ -195,9 +193,9 @@ This bit every pre-existing invitations test fixture day guard was added,
 not just new ones. Not bug in guard. It is `CourseFactory` deliberate "admin
 must explicitly publish" default surfacing in new place.
 
-## Auto-Update Protocol (SPEC-03)
+## Auto-Update Protocol
 
-Per `spec/specs/03-agentic-harness-and-self-updating-skills.md`: any change
+Any change
 to `InvitationController`/`InvitationLinkController`/`EnrollmentController`,
 `ProcessSmartInvitationAction`, `InvitationLink::unusableReason()`/`isUsable()`,
 `App\Exceptions\InvitationLinkInvalidException` (or its `bootstrap/app.php`
@@ -215,10 +213,8 @@ task counts as done. Also re-check:
 - Run `vendor/bin/sail artisan harness:check-skills` — fails build if any of
   three `invitations-*` skills is missing.
 
-## Related Specs
+## Related
 
-- `spec/specs/06-smart-invitation-and-enrollment-system.md` — RF03, RF21,
-  RN09.
 - `courses-maintenance` — analogous module this one mirrors (AJAX reorder
   vs this module AJAX check-email).
 - `tenancy-maintenance` — underlying `OrgScope` contract this module builds
@@ -230,7 +226,7 @@ task counts as done. Also re-check:
 
 Browser tests in `tests/Browser/` grouped by **user journey (lifecycle
 chain)** — one method drives create, edit, state change, delete,
-consequence — **not** by module, spec, or use case. Consequences when
+consequence — **not** by module or feature. Consequences when
 maintaining this module:
 
 - **Finding coverage**: Dusk scenarios listed above may be asserted as

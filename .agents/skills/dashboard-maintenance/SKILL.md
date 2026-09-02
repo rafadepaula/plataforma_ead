@@ -2,11 +2,11 @@
 name: dashboard-maintenance
 description: >
   Debug, test, edge-case guide for Admin Dashboard, Analytics & System
-  Settings (SPEC-12): mandatory PHPUnit/Dusk test files, common
+  Settings: mandatory PHPUnit/Dusk test files, common
   org-scoping/streaming failure modes, `admin.dashboard` route-name
   gotcha, open questions (exact KPI/CSV column definitions, SMTP
   admin-only-vs-gestor-editable) still needing decision. Also covers
-  SPEC-001's Organizations summary table test coverage (3
+  the Organizations summary table test coverage (3
   `OrgDashboardTest` cases, 4 `DashboardMetricsServiceTest` cases,
   `DashboardDuskTest` assertions). Use when `OrgDashboardTest`,
   `MultiTenantCsvExportTest`, or `DashboardDuskTest` fail; KPI show wrong
@@ -17,30 +17,27 @@ license: MIT
 metadata:
   feature: dashboard
   role: maintenance
-  specs:
-    - spec/specs/12-admin-dashboard-analytics-and-system-settings.md
-    - spec/docs/mockups/07-dashboard-admin.md
 ---
 
 # Dashboard Maintenance
 
 ## Mandatory Test Coverage for This Module
 
-Tests guard SPEC-12 contract. Must stay green (PHPUnit, no Pest):
+Tests guard this module's contract. Must stay green (PHPUnit, no Pest):
 
 - `tests/Unit/Services/SettingServiceTest.php` — org-then-global fallback
   + cache-busting on `set()`/`forget()`.
 - `tests/Unit/Services/DashboardMetricsServiceTest.php` — exact stat shape
   and manual admin-global-vs-gestor-own-org branching for
   `Certificate`/`course_user`/`User` (see `dashboard-architecture`); plus
-  4 SPEC-001 cases for `organizationsSummary()`:
+  4 cases for `organizationsSummary()`:
   `test_organizations_summary_counts_active_alunos_courses_and_non_revoked_certificates_per_org`,
   `test_organizations_summary_bypasses_courses_org_scope_regardless_of_the_acting_user`,
   `test_organizations_summary_zero_fills_an_organization_with_no_related_data`,
   `test_organizations_summary_excludes_soft_deleted_organizations`.
 - `tests/Feature/OrgDashboardTest.php` — Admin with no impersonated Org
   see global KPIs/recentEnrollments, Admin impersonating Org see only
-  that Org, Gestor see only own `org_id`; plus 3 SPEC-001 cases for the
+  that Org, Gestor see only own `org_id`; plus 3 cases for the
   Organizations summary table:
   `test_admin_with_no_impersonated_org_sees_organizations_summary_with_correct_counts`,
   `test_gestor_never_receives_organizations_summary`,
@@ -116,12 +113,11 @@ HTTP process); `DatabaseMigrations` retired (per-method `migrate:fresh`)
 
 ## Open Questions Still Needing a Decision
 
-Logged from SPEC-12 tech-refine pass. **Not** resolved by this bucket
+Logged during design review. **Not** resolved by this module's
 implementation — flag again before building on top of assumptions baked
 into current code:
 
-1. **Exact KPI/CSV column definitions.** Mockup
-   (`spec/docs/mockups/07-dashboard-admin.md` §4) show only 4 stat values
+1. **Exact KPI/CSV column definitions.** The dashboard mockup show only 4 stat values
    + 3-column recent-enrollments table with no field list for CSV itself,
    and no historical-comparison logic for `delta` percentages
    (`+4,2%`/`+12%` are hardcoded display strings in mockup, not computed)
@@ -131,8 +127,8 @@ into current code:
    this bucket dashboard entry points; confirm whether `users` report or
    others also expected under "Central de Exportação" before assume
    `type` route parameter valid set is closed.
-3. **SMTP settings: admin-only or gestor-editable per-org?** Not
-   addressed by spec text — compromised Gestor account setting arbitrary
+3. **SMTP settings: admin-only or gestor-editable per-org?** Still
+   undecided — a compromised Gestor account setting arbitrary
    SMTP credentials is security concern. Current
    `settings.edit`/`settings.update` routes gated `role:admin|gestor`
    uniformly; if SMTP fields must be Admin-only, that require follow-up
@@ -141,8 +137,9 @@ into current code:
    middleware change (logo/signature almost certainly remain
    Gestor-editable per-org either way).
 4. **Admin per-Org dashboard access: Impersonate Org only, or also
-   `?org_id=` query param?** Spec text "recurso de Impersonate Org para
-   visualizar dashboards de Orgs específicas" suggest Impersonate Org is
+   `?org_id=` query param?** The documented intent — "recurso de Impersonate
+   Org para visualizar dashboards de Orgs específicas" — suggests Impersonate
+   Org is
    sole sanctioned path; `DashboardController`/`ReportExportController`
    must not grow parallel Admin-facing `org_id` query-param affordance
    without confirming this.
@@ -153,7 +150,7 @@ into current code:
 
 Browser tests in `tests/Browser/` grouped by **user journey (lifecycle
 chain)** — one method drive create → edit → state change → delete →
-consequence — **not** by module, spec, or use case. Consequences when
+consequence — **not** by module or feature. Consequences when
 maintain this module:
 
 - **Finding coverage**: Dusk scenarios listed above may be asserted as

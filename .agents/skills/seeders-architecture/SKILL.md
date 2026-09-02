@@ -9,16 +9,13 @@ license: MIT
 metadata:
   feature: database-seeders
   role: architecture
-  specs:
-    - spec/specs/16-database-seeders-and-environment-seeding.md
-    - spec/specs/00-architecture-database-and-guardrails.md
 ---
 
 # Database Seeders Architecture
 
 ## Overview
 
-SPEC-16 = modular, environment-aware seeding pipeline for multi-tenant EAD platform. Seeding must adapt to environment (`production` vs `local`/`testing`/`staging`), stay idempotent on re-run, respect `org_id` isolation.
+Seeder layer = modular, environment-aware seeding pipeline for multi-tenant EAD platform. Seeding must adapt to environment (`production` vs `local`/`testing`/`staging`), stay idempotent on re-run, respect `org_id` isolation.
 
 ## Environment Orchestration (`DatabaseSeeder`)
 

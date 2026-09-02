@@ -1,7 +1,7 @@
 ---
 name: notifications-architecture
 description: >
-  Notifications & Alerts domain (SPEC-13). 4 triggers: invitation created,
+  Notifications & Alerts domain. 4 triggers: invitation created,
   certificate issued, new forum reply, enrollment confirmed. Why
   `notifications` reuse Laravel stock `Notifiable`/`DatabaseNotification`
   shape, no bespoke model. Event, Listener, Notification pipeline per
@@ -13,17 +13,14 @@ license: MIT
 metadata:
   feature: notifications
   role: architecture
-  specs:
-    - spec/specs/13-notifications-and-alerts.md
-    - spec/specs/00-architecture-database-and-guardrails.md
 ---
 
 # Notifications Architecture
 
 ## Overview
 
-SPEC-13/RF28 gives Gestor and Aluno topbar bell. 4 independent business
-triggers (§2):
+Gestor and Aluno get a topbar bell. 4 independent business
+triggers:
 
 | # | Trigger | Channels | Recipient |
 | --- | --- | --- | --- |
@@ -39,10 +36,10 @@ Notification class in module ever dispatched to Admin.
 ## `notifications` Table Is Framework Shape, No New Migration
 
 `database/migrations/2026_08_01_000022_create_notifications_table.php`
-existed before SPEC-13. Laravel standard `Notification::createTable()`
+predates this feature. Laravel standard `Notification::createTable()`
 shape: UUID `id`, `type`, morphs `notifiable_type`/`notifiable_id`, `data`
 JSON, nullable `read_at`, timestamps. `App\Models\User` already `use`s
-framework `Notifiable` trait. SPEC-13 adds **zero** schema. Every
+framework `Notifiable` trait. This feature adds **zero** schema. Every
 notification class is plain `Illuminate\Notifications\Notification`. Every
 read in module goes through `$user->notifications()`/
 `$user->unreadNotifications()`, never bespoke `Notification` Eloquent model
@@ -61,8 +58,9 @@ EnrollmentController::store() /
 ProcessSmartInvitationAction        → EnrollmentConfirmed     → SendEnrollmentConfirmedNotification
 ```
 
-4th trigger (certificate issued) is exception. Reuses **existing** SPEC-09
-pipeline (`CourseCompletedByStudent`, `IssueCertificateOnCourseCompletion`,
+4th trigger (certificate issued) is exception. Reuses **existing**
+certificates pipeline (`CourseCompletedByStudent`,
+`IssueCertificateOnCourseCompletion`,
 `IssueCertificateAction`) instead of parallel event. Dispatches
 `CertificateIssuedNotification` directly inside
 `IssueCertificateAction::execute()`, right after `Certificate::firstOrCreate`
@@ -79,7 +77,7 @@ in codebase (`LessonMarkedAsCompleted` → `RecalculateCourseProgress`,
 
 ## Mail-Failure Isolation Boundary
 
-RN (SPEC-13 §3): mail transport failure must never roll back business
+Mail transport failure must never roll back business
 transaction that just committed (invitation/reply/enrollment/certificate
 row), nor abort HTTP response. `QUEUE_CONNECTION=sync` runs notification
 `ShouldQueue` job inline, in-request. Boundary is
@@ -124,20 +122,18 @@ recipient event to record, and `database` row here would have no meaningful
   student gets duplicate certificate e-mail on every course page load.
 - **Enrollment confirmed**: fires on brand-new `course_user` row **or**
   `cancelled → active` transition, from both `EnrollmentController::store()`
-  (Gestor-driven, RF21) and `ProcessSmartInvitationAction` (self-service
-  invite, RF03). Never on already-`active`, unchanged enrollment. No
+  (Gestor-driven) and `ProcessSmartInvitationAction` (self-service
+  invite). Never on already-`active`, unchanged enrollment. No
   double-notify on no-op re-submit.
 
-## Related Specs
+## Related
 
-- `spec/specs/13-notifications-and-alerts.md` — RF28, 4-trigger table (§2),
-  mail-isolation RN (§3).
 - `certificates-architecture` — `IssueCertificateAction`
   eligibility/idempotency engine trigger 2 hooks into.
 - `forum-architecture` — topic/reply schema trigger 3 recipient resolution
   walks, and why it deliberately excludes "new report" from trigger list.
 - `invitations-architecture` — `InvitationLink` shape trigger 1 hooks into,
-  and RN09 no-per-invitee-email rationale.
+  and the no-per-invitee-email rationale.
 - `tenancy-architecture` — why `ForumTopic` `OrgScope` requires
   `withoutGlobalScopes()` when Listener/queued Notification resolves it
   outside original request tenant context.

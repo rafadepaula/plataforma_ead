@@ -9,9 +9,6 @@ license: MIT
 metadata:
     feature: tenancy
     role: security-auditor
-    specs:
-        - spec/specs/00-architecture-database-and-guardrails.md
-        - spec/docs/multitenancy.md
 ---
 
 # Tenancy Security & Anti-Data-Leakage Skill

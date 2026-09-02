@@ -1,7 +1,7 @@
 ---
 name: notifications-maintenance
 description: >
-  Debug, test, edge-case guide for Notifications & Alerts (SPEC-13):
+  Debug, test, edge-case guide for Notifications & Alerts:
   mandatory PHPUnit/Dusk test files, duplicate-notification/recipient-set/
   mail-isolation failure modes, stale-`public/build` gotcha for
   NotificationBell.js, role:gestor/role:aluno bell-visibility regression. Use
@@ -14,21 +14,18 @@ license: MIT
 metadata:
   feature: notifications
   role: maintenance
-  specs:
-    - spec/specs/13-notifications-and-alerts.md
-    - spec/specs/00-architecture-database-and-guardrails.md
 ---
 
 # Notifications Maintenance
 
 ## Mandatory Test Coverage for This Module
 
-These tests guard SPEC-13 contract, must stay green (PHPUnit, no Pest):
+These tests guard this module's contract, must stay green (PHPUnit, no Pest):
 
 - `tests/Feature/NotificationTriggersTest.php` — all 4 triggers via
   `Notification::fake()`/`Mail::fake()`, `database` row assertions,
   forum-reply recipient-set correctness (dedupe + self-exclusion),
-  mail-failure-does-not-roll-back-the-transaction case, RN12 org isolation.
+  mail-failure-does-not-roll-back-the-transaction case, org isolation.
 - `tests/Feature/NotificationBellTest.php` — `notifications.unread-count`
   accuracy, `notifications.read-all` marks all/only own rows,
   `notifications.read` + `action_url` passthrough, guest redirect,
@@ -94,12 +91,12 @@ already committed, turning successful business action into 500. Restore
 
 ## `NotificationController::read()` Returns 404 for Row That Exists
 
-Expected, not bug, **if** UUID belongs to another user. RN12 requires this
+Expected, not bug, **if** UUID belongs to another user — it must be
 indistinguishable from genuinely nonexistent id. If happening for
 *authenticated* user own row, check `{notification}` wasn't accidentally
 typed as `DatabaseNotification $notification` implicit binding. No Policy
-backs it, so binding either always succeeds regardless of ownership (RN12
-regression) or always fails depending on config. Neither correct. Must stay
+backs it, so binding either always succeeds regardless of ownership (an
+isolation regression) or always fails depending on config. Neither correct. Must stay
 plain `string` resolved through
 `$request->user()->notifications()->findOrFail($notification)`.
 
@@ -125,9 +122,9 @@ plain `string` resolved through
   `hasRole(RolesEnum::GESTOR->value) || hasRole(RolesEnum::ALUNO->value)`,
   not loosened to bare `@auth`.
 
-## Auto-Update Protocol (SPEC-03)
+## Auto-Update Protocol
 
-Per `spec/specs/03-agentic-harness-and-self-updating-skills.md`: any change
+Any change
 to Notification class in `app/Notifications/`, Event/Listener pair in
 `app/Events/`/`app/Listeners/` for one of 4 triggers,
 `NotificationController`, `notifications.*` routes,
@@ -137,15 +134,13 @@ notifications skills (`notifications-architecture`,
 `notifications-conventions`, `notifications-maintenance`) in same change,
 before task counts done. `.agents/skills` is only real location for these
 three skills in this repo. `.ai/skills` and `.goose/skills` do not mirror
-spec-specific skill set (they carry only generic
+this project's module skill set (they carry only generic
 `laravel-specialist`/`laravel-verification` and `caveman-*` skills), so no
 sync step needed there. Verify this hasn't changed before assuming
 otherwise.
 
-## Related Specs
+## Related
 
-- `spec/specs/13-notifications-and-alerts.md` — RF28, §2 4-trigger table, §3
-  mail-isolation RN.
 - `certificates-maintenance` — `wasRecentlyCreated`/idempotency gotcha
   trigger 2 dispatch site sits inside of.
 - `forum-maintenance` — `withoutGlobalScopes()`/`OrgScope` gotcha trigger 3
@@ -159,7 +154,7 @@ otherwise.
 
 Browser tests in `tests/Browser/` grouped by **user journey (lifecycle
 chain)**. One method drives create → edit → state change → delete →
-consequence. **Not** by module, spec, or use case. Consequences when
+consequence. **Not** by module or feature. Consequences when
 maintaining this module:
 
 - **Finding coverage**: Dusk scenarios listed above may be asserted as

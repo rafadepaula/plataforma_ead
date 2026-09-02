@@ -1,8 +1,8 @@
 ---
 name: profile-conventions
 description: >
-  Code patterns, snippets, guardrails for User Profile Self-Service
-  (SPEC-18/UC02): `profile.edit`/`profile.update`/`password.update`
+  Code patterns, snippets, guardrails for User Profile Self-Service:
+  `profile.edit`/`profile.update`/`password.update`
   route-name contract, `dusk="profile-form"`/`dusk="password-form"`
   two-independent-forms Blade pattern, `Auth::logoutOtherDevices()`
   call-order requirement, where to add `App\Rules\Cpf` when new
@@ -13,9 +13,6 @@ license: MIT
 metadata:
   feature: profile
   role: conventions
-  specs:
-    - spec/specs/18-user-profile-management.md
-    - spec/docs/usecases/UC02-gestao-de-perfil-do-usuario.md
 ---
 
 # Profile Conventions
@@ -29,7 +26,7 @@ route('password.update');   // PUT   /profile/password — PasswordController@up
 ```
 
 `password.update`, not `password.store`. `password.store` already belongs to
-public reset flow (`Auth\NewPasswordController` in `routes/auth.php`, UC01).
+public reset flow (`Auth\NewPasswordController` in `routes/auth.php`).
 Reusing that name collides, breaks password recovery. Both routes live under
 single `Route::middleware('auth')` group in `routes/web.php` with **no**
 `role:` restriction. Screen identical for every role.
@@ -107,8 +104,7 @@ Every CPF-accepting Form Request follows same array-of-rules shape:
 - `ImportUsersChunkRequest` is sole exception. Do not add `Cpf` there; see
   `profile-architecture` and `auth-orgs-maintenance` for why.
 - Failure message fixed by Rule itself (*"O CPF informado é inválido."*).
-  Never override per-Request, or uniform-message guarantee RN17 asks for
-  breaks.
+  Never override per-Request, or the uniform-message guarantee breaks.
 
 ## Topbar Link
 

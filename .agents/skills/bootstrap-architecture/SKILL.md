@@ -15,22 +15,14 @@ license: MIT
 metadata:
   feature: bootstrap
   role: architecture
-  specs:
-    - spec/front_migration/01-current-state.md
-    - spec/front_migration/06-skills-and-agents.md
-    - spec/specs/00-architecture-database-and-guardrails.md
-    - spec/front_redesign/01-direcao-visual-e-tokens.md
-    - spec/front_redesign/02-camada-de-tema-e-build.md
-    - spec/front_redesign/14-contrato-dusk-e-testes.md
-    - spec/front_redesign/15-plano-de-fases.md
 ---
 
 # Bootstrap Architecture
 
-> **Redesign em andamento (`spec/front_redesign/`, Fase 0 concluída).** O
+> **Redesign em andamento (Fase 0 concluída).** O
 > **Modernist Design System** (accent vermelho `#ec3013`, canto reto
 > sistêmico, fonte Archivo) descrito abaixo está sendo **substituído** pelo
-> novo **Material Bootstrap** de `spec/front_redesign/01-direcao-visual-e-tokens.md`
+> novo **Material Bootstrap**
 > — paleta pastel azul/menta/céu (**vermelho, laranja e amarelo proibidos**),
 > cantos suaves (`$border-radius: 14px`, não 0), fonte **Nunito Sans**. A
 > Fase 0 já trocou a camada de tokens e o pipeline de build (ver seção
@@ -55,14 +47,14 @@ metadata:
 > `organizations/index`, `users/index`, `admin/users/index`,
 > `admin/users/show`, `audit-logs/index` e o modal `audit-logs/partials/
 > _diff-modal`) também concluída.** **Fase 4 (todas as telas de formulário
-> `create`/`edit`/`_form`/`import` dos docs 05 e 09 — cursos, módulos,
+> `create`/`edit`/`_form`/`import` — cursos, módulos,
 > lições, links de convite, organizações, usuários, admin/usuários,
 > configurações, perfil) também concluída**: `<x-ui.field-stack>` e
 > `<x-ui.form-actions>` são os componentes centrais de toda tela de
 > formulário migrada; a classe `.org-logo` deixou de ser fantasma/exceção
 > nesta fase, ganhando regra real em
 > `resources/scss/components/_organizations.scss`. **Fase 7 (públicas e
-> acesso, doc `10`) também concluída**: as 7 telas do doc (`auth/login`,
+> acesso) também concluída**: as 7 telas (`auth/login`,
 > `auth/forgot-password`, `auth/reset-password`, `convite/show`, o novo
 > `convite/invalid`, `landing/show`, `public/certificates/show`) rodam sobre
 > o Material Bootstrap, mais os layouts `layouts/guest.blade.php` e o novo
@@ -73,7 +65,7 @@ metadata:
 > `.icon-circle-success|critical|primary`) — ver seção "Camada de Tokens"
 > abaixo para a lista de partials atualizada. Telas de Aluno/quiz/fórum
 > seguem o trabalho das Fases 5–6 do plano. **Fase 8 (mobile, acessibilidade
-> e polimento, docs 11 e 13 — última fase do redesign) também concluída**:
+> e polimento — última fase do redesign) também concluída**:
 > `prefers-reduced-motion` passa a existir (`_reduced-motion.scss`, escopo
 > **só** modal e drawer — nada mais some animação de entrada). Tabela usa
 > componente canônico `<x-ui.table>`; `<x-ui.data-table>` = alias compatível.
@@ -123,7 +115,7 @@ Princípio-mestre: **uma decisão visual mora em exatamente um lugar.** Botão d
       do import do core. Não existe `resources/scss/_variables.scss`.
 ```
 
-**[ATUALIZADO — Fase 0 do `front_redesign`]** Entrada real (`resources/scss/app.scss`), 4 imports, ordem obrigatória:
+**[ATUALIZADO — Fase 0 do redesign]** Entrada real (`resources/scss/app.scss`), 4 imports, ordem obrigatória:
 
 ```scss
 // 1) Tokens do design system (custom properties, disponíveis em runtime)
@@ -269,7 +261,7 @@ Exceção única: **utilities de layout** (`row`, `col-*`, `d-flex`, `gap-*`, `m
 | `.dialog` / `.dialog-backdrop` + diretivas Alpine órfãs | `.modal` / `.modal-backdrop` | Alpine nunca esteve instalado; modal era inerte |
 | `ModalManager.js` | `bootstrap.Modal` | módulo removido |
 | `NotificationService.js` | `bootstrap.Toast` + `<x-ui.toast>` | fachada `window.NotificationService.success()/error()` mantida sobre `bootstrap.Toast`, para não quebrar os 6 módulos que a injetam |
-| Tailwind 4 (`@tailwindcss/vite`, `tailwindcss`) instalado e não usado | removido de `package.json` e `vite.config.js` | dependência morta; remoção exige aprovação (Parte C, T0) |
+| Tailwind 4 (`@tailwindcss/vite`, `tailwindcss`) instalado e não usado | removido de `package.json` e `vite.config.js` | dependência morta; remoção exige aprovação |
 | `bunny('Instrument Sans')` no `vite.config.js` | removido — fonte real é Archivo self-hosted | fonte baixada e nunca aplicada |
 | `<x-ui.select>` com chevron SVG absoluto + `appearance:none` | `.form-select` | |
 | `<x-ui.table>` com styles inline / `<x-ui.data-table>` independente | `<x-ui.table>` canônico: `.ds-table-wrap` + toolbar opcional + `.ds-table-scroll` + `.ds-table`; `<x-ui.data-table>` delega como alias | props e slots idênticos; atributos chegam ao `<table>` |
@@ -317,7 +309,7 @@ Fluxo único:
 - **Dusk é intocável.** Os **400** `dusk="..."` em `resources/views/` (baseline atual em `tests/fixtures/dusk-selectors-snapshot.json`) são contrato de teste. Migrar markup **nunca** renomeia, move para outro elemento semântico, nem remove um `dusk=`. Se o elemento sumir, o atributo migra para o equivalente mais próximo — e isso precisa de justificativa no receipt da migração.
 - **PDF é território separado.** `resources/views/certificates/pdf.blade.php` roda em `barryvdh/laravel-dompdf`, que **não** entende CSS do Bootstrap 5 (custom properties, `color-mix()`, flexbox moderno, grid). A view de PDF mantém CSS próprio em `<style>` — **única** exceção à regra de zero CSS ad-hoc. Ver `bootstrap-maintenance`.
 - **Multi-tenant/roles não mudam.** Sidebar continua montando itens por `role:admin|gestor|aluno` (Spatie). Migração é só camada de apresentação.
-- **`<x-help-button>`** (SPEC-11) segue em 100% das telas. Passa a abrir `.modal` do Bootstrap, mantendo `dusk="help-button-{key}"` e `dusk="help-article-content-{key}"`.
+- **`<x-help-button>`** segue em 100% das telas. Passa a abrir `.modal` do Bootstrap, mantendo `dusk="help-button-{key}"` e `dusk="help-article-content-{key}"`.
 
 ## Pagination and Course Catalog Surfaces
 

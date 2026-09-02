@@ -1,7 +1,7 @@
 ---
 name: auth-orgs-architecture
 description: >
-  RF01/RF02 auth architecture (login, role-based redirect, single-use
+  Auth architecture (login, role-based redirect, single-use
   password-reset token) and how it plugs into existing multitenancy
   (Organizations, `OrgScope`, Impersonate Org, `RolesEnum`). Use when you
   need how a user authenticates, why `status=active` gates login, how
@@ -12,21 +12,20 @@ license: MIT
 metadata:
   feature: auth-orgs
   role: architecture
-  specs:
-    - spec/specs/04-auth-profile-organizations-and-user-management.md
-    - spec/specs/00-architecture-database-and-guardrails.md
-    - spec/to_refine/specs/SPEC-002-admin-global-user-management-screen.md
 ---
 
 # Auth + Orgs Architecture
 
 ## Overview
 
-SPEC-04 RF01/RF02 = **custom** session auth (no Breeze/Fortify/Jetstream) on top of `users` table and the `RolesEnum`/`OrgScope` tenancy from SPEC-00 (see `tenancy-architecture`). No new dependency, no new migration. Auth only *reads* existing `email`, `password`, `status`, `org_id` columns and Spatie roles.
+Auth = **custom** session auth (no Breeze/Fortify/Jetstream) on top of
+`users` table and the `RolesEnum`/`OrgScope` tenancy (see
+`tenancy-architecture`). No new dependency, no new migration. Auth only
+*reads* existing `email`, `password`, `status`, `org_id` columns and Spatie roles.
 
 ## Why Custom Controllers
 
-`composer.json` has no `laravel/breeze`/`fortify`/`jetstream`, and CLAUDE.md forbids changing dependencies without approval. RF01/RF02 scope (email+password login, role check, single-use reset token) is small, so hand-written controllers mirror Breeze's pattern (`LoginRequest::authenticate()`, `Password::sendResetLink()`/`Password::reset()`) without a scaffolding package or its view stack.
+`composer.json` has no `laravel/breeze`/`fortify`/`jetstream`, and CLAUDE.md forbids changing dependencies without approval. The scope (email+password login, role check, single-use reset token) is small, so hand-written controllers mirror Breeze's pattern (`LoginRequest::authenticate()`, `Password::sendResetLink()`/`Password::reset()`) without a scaffolding package or its view stack.
 
 ## Request Flow
 
@@ -40,9 +39,9 @@ GET  /reset-password/{token}    -> NewPasswordController::create
 POST /reset-password            -> NewPasswordController::store            (Password::reset())
 ```
 
-All six in `routes/auth.php`, required from `routes/web.php` — keeps the auth surface reviewable in one file. `login`/`forgot-password`/`reset-password/{token}` GET behind `guest` alias; `logout` behind `auth`. `auth` alias stays framework default. `guest` is **overridden** in `bootstrap/app.php` (BUG-001 fix) to `App\Http\Middleware\RedirectIfAuthenticated`, which gives role-aware targets via `UserHomeResolver` instead of the framework fallback to `/`.
+All six in `routes/auth.php`, required from `routes/web.php` — keeps the auth surface reviewable in one file. `login`/`forgot-password`/`reset-password/{token}` GET behind `guest` alias; `logout` behind `auth`. `auth` alias stays framework default. `guest` is **overridden** in `bootstrap/app.php` with `App\Http\Middleware\RedirectIfAuthenticated`, which gives role-aware targets via `UserHomeResolver` instead of the framework fallback to `/`.
 
-## `status=active` Gate (RF01)
+## `status=active` Gate
 
 `User::status` (`active`/`inactive`, migration default `active`) folded into credentials:
 
@@ -64,9 +63,9 @@ Never hardcode a URL. New role destination goes behind a `Route::has()` check so
 
 `redirect()->intended()` so a guest bounced to `/login` by `auth` middleware (or the `UnauthorizedException` guest-redirect in `bootstrap/app.php`) returns to the page originally asked for. `RedirectIfAuthenticated` also uses `intended()`, so the intended URL is honored on explicit login and when the `guest` guard intercepts an already-authenticated user at `/login`.
 
-## Password Reset (RF02) — Single-Use Token via SMTP
+## Password Reset — Single-Use Token via SMTP
 
-Uses Laravel's password broker (`Illuminate\Auth\Passwords`), not a custom token table — `password_reset_tokens` came with the base `users` migration (SPEC-00 left it alone). `Password::sendResetLink()`/`Password::reset()` handle hashing, expiry (`config('auth.passwords.users.expire')`, 60 min) and **single-use deletion** of the token row. Second `POST /reset-password` with the same token fails with `passwords.token`, mapped to the `email` field.
+Uses Laravel's password broker (`Illuminate\Auth\Passwords`), not a custom token table — `password_reset_tokens` came with the base `users` migration. `Password::sendResetLink()`/`Password::reset()` handle hashing, expiry (`config('auth.passwords.users.expire')`, 60 min) and **single-use deletion** of the token row. Second `POST /reset-password` with the same token fails with `passwords.token`, mapped to the `email` field.
 
 **Delivery**: `App\Notifications\ResetPasswordNotification` extends `Illuminate\Auth\Notifications\ResetPassword` to localize copy (pt-BR) and reuses parent `resetUrl()` (resolves via `password.reset` named route — no manual URL building). `User::sendPasswordResetNotification()` overridden to dispatch it. Mailer = whatever `MAIL_MAILER`/`config('mail.php')` resolves (SMTP in production, `log` in local `.env`, `array` in tests via `phpunit.xml`). No auth-specific mail config.
 
@@ -76,11 +75,11 @@ Uses Laravel's password broker (`Illuminate\Auth\Passwords`), not a custom token
 - Reset tests use `Notification::fake()` + `Notification::assertSentTo($user, ResetPasswordNotification::class, fn ($n) => ...)` to pull the real `$notification->token` and drive the form (`tests/Feature/Auth/PasswordResetTest.php`). Never assert a hardcoded token.
 - Dusk (`tests/Browser/Auth/LoginTest.php`) declares no DB trait — `DatabaseTruncation` comes from `Tests\DuskTestCase` (never `RefreshDatabase`; Dusk drives a separate HTTP process). Targets `dusk="login-*"` attributes, not CSS classes.
 
-## SPEC-002 — Global Admin User-Management Screen (`admin.users.*`)
+## Global Admin User-Management Screen (`admin.users.*`)
 
-The operational `users.index` (above/`UserController`) is single-Organization by design: `ResolvesOrgContext` throws `UnresolvedOrgContextException` for an Admin with no `session('active_org_id')`, and the query is hard-scoped to `aluno`/`gestor`. SPEC-002 adds a **second, deliberately separate** screen — `admin/users` (`admin.users.index|show|edit|update|status|destroy`) — for cross-org administration of all three roles (admin/gestor/aluno), registered inside the `role:admin`-only route group (not `role:admin|gestor`), so Gestor/Aluno are blocked by middleware first, Policy second.
+The operational `users.index` (above/`UserController`) is single-Organization by design: `ResolvesOrgContext` throws `UnresolvedOrgContextException` for an Admin with no `session('active_org_id')`, and the query is hard-scoped to `aluno`/`gestor`. A **second, deliberately separate** screen — `admin/users` (`admin.users.index|show|edit|update|status|destroy`) — serves cross-org administration of all three roles (admin/gestor/aluno), registered inside the `role:admin`-only route group (not `role:admin|gestor`), so Gestor/Aluno are blocked by middleware first, Policy second.
 
-`App\Http\Controllers\Admin\UserAdminController` does **not** extend `UserController` and does **not** use `ResolvesOrgContext` — the listing is global by definition (no `org_id` is ever resolved from the acting Admin's session; `org_id` only appears as an optional *filter* from the request). It reuses `User`/`RolesEnum`/the `user.status_changed` audit event, but is otherwise a fully independent controller/request/view stack from Bucket B/C of SPEC-04.
+`App\Http\Controllers\Admin\UserAdminController` does **not** extend `UserController` and does **not** use `ResolvesOrgContext` — the listing is global by definition (no `org_id` is ever resolved from the acting Admin's session; `org_id` only appears as an optional *filter* from the request). It reuses `User`/`RolesEnum`/the `user.status_changed` audit event, but is otherwise a fully independent controller/request/view stack.
 
 Authorization is a second, parallel set of `UserPolicy` abilities — `viewAnyGlobal`/`viewGlobal`/`updateGlobal`/`deleteGlobal` — plain `hasRole(ADMIN)` checks with **no** `sharesOrgContext()` involved (an Admin here acts globally, there is nothing to compare `org_id` against). The existing `sharesOrgContext()`-driven `viewAny`/`view`/`update`/`delete` abilities that gate the operational screen are untouched, so relaxing global admin access can never accidentally loosen multi-tenant isolation on `users.index`. `deleteGlobal` additionally blocks self-deletion (`$user->id !== $model->id`); `UserAdminController::update()`/`updateStatus()` separately guard against self-deactivation and self-demotion-from-admin in the controller body (403, not validation).
 
@@ -91,7 +90,5 @@ Authorization is a second, parallel set of `UserPolicy` abilities — `viewAnyGl
 ## Related
 
 - `tenancy-architecture` — `RolesEnum`, `OrgScope`, Impersonate Org. Assumed here.
-- `auth-orgs-conventions` — controller/policy/form-request conventions for Org CRUD, User CRUD, CSV Import (SPEC-04 Buckets B/C), and the SPEC-002 global-admin patterns.
-- `auth-orgs-maintenance` — RN09 edge cases, coverage checklist, SPEC-002 test contract.
-- `spec/specs/04-auth-profile-organizations-and-user-management.md` — RF01/RF02/RF23/RF04/RF05.
-- `spec/to_refine/specs/SPEC-002-admin-global-user-management-screen.md` — global Admin user-management screen.
+- `auth-orgs-conventions` — controller/policy/form-request conventions for Org CRUD, User CRUD, CSV Import, and the global-admin patterns.
+- `auth-orgs-maintenance` — edge cases, coverage checklist, test contract.

@@ -1,8 +1,8 @@
 ---
 name: forum-maintenance
 description: >
-  Debug, test, edge-case guide for Course Discussion Forum feature
-  (SPEC-10): mandatory PHPUnit/Dusk test files, common
+  Debug, test, edge-case guide for Course Discussion Forum feature:
+  mandatory PHPUnit/Dusk test files, common
   postable_type/withTrashed() and cross-tenant Policy failure modes,
   ForumTopic::withoutEvents() gotcha, frontend-build gotcha for
   ForumPolling.js/ForumReportModal.js. Use when
@@ -14,17 +14,13 @@ license: MIT
 metadata:
   feature: forum
   role: maintenance
-  specs:
-    - spec/specs/10-course-discussion-forum.md
-    - spec/specs/30-course-discussion-forum-and-realtime-polling.md
-    - spec/specs/00-architecture-database-and-guardrails.md
 ---
 
 # Forum Maintenance
 
 ## Mandatory Test Coverage for This Module
 
-These tests guard SPEC-10 contract, must stay green (PHPUnit, no Pest):
+These tests guard this module's contract, must stay green (PHPUnit, no Pest):
 
 - `tests/Feature/ForumTopicTest.php` — Topic/Reply CRUD, `pinnedFirst()`
   ordering, `student.enrolled` gating, `since_id` polling contract.
@@ -37,8 +33,8 @@ These tests guard SPEC-10 contract, must stay green (PHPUnit, no Pest):
 - `tests/Feature/ForumReplyControllerTest.php` — reply store/update/
   destroy plus the `fetchNew` payload: `id > since_id` only, ascending,
   capped at 50, and the `initials`/`role_label`/`last_id` keys.
-  Duplicate coverage with `ForumTopicTest` is intentional — the spec
-  names these two files and no test may be removed without approval.
+  Duplicate coverage with `ForumTopicTest` is intentional — both files are
+  mandatory and no test may be removed without approval.
 - `tests/Feature/XssSanitizationTest.php` — `ForumContentSanitizerService`
   strip tags from topic/reply `content` and report `reason` on every
   write path.
@@ -135,7 +131,7 @@ vendor/bin/sail dusk --filter=ForumPollingAndInteractionDuskTest
 - Means `ForumTopicController::store()` `ForumTopic::withoutEvents()`
   wrapper removed or bypassed. `OrgScope` `creating` hook then try
   resolve `org_id` from `$user->org_id ?? session('active_org_id')`,
-  which multi-org Aluno (RF19, `org_id === null`, no impersonation
+  which multi-org Aluno (`org_id === null`, no impersonation
   session) have neither of, even though `$courseModel->org_id` right
   there. Restore `withoutEvents()` wrapper instead of setting
   `session('active_org_id')` for Aluno — that session key is
@@ -311,9 +307,9 @@ documenting a selector in a comment, describe it without the literal
 `dusk="..."` attribute form (e.g. "the remove-form-{id} selector"), or the
 contract test will count it as a new occurrence.
 
-## Auto-Update Protocol (SPEC-03)
+## Auto-Update Protocol
 
-Per `spec/specs/03-agentic-harness-and-self-updating-skills.md`: any
+Any
 change to `ForumTopicController`/`ForumReplyController`/
 `ForumReportController`/`ForumModerationController`,
 `EditForumPostAction`/`DeleteForumPostAction`/`ReportForumPostAction`,
@@ -329,13 +325,8 @@ re-check `tenancy-architecture` cascade-inherited table list for
 `forum_replies` and its pseudo-polymorphic-table note whenever 5th forum
 table or new `postable_type` added.
 
-## Related Specs
+## Related
 
-- `spec/specs/10-course-discussion-forum.md` — RF22, RF26, RF27, RN08,
-  RN10.
-- `spec/specs/30-course-discussion-forum-and-realtime-polling.md` —
-  Material Bootstrap forum screens, FAB, and the incremental polling
-  contract these Dusk chains guard.
 - `quizzes-maintenance` — analogous `parentCourse()`-cascade Policy
   test-matrix pattern this module Policy tests copy one level shallower.
 - `certificates-maintenance` — analogous "resolve pseudo-polymorphic
@@ -347,7 +338,7 @@ table or new `postable_type` added.
 
 Browser tests in `tests/Browser/` grouped by **user journey (lifecycle
 chain)** — one method drive create → edit → state change → delete →
-consequence — **not** by module, spec, or use case. Consequences when
+consequence — **not** by module or feature. Consequences when
 maintaining this module:
 
 - **Finding coverage**: Dusk scenarios listed above may be asserted as
