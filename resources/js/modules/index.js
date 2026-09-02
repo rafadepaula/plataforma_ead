@@ -6,6 +6,7 @@
 import AuditLogDiffModal   from './AuditLogDiffModal';
 import CsvImporter         from './CsvImporter';
 import DashboardFilter     from './DashboardFilter';
+import EnrollmentSearch    from './EnrollmentSearch';
 import EssayGrading        from './EssayGrading';
 import ForumPolling        from './ForumPolling';
 import ForumReportModal    from './ForumReportModal';
@@ -33,6 +34,7 @@ export default {
     AuditLogDiffModal:   new AuditLogDiffModal(),
     CsvImporter:         new CsvImporter(httpClient),
     DashboardFilter:     new DashboardFilter(httpClient),
+    EnrollmentSearch:    new EnrollmentSearch(httpClient),
     EssayGrading:        new EssayGrading(),
     ForumPolling:        new ForumPolling(httpClient),
     ForumReportModal:    new ForumReportModal(httpClient, notifications),

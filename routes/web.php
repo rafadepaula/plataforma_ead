@@ -198,6 +198,12 @@ Route::middleware(['auth', 'role:admin|gestor'])->group(function (): void {
     // a `shallow()` single-segment `{enrollment}`.
     Route::get('courses/{course}/enrollments', [EnrollmentController::class, 'index'])
         ->name('courses.enrollments.index');
+    Route::get('courses/{course}/enrollments/search', [EnrollmentController::class, 'search'])
+        ->name('courses.enrollments.search');
+    Route::get('courses/{course}/enrollments/create', [EnrollmentController::class, 'create'])
+        ->name('courses.enrollments.create');
+    Route::post('courses/{course}/enrollments/store-student', [EnrollmentController::class, 'storeStudent'])
+        ->name('courses.enrollments.store-student');
     Route::post('courses/{course}/enrollments', [EnrollmentController::class, 'store'])
         ->name('courses.enrollments.store');
     Route::delete('courses/{course}/enrollments/{user}', [EnrollmentController::class, 'destroy'])

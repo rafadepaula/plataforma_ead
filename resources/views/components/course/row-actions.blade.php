@@ -1,6 +1,7 @@
 @props([
     'course',
     'manageModulesDusk' => null,
+    'manageEnrollmentsDusk' => null,
     'manageCompletionRulesDusk' => null,
     'editCourseDusk' => null,
     'deleteCourseDusk' => null,
@@ -9,6 +10,7 @@
 @php
     $activeStudentsCount = (int) $course->active_students_count;
     $manageModulesDusk ??= 'manage-modules-'.$course->id;
+    $manageEnrollmentsDusk ??= 'manage-enrollments-'.$course->id;
     $manageCompletionRulesDusk ??= 'manage-completion-rules-'.$course->id;
     $editCourseDusk ??= 'edit-course-'.$course->id;
     $deleteCourseDusk ??= 'delete-course-'.$course->id;
@@ -19,6 +21,11 @@
                  size="sm"
                  :href="route('courses.modules.index', $course)"
                  :dusk="$manageModulesDusk">Módulos</x-ui.button>
+
+    <x-ui.button variant="ghost"
+                 size="sm"
+                 :href="route('courses.enrollments.index', $course)"
+                 :dusk="$manageEnrollmentsDusk">Matrículas</x-ui.button>
 
     <x-ui.button variant="ghost"
                  size="sm"

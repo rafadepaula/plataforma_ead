@@ -29,27 +29,62 @@
         </x-slot:actions>
     </x-layout.page-header>
 
-    <x-ui.card title="Matricular manualmente" kicker="Matrículas">
+    <x-ui.card title="Matricular aluno" kicker="Matrículas">
+        <div class="d-flex justify-content-end mb-3">
+            <x-ui.button variant="tonal"
+                         size="sm"
+                         icon="plus"
+                         :href="route('courses.enrollments.create', $course)"
+                         dusk="create-student-link">Cadastrar novo aluno</x-ui.button>
+        </div>
+
+        {{--
+            `EnrollmentSearch.js` drive este formulário: a busca por
+            nome/e-mail/CPF preenche o `user_id` oculto que
+            `StoreEnrollmentRequest` sempre esperou — o contrato POST
+            (incluindo reativação de matrícula cancelada) não muda.
+            `manual-enroll-form`/`manual-enroll-submit`/`manual-enroll-user-id`
+            são seletores Dusk congelados no snapshot e no
+            `UserManagementTest` — não renomear.
+        --}}
         <form method="POST"
               action="{{ route('courses.enrollments.store', $course) }}"
               dusk="manual-enroll-form"
+              data-enrollment-search
+              data-search-url="{{ route('courses.enrollments.search', $course) }}"
               class="row g-3 align-items-end">
             @csrf
 
-            <div class="col-12 col-md-4">
+            <div class="col-12 col-md-6 position-relative">
                 <x-ui.input
-                    type="number"
-                    name="user_id"
-                    label="ID do Usuário"
-                    hint="Encontre o ID na listagem de Usuários."
-                    value="{{ old('user_id') }}"
-                    required
-                    dusk="manual-enroll-user-id"
+                    type="search"
+                    name="enrollment_search"
+                    label="Buscar aluno por nome, e-mail ou CPF"
+                    hint="Mínimo de 2 caracteres. Alunos já ativos neste curso não aparecem."
+                    value="{{ old('enrollment_search') }}"
+                    autocomplete="off"
+                    dusk="manual-enroll-search"
+                    data-enrollment-search-input
                 />
+                <div class="list-group position-absolute w-100 shadow-sm"
+                     style="z-index: 1055;"
+                     dusk="manual-enroll-results"
+                     data-enrollment-search-results
+                     hidden></div>
             </div>
 
+            <input type="hidden" name="user_id" dusk="manual-enroll-user-id" data-enrollment-user-id value="{{ old('user_id') }}">
+
+            <div class="col-12 col-md-6" dusk="manual-enroll-selected" data-enrollment-selected hidden></div>
+
+            @error('user_id')
+                <div class="col-12">
+                    <div class="small text-danger" role="alert">{{ $message }}</div>
+                </div>
+            @enderror
+
             <div class="col-auto mb-3">
-                <x-ui.button type="submit" dusk="manual-enroll-submit">Matricular</x-ui.button>
+                <x-ui.button type="submit" dusk="manual-enroll-submit" data-enrollment-submit disabled>Matricular</x-ui.button>
             </div>
         </form>
     </x-ui.card>
@@ -130,7 +165,7 @@
                     colspan="5"
                     icon="user"
                     title="Nenhum aluno matriculado neste curso."
-                    description="Use o formulário acima para matricular manualmente pelo ID do usuário."
+                    description="Busque o aluno por nome, e-mail ou CPF no formulário acima, ou use \"Cadastrar novo aluno\" para criar a conta e já matriculá-la."
                 />
             @endforelse
         </x-ui.data-table>

@@ -114,12 +114,17 @@ class UserManagementTest extends DuskTestCase
         $course = Course::factory()->create(['org_id' => $org->id]);
 
         $this->browse(function (Browser $browser) use ($gestor, $aluno, $course): void {
-            // 1. Matrícula manual
+            // 1. Matrícula manual via autocomplete (EnrollmentSearch.js):
+            // digita parte do nome, espera o dropdown do endpoint JSON e
+            // clica na opção do aluno — o `user_id` oculto é preenchido
+            // pelo módulo antes do submit.
             $browser->loginAs($gestor)
                 ->visit(route('courses.enrollments.index', $course))
                 ->waitFor('@manual-enroll-form')
-                ->type('user_id', (string) $aluno->id)
-                ->press('Matricular')
+                ->type('@manual-enroll-search', 'Matriculável')
+                ->waitFor('[data-enrollment-option="'.$aluno->id.'"]')
+                ->click('[data-enrollment-option="'.$aluno->id.'"]')
+                ->press('@manual-enroll-submit')
                 ->waitForText('Aluno matriculado com sucesso.')
                 ->assertSee('Aluno Matriculável');
 
