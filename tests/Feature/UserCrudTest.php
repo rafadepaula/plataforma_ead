@@ -3,18 +3,24 @@
 namespace Tests\Feature;
 
 use App\Enums\Permissions\RolesEnum;
+use App\Models\Course;
 use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 /**
- *  Admin/Gestor CRUD of Alunos and Gestores, always scoped by
- * server-resolved `org_id` (never trusted from request input).
+ *  User CRUD authorization matrix. The operational
+ * `users.*` screen is Admin-exclusive (`role:admin`): an Admin manages a
+ * single Organization's Alunos AND Gestores while impersonating it, a
+ * Gestor is blocked by middleware first and gets the dedicated
+ * `gestor.students.*` Aluno directory instead, and an Aluno has no
+ * access at all. Every path is scoped by server-resolved `org_id`
+ * (never trusted from request input).
  */
 class UserCrudTest extends TestCase
 {
-    public function test_gestor_can_create_an_aluno_in_their_own_org(): void
+    public function test_gestor_is_forbidden_from_creating_a_user_via_the_admin_screen(): void
     {
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
@@ -27,18 +33,20 @@ class UserCrudTest extends TestCase
             'password_confirmation' => 'password123',
         ]);
 
-        $response->assertRedirect(route('users.index'));
-
-        $user = User::where('email', 'aluno.novo@example.com')->firstOrFail();
-        $this->assertSame($org->id, $user->org_id);
-        $this->assertTrue($user->hasRole(RolesEnum::ALUNO->value));
+        //  `users.*` is Admin-exclusive (`role:admin`): the
+        // Gestor is blocked by middleware, before any Policy or
+        // validation runs — new Alunos enter their Organization via
+        // invitation links, the shared CSV import or per-Course manual
+        // enrollment instead.
+        $response->assertForbidden();
+        $this->assertFalse(User::where('email', 'aluno.novo@example.com')->exists());
     }
 
-    public function test_gestor_creating_a_user_ignores_any_org_id_sent_in_the_request(): void
+    public function test_admin_impersonating_an_org_creating_a_user_ignores_any_org_id_sent_in_the_request(): void
     {
         $org = Organization::factory()->create();
         $otherOrg = Organization::factory()->create();
-        $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
+        $this->actingAsAdmin($org);
 
         $this->post('/users', [
             'name' => 'Tentativa',
@@ -54,29 +62,19 @@ class UserCrudTest extends TestCase
         $this->assertNotSame($otherOrg->id, $user->org_id);
     }
 
-    public function test_gestor_cannot_see_or_edit_users_from_another_org(): void
-    {
-        $org = Organization::factory()->create();
-        $otherOrg = Organization::factory()->create();
-        $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
-
-        $outsideUser = User::factory()->create(['org_id' => $otherOrg->id]);
-        $outsideUser->assignRole(RolesEnum::ALUNO->value);
-
-        $this->get("/users/{$outsideUser->id}/edit")->assertForbidden();
-    }
-
-    public function test_gestor_can_view_the_users_index_for_their_own_org(): void
+    public function test_gestor_can_view_their_own_orgs_enrolled_students_directory(): void
     {
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
 
         $aluno = User::factory()->create(['org_id' => $org->id]);
         $aluno->assignRole(RolesEnum::ALUNO->value);
+        $course = Course::factory()->for($org)->create();
+        $aluno->courses()->attach($course->id, ['status' => 'active', 'enrolled_at' => now()]);
 
-        $this->get('/users')
+        $this->get('/gestor/students')
             ->assertOk()
-            ->assertViewIs('users.index')
+            ->assertViewIs('gestor.students.index')
             ->assertSee($aluno->name);
     }
 
@@ -93,7 +91,7 @@ class UserCrudTest extends TestCase
             ->assertSee($aluno->name);
     }
 
-    public function test_gestor_can_view_the_edit_form_for_an_aluno_in_their_own_org(): void
+    public function test_gestor_is_forbidden_from_the_admin_users_screens(): void
     {
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
@@ -101,39 +99,16 @@ class UserCrudTest extends TestCase
         $aluno = User::factory()->create(['org_id' => $org->id]);
         $aluno->assignRole(RolesEnum::ALUNO->value);
 
-        $this->get("/users/{$aluno->id}/edit")
-            ->assertOk()
-            ->assertViewIs('users.edit');
+        //  the whole operational stack (list, create form,
+        // edit form, update, delete) is Admin-only now — blocked by
+        // `role:admin` middleware regardless of the target's org or role.
+        $this->get('/users')->assertForbidden();
+        $this->get('/users/create')->assertForbidden();
+        $this->get("/users/{$aluno->id}/edit")->assertForbidden();
+        $this->put("/users/{$aluno->id}", ['name' => 'x', 'email' => 'x@example.com', 'role' => RolesEnum::ALUNO->value])->assertForbidden();
+        $this->delete("/users/{$aluno->id}")->assertForbidden();
     }
 
-    public function test_admin_impersonating_an_org_can_manage_that_orgs_users(): void
-    {
-        $org = Organization::factory()->create();
-        $this->actingAsAdmin($org);
-
-        $response = $this->post('/users', [
-            'name' => 'Aluno do Admin',
-            'email' => 'aluno.admin@example.com',
-            'role' => RolesEnum::ALUNO->value,
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
-        ]);
-
-        $response->assertRedirect(route('users.index'));
-
-        $user = User::where('email', 'aluno.admin@example.com')->firstOrFail();
-        $this->assertSame($org->id, $user->org_id);
-    }
-
-    /**
-     *  the menu no longer offers `users.index` to an Admin
-     * without an active Organization context (see
-     * `RoleMenuVisibilityTest`), but a hand-typed URL must still fail
-     * safely: the strict `ResolvesOrgContext` resolution stays in place
-     * and the global handler turns it into a `back()` + flash error,
-     * never a 500 and never a cross-org listing (that screen belongs to
-     * ).
-     */
     public function test_admin_without_active_org_context_is_redirected_back_from_the_users_index(): void
     {
         $this->actingAsAdmin();
@@ -176,16 +151,9 @@ class UserCrudTest extends TestCase
         $this->get("/users/{$colleague->id}/edit")->assertForbidden();
         $this->put("/users/{$colleague->id}", ['name' => 'x', 'email' => 'x@example.com', 'role' => RolesEnum::ALUNO->value])->assertForbidden();
         $this->delete("/users/{$colleague->id}")->assertForbidden();
-    }
-
-    public function test_gestor_can_view_the_create_user_form(): void
-    {
-        $org = Organization::factory()->create();
-        $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
-
-        $this->get('/users/create')
-            ->assertOk()
-            ->assertViewIs('users.create');
+        // The Gestor directory is staff-only too.
+        $this->get('/gestor/students')->assertForbidden();
+        $this->get("/gestor/students/{$colleague->id}/edit")->assertForbidden();
     }
 
     public function test_admin_without_active_org_context_is_forbidden_from_updating_a_user(): void
@@ -207,7 +175,7 @@ class UserCrudTest extends TestCase
     public function test_creating_a_user_with_a_checksum_invalid_cpf_is_rejected(): void
     {
         $org = Organization::factory()->create();
-        $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
+        $this->actingAsAdmin($org);
 
         $response = $this->post('/users', [
             'name' => 'Novo Aluno',
@@ -222,61 +190,64 @@ class UserCrudTest extends TestCase
         $this->assertFalse(User::where('email', 'aluno.cpf.invalido@example.com')->exists());
     }
 
-    public function test_gestor_can_update_an_aluno_in_their_own_org(): void
+    public function test_gestor_can_update_an_enrolled_aluno_of_their_own_org(): void
     {
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
 
         $aluno = User::factory()->create(['org_id' => $org->id, 'email' => 'antigo@example.com']);
         $aluno->assignRole(RolesEnum::ALUNO->value);
+        $course = Course::factory()->for($org)->create();
+        $aluno->courses()->attach($course->id, ['status' => 'active', 'enrolled_at' => now()]);
 
-        $response = $this->put("/users/{$aluno->id}", [
+        $response = $this->put("/gestor/students/{$aluno->id}", [
             'name' => 'Nome Atualizado',
             'email' => 'novo.email@example.com',
-            'role' => RolesEnum::ALUNO->value,
         ]);
 
-        $response->assertRedirect(route('users.index'));
+        $response->assertRedirect(route('gestor.students.index'));
         $aluno->refresh();
         $this->assertSame('Nome Atualizado', $aluno->name);
         $this->assertSame('novo.email@example.com', $aluno->email);
     }
 
-    public function test_gestor_can_update_an_alunos_password(): void
+    public function test_gestor_can_update_an_enrolled_alunos_password(): void
     {
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
 
         $aluno = User::factory()->create(['org_id' => $org->id, 'password' => bcrypt('old-password')]);
         $aluno->assignRole(RolesEnum::ALUNO->value);
+        $course = Course::factory()->for($org)->create();
+        $aluno->courses()->attach($course->id, ['status' => 'active', 'enrolled_at' => now()]);
         $originalHash = $aluno->password;
 
-        $response = $this->put("/users/{$aluno->id}", [
+        $response = $this->put("/gestor/students/{$aluno->id}", [
             'name' => $aluno->name,
             'email' => $aluno->email,
-            'role' => RolesEnum::ALUNO->value,
             'password' => 'brand-new-password',
             'password_confirmation' => 'brand-new-password',
         ]);
 
-        $response->assertRedirect(route('users.index'));
+        $response->assertRedirect(route('gestor.students.index'));
         $aluno->refresh();
         $this->assertNotSame($originalHash, $aluno->password);
         $this->assertTrue(Hash::check('brand-new-password', $aluno->password));
     }
 
-    public function test_updating_a_user_with_a_checksum_invalid_cpf_is_rejected(): void
+    public function test_updating_a_student_with_a_checksum_invalid_cpf_is_rejected(): void
     {
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
 
         $aluno = User::factory()->create(['org_id' => $org->id, 'cpf' => null]);
         $aluno->assignRole(RolesEnum::ALUNO->value);
+        $course = Course::factory()->for($org)->create();
+        $aluno->courses()->attach($course->id, ['status' => 'active', 'enrolled_at' => now()]);
 
-        $response = $this->put("/users/{$aluno->id}", [
+        $response = $this->put("/gestor/students/{$aluno->id}", [
             'name' => $aluno->name,
             'email' => $aluno->email,
-            'role' => RolesEnum::ALUNO->value,
             'cpf' => '111.444.777-36',
         ]);
 
@@ -284,15 +255,17 @@ class UserCrudTest extends TestCase
         $this->assertNull($aluno->fresh()->cpf);
     }
 
-    public function test_gestor_can_delete_an_aluno_in_their_own_org(): void
+    public function test_gestor_can_delete_an_enrolled_aluno_of_their_own_org(): void
     {
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
 
         $aluno = User::factory()->create(['org_id' => $org->id]);
         $aluno->assignRole(RolesEnum::ALUNO->value);
+        $course = Course::factory()->for($org)->create();
+        $aluno->courses()->attach($course->id, ['status' => 'active', 'enrolled_at' => now()]);
 
-        $this->delete("/users/{$aluno->id}")->assertRedirect(route('users.index'));
+        $this->delete("/gestor/students/{$aluno->id}")->assertRedirect(route('gestor.students.index'));
 
         $this->assertFalse(User::whereKey($aluno->id)->exists());
     }

@@ -64,6 +64,45 @@ class UserPolicy
     }
 
     /**
+     * the Gestor's exclusive Aluno directory
+     * (`gestor.students.*`). A parallel set of named abilities — not a
+     * branch inside `sharesOrgContext()` (see `auth-orgs-conventions`) —
+     * because the Gestor's surface is genuinely narrower than the
+     * operational screen's: it covers ONLY Aluno accounts inside their
+     * own `org_id`. A Gestor never manages a fellow Gestor or an Admin,
+     * whatever route reaches these abilities.
+     */
+    public function viewAnyStudents(User $user): bool
+    {
+        return $user->hasRole(RolesEnum::GESTOR->value);
+    }
+
+    public function updateStudent(User $user, User $model): bool
+    {
+        return $this->managesSameOrgAluno($user, $model);
+    }
+
+    public function deleteStudent(User $user, User $model): bool
+    {
+        return $this->managesSameOrgAluno($user, $model);
+    }
+
+    /**
+     * Same tenant rule as the Gestor branch of
+     * `{@see self::sharesOrgContext()}`, plus the target-must-be-Aluno
+     * restriction that defines the Organizador's boundary. Both sides of
+     * the comparison come from server-resolved state — never from
+     * request input.
+     */
+    protected function managesSameOrgAluno(User $user, User $model): bool
+    {
+        return $user->hasRole(RolesEnum::GESTOR->value)
+            && $user->org_id
+            && (int) $model->org_id === (int) $user->org_id
+            && $model->hasRole(RolesEnum::ALUNO->value);
+    }
+
+    /**
      * cross-org abilities for the global Admin user-management
      * screen (`admin.users.*`). Deliberately separate from
      * {@see self::viewAny()}/{@see self::view()}/{@see self::update()}/

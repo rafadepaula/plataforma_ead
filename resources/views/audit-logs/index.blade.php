@@ -1,7 +1,8 @@
 {{--
-    `/admin/audit-logs` (`admin.audit-logs.index`) and
-    `/gestor/audit-logs` (`gestor.audit-logs.index`), both served by the
+    `/admin/audit-logs` (`admin.audit-logs.index`), served by the
     same `App\Http\Controllers\AuditLogController::index()` (Bucket B).
+    Audit is Admin-only (`role:admin`) — the legacy Gestor-prefixed
+    counterpart route was removed.
 
     Bootstrap 5.3 composition (see `bootstrap-conventions` §4/§5): the screen
     holds no raw Bootstrap markup and no `style=` — it is assembled from
@@ -17,11 +18,10 @@
                              populate the "Evento" dropdown (see
                              `audit-logs-conventions` for the exact keys).
 
-    The current route name (`admin.audit-logs.index` or
-    `gestor.audit-logs.index`) is read at render time to resolve both the
-    filter form's own `action` and the "Exportar CSV" link's `*.export`
-    counterpart, so this single view serves both Admin and Gestor without
-    needing two near-identical Blade files.
+    The current route name (`admin.audit-logs.index`) is read at render
+    time to resolve both the filter form's own `action` and the
+    "Exportar CSV" link's `*.export` counterpart, so the view keeps
+    surviving a future route re-prefix without markup changes.
 
     The "Ver diff" trigger deliberately keeps the LEGACY `data-modal-target`
     spelling instead of `data-bs-toggle="modal"`: `AuditLogDiffModal.js` must

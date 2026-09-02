@@ -75,8 +75,10 @@ final class NavigationRegistry
                 key: 'users',
                 label: 'Alunos & Usuários',
                 //  `users.index` is an *operational*, single-org
-                // screen: `UserController` resolves its tenant strictly
-                // via `ResolvesOrgContext`, so a system Admin with no
+                // screen, and since it became Admin-exclusive
+                // (`role:admin` on the route, Gestor has the dedicated
+                // `students` item below) it resolves its tenant strictly
+                // via `ResolvesOrgContext`: a system Admin with no
                 // `org_id` and no active "Impersonate Org" cannot reach
                 // it. The resolver below hides the item in that state
                 // rather than offering a link that dead-ends in a
@@ -86,13 +88,27 @@ final class NavigationRegistry
                 route: 'users.index',
                 activePatterns: ['users.*'],
                 icon: $this->usersIcon(),
-                roles: self::ADMIN_GESTOR,
+                roles: ['admin'],
                 section: 'Administração',
                 routeResolver: fn ($user) => $this->resolveUsersRoute($user),
             ),
+            //  the Gestor's exclusive Aluno directory:
+            // lists only the Alunos enrolled in their own Organization's
+            // Courses (`gestor.students.*`, `role:gestor`). Distinct from
+            // the Admin-only `users` item above — the two are mutually
+            // exclusive per role and never coexist in one menu.
+            new NavigationItem(
+                key: 'students',
+                label: 'Alunos',
+                route: 'gestor.students.index',
+                activePatterns: ['gestor.students.*'],
+                icon: $this->usersIcon(),
+                roles: ['gestor'],
+                section: 'Administração',
+            ),
             // cross-org, all-roles Admin user-management
             // screen. Distinct from `users.index` above (which stays
-            // operational, single-org, aluno/gestor only): this item
+            // operational, single-org, Admin-only): this item
             // belongs to the reduced Admin-only set  keeps in
             // "Administração", never the "Impersonate" section, so
             // `roles` is `['admin']` only (no Gestor).
@@ -149,15 +165,15 @@ final class NavigationRegistry
             new NavigationItem(
                 key: 'audit-logs',
                 label: 'Auditoria',
-                // The concrete route name is decided per-user by the
-                // resolver below : `admin.audit-logs.*` for an
-                // Admin, `gestor.audit-logs.*` for a Gestor-only user.
+                //  Audit is a system-administration surface:
+                // `role:admin` on `admin.audit-logs.*` (the legacy
+                // Gestor-prefixed routes were removed), so `roles`
+                // mirrors that parity exactly.
                 route: 'admin.audit-logs.index',
-                activePatterns: ['admin.audit-logs.*', 'gestor.audit-logs.*'],
+                activePatterns: ['admin.audit-logs.*'],
                 icon: $this->fileTextIcon(),
-                roles: self::ADMIN_GESTOR,
+                roles: ['admin'],
                 section: 'Administração',
-                routeResolver: fn ($user) => $this->resolveAuditLogsRoute($user),
             ),
             new NavigationItem(
                 key: 'settings',
@@ -176,11 +192,12 @@ final class NavigationRegistry
                 route: 'student.courses.index',
                 activePatterns: ['student.courses.*', 'classroom.*'],
                 icon: $this->homeIcon(),
-                //  the Admin is not a learner: "Meus Cursos" was
-                // dropped from their menu, which leaves "Aprendizado"
-                // empty and therefore discarded by
-                // `NavigationService::build()`.
-                roles: ['aluno', 'gestor'],
+                //  neither the Admin nor the Gestor is a
+                // learner: "Meus Cursos" is Aluno-only, mirroring the
+                // route's own `role:aluno` middleware. Staff accounts
+                // lose the "Aprendizado" section, which is therefore
+                // discarded by `NavigationService::build()` when empty.
+                roles: ['aluno'],
                 section: 'Aprendizado',
             ),
             new NavigationItem(
@@ -212,35 +229,13 @@ final class NavigationRegistry
     }
 
     /**
-     *  Admin (or a dual Admin/Gestor account) routes to the global
-     * `admin.audit-logs.index`; a Gestor-only account routes to the
-     * scoped `gestor.audit-logs.index`. Returns `null` if neither route
-     * name is registered (hides the item rather than emitting a dead
-     * link, mirroring the legacy `Route::has()` guard).
-     */
-    private function resolveAuditLogsRoute(User $user): ?string
-    {
-        $isAdmin = $user->hasRole('admin');
-        $isGestorOnly = $user->hasRole('gestor') && ! $isAdmin;
-
-        if ($isGestorOnly && Route::has('gestor.audit-logs.index')) {
-            return route('gestor.audit-logs.index');
-        }
-
-        if ($isAdmin && Route::has('admin.audit-logs.index')) {
-            return route('admin.audit-logs.index');
-        }
-
-        return null;
-    }
-
-    /**
      *  mirrors `ResolvesOrgContext::resolveOrgId()`: the item is
      * only reachable when a tenant context can be resolved server-side
-     * (the Gestor's own `org_id`, or the Admin's impersonated
-     * `session('active_org_id')`). Returns `null` — hiding the item in
-     * both the desktop `<aside>` and the mobile Offcanvas, which render
-     * the same resolved array — for a system Admin in global context.
+     * (the Admin's impersonated `session('active_org_id')` — the screen
+     * is Admin-only now, so no Gestor branch applies). Returns `null` —
+     * hiding the item in both the desktop `<aside>` and the mobile
+     * Offcanvas, which render the same resolved array — for a system
+     * Admin in global context.
      */
     private function resolveUsersRoute(User $user): ?string
     {

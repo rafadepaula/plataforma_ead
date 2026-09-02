@@ -54,12 +54,16 @@ class RoleMenuVisibilityTest extends TestCase
         $response = $this->actingAs($gestor)->get(route('admin.dashboard'));
 
         $response->assertOk();
-        //  `Organizações` is admin-exclusive.
+        //  `Organizações`, `Alunos & Usuários` (`users.index`)
+        // and `Auditoria` are admin-exclusive.
         $response->assertDontSee(route('organizations.index'), false);
         $response->assertDontSeeText('Organizações');
-        // Gestor still sees the rest of the admin block.
-        $response->assertSee(route('users.index'), false);
-        $response->assertSee(route('gestor.audit-logs.index'), false);
+        $response->assertDontSee(route('users.index'), false);
+        $response->assertDontSee(route('admin.audit-logs.index'), false);
+        //  "Meus Cursos" is Aluno-only (`role:aluno` parity).
+        $response->assertDontSee(route('student.courses.index'), false);
+        // The Gestor's exclusive Aluno directory is offered instead.
+        $response->assertSee(route('gestor.students.index'), false);
     }
 
     public function test_aluno_menu_has_no_administration_links_at_all(): void
@@ -79,7 +83,6 @@ class RoleMenuVisibilityTest extends TestCase
         $response->assertDontSee(route('quiz-attempts.pending'), false);
         $response->assertDontSee(route('forum-moderation.index'), false);
         $response->assertDontSee(route('admin.audit-logs.index'), false);
-        $response->assertDontSee(route('gestor.audit-logs.index'), false);
         $response->assertDontSee(route('settings.edit'), false);
         $response->assertDontSeeText('Administração');
     }
@@ -233,9 +236,9 @@ class RoleMenuVisibilityTest extends TestCase
     }
 
     /**
-     *  non-regression — nothing moves for the Gestor: the
-     * operational items stay in "Administração" and no "Impersonate"
-     * heading appears, even with a stale `active_org_id` in session.
+     *  the Gestor is staff, not a learner: "Meus Cursos" is
+     * Aluno-only (mirroring the route's own `role:aluno`), so the
+     * "Aprendizado" heading is never rendered for a Gestor either.
      */
     public function test_gestor_menu_is_untouched_and_never_shows_an_impersonate_section(): void
     {
@@ -253,9 +256,12 @@ class RoleMenuVisibilityTest extends TestCase
         $response->assertSee(route('courses.index'), false);
         $response->assertSee(route('quiz-attempts.pending'), false);
         $response->assertSee(route('forum-moderation.index'), false);
-        // The Gestor keeps "Meus Cursos".
-        $response->assertSee(route('student.courses.index'), false);
-        $response->assertSeeText('Aprendizado');
+        // The Gestor-exclusive Aluno directory replaces it.
+        $response->assertSee(route('gestor.students.index'), false);
+        //  "Meus Cursos" is gone from the Gestor's menu too,
+        // which leaves "Aprendizado" empty and dropped.
+        $response->assertDontSee(route('student.courses.index'), false);
+        $response->assertDontSeeText('Aprendizado');
     }
 
     public function test_admin_impersonating_an_org_sees_the_users_link_in_both_renders(): void
@@ -278,7 +284,14 @@ class RoleMenuVisibilityTest extends TestCase
             ->assertOk();
     }
 
-    public function test_gestor_sees_the_users_link_in_both_renders(): void
+    /**
+     *  `users.index` is Admin-exclusive now (`role:admin`), so the
+     * Gestor gets the dedicated `students` item instead — in BOTH renders
+     * (desktop `<aside>` and mobile Offcanvas) — and the admin screen's
+     * URL must be blocked by its own middleware, not just absent from the
+     * menu.
+     */
+    public function test_gestor_sees_the_students_link_in_both_renders_and_not_the_users_link(): void
     {
         $org = Organization::factory()->create();
         $gestor = User::factory()->create(['org_id' => $org->id]);
@@ -287,9 +300,14 @@ class RoleMenuVisibilityTest extends TestCase
         $response = $this->actingAs($gestor)->get(route('admin.dashboard'));
 
         $response->assertOk();
-        $this->assertStringContainsString('dusk="sidebar-users-link"', $response->getContent());
-        $this->assertStringContainsString('dusk="sidebar-users-link-mobile"', $response->getContent());
+        $this->assertStringContainsString('dusk="sidebar-students-link"', $response->getContent());
+        $this->assertStringContainsString('dusk="sidebar-students-link-mobile"', $response->getContent());
+        $this->assertStringNotContainsString('dusk="sidebar-users-link"', $response->getContent());
+        $this->assertStringNotContainsString('dusk="sidebar-users-link-mobile"', $response->getContent());
 
-        $this->actingAs($gestor)->get(route('users.index'))->assertOk();
+        // The offered link actually works...
+        $this->actingAs($gestor)->get(route('gestor.students.index'))->assertOk();
+        // ...and the admin-exclusive screen it replaced 403s.
+        $this->actingAs($gestor)->get(route('users.index'))->assertForbidden();
     }
 }

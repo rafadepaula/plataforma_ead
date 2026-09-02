@@ -12,14 +12,14 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * read/query surface for the audit trail, served at
- * both `/admin/audit-logs` (`admin.audit-logs.index`) and
- * `/gestor/audit-logs` (`gestor.audit-logs.index`) — two distinct routes
- * pointing at the same controller methods (see `routes/web.php` and
- * `audit-logs-conventions`). `AuditLog`'s own `OrgScope` global scope
- * already restricts a Gestor's query to their own `org_id`; an Admin sees
- * everything (or one Org while impersonating) — no manual `org_id`
- * filtering is needed for that half of the isolation, only the explicit
- * `org_id` filter dropdown below.
+ * `/admin/audit-logs` (`admin.audit-logs.index`) — audit is a
+ * system-administration surface reserved to `role:admin`; the legacy
+ * Gestor-prefixed `gestor.audit-logs.*` routes were removed (see
+ * `routes/web.php`). `AuditLog`'s `OrgScope` global scope keeps the
+ * listing pinned to `session('active_org_id')` while an Admin is
+ * impersonating an Organization — the explicit `org_id` filter dropdown
+ * below only ever widens an Admin's own view, never crosses tenants for
+ * anyone else.
  */
 class AuditLogController extends Controller
 {

@@ -13,52 +13,45 @@ use Tests\DuskTestCase;
  * E2E coverage for user management screens.
  *
  * Agrupado por cadeia de ciclo de vida (ver `testing-conventions`): a
- * jornada do Gestor sobre um usuário (criar → editar → inativar →
- * consequência no login) é um único método, e a jornada de matrícula
- * (matricular → revogar) é outro. Negativas independentes (cross-tenant,
- * rejeições de validação) seguem em métodos próprios.
+ * jornada do Gestor sobre um ALUNO matriculado (visualizar na listagem →
+ * editar → inativar → consequência no login) é um único método, a jornada
+ * de matrícula (matricular → revogar) é outra, e as rejeições de
+ * validação da criação de usuários (agora exclusiva do Admin, via
+ * "Entrar como") fecham o arquivo. Negativas independentes (cross-tenant,
+ * permissões) seguem em métodos próprios ou nos testes Feature.
  */
 class UserManagementTest extends DuskTestCase
 {
-    public function test_gestor_user_management_full_lifecycle(): void
+    public function test_gestor_student_management_full_lifecycle(): void
     {
-        $gestor = User::factory()->gestor()->create();
+        $org = Organization::factory()->create();
+        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor->assignRole(RolesEnum::GESTOR->value);
+        $course = Course::factory()->for($org)->create();
+        $aluno = User::factory()->aluno()->create([
+            'org_id' => $org->id,
+            'name' => 'Aluno Dusk',
+            'email' => 'aluno.dusk@example.com',
+        ]);
+        $aluno->courses()->attach($course->id, ['status' => 'active', 'enrolled_at' => now()]);
 
-        $this->browse(function (Browser $browser) use ($gestor): void {
-            // 1. Criação
+        $this->browse(function (Browser $browser) use ($gestor, $aluno): void {
+            // 1. Listagem: o Aluno matriculado aparece no diretório.
             $browser->loginAs($gestor)
-                ->visit(route('users.create'))
-                ->waitFor('@user-form')
-                ->type('name', 'Aluno Dusk')
-                ->type('email', 'aluno.dusk@example.com')
-                ->type('cpf', '98765432100')
-                ->select('role', 'aluno')
-                ->type('password', 'password')
-                ->type('password_confirmation', 'password')
-                ->press('Criar Usuário')
-                ->waitForLocation('/users')
-                ->assertSee('Usuário criado com sucesso.')
+                ->visit(route('gestor.students.index'))
+                ->waitFor('@gestor-students-index')
+                ->waitFor('@student-row-'.$aluno->id)
                 ->assertSee('Aluno Dusk');
 
-            $this->assertDatabaseHas('users', [
-                'name' => 'Aluno Dusk',
-                'email' => 'aluno.dusk@example.com',
-                'cpf' => '98765432100',
-                'org_id' => $gestor->org_id,
-            ]);
-
-            $aluno = User::where('email', 'aluno.dusk@example.com')->firstOrFail();
-
             // 2. Edição, a partir da listagem, na mesma sessão
-            $browser->visit(route('users.index'))
-                ->waitFor('@edit-user-'.$aluno->id)
-                ->click('@edit-user-'.$aluno->id)
-                ->waitFor('@user-form')
+            $browser->click('@edit-student-'.$aluno->id)
+                ->waitFor('@student-form')
                 ->clear('name')
                 ->type('name', 'Aluno Editado')
                 ->press('Salvar Alterações')
-                ->waitForLocation('/users')
-                ->assertSee('Usuário atualizado com sucesso.')
+                ->waitForLocation('/gestor/students')
+                ->waitFor('@gestor-students-index')
+                ->assertSee('Aluno atualizado com sucesso.')
                 ->assertSee('Aluno Editado');
 
             $this->assertDatabaseHas('users', [
@@ -67,17 +60,17 @@ class UserManagementTest extends DuskTestCase
             ]);
 
             // 3. Inativação
-            $browser->visit(route('users.edit', $aluno))
-                ->waitFor('@user-form')
-                ->select('@user-status-select', 'inactive')
-                ->type('@user-status-reason', 'Aluno solicitou o encerramento do acesso.')
+            $browser->visit(route('gestor.students.edit', $aluno))
+                ->waitFor('@student-form')
+                ->select('@student-status-select', 'inactive')
+                ->type('@student-status-reason', 'Aluno solicitou o encerramento do acesso.')
                 ->press('Salvar Alterações')
-                ->waitForText('Usuário atualizado com sucesso.')
-                ->waitFor('@user-status-'.$aluno->id)
+                ->waitForText('Aluno atualizado com sucesso.')
+                ->waitFor('@student-status-'.$aluno->id)
                 // `<x-ui.badge>` carries `text-transform: uppercase`, and
                 // Selenium's getText() returns the rendered (transformed)
                 // texto: a caixa é decisão de tema, então a asserção ignora a caixa.
-                ->assertTextEqualsIgnoringCase('@user-status-'.$aluno->id, 'Inativo');
+                ->assertTextEqualsIgnoringCase('@student-status-'.$aluno->id, 'Inativo');
 
             $this->assertDatabaseHas('users', [
                 'id' => $aluno->id,
@@ -152,21 +145,31 @@ class UserManagementTest extends DuskTestCase
 
     /**
      * Rejeições de validação agrupadas na MESMA sessão de formulário — sem
-     * recarregar navegador nem refazer login entre elas.
+     * recarregar navegador nem refazer login entre elas. A criação de
+     * usuários é exclusiva do Admin agora (`users.*` é `role:admin`), então
+     * o Admin assume o contexto da Organização antes do formulário.
      */
     public function test_create_user_validation_rejections(): void
     {
-        $gestor = User::factory()->gestor()->create();
+        $org = Organization::factory()->create();
+        $admin = User::factory()->create(['org_id' => null]);
+        $admin->assignRole(RolesEnum::ADMIN->value);
         User::factory()->aluno()->create([
-            'org_id' => $gestor->org_id,
+            'org_id' => $org->id,
             'email' => 'duplicado@example.com',
         ]);
 
-        $this->browse(function (Browser $browser) use ($gestor): void {
-            // 1. E-mail duplicado
-            $browser->loginAs($gestor)
+        $this->browse(function (Browser $browser) use ($admin, $org): void {
+            // "Entrar como" na Organização dá ao Admin o contexto de tenant
+            // exigido pelo `users.*`.
+            $browser->loginAs($admin)
+                ->visit(route('organizations.index'))
+                ->waitFor('@impersonate-'.$org->id)
+                ->click('@impersonate-'.$org->id)
+                ->waitForLocation('/organizations')
                 ->visit(route('users.create'))
                 ->waitFor('@user-form')
+                // 1. E-mail duplicado
                 ->type('name', 'Aluno Duplicado')
                 ->type('email', 'duplicado@example.com')
                 ->type('cpf', '98765432100')

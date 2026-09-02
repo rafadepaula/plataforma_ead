@@ -10,16 +10,17 @@ use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 
 /**
- * E2E coverage of the `/admin/audit-logs` and
- * `/gestor/audit-logs` screens: loading, filtering, opening the shared
- * "Ver diff" modal, pagination, CSV export, and cross-org isolation
- * (a Gestor never sees another Org's rows nor the Admin-only Org filter
- * dropdown).
+ * E2E coverage of the `/admin/audit-logs`
+ * screen (Admin-only since the Gestor-prefixed routes were removed):
+ * loading, filtering, opening the shared "Ver diff" modal, pagination,
+ * CSV export — and the rejection contract: a Gestor has NO audit surface
+ * at all (the legacy `/gestor/audit-logs` URL 404s, and the Admin URL
+ * 403s via `role:admin` middleware).
  *
  * Agrupado por cadeia de ciclo de vida (ver `testing-conventions`): toda a
  * jornada do Admin na tela (estado inicial → diff → filtro → paginação →
- * export) é um método; a jornada do Gestor (isolamento cross-org →
- * rejeição na URL de Admin) é outro, pois exige outro ator.
+ * export) é um método; a jornada do Gestor (nenhuma superfície de
+ * auditoria) é outro, pois exige outro ator.
  *
  * Seeds `AuditLog` rows directly via `AuditLog::withoutEvents()` (mirrors
  * `AuditLogFactory`'s own doc-comment guidance) to avoid `OrgScope`'s
@@ -110,7 +111,7 @@ class AuditLogUiTest extends DuskTestCase
         );
     }
 
-    public function test_gestor_audit_logs_isolation_and_admin_route_rejection(): void
+    public function test_gestor_has_no_audit_surface_at_all(): void
     {
         $ownOrg = Organization::factory()->create();
         $otherOrg = Organization::factory()->create();
@@ -121,24 +122,23 @@ class AuditLogUiTest extends DuskTestCase
         $ownLog = $this->seedLog($ownOrg, null, 'login.success');
         $otherOrgLog = $this->seedLog($otherOrg, null, 'login.failed');
 
-        $this->browse(function (Browser $browser) use ($gestor, $ownLog, $otherOrgLog): void {
-            // 1. Sua própria tela: só as linhas da própria Organização e sem
-            //    o filtro de Organização (exclusivo do Admin).
+        $this->browse(function (Browser $browser) use ($gestor): void {
+            // 1. A URL prefixada de Gestor não existe mais: auditoria é
+            //    superfície exclusiva de Admin, e o 404 prova que a rota
+            //    foi removida, não apenas escondida do menu.
             $browser->loginAs($gestor)
-                ->visit(route('gestor.audit-logs.index'))
-                ->waitFor('@audit-logs-index')
-                ->waitFor('@audit-log-row-'.$ownLog->id)
-                ->assertMissing('@audit-log-row-'.$otherOrgLog->id)
-                ->assertMissing('@audit-logs-org-filter');
+                ->visit('/gestor/audit-logs')
+                ->assertSee('404');
 
             // 2. A URL prefixada de Admin é rejeitada para o mesmo Gestor.
             $browser->visit(route('admin.audit-logs.index'))
                 ->assertSee('403');
         });
 
-        $this->assertDatabaseHas('audit_logs', [
-            'id' => $otherOrgLog->id,
-            'org_id' => $otherOrgLog->org_id,
-        ]);
+        // As linhas das duas Organizações continuam intatas no banco —
+        // a remoção da tela do Gestor nunca foi um atalho para apagar
+        // dados (o isolamento em query já é coberto no nível Feature).
+        $this->assertDatabaseHas('audit_logs', ['id' => $ownLog->id]);
+        $this->assertDatabaseHas('audit_logs', ['id' => $otherOrgLog->id]);
     }
 }

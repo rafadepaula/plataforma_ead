@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Permissions\RolesEnum;
 use App\Http\Controllers\Concerns\ResolvesOrgContext;
 use App\Http\Requests\ImportUsersChunkRequest;
 use App\Models\Course;
@@ -30,7 +31,15 @@ class UserImportController extends Controller
         $orgId = $this->resolveOrgId($request);
         $courses = Course::query()->where('org_id', $orgId)->orderBy('title')->get();
 
-        return view('users.import', compact('courses'));
+        //  the import is shared by Admin and Gestor, but the
+        // `users.index` screen it used to bounce back to is Admin-only
+        // now — a Gestor's "Voltar" must land on their exclusive Aluno
+        // directory instead, never on a screen their middleware 403s.
+        $backUrl = $request->user()->hasRole(RolesEnum::GESTOR->value)
+            ? route('gestor.students.index')
+            : route('users.index');
+
+        return view('users.import', compact('courses', 'backUrl'));
     }
 
     public function chunk(ImportUsersChunkRequest $request): JsonResponse

@@ -639,11 +639,14 @@ class UserAdminManagementTest extends TestCase
     }
 
     /**
-     * Regression guard: the operational `users.index` screen must remain
-     * restricted to the acting Gestor's own Organization, and to
-     * aluno/gestor roles only —  does not touch it.
+     * Regression guard: the operational `users.index` screen is
+     * Admin-exclusive now (`role:admin` — see `routes/web.php`), so a
+     * Gestor is blocked by middleware no matter which Organization they
+     * target. The Gestor's own people surface is the exclusive Aluno
+     * directory (`gestor.students.*`), whose own-org scoping is covered
+     * by `GestorStudentManagementTest`.
      */
-    public function test_operational_users_index_is_unaffected(): void
+    public function test_operational_users_index_is_admin_exclusive(): void
     {
         $org = Organization::factory()->create();
         $otherOrg = Organization::factory()->create();
@@ -657,9 +660,7 @@ class UserAdminManagementTest extends TestCase
 
         $response = $this->actingAs($gestor)->get(route('users.index'));
 
-        $response->assertOk();
-        $response->assertSee($ownAluno->name);
-        $response->assertDontSee($otherOrgAluno->name);
+        $response->assertForbidden();
     }
 
     /**

@@ -2,7 +2,7 @@
 
 @section('content')
     <x-layout.page-header
-        :breadcrumb="[['label' => 'Organização', 'url' => route('users.index')], ['label' => 'Alunos & Gestores', 'url' => route('users.index')], ['label' => 'Importar Alunos via CSV']]"
+        :breadcrumb="[['label' => 'Organização', 'url' => $backUrl], ['label' => 'Importar Alunos via CSV']]"
         kicker="Organização"
         title="Importar Alunos via CSV"
         subtitle="Cadastre e matricule vários Alunos de uma vez a partir de um arquivo CSV."
@@ -67,7 +67,7 @@
 
             <x-ui.form-actions>
                 <x-ui.button type="submit" dusk="csv-import-submit">Iniciar Importação</x-ui.button>
-                <x-ui.button variant="secondary" href="{{ route('users.index') }}">Voltar</x-ui.button>
+                <x-ui.button variant="secondary" href="{{ $backUrl }}">Voltar</x-ui.button>
             </x-ui.form-actions>
         </form>
     </x-ui.card>

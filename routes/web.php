@@ -13,6 +13,7 @@ use App\Http\Controllers\ForumModerationController;
 use App\Http\Controllers\ForumReplyController;
 use App\Http\Controllers\ForumReportController;
 use App\Http\Controllers\ForumTopicController;
+use App\Http\Controllers\GestorStudentController;
 use App\Http\Controllers\ImpersonateOrgController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\InvitationLinkController;
@@ -68,23 +69,46 @@ Route::middleware(['auth', 'role:admin'])->group(function (): void {
     Route::put('admin/users/{user}', [UserAdminController::class, 'update'])->name('admin.users.update');
     Route::patch('admin/users/{user}/status', [UserAdminController::class, 'updateStatus'])->name('admin.users.status');
     Route::delete('admin/users/{user}', [UserAdminController::class, 'destroy'])->name('admin.users.destroy');
+
+    // the operational single-org "Alunos & Gestores" screen,
+    // Admin-exclusive (`role:admin`, mirroring the `users` navigation
+    // item's `roles`): the Gestor's people management lives in the
+    // dedicated `gestor.students.*` group below, never here. Tenant
+    // resolution still goes through `ResolvesOrgContext` — an Admin
+    // reaches this resource only while impersonating an Organization.
+    Route::resource('users', UserController::class)->except(['show']);
 });
 
-// Gestor-side audit trail UI, same controller as the
-// Admin block above. `AuditLog`'s `OrgScope` global scope restricts a
-// Gestor's query to their own `org_id` automatically.
-Route::middleware(['auth', 'role:gestor'])->group(function (): void {
-    Route::get('gestor/audit-logs', [AuditLogController::class, 'index'])->name('gestor.audit-logs.index');
-    Route::get('gestor/audit-logs/export', [AuditLogController::class, 'export'])->name('gestor.audit-logs.export');
-});
+// Gestor-side audit trail routes were removed :
+// audit is a system-administration surface reserved to `role:admin`
+// (`admin.audit-logs.*` in the group above), with parity enforced by the
+// `audit-logs` navigation item's `roles` and by the OrgScope on `AuditLog`
+// for the impersonation case.
 
-// Aluno/Gestor CRUD + chunked CSV import, restricted to
-// Admin/Gestor (see the `auth-orgs-maintenance` skill).
+// Aluno/Gestor chunked CSV import stays shared
+// (`role:admin|gestor`): unlike the `users.*` CRUD above, it is an
+// enrollment tool scoped to the acting user's own Organization's Courses
+// (see `UserImportService::importChunk()`), i.e. part of managing their
+// Organization's Alunos rather than part of the Admin-only users screen.
 Route::middleware(['auth', 'role:admin|gestor'])->group(function (): void {
     Route::get('users/import', [UserImportController::class, 'create'])->name('users.import.create');
     Route::post('users/import/chunk', [UserImportController::class, 'chunk'])->name('users.import.chunk');
+});
 
-    Route::resource('users', UserController::class)->except(['show']);
+// the Gestor's exclusive Aluno directory: lists only the
+// Alunos enrolled in the acting Gestor's own Organization's Courses, and
+// lets them view/manage exactly those Alunos (edit profile/status and
+// remove) — nothing beyond their own tenant and never another staff
+// account (see `GestorStudentController` and `UserPolicy::*Student`).
+// Distinct from the Admin-only `users.*` resource above by design (see
+// `auth-orgs-conventions`): a separate controller, a separate route
+// namespace and a `role:gestor`-only middleware group, so the boundary is
+// enforced by middleware first and Policy second.
+Route::middleware(['auth', 'role:gestor'])->group(function (): void {
+    Route::get('gestor/students', [GestorStudentController::class, 'index'])->name('gestor.students.index');
+    Route::get('gestor/students/{user}/edit', [GestorStudentController::class, 'edit'])->name('gestor.students.edit');
+    Route::put('gestor/students/{user}', [GestorStudentController::class, 'update'])->name('gestor.students.update');
+    Route::delete('gestor/students/{user}', [GestorStudentController::class, 'destroy'])->name('gestor.students.destroy');
 });
 
 // Course/Module/Lesson CRUD + AJAX reorder,

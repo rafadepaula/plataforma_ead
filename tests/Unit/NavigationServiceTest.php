@@ -218,6 +218,8 @@ class NavigationServiceTest extends TestCase
      *  non-regression — a Gestor always operates inside their own
      * Organization, so nothing moves for them: the operational items stay
      * in "Administração" and no "Impersonate" heading is ever emitted.
+     * `users`/`audit-logs` are Admin-only now; `students` is the
+     * Gestor-exclusive people-management item.
      */
     public function test_gestor_keeps_the_operational_items_in_administracao_and_never_sees_impersonate(): void
     {
@@ -227,7 +229,7 @@ class NavigationServiceTest extends TestCase
 
         $this->assertNotContains('Impersonate', $this->sectionTitlesFor($gestor));
         $this->assertSame(
-            ['dashboard', 'users', 'courses', 'quiz-attempts', 'forum-moderation', 'audit-logs', 'settings'],
+            ['dashboard', 'students', 'courses', 'quiz-attempts', 'forum-moderation', 'settings'],
             $this->keysInSection($gestor, 'Administração'),
         );
     }
@@ -283,17 +285,19 @@ class NavigationServiceTest extends TestCase
     }
 
     /**
-     *  non-regression — only the Admin loses "Meus Cursos"; the
-     * Gestor and the Aluno keep their "Aprendizado" section.
+     *  "Meus Cursos" is Aluno-only (`role:aluno` parity — staff
+     * accounts are not learners): the Gestor's "Aprendizado" section is
+     * empty and therefore dropped entirely by `build()`, while the Aluno
+     * keeps both the section and the item.
      */
-    public function test_gestor_and_aluno_still_see_meus_cursos(): void
+    public function test_only_the_aluno_still_sees_meus_cursos(): void
     {
         $org = Organization::factory()->create();
 
         $gestor = User::factory()->create(['org_id' => $org->id]);
         $gestor->assignRole(RolesEnum::GESTOR->value);
-        $this->assertContains('Aprendizado', $this->sectionTitlesFor($gestor));
-        $this->assertContains('student-courses', $this->keysInSection($gestor, 'Aprendizado'));
+        $this->assertNotContains('Aprendizado', $this->sectionTitlesFor($gestor));
+        $this->assertNotContains('student-courses', $this->keysFor($gestor));
 
         $aluno = User::factory()->create(['org_id' => $org->id]);
         $aluno->assignRole(RolesEnum::ALUNO->value);
@@ -312,7 +316,7 @@ class NavigationServiceTest extends TestCase
         $this->assertContains('users', $this->keysFor($admin));
     }
 
-    public function test_gestor_never_sees_organizations_but_sees_everything_else_admin_sees(): void
+    public function test_gestor_never_sees_the_admin_exclusive_items_but_sees_the_students_item(): void
     {
         $org = Organization::factory()->create();
         $gestor = User::factory()->create(['org_id' => $org->id]);
@@ -320,10 +324,15 @@ class NavigationServiceTest extends TestCase
 
         $keys = $this->keysFor($gestor);
 
-        //  `organizations` is admin-exclusive.
+        //  `organizations`, `users` and `audit-logs` are
+        // admin-exclusive; "Meus Cursos" is Aluno-only.
         $this->assertNotContains('organizations', $keys);
+        $this->assertNotContains('users', $keys);
+        $this->assertNotContains('audit-logs', $keys);
+        $this->assertNotContains('student-courses', $keys);
+        //  the Gestor-exclusive Aluno directory.
+        $this->assertContains('students', $keys);
         $this->assertContains('dashboard', $keys);
-        $this->assertContains('users', $keys);
         $this->assertContains('courses', $keys);
         $this->assertContains('settings', $keys);
     }
@@ -384,15 +393,19 @@ class NavigationServiceTest extends TestCase
         $this->assertSame(route('admin.audit-logs.index'), $auditItem['url']);
     }
 
-    public function test_gestor_only_audit_logs_route_resolves_to_gestor_prefixed_route(): void
+    public function test_gestor_has_no_audit_logs_item_at_all(): void
     {
+        //  audit is a system-administration surface:
+        // `roles: ['admin']` on the item mirrors the route's
+        // `role:admin` middleware (the legacy Gestor-prefixed routes were
+        // removed), so the item is filtered out for a Gestor entirely.
         $org = Organization::factory()->create();
         $gestor = User::factory()->create(['org_id' => $org->id]);
         $gestor->assignRole(RolesEnum::GESTOR->value);
 
-        $auditItem = $this->findItem($gestor, 'audit-logs');
+        $keys = $this->keysFor($gestor);
 
-        $this->assertSame(route('gestor.audit-logs.index'), $auditItem['url']);
+        $this->assertNotContains('audit-logs', $keys);
     }
 
     public function test_pending_essay_badge_counts_awaiting_manual_grading_attempts(): void
@@ -503,9 +516,8 @@ class NavigationServiceTest extends TestCase
     public function test_active_flag_is_true_when_request_route_matches_an_active_pattern(): void
     {
         $org = Organization::factory()->create();
-        // A Gestor always resolves a tenant context, so the `users` item
-        // is present for them ( hides it only for a context-less
-        // Admin).
+        // The `students` item is the Gestor-exclusive people-management
+        // entry ( `users` is Admin-only now).
         $gestor = User::factory()->create(['org_id' => $org->id]);
         $gestor->assignRole(RolesEnum::GESTOR->value);
 
@@ -515,21 +527,21 @@ class NavigationServiceTest extends TestCase
         // the active wildcard matching  against the framework's own
         // `named()` implementation, not a re-implementation of it. The
         // Feature/Dusk suites additionally cover dispatched-route parity.
-        $route = (new Route('GET', 'users/create', []))
-            ->name('users.create');
+        $route = (new Route('GET', 'gestor/students/{user}/edit', []))
+            ->name('gestor.students.edit');
 
-        $request = Request::create('/users/create', 'GET');
+        $request = Request::create('/gestor/students/1/edit', 'GET');
         $request->setRouteResolver(fn () => $route);
 
         $service = new NavigationService(new NavigationRegistry, $request);
 
-        $usersItem = collect($service->build($gestor))
+        $studentsItem = collect($service->build($gestor))
             ->flatMap(fn ($section) => $section->items)
-            ->firstWhere('key', 'users');
+            ->firstWhere('key', 'students');
 
-        //  the `users.*` wildcard highlights the parent on a
-        // sub-route like `users.create`.
-        $this->assertTrue($usersItem['active']);
+        //  the `gestor.students.*` wildcard highlights the
+        // parent on a sub-route like `gestor.students.edit`.
+        $this->assertTrue($studentsItem['active']);
     }
 
     public function test_guest_returns_an_empty_section_list(): void

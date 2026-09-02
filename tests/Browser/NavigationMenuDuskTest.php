@@ -93,9 +93,17 @@ class NavigationMenuDuskTest extends DuskTestCase
                 ->visit(route('admin.dashboard'))
                 ->waitFor('@admin-dashboard')
                 ->assertMissing('@sidebar-organizations-link')
+                //  `users` (Alunos & Usuários) e `audit-logs`
+                // (Auditoria) são exclusivos do Admin agora.
+                ->assertMissing('@sidebar-users-link')
+                ->assertMissing('@sidebar-audit-logs-link')
                 ->assertPresent('@sidebar-dashboard-link')
-                ->assertPresent('@sidebar-users-link')
-                ->assertPresent('@sidebar-settings-link');
+                ->assertPresent('@sidebar-students-link')
+                ->assertPresent('@sidebar-settings-link')
+                // O link do diretório de Alunos é real: leva à listagem.
+                ->click('@sidebar-students-link')
+                ->waitForLocation('/gestor/students')
+                ->waitFor('@gestor-students-index');
         });
     }
 
@@ -149,25 +157,27 @@ class NavigationMenuDuskTest extends DuskTestCase
         $org = Organization::factory()->create();
         $gestor = User::factory()->create(['org_id' => $org->id]);
         $gestor->assignRole(RolesEnum::GESTOR->value);
+        $aluno = User::factory()->create(['org_id' => $org->id]);
+        $aluno->assignRole(RolesEnum::ALUNO->value);
 
-        // A Gestor always resolves a tenant context, so the users item is
-        // visible for them ( only hides it for a context-less Admin).
-        $this->browse(function (Browser $browser) use ($gestor): void {
+        // The `students` item is the Gestor-exclusive people-management
+        // entry ( `users` is Admin-only now).
+        $this->browse(function (Browser $browser) use ($gestor, $aluno): void {
             $browser->loginAs($gestor)
-                ->visit(route('users.create'))
-                ->waitFor('@user-form');
+                ->visit(route('gestor.students.edit', $aluno))
+                ->waitFor('@student-form');
 
-            // The parent "Alunos & Usuários" item must carry the
-            // `active` class on its `users.create` sub-route .
-            // Dusk's `assertAttribute` does strict equality on the full
-            // attribute string, so read the class and assert `active`
-            // membership directly.
-            $class = $browser->attribute('@sidebar-users-link', 'class');
-            $this->assertNotNull($class, 'sidebar-users-link element is missing.');
+            // The parent "Alunos" item must carry the `active` class on
+            // its `gestor.students.edit` sub-route . Dusk's
+            // `assertAttribute` does strict equality on the full attribute
+            // string, so read the class and assert `active` membership
+            // directly.
+            $class = $browser->attribute('@sidebar-students-link', 'class');
+            $this->assertNotNull($class, 'sidebar-students-link element is missing.');
             $this->assertStringContainsString(
                 'active',
                 $class,
-                "Expected sidebar-users-link to carry the 'active' class on its users.create sub-route ."
+                "Expected sidebar-students-link to carry the 'active' class on its gestor.students.edit sub-route ."
             );
         });
     }

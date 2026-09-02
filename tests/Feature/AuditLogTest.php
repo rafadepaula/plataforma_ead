@@ -535,16 +535,15 @@ class AuditLogTest extends TestCase
 
         AuditLog::query()->delete();
 
-        $this->put(route('users.update', $student), [
+        $this->put(route('gestor.students.update', $student), [
             'name' => $student->name,
             'email' => $student->email,
-            'role' => RolesEnum::ALUNO->value,
             'status' => 'inactive',
         ]);
 
         $log = AuditLog::withoutGlobalScopes()->where('event', 'user.status_changed')->first();
 
-        $this->assertNotNull($log, 'Expected a user.status_changed audit row (Bucket B: UserController::update()).');
+        $this->assertNotNull($log, 'Expected a user.status_changed audit row (GestorStudentController::update()).');
     }
 
     public function test_essay_graded_is_recorded_per_question(): void
@@ -772,36 +771,21 @@ class AuditLogTest extends TestCase
         $this->get(route('admin.audit-logs.index'))->assertRedirect(route('login'));
     }
 
-    public function test_aluno_is_forbidden_from_the_gestor_audit_logs_index(): void
+    public function test_gestor_audit_routes_are_gone_and_the_admin_route_stays_gestor_free(): void
     {
-        if (! Route::has('gestor.audit-logs.index')) {
-            $this->markTestIncomplete('gestor.audit-logs.index route not yet registered (Bucket B).');
-        }
+        //  audit became a system-administration surface:
+        // the Gestor-prefixed routes were removed, so a hand-typed
+        // `/gestor/audit-logs` URL 404s for anyone, and the surviving
+        // `admin.audit-logs.index` 403s a Gestor via `role:admin`
+        // middleware.
+        $this->assertFalse(Route::has('gestor.audit-logs.index'), 'gestor.audit-logs.index must no longer be registered.');
+        $this->assertFalse(Route::has('gestor.audit-logs.export'), 'gestor.audit-logs.export must no longer be registered.');
 
         $org = Organization::factory()->create();
-        $this->actingAsOrgUser($org, 'aluno');
+        $this->actingAsOrgUser($org, 'gestor');
 
-        $this->get(route('gestor.audit-logs.index'))->assertForbidden();
-    }
-
-    public function test_admin_is_forbidden_from_the_gestor_audit_logs_index(): void
-    {
-        if (! Route::has('gestor.audit-logs.index')) {
-            $this->markTestIncomplete('gestor.audit-logs.index route not yet registered (Bucket B).');
-        }
-
-        $this->actingAsAdmin();
-
-        $this->get(route('gestor.audit-logs.index'))->assertForbidden();
-    }
-
-    public function test_guest_is_redirected_away_from_the_gestor_audit_logs_index(): void
-    {
-        if (! Route::has('gestor.audit-logs.index')) {
-            $this->markTestIncomplete('gestor.audit-logs.index route not yet registered (Bucket B).');
-        }
-
-        $this->get(route('gestor.audit-logs.index'))->assertRedirect(route('login'));
+        $this->get('/gestor/audit-logs')->assertNotFound();
+        $this->get(route('admin.audit-logs.index'))->assertForbidden();
     }
 
     public function test_aluno_is_forbidden_from_the_admin_audit_logs_export(): void
@@ -816,39 +800,14 @@ class AuditLogTest extends TestCase
         $this->get(route('admin.audit-logs.export'))->assertForbidden();
     }
 
-    public function test_aluno_is_forbidden_from_the_gestor_audit_logs_export(): void
+    public function test_gestor_audit_export_route_is_gone_too(): void
     {
-        if (! Route::has('gestor.audit-logs.export')) {
-            $this->markTestIncomplete('gestor.audit-logs.export route not yet registered (Bucket B).');
-        }
+        $this->assertFalse(Route::has('gestor.audit-logs.export'));
 
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org, 'aluno');
 
-        $this->get(route('gestor.audit-logs.export'))->assertForbidden();
-    }
-
-    public function test_gestor_audit_logs_index_is_scoped_to_their_own_org(): void
-    {
-        if (! Route::has('gestor.audit-logs.index')) {
-            $this->markTestIncomplete('gestor.audit-logs.index route not yet registered (Bucket B).');
-        }
-
-        $orgA = Organization::factory()->create();
-        $orgB = Organization::factory()->create();
-
-        AuditLog::withoutEvents(function () use ($orgA, $orgB) {
-            AuditLog::factory()->for($orgA, 'organization')->create(['event' => 'gestor-scope-a']);
-            AuditLog::factory()->for($orgB, 'organization')->create(['event' => 'gestor-scope-b']);
-        });
-
-        $this->actingAsOrgUser($orgA, 'gestor');
-
-        $response = $this->get(route('gestor.audit-logs.index'));
-
-        $response->assertOk();
-        $response->assertSee('gestor-scope-a');
-        $response->assertDontSee('gestor-scope-b');
+        $this->get('/gestor/audit-logs/export')->assertNotFound();
     }
 
     public function test_index_filters_by_date_range_event_category_and_user_search(): void
@@ -884,27 +843,17 @@ class AuditLogTest extends TestCase
         $response->assertDontSee('course.updated');
     }
 
-    public function test_admin_org_id_filter_is_ignored_for_a_gestor_request(): void
+    public function test_a_gestor_request_cannot_reach_the_admin_only_screen_to_spoof_an_org_filter(): void
     {
-        if (! Route::has('gestor.audit-logs.index')) {
-            $this->markTestIncomplete('gestor.audit-logs.index route not yet registered (Bucket B).');
-        }
+        //  the org_id filter is Admin-only at the controller
+        // layer (defense in depth), but since the Gestor-facing routes
+        // were removed, a spoofed `org_id` from a Gestor now dies at the
+        // `role:admin` middleware long before any filter is built.
+        $org = Organization::factory()->create();
 
-        $orgA = Organization::factory()->create();
-        $orgB = Organization::factory()->create();
+        $this->actingAsOrgUser($org, 'gestor');
 
-        AuditLog::withoutEvents(function () use ($orgA, $orgB) {
-            AuditLog::factory()->for($orgA, 'organization')->create(['event' => 'own-org-event']);
-            AuditLog::factory()->for($orgB, 'organization')->create(['event' => 'spoofed-org-event']);
-        });
-
-        $this->actingAsOrgUser($orgA, 'gestor');
-
-        $response = $this->get(route('gestor.audit-logs.index', ['org_id' => $orgB->id]));
-
-        $response->assertOk();
-        $response->assertSee('own-org-event');
-        $response->assertDontSee('spoofed-org-event');
+        $this->get(route('admin.audit-logs.index', ['org_id' => $org->id]))->assertForbidden();
     }
 
     public function test_admin_can_filter_by_org_id(): void
