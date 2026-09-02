@@ -11,7 +11,9 @@
 @if($quiz && $questionsCount > 0)
     @php
         /** O resumo de questões/tempo é sempre exibido; as instruções, quando houver, complementam. */
-        $questionsLabel = $questionsCount.' '.($questionsCount === 1 ? 'questão' : 'questões');
+        $questionsLabel = $questionsCount === 1
+            ? 'Existe uma questão'
+            : 'São '.$questionsCount.' questões';
         $timeLabel = $quiz->time_limit_minutes ? ' e '.$quiz->time_limit_minutes.' minutos' : '';
     @endphp
     <div class="ds-quiz-placeholder" dusk="quiz-placeholder">

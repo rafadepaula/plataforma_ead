@@ -29,7 +29,7 @@
             :breadcrumb="[['label' => 'Meus cursos', 'url' => route('student.courses.index')], ['label' => $course->title, 'url' => route('classroom.show', $course)], ['label' => $lesson->title]]"
             :kicker="$course->title . ' / Prova'"
             :title="$quiz->title ?? $lesson->title"
-            :subtitle="'São ' . $quiz->questions->count() . ' ' . ($quiz->questions->count() === 1 ? 'questão' : 'questões') . '.'">
+            :subtitle="$quiz->questions->count() === 1 ? 'Existe uma questão.' : 'São '.$quiz->questions->count().' questões.'">
             @if($quiz->time_limit_minutes && $canAttempt && $attemptStartedAt !== null)
                 <x-slot:actions>
                     <div class="d-inline-flex align-items-center gap-2 px-3 py-2 bg-body-secondary rounded-pill fw-semibold">
