@@ -29,7 +29,7 @@ section). Admin with no active impersonation manage nothing here. No fallback to
 | `courses` | `org_id`, `title`, `description`, `workload_hours`, `is_published` | **Directly org-scoped** — `OrgScope` trait |
 | `course_user` (pivot) | `user_id`, `course_id`, `status` (`active`\|`cancelled`\|`completed`), `progress_percentage`, `enrolled_at`, `completed_at`, `expires_at` nullable | Not org-scoped — enrollment cross orgs (see `tenancy-architecture`). `expires_at` backs `Course::enrollmentDisplayStatusFor()`'s derived `expirado` chip on an `active` row past deadline — not a 4th pivot `status` value |
 | `modules` | `course_id`, `title`, `description`, `order_index` | **Cascade-inherited** via `courses.org_id` — no own `org_id`, no `OrgScope` |
-| `lessons` | `module_id`, `title`, `type` (`content`\|`quiz`), `content_text`, `youtube_url`, `pdf_path`, `image_path`, `order_index`, `is_published` | **Cascade-inherited** via `modules`, `courses.org_id` |
+| `lessons` | `module_id`, `title`, `type` (`content`\|`quiz`), `content_text`, `video_provider` (`youtube`\|`vimeo`, nullable, default `youtube`), `video_url`, `pdf_path`, `image_path`, `order_index`, `is_published` | **Cascade-inherited** via `modules`, `courses.org_id` |
 | `lesson_media` | `lesson_id` FK `cascadeOnDelete`, `kind` ENUM(`image`\|`pdf`), `path`, `original_name` nullable, `size_bytes` nullable unsignedBigInteger; INDEX(`lesson_id`,`kind`) | **Cascade-inherited** via `lesson -> module -> courses.org_id` — no own `org_id`, no `OrgScope` (same as `Module`/`Lesson`) |
 
 All three (`courses`, `modules`, `lessons`) use `SoftDeletes`. Every delete
@@ -132,11 +132,11 @@ Gestor/Admin managing own content, not student consuming it.
 ## `lessons.type = 'quiz'` Is Placeholder Here
 
 The quizzes domain own quiz question authoring. This feature's Lesson form only populate
-`type = content` rows (Rich Text / Imagem / PDF / YouTube — the four content
+`type = content` rows (Rich Text / Imagem / PDF / Vídeo YouTube/Vimeo — the four content
 kinds).
 `quiz` exist as schema value and disabled/placeholder option in UI, never fully
 wired content path in this feature. Do not add
-`content_text`/`youtube_url`/`pdf_path`/`image_path` population logic for
+`content_text`/`video_provider`/`video_url`/`pdf_path`/`image_path` population logic for
 `type = quiz` rows.
 
 ## Gestor Course Catalog Read Model

@@ -2,7 +2,7 @@
 name: courses-conventions
 description: >
   Code patterns, snippets, guardrails for Courses/Modules/Lessons feature:
-  FileUploadService/YoutubeSanitizerService usage,
+  FileUploadService/VideoUrlSanitizerManager usage,
   Course/Module/Lesson Policy conventions, factory conventions, AJAX reorder
   endpoint shape. Use when write controller, Policy, Form Request, or Service
   managing `Course`/`Module`/`Lesson` records, handle Lesson media upload or
@@ -72,8 +72,9 @@ mass assignment, then `LessonController::syncMedia()`:
   lesson's own `media()` relation (ids from another lesson/org simply don't
   match the scoped query, so they are ignored rather than rejected), and
   `Storage::disk('public')->delete()`s each removed file;
-- re-sanitizes `youtube_url` exactly as before — multi-file changed nothing
-  in the YouTube path.
+- re-sanitizes `video_url` through the sanitizer of its `video_provider`
+  (detected from the URL itself when the select came empty) and nulls
+  provider + URL out together when the URL is cleared.
 
 Tests fake disk (`Storage::fake('public')`) rather than touch real storage, and
 assert on returned path's `dirname()` to confirm tenant isolation:
@@ -84,17 +85,27 @@ $path = (new FileUploadService)->storeImage($file, $course);
 $this->assertSame("orgs/{$course->org_id}/courses/{$course->id}/images", dirname($path));
 ```
 
-## `YoutubeSanitizerService`: Whitelist, Don't Blacklist
+## `VideoUrlSanitizerManager`: Whitelist, Don't Blacklist, One Provider Registry
 
-`sanitize(string $url): string` match only `youtube.com/watch?v=`,
-`youtube.com/embed/`, and `youtu.be/` (with optional `www.` and 11-character
-video ID). Everything else, including `youtube-nocookie.com`, `javascript:`
-URIs, and arbitrary `<iframe>` src values, fail *same* regex and throw
-`InvalidYoutubeUrlException`. Never add second "reject known-bad patterns"
+Video URL validation run per-provider through `VideoUrlSanitizer` interface —
+`YoutubeSanitizerService` and `VimeoSanitizerService` — resolved by
+`VideoUrlSanitizerManager` (`for(string $provider)`, `providerFor(string $url)`).
+The manager is THE one place that knows every provider; new provider = new
+sanitizer class + one entry in its `SANITIZERS` map. Each `sanitize(string
+$url): string` match only its own host shapes (YouTube: `youtube.com/watch?v=`,
+`youtube.com/embed/`, `youtube-nocookie.com/embed/`, `youtu.be/`, 11-char id;
+Vimeo: `vimeo.com/{numeric id}`, `vimeo.com/{id}/{unlisted hash}`,
+`player.vimeo.com/video/{id}`). Everything else, including `javascript:` URIs
+and arbitrary `<iframe>` src values, fail *same* regex and throw provider
+exception (`InvalidYoutubeUrlException`/`InvalidVimeoUrlException`, both extend
+`InvalidVideoUrlException`). Never add second "reject known-bad patterns"
 branch. Whitelist-only match is whole mitigation:
 
 ```php
-private const PATTERN = '#^https?://(?:www\.)?(?:youtube\.com/(?:watch\?v=|embed/)|youtu\.be/)([A-Za-z0-9_-]{11})(?:[&?][^\s]*)?$#i';
+// YoutubeSanitizerService — output host is privacy-enhanced youtube-nocookie,
+// so output MUST re-parse as valid input (idempotent roundtrip) or every
+// accessor built on extractVideoId degrade the lesson it just sanitized.
+private const PATTERN = '#^https?://(?:www\.)?(?:youtube\.com/(?:watch\?v=|embed/)|youtube-nocookie\.com/embed/|youtu\.be/)([A-Za-z0-9_-]{11})(?:[&?][^\s]*)?$#i';
 
 public function sanitize(string $url): string
 {
@@ -102,36 +113,46 @@ public function sanitize(string $url): string
         throw new InvalidYoutubeUrlException("URL do YouTube inválida ou não suportada: \"{$url}\".");
     }
 
-    return 'https://www.youtube.com/embed/'.$matches[1];
+    return 'https://www.youtube-nocookie.com/embed/'.$matches[1];
 }
 ```
 
-`InvalidYoutubeUrlException extends \InvalidArgumentException` specifically so it
+`InvalidVideoUrlException extends \InvalidArgumentException` specifically so it
 never need `bootstrap/app.php` handler entry. Always caught locally, inside
-`StoreLessonRequest`/`UpdateLessonRequest` `withValidator()`, and re-surfaced as
-normal validation error on `youtube_url` field:
+`StoreLessonRequest`/`UpdateLessonRequest` `withValidator()` — provider chosen
+from `video_provider` input, or detected via `providerFor()` when select came
+empty — and re-surfaced as normal validation error on `video_url` field:
 
 ```php
 public function withValidator(Validator $validator): void
 {
     $validator->after(function (Validator $validator): void {
-        $url = $this->input('youtube_url');
+        $url = $this->input('video_url');
         if (! $url) {
             return;
         }
 
+        $manager = app(VideoUrlSanitizerManager::class);
+        $provider = $this->input('video_provider') ?: $manager->providerFor($url);
+
+        if ($provider === null) {
+            $validator->errors()->add('video_url', 'Não foi possível identificar o provedor do vídeo — informe uma URL do YouTube ou do Vimeo.');
+
+            return;
+        }
+
         try {
-            app(YoutubeSanitizerService::class)->sanitize($url);
-        } catch (InvalidYoutubeUrlException $e) {
-            $validator->errors()->add('youtube_url', $e->getMessage());
+            $manager->for($provider)->sanitize($url);
+        } catch (InvalidVideoUrlException $e) {
+            $validator->errors()->add('video_url', $e->getMessage());
         }
     });
 }
 ```
 
-Controller then re-sanitize already-validated value before persist
-(`$data['youtube_url'] = $this->youtubeSanitizerService->sanitize($data['youtube_url'])`)
-so row always store canonical embed URL, never raw input.
+Controller then re-sanitize already-validated value through the provider
+sanitizer before persist (`LessonController::validatedAttributes()`), so row
+always store canonical embed URL + explicit `video_provider`, never raw input.
 
 ## Policies: Course Scope-Protected, Module/Lesson Not
 

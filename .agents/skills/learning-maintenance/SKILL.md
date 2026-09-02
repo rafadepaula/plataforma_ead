@@ -103,7 +103,7 @@ Tests guard this module's contract. Must stay green (PHPUnit, no Pest):
   check.
 - `tests/Feature/LessonDispatchOrderTest.php` — 9 tests freezing
   the lesson-player view contract: the exclusive `@if/@elseif` dispatch on
-  conflicting rows (a `type=quiz` Lesson carrying BOTH `youtube_url` and
+  conflicting rows (a `type=quiz` Lesson carrying BOTH `video_url` and
   `pdf_path` renders `quiz-placeholder` and neither `video-player-{id}`
   nor `mark-complete-button`; a content Lesson with both renders only the
   video), the PDF-only and text-only branches, the material-less lesson
@@ -348,8 +348,8 @@ Full rule: `testing-conventions`. Chain debugging: `testing-maintenance`.
   the fallback) — a factory row alone no longer renders a viewer. See the
   `Storage::fake` setup in `tests/Feature/LessonMediaTest.php`.
 - **A manual completion 422s on a lesson that shows no player**: the guard
-  is `youtube_video_id`, not `youtube_url`. If an unparseable URL is
-  rejected, someone reverted the accessor check to `empty($lesson->
-  youtube_url)`; that would make the lesson uncompletable and freeze
-  `progress_percentage` for the whole course.
-  `LessonProgressControllerTest` covers both directions.
+  is `hasPlayableVideo()` (id resolved through the provider sanitizer), not
+  the raw `video_url`. If an unparseable URL is rejected, someone reverted
+  the accessor check to `empty($lesson->video_url)`; that would make the
+  lesson uncompletable and freeze `progress_percentage` for the whole
+  course. `LessonProgressControllerTest` covers both directions.

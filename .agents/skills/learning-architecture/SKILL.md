@@ -42,13 +42,13 @@ differ by lesson shape:
 
 | Lesson shape | Trigger | `completion_source` | Endpoint |
 | --- | --- | --- | --- |
-| Video (`youtube_url` set) | YouTube IFrame API polling reports `watched_seconds` ≥ 90% of `duration_seconds` | `video_threshold` | `POST /lessons/{lesson}/progress` |
-| Text/PDF/Image (no `youtube_url`) | Explicit "Marcar como concluída" click | `manual_click` | `POST /lessons/{lesson}/complete` |
+| Video (`video_url` set, id resolves — YouTube or Vimeo) | provider adapter polling reports `watched_seconds` ≥ 90% of `duration_seconds` | `video_threshold` | `POST /lessons/{lesson}/progress` |
+| Text/PDF/Image (no `video_url`) | Explicit "Marcar como concluída" click | `manual_click` | `POST /lessons/{lesson}/complete` |
 | Quiz (`type = quiz`) | `SubmitQuizAttemptAction` when `quiz_attempts.is_passed = true` | `quiz_passed` | none — no manual button ever renders for quiz lesson |
 
 Both HTTP endpoints reject wrong shape with 422, never silently accept it:
-`complete()` 422s on `type=quiz` or non-empty `youtube_url`;
-`updateProgress()` 422s on `type=quiz` or empty `youtube_url`. See
+`complete()` 422s on `type=quiz` or playable video (`hasPlayableVideo()`);
+`updateProgress()` 422s on `type=quiz` or non-playable lesson. See
 `learning-conventions` for exact controller checks.
 
 ## `MarkLessonCompleteAction`: the Single Write Path
@@ -246,7 +246,7 @@ lookup or resolves media itself:
 ### Glyph resolution is media-aware (`Lesson::pendingGlyph`)
 
 The pending-state glyph is resolved in PHP, never in Blade:
-`type === 'quiz'` → `clipboard`; `youtube_url` filled → `play`;
+`type === 'quiz'` → `clipboard`; `video_url` filled → `play`;
 `hasPdfAttachment()` → `file-text`; else `book-open`. A completed lesson
 always overrides to `check`.
 
@@ -279,24 +279,48 @@ format from a frozen `@if/@elseif` chain in
 
 ```
 type === 'quiz'        -> classroom.partials._quiz-placeholder
-filled(youtube_url)    -> classroom.partials._video
+filled(video_url)      -> classroom.partials._video
 filled(pdf_path)       -> classroom.partials._pdf
 else                   -> classroom.partials._text-image
 ```
 
 The order is a **contract, not a style choice**. Rows carry conflicting
 content columns in the wild (a quiz Lesson that also stores a
-`youtube_url`, a video Lesson that also stores a `pdf_path`), and this
+`video_url`, a video Lesson that also stores a `pdf_path`), and this
 chain is what guarantees a quiz never reaches the video player and never
 renders a manual-completion button. `LessonProgressController::
 updateProgress()` mirrors the same precedence server-side — it checks
-`type === 'quiz'` **before** the `youtube_video_id === null` check — so the
+`type === 'quiz'` **before** the `hasPlayableVideo()` check — so the
 two layers agree on which lesson is video-driven. Reordering either side
 without the other silently lets a quiz be completed by a video poll.
 `tests/Feature/LessonDispatchOrderTest.php` freezes all four branches.
 
-The server-side predicate is the **resolved video id**, not the raw
-`youtube_url` column. A lesson whose URL cannot be parsed into an id has no
+### The player is click-to-load, provider-agnostic (`lesson-player/`)
+
+`_video.blade.php` NEVER renders a provider iframe. Server ships one
+`.ds-player` shell (`dusk="video-player-{id}"` on BOTH the playable and the
+unavailable branch): pastel-wash facade button
+(`dusk="video-facade-{id}"`), a server-rendered control bar
+(`dusk="video-play/seek/time/mute/volume/fullscreen-{id}"`, `.d-none` + inert
+until boot — selectors live in Blade, so the Dusk snapshot sees them), and the
+runtime-error notice. Wiring travels as data attributes: `data-provider`
+(`youtube`\|`vimeo`), `data-video-id`, `data-video-embed` (canonical
+nocookie/`player.vimeo.com` URL, carrying `?h=` for unlisted Vimeo),
+`data-lesson-id`, `data-progress-url`.
+
+First facade click boots a `VideoPlayerAdapter`
+(`resources/js/modules/lesson-player/`): `YoutubeAdapter` (IFrame API,
+`youtube-nocookie.com` host, `controls: 0`, `disablekb: 1`) or `VimeoAdapter`
+(Player SDK via CDN, `controls: false`, `dnt`), same surface:
+`play/pause/seek/setVolume/setMuted/getCurrentTime/getDuration/getState/on`,
+events `ready/timeupdate/statechange/error`. `PlayerController` owns the
+overlay controls, keyboard shortcuts, fullscreen, auto-hide and the 5s poll
+that funnels through `LessonPlayer.reportProgress`. Zero third-party JS loads
+before the student clicks; adapter `error` swaps the shell to the neutral
+unavailable notice (runtime-degraded video, provider removed it).
+
+The server-side predicate is the **resolved video id** (`Lesson::
+hasPlayableVideo()`), not the raw `video_url` column. A lesson whose URL cannot be parsed into an id has no
 player to drive the 90% threshold, so `complete()` accepts it and
 `updateProgress()` rejects it — that inversion is what keeps one broken
 link from freezing a whole course. `_video.blade.php` mirrors it by passing
@@ -306,8 +330,8 @@ link from freezing a whole course. `_video.blade.php` mirrors it by passing
 
 - **`tracksProgress`** — `$user->hasActiveOrCompletedEnrollment($course)`.
   Every partial reads it (`$tracksProgress ?? true`) and forwards it to the
-  completion bar; `_video` also gates the `data-youtube-player` wiring on
-  it. It exists because `EnsureStudentIsEnrolled` lets Admin and same-org
+  completion bar; `_video` also gates the `data-progress-url` polling wiring on
+  it (the player shell itself still renders for preview — see below). It exists because `EnsureStudentIsEnrolled` lets Admin and same-org
   Gestor *open* the screen to preview it, while
   `LessonProgressController::abortUnlessEnrolled()` answers **403** on both
   write endpoints for anyone without an `active`/`completed` `course_user`

@@ -45,23 +45,24 @@ calling Action. Do not route that branch through
 Both `LessonProgressController` actions validate lesson **shape** before
 touching `lesson_progress`, checking `type === 'quiz'` first (quiz
 completion goes through `SubmitQuizAttemptAction`), so malformed
-data carrying both `type=quiz` and `youtube_url` still 422s as quiz. The
-video half of the guard tests the **resolved** `youtube_video_id`
-accessor, never the raw `youtube_url` column:
+data carrying both `type=quiz` and `video_url` still 422s as quiz. The
+video half of the guard tests the **resolved** `hasPlayableVideo()`
+predicate (video id parsed through the provider sanitizer), never the raw
+`video_url` column:
 
 ```php
 // complete(): rejects quiz lessons and PLAYABLE video lessons
-if ($lesson->type === 'quiz' || $lesson->youtube_video_id !== null) {
+if ($lesson->type === 'quiz' || $lesson->hasPlayableVideo()) {
     return response()->json(['message' => '...'], 422);
 }
 
 // updateProgress(): rejects quiz lessons and lessons with no resolvable player
-if ($lesson->type === 'quiz' || $lesson->youtube_video_id === null) {
+if ($lesson->type === 'quiz' || ! $lesson->hasPlayableVideo()) {
     return response()->json(['message' => '...'], 422);
 }
 ```
 
-Do not "simplify" either line back to `empty($lesson->youtube_url)`. A
+Do not "simplify" either line back to `empty($lesson->video_url)`. A
 lesson whose URL cannot be parsed into an id (a Vimeo link, a typo) has no
 player, so no 90% threshold can ever fire for it; the accessor form is what
 keeps it manually completable instead of permanently blocking course
@@ -145,7 +146,9 @@ $lesson->module->setRelation('course', $course);
 
 `resources/js/modules/LessonPlayer.js` binds two unrelated things on
 `init()` — `bindManualCompletion()` for `[data-mark-complete-url]` buttons,
-`bindVideoPlayers()` for `[data-youtube-player]` containers. Both funnel UI
+`bindVideoPlayers()` for `[data-video-player]` containers (one
+`PlayerController` per container — facade click-to-boot, overlay controls,
+5s poll). Both funnel UI
 feedback through same `reflectCompletion()`/`notify()` helpers, so manual
 click and video auto-completion look identical to student.
 
@@ -313,7 +316,7 @@ after the controller stops sending one of the pair.
 Consequences to preserve when editing them:
 
 - `lesson-row` reads `$lesson->glyph` and the `completed` prop; it must
-  NOT re-derive the icon with a `match(true)` over `youtube_url`/
+  NOT re-derive the icon with a `match(true)` over `video_url`/
   `pdf_path` — that path is media-blind (see `learning-architecture`).
 - `show.blade.php` renders the `col-lg-8` main track FIRST and the
   `col-lg-4` sidebar SECOND, so the sidebar stacks below the track on

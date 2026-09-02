@@ -45,9 +45,11 @@ These tests guard this module's contract, must stay green (PHPUnit, no Pest):
 - `tests/Feature/UiSortableFieldComponentsTest.php` — the four wrapper
   components in isolation: `<x-ui.sortable-list>`/`<x-ui.sortable-row>`
   markup and dusk passthrough, `<x-ui.file-drop>` attachment list/remove
-  button/`.is-invalid` convention, `<x-ui.youtube-field>` filled-vs-empty
-  server-rendered preview.
+  button/`.is-invalid` convention, `<x-ui.video-field>` provider select +
+  filled-vs-empty server-rendered preview (YouTube nocookie and Vimeo embed).
 - `tests/Unit/Services/YoutubeSanitizerServiceTest.php`,
+  `tests/Unit/Services/VimeoSanitizerServiceTest.php`,
+  `tests/Unit/Services/VideoUrlSanitizerManagerTest.php`,
   `tests/Unit/Services/FileUploadServiceTest.php` — service-level unit coverage,
   independent of HTTP layer.
 - `tests/Browser/CourseManagementTest.php` — E2E: Gestor creates/edits/deletes
@@ -58,12 +60,12 @@ These tests guard this module's contract, must stay green (PHPUnit, no Pest):
   full trail-builder selector contract: module rows + "{N} lições" chip
   (zero-lesson wording included), cascade ConfirmModal deletion quoting the
   real lesson count, lesson rows with `Conteúdo`/`Não publicada` chips,
-  multi-file attach on `lesson-image-input`/`lesson-pdf-input`, YouTube preview
+  multi-file attach on `lesson-image-input`/`lesson-pdf-input`, video preview
   asserted via `src` attribute (never iframe load — network race), type-select
   quiz hiding, and reorder round-trip via `persistOrder()`. Also carries the
   exception-flow negatives the happy-path lifecycle never touches:
-  `test_lesson_form_validation_rejections` (invalid YouTube URL rejected with
-  `error-youtube_url`, an oversized image rejected CLIENT-SIDE by
+  `test_lesson_form_validation_rejections` (invalid video URL rejected with
+  `error-video_url`, an oversized image rejected CLIENT-SIDE by
   `LessonForm.js`'s own `.is-invalid` toggle with no server round-trip, and an
   oversized/wrong-type PDF that bypasses that client gate — via the
   `attachFileBypassingClientValidation()` helper, which sets `input.files`
@@ -172,25 +174,26 @@ failures in this codebase.
 
 `modules/lessons/_form.blade.php` `type` select offer `quiz` as option (the
 `lessons.type` column is `content|quiz`), but this feature's form only ever
-expose four `content`-kind fields (Rich Text/Imagem/PDF/YouTube). The quizzes
+expose four `content`-kind fields (Rich Text/Imagem/PDF/Vídeo YouTube/Vimeo). The quizzes
 module own quiz question authoring. If asked to "wire up quiz creation", that
 out of scope here; extend the quizzes module's own controller/views instead of
 adding fields to this form.
 
-## Client-Side YouTube Preview Best-Effort Only
+## Client-Side Video Preview Best-Effort Only
 
-The preview lives in the `LessonForm.js` module (`x-youtube-field` renders the
-iframe) and mirror `YoutubeSanitizerService` regex client-side purely to render
-the 16:9 preview. It **not** security boundary.
-`StoreLessonRequest`/`UpdateLessonRequest` `withValidator()` always re-validate
-through real `YoutubeSanitizerService` server-side; if you ever see lesson with
-non-canonical `youtube_url` stored, bug in controller/request, not preview JS.
-Never trust client-side match result for anything beyond visual preview.
+The preview lives in the `LessonForm.js` module (`x-video-field` renders the
+iframe) and mirror `VideoUrlSanitizerManager` regexes client-side — one pattern
+per provider in `VIDEO_PATTERNS` — purely to render the 16:9 preview. URL that
+match only the OTHER provider auto-switch the provider select; result **not**
+security boundary. `StoreLessonRequest`/`UpdateLessonRequest` `withValidator()`
+always re-validate through real sanitizer server-side; if you ever see lesson
+with non-canonical `video_url` stored, bug in controller/request, not preview
+JS. Never trust client-side match result for anything beyond visual preview.
 
-Dusk gotcha: waiting on the external YouTube iframe can hang on
-network — assert the `src` ATTRIBUTE (`assertAttributeContains('@youtube-preview',
+Dusk gotcha: waiting on the external provider iframe can hang on
+network — assert the `src` ATTRIBUTE (`assertAttributeContains('@video-preview',
 'src', '.../embed/...')`), never wait for the iframe to load, and never race a
-submit against a YouTube-bearing edit form.
+submit against a video-bearing edit form.
 
 ## `FileUploadService` Path Mismatches
 
