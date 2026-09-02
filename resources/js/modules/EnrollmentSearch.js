@@ -122,10 +122,11 @@ export class EnrollmentSearch {
         students.forEach((student) => {
             const item = document.createElement('button');
             item.type = 'button';
-            item.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center';
+            item.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center gap-2';
             item.setAttribute('data-enrollment-option', String(student.id));
 
             const info = document.createElement('div');
+            info.className = 'min-w-0';
             const name = document.createElement('div');
             name.className = 'fw-semibold';
             name.textContent = student.name;
@@ -137,8 +138,12 @@ export class EnrollmentSearch {
             item.append(info);
 
             if (student.enrollment_status === 'cancelled') {
+                // Par sólido do design system (`--success`/`--on-secondary`,
+                // mesmo do `.btn-success`) com a métrica do `.ds-badge` — o
+                // `text-bg-secondary` do Bootstrap rendia texto escuro,
+                // pequeno e sem respiro.
                 const badge = document.createElement('span');
-                badge.className = 'badge text-bg-secondary';
+                badge.className = 'badge ds-badge ds-badge-plain ds-enrollment-badge flex-shrink-0';
                 badge.textContent = 'matrícula cancelada';
                 item.append(badge);
             }

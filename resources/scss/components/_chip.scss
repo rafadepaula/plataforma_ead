@@ -145,3 +145,15 @@
     opacity: .45;
     pointer-events: none;
 }
+
+// -----------------------------------------------------------------------------
+// Badge sólido do autocomplete de matrícula (`EnrollmentSearch.js`) — o
+// markup nasce em JS, fora do alcance do `x-ui.badge`, então repete aqui o
+// par sólido do `.btn-success` (`--success`/`--on-secondary`, texto branco
+// sobre o fill menta) com a métrica do `.ds-badge` (altura 32px, padding
+// lateral 14px, fonte caption) vinda das classes `ds-badge ds-badge-plain`.
+// -----------------------------------------------------------------------------
+.ds-enrollment-badge {
+    color: var(--on-secondary);
+    background-color: var(--success);
+}

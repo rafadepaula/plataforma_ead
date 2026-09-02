@@ -7,6 +7,7 @@ use App\Models\Course;
 use App\Models\Organization;
 use App\Models\User;
 use App\Notifications\EnrollmentConfirmedNotification;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
@@ -105,6 +106,136 @@ class EnrollmentManagementTest extends TestCase
         ]);
     }
 
+    public function test_gestor_can_restore_a_cancelled_enrollment(): void
+    {
+        Notification::fake();
+
+        $org = Organization::factory()->create();
+        $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
+        $course = Course::factory()->create(['org_id' => $org->id]);
+        $student = User::factory()->create(['org_id' => $org->id]);
+        $enrolledAt = Carbon::parse('2026-03-15 10:00:00');
+        $course->students()->attach($student->id, [
+            'enrolled_at' => $enrolledAt,
+            'status' => 'cancelled',
+            'progress_percentage' => 40,
+        ]);
+
+        $this->post(route('courses.enrollments.restore', [$course, $student]))
+            ->assertRedirect(route('courses.enrollments.index', $course))
+            ->assertSessionHas('success', 'Matrícula restaurada com sucesso.');
+
+        // Restaurar devolve o status ativo preservando o progresso...
+        $this->assertDatabaseHas('course_user', [
+            'course_id' => $course->id,
+            'user_id' => $student->id,
+            'status' => 'active',
+            'progress_percentage' => 40,
+        ]);
+
+        // ...e a data original de matrícula: restaurar não é uma nova
+        // matrícula (diferente da reativação via `store()`, que reseta
+        // `enrolled_at`).
+        $pivot = $course->students()->where('users.id', $student->id)->first()->pivot;
+        $this->assertTrue($pivot->enrolled_at->equalTo($enrolledAt));
+
+        Notification::assertSentTo($student, EnrollmentConfirmedNotification::class);
+    }
+
+    public function test_restoring_a_user_without_an_enrollment_returns_404(): void
+    {
+        $org = Organization::factory()->create();
+        $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
+        $course = Course::factory()->create(['org_id' => $org->id]);
+        $neverEnrolled = User::factory()->create(['org_id' => $org->id]);
+
+        $this->post(route('courses.enrollments.restore', [$course, $neverEnrolled]))
+            ->assertNotFound();
+    }
+
+    public function test_restoring_an_already_active_enrollment_is_idempotent(): void
+    {
+        Notification::fake();
+
+        $org = Organization::factory()->create();
+        $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
+        $course = Course::factory()->create(['org_id' => $org->id]);
+        $student = User::factory()->create(['org_id' => $org->id]);
+        $course->students()->attach($student->id, ['enrolled_at' => now(), 'status' => 'active']);
+
+        $this->post(route('courses.enrollments.restore', [$course, $student]))
+            ->assertRedirect(route('courses.enrollments.index', $course))
+            ->assertSessionHas('success', 'A matrícula deste aluno já está ativa.');
+
+        // Idempotente: nada muda e ninguém é notificado de novo.
+        $this->assertDatabaseHas('course_user', [
+            'course_id' => $course->id,
+            'user_id' => $student->id,
+            'status' => 'active',
+        ]);
+        Notification::assertNothingSent();
+    }
+
+    public function test_restoring_a_completed_enrollment_does_not_regress_it(): void
+    {
+        Notification::fake();
+
+        $org = Organization::factory()->create();
+        $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
+        $course = Course::factory()->create(['org_id' => $org->id]);
+        $student = User::factory()->create(['org_id' => $org->id]);
+        $course->students()->attach($student->id, [
+            'enrolled_at' => now()->subMonths(2),
+            'status' => 'completed',
+            'progress_percentage' => 100,
+            'completed_at' => now()->subMonth(),
+        ]);
+
+        $this->post(route('courses.enrollments.restore', [$course, $student]))
+            ->assertRedirect(route('courses.enrollments.index', $course))
+            ->assertSessionHas('success', 'A matrícula deste aluno foi concluída — não há o que restaurar.');
+
+        // Concluir é estado final: o restore não devolve para `active`.
+        $this->assertDatabaseHas('course_user', [
+            'course_id' => $course->id,
+            'user_id' => $student->id,
+            'status' => 'completed',
+        ]);
+        Notification::assertNothingSent();
+    }
+
+    /**
+     * A correção de raiz do bug da coluna "Matriculado em" (pivot custom
+     * `CourseUser` com casts de data): a view recebe `enrolled_at` como
+     * Carbon e rende a data `d/m/Y` — antes do pivot class a célula era
+     * sempre vazia (`->format()` sobre a string crua do banco).
+     */
+    public function test_enrollments_index_renders_formatted_dates_and_row_actions(): void
+    {
+        $org = Organization::factory()->create();
+        $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
+        $course = Course::factory()->create(['org_id' => $org->id]);
+        $active = User::factory()->create(['org_id' => $org->id, 'name' => 'Aluno Ativo']);
+        $cancelled = User::factory()->create(['org_id' => $org->id, 'name' => 'Aluno Cancelado']);
+        $course->students()->attach($active->id, [
+            'enrolled_at' => Carbon::parse('2026-03-15 10:00:00'),
+            'status' => 'active',
+        ]);
+        $course->students()->attach($cancelled->id, [
+            'enrolled_at' => Carbon::parse('2026-02-10 09:00:00'),
+            'status' => 'cancelled',
+        ]);
+
+        $this->get(route('courses.enrollments.index', $course))
+            ->assertOk()
+            ->assertSee('15/03/2026')
+            ->assertSee('10/02/2026')
+            // Linha ativa: revogação com confirmação; linha cancelada:
+            // ação de restaurar.
+            ->assertSee('Revogar')
+            ->assertSee('Restaurar');
+    }
+
     /**
      * `CoursePolicy`/`CourseController::destroy()`'s "no active
      * enrollments" guard (`Course::hasActiveEnrollments()`) must stay
@@ -138,10 +269,12 @@ class EnrollmentManagementTest extends TestCase
     {
         $org = Organization::factory()->create();
         $course = Course::factory()->create(['org_id' => $org->id]);
+        $student = User::factory()->create(['org_id' => $org->id]);
         $this->actingAsOrgUser($org, RolesEnum::ALUNO->value);
 
         $this->get(route('courses.enrollments.index', $course))->assertForbidden();
         $this->post(route('courses.enrollments.store', $course), ['user_id' => 1])->assertForbidden();
+        $this->post(route('courses.enrollments.restore', [$course, $student]))->assertForbidden();
     }
 
     public function test_gestor_from_another_org_cannot_manage_enrollments_of_a_course_they_do_not_own(): void
@@ -156,6 +289,7 @@ class EnrollmentManagementTest extends TestCase
         // `MultiTenantCourseManagementTest`'s cross-tenant Course checks.
         $this->get(route('courses.enrollments.index', $otherCourse))->assertNotFound();
         $this->post(route('courses.enrollments.store', $otherCourse), ['user_id' => 1])->assertNotFound();
+        $this->post(route('courses.enrollments.restore', [$otherCourse, User::factory()->create()]))->assertNotFound();
     }
 
     public function test_gestor_cannot_manually_enroll_a_user_from_a_different_org(): void

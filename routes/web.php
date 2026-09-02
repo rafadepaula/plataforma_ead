@@ -232,6 +232,8 @@ Route::middleware(['auth', 'role:admin|gestor'])->group(function (): void {
         ->name('courses.enrollments.store');
     Route::delete('courses/{course}/enrollments/{user}', [EnrollmentController::class, 'destroy'])
         ->name('courses.enrollments.destroy');
+    Route::post('courses/{course}/enrollments/{user}/restore', [EnrollmentController::class, 'restore'])
+        ->name('courses.enrollments.restore');
 });
 
 // public, unauthenticated Smart Invitation flow: a

@@ -17,6 +17,11 @@
     Os atributos extras (inclusive `dusk=`) são mesclados no `<form>`, que é a
     raiz funcional do componente — o card é apenas o invólucro visual.
 
+    `dense` é opt-in para telas que precisam de mais aproveitamento
+    vertical (ex.: matrículas de curso): enxuga o padding superior/inferior
+    do `card-body` sem tocar no default, que é o padrão visual das demais
+    telas (cursos, audit-logs).
+
     Visual: `.card` do Bootstrap já é outlined por padrão (borda `--border-color`,
     sem sombra) com raio 20px vindo da ponte (`$card-border-radius`) — não
     precisa de classe extra nem de um segundo contorno dentro do card-body.
@@ -30,6 +35,7 @@
     'label' => 'Filtros',
     'submitDusk' => 'filter-submit',
     'resetDusk' => 'filter-reset',
+    'dense' => false,
 ])
 
 @php
@@ -39,7 +45,7 @@
 @endphp
 
 <div class="card mb-3">
-    <div class="card-body">
+    <div class="card-body {{ $dense ? 'py-2' : '' }}">
         <form method="{{ $htmlMethod }}"
               action="{{ $action }}"
               role="search"

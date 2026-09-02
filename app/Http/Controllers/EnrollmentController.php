@@ -19,10 +19,10 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Hash;
 
 /**
- * Gestor/Admin panel for manually enrolling/revoking a
+ * Gestor/Admin panel for manually enrolling/revoking/restoring a
  * Course's `course_user` rows, nested under `{course}` (`index`/`store`
- * reached via `{course}` alone, `destroy` via `{course}` + `{user}` — not a
- * `Route::resource()`, see `routes/web.php`). No separate `Enrollment`
+ * reached via `{course}` alone, `destroy`/`restore` via `{course}` +
+ * `{user}` — not a `Route::resource()`, see `routes/web.php`). No separate `Enrollment`
  * model/policy exists — `course_user` is a pivot only (see
  * `courses-architecture`), so every action is authorized against the
  * parent `Course` via `CoursePolicy::update`, matching
@@ -195,5 +195,45 @@ class EnrollmentController extends Controller
 
         return redirect()->route('courses.enrollments.index', $course)
             ->with('success', 'Matrícula revogada com sucesso.');
+    }
+
+    /**
+     * restaura uma matrícula previamente revogada: volta o pivot
+     * `cancelled` para `active` sem tocar em `enrolled_at`,
+     * `progress_percentage` ou `completed_at` — restaurar não é uma nova
+     * matrícula (ao contrário da reativação de `store()`, que reseta
+     * `enrolled_at` pois chega pelo fluxo de autocomplete). Estado não
+     * revogado nunca muda aqui: `active` é idempotente e `completed` não
+     * regride (concluir é estado final) — ambos respondem com flash
+     * informativo, sem despachar `EnrollmentConfirmed`.
+     */
+    public function restore(Course $course, User $user): RedirectResponse
+    {
+        Gate::authorize('update', $course);
+
+        $pivot = $course->students()->where('users.id', $user->id)->first()?->pivot;
+
+        if ($pivot === null) {
+            abort(404);
+        }
+
+        if ($pivot->status !== 'cancelled') {
+            $message = $pivot->status === 'active'
+                ? 'A matrícula deste aluno já está ativa.'
+                : 'A matrícula deste aluno foi concluída — não há o que restaurar.';
+
+            return redirect()->route('courses.enrollments.index', $course)
+                ->with('success', $message);
+        }
+
+        // `updateExistingPivot` grava apenas as colunas passadas:
+        // progresso, `completed_at` e a data original de matrícula ficam
+        // intactos.
+        $course->students()->updateExistingPivot($user->id, ['status' => 'active']);
+
+        EnrollmentConfirmed::dispatch($course, $user);
+
+        return redirect()->route('courses.enrollments.index', $course)
+            ->with('success', 'Matrícula restaurada com sucesso.');
     }
 }

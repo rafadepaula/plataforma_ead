@@ -107,12 +107,17 @@ class UserManagementTest extends DuskTestCase
         $course = Course::factory()->create(['org_id' => $org->id]);
 
         $this->browse(function (Browser $browser) use ($gestor, $aluno, $course): void {
-            // 1. Matrícula manual via autocomplete (EnrollmentSearch.js):
-            // digita parte do nome, espera o dropdown do endpoint JSON e
-            // clica na opção do aluno — o `user_id` oculto é preenchido
-            // pelo módulo antes do submit.
+            // 1. Matrícula manual via modal: o formulário mora dentro de
+            // `#enroll-student-modal` (nasce `display:none`), então o
+            // gatilho do header precisa ser clicado antes de qualquer
+            // interação com o autocomplete (`EnrollmentSearch.js`): digita
+            // parte do nome, espera o dropdown do endpoint JSON e clica na
+            // opção do aluno — o `user_id` oculto é preenchido pelo módulo
+            // antes do submit.
             $browser->loginAs($gestor)
                 ->visit(route('courses.enrollments.index', $course))
+                ->waitFor('@enroll-student-button')
+                ->click('@enroll-student-button')
                 ->waitFor('@manual-enroll-form')
                 ->type('@manual-enroll-search', 'Matriculável')
                 ->waitFor('[data-enrollment-option="'.$aluno->id.'"]')
@@ -127,19 +132,38 @@ class UserManagementTest extends DuskTestCase
                 'status' => 'active',
             ]);
 
-            // 2. Revogação da matrícula recém-criada
+            // 2. Revogação da matrícula recém-criada — passa pela modal de
+            // confirmação (`x-ui.confirm-modal`): o botão "Revogar" da
+            // linha é só gatilho; quem submete o form é o botão de
+            // confirmação da modal.
             $browser->visit(route('courses.enrollments.index', $course))
                 ->waitFor('@revoke-enrollment-'.$aluno->id)
                 ->click('@revoke-enrollment-'.$aluno->id)
+                ->waitFor('@revoke-enrollment-confirm-'.$aluno->id)
+                ->press('@revoke-enrollment-confirm-'.$aluno->id)
                 ->waitForText('Matrícula revogada com sucesso.')
                 ->assertSee('Aluno Matriculável')
                 ->assertMissing('@revoke-enrollment-form-'.$aluno->id);
+
+            $this->assertDatabaseHas('course_user', [
+                'course_id' => $course->id,
+                'user_id' => $aluno->id,
+                'status' => 'cancelled',
+            ]);
+
+            // 3. Restauração da matrícula revogada: submit direto (ação não
+            // destrutiva, sem confirmação) devolve a linha para "Ativo".
+            $browser->visit(route('courses.enrollments.index', $course))
+                ->waitFor('@restore-enrollment-'.$aluno->id)
+                ->click('@restore-enrollment-'.$aluno->id)
+                ->waitForText('Matrícula restaurada com sucesso.')
+                ->assertSee('Aluno Matriculável');
         });
 
         $this->assertDatabaseHas('course_user', [
             'course_id' => $course->id,
             'user_id' => $aluno->id,
-            'status' => 'cancelled',
+            'status' => 'active',
         ]);
     }
 
