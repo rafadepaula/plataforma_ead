@@ -4,19 +4,35 @@
  * Substitui o antigo `<script>` inline da view (proibido pela convenção do
  * Bootstrap: interatividade vive em módulos JS). É puramente presenteacional
  * e de conveniência — o servidor (StoreLessonRequest/UpdateLessonRequest +
- * YoutubeSanitizerService) continua sendo a fonte da verdade.
+ * VideoUrlSanitizerManager) continua sendo a fonte da verdade.
  *
  * Responsabilidades:
  *  - alternar os campos de conteúdo conforme o `type` (quiz oculta mídia);
- *  - pré-visualizar o vídeo do YouTube ao vivo (mesma heurística best-effort
- *    do servidor, rejeitando qualquer coisa que não pareça youtube.com/youtu.be);
+ *  - pré-visualizar o vídeo ao vivo por provedor (YouTube | Vimeo): a mesma
+ *    heurística best-effort dos sanitizadores decide iframe vs. estado vazio,
+ *    e o select de provedor acompanha a URL colada quando ela só casa com o
+ *    outro provedor;
  *  - validar tamanho por arquivo no cliente (data-max-size em bytes), listar
  *    anexos escolhidos (nome, KB/MB, barra de progresso animada durante o
  *    POST, remoção individual) e marcar `.is-invalid` na zona ao exceder;
  *  - esconder anexos persistidos removidos no cliente somando
  *    `removed_media[]` ao form (o servidor apaga o registro e o arquivo).
  */
-const YOUTUBE_PATTERN = /^https?:\/\/(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{11})(?:[&?][^\s]*)?$/i;
+const VIDEO_PATTERNS = {
+    youtube: /^https?:\/\/(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{11})(?:[&?][^\s]*)?$/i,
+    vimeo: /^https?:\/\/(?:www\.)?(?:player\.)?vimeo\.com\/(?:video\/)?(\d{6,})(?:\/([A-Za-z0-9]+))?(?:[&?][^\s]*)?$/i,
+};
+
+// Espelha a canonicalização dos sanitizadores do servidor: o preview nunca
+// aponta para uma forma que o embed do provedor recusaria.
+const PREVIEW_BUILDERS = {
+    youtube: (match) => `https://www.youtube-nocookie.com/embed/${match[1]}`,
+    vimeo: (match, url) => {
+        const hash = match[2] || new URL(url).searchParams.get('h');
+
+        return `https://player.vimeo.com/video/${match[1]}${hash ? `?h=${hash}` : ''}`;
+    },
+};
 
 const HINT_PUBLISHED = 'A lição fica visível para os alunos imediatamente após salvar.';
 const HINT_UNPUBLISHED = 'A lição continua oculta para os alunos até ser publicada.';
@@ -34,7 +50,7 @@ export class LessonForm {
 
     bind() {
         this.bindTypeToggle();
-        this.bindYoutubePreview();
+        this.bindVideoPreview();
         this.bindFileDrops();
         this.bindPublishHint();
     }
@@ -56,22 +72,38 @@ export class LessonForm {
     }
 
     /**
-     * Pré-visualização 16:9 ao vivo: iframe sanitizado ou estado vazio pastel.
+     * Pré-visualização 16:9 ao vivo por provedor: iframe sanitizado ou
+     * estado vazio pastel. Quando a URL colada só casa com o OUTRO provedor,
+     * o select acompanha a detecção (o servidor revalida no submit).
      */
-    bindYoutubePreview() {
-        const field = document.querySelector('[data-youtube-field]');
+    bindVideoPreview() {
+        const field = document.querySelector('[data-video-field]');
         if (!field) return;
 
-        const input = field.querySelector('input[name="youtube_url"]');
-        const frame = field.querySelector('[data-youtube-frame]');
-        const emptyState = field.querySelector('[data-youtube-empty]');
+        const input = field.querySelector('input[name="video_url"]');
+        const providerSelect = field.querySelector('[data-video-provider-select]');
+        const frame = field.querySelector('[data-video-frame]');
+        const emptyState = field.querySelector('[data-video-empty]');
         if (!input || !frame || !emptyState) return;
 
         const update = () => {
-            const match = input.value.trim().match(YOUTUBE_PATTERN);
+            const url = input.value.trim();
+            let provider = providerSelect ? providerSelect.value : null;
+            let match = provider && VIDEO_PATTERNS[provider] ? url.match(VIDEO_PATTERNS[provider]) : null;
 
-            if (match) {
-                frame.src = `https://www.youtube.com/embed/${match[1]}`;
+            if (!match) {
+                for (const [candidate, pattern] of Object.entries(VIDEO_PATTERNS)) {
+                    if (candidate !== provider && pattern.test(url)) {
+                        provider = candidate;
+                        if (providerSelect) providerSelect.value = candidate;
+                        match = url.match(pattern);
+                        break;
+                    }
+                }
+            }
+
+            if (match && provider) {
+                frame.src = PREVIEW_BUILDERS[provider](match, url);
                 frame.classList.remove('d-none');
                 emptyState.classList.add('d-none');
             } else {
@@ -82,6 +114,7 @@ export class LessonForm {
         };
 
         input.addEventListener('input', update);
+        if (providerSelect) providerSelect.addEventListener('change', update);
         update();
     }
 

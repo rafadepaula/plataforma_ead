@@ -39,7 +39,7 @@
             data-lesson-type-select
         />
         <p class="form-text mt-n2 mb-0">
-            Quiz será habilitado em uma etapa futura. Selecione "Conteúdo" para cadastrar Rich Text, Imagem, PDF ou vídeo do YouTube.
+            Quiz será habilitado em uma etapa futura. Selecione "Conteúdo" para cadastrar Rich Text, Imagem, PDF ou vídeo (YouTube ou Vimeo).
         </p>
     </div>
 
@@ -70,12 +70,13 @@
             :attachments="$pdfAttachments"
         />
 
-        <x-ui.youtube-field
-            :value="$lesson->youtube_url"
-            label="URL do YouTube"
-            hint="O servidor revalida o link no envio: apenas vídeos do YouTube são aceitos."
-            dusk="lesson-youtube-input"
-            preview-dusk="youtube-preview"
+        <x-ui.video-field
+            :value="$lesson->video_url"
+            :provider="$lesson->video_provider"
+            label="URL do vídeo"
+            hint="O servidor revalida o link no envio: apenas vídeos do YouTube ou Vimeo são aceitos."
+            dusk="lesson-video-input"
+            preview-dusk="video-preview"
         />
     </div>
 

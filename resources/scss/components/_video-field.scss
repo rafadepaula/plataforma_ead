@@ -1,20 +1,20 @@
 // =============================================================================
-// Componente: YouTube field (campo de URL com pré-visualização 16:9)
+// Componente: Video field (campo de URL por provedor + pré-visualização 16:9)
 // -----------------------------------------------------------------------------
-// `x-ui.youtube-field`: o estado vazio é um bloco 16:9 em pastel wash
-// (`linear-gradient(135deg, var(--blue-100), var(--mint-100))`) com botão
-// circular de play; o estado preenchido é o `<iframe>` responsivo (a moldura
-// 16:9 vem das utilities `.ratio.ratio-16x9` do Bootstrap). Bootstrap não
-// entrega esse padrão pronto.
+// `x-ui.video-field`: o estado vazio é um bloco 16:9 em pastel wash
+// (`.ds-video-wash`) com botão circular de play; o estado preenchido é o
+// `<iframe>` responsivo (a moldura 16:9 vem das utilities `.ratio.ratio-16x9`
+// do Bootstrap). `.ds-video-wash`/`.ds-video-play` são reaproveitadas pela
+// fachada click-to-load do player da sala de aula.
 // Regra: qualquer declaração aqui só pode consumir var(--*), nunca literal de
 // cor/raio/sombra.
 // =============================================================================
 
-.ds-youtube-wash {
+.ds-video-wash {
     background: linear-gradient(135deg, var(--blue-100), var(--mint-100));
 }
 
-.ds-youtube-play {
+.ds-video-play {
     width: 56px;
     height: 56px;
     color: var(--text-secondary);
