@@ -24,7 +24,7 @@
         <h2 class="ds-quiz-placeholder-title">Esta aula é uma prova</h2>
 
         <p class="ds-quiz-placeholder-text">
-            São {{ $questionsLabel }}{{ $timeLabel }}.
+            {{ $questionsLabel }}{{ $timeLabel }}.
         </p>
 
         @if($quiz->time_limit_minutes)
