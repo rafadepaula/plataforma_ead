@@ -86,6 +86,47 @@
     line-height: 1;
 }
 
+// Subitens do menu — atalhos sempre visíveis ( os cursos ativos
+// do Aluno sob "Meus Cursos"): indentados sob o item pai, tipografia
+// menor e barra de progresso do pivot `course_user.progress_percentage`
+// (renderizada pelo `x-ui.progress`). Compartilhados entre desktop e
+// Offcanvas mobile — o partial `x-layout.sidebar-item` emite os mesmos
+// elementos nos dois renders.
+.sidebar-children {
+    display: flex;
+    flex-direction: column;
+    margin-block-end: var(--space-2);
+}
+
+.sidebar-child-item {
+    display: block;
+    margin-inline: var(--space-8) var(--space-6);
+    padding: var(--space-2) var(--space-3);
+    border-left: var(--border-width) solid var(--divider);
+    color: var(--nav-fg);
+    font-size: var(--font-size-body-sm);
+    text-decoration: none;
+    transition: var(--transition-base);
+
+    .progress {
+        margin-block-start: var(--space-1);
+    }
+
+    &:hover,
+    &:focus-visible {
+        background: var(--state-hover);
+        color: var(--nav-fg-active);
+        text-decoration: none;
+    }
+
+    &.active {
+        background: var(--nav-active-bg);
+        border-left-color: var(--primary);
+        color: var(--nav-fg-active);
+        font-weight: var(--font-weight-semibold);
+    }
+}
+
 // Drawer mobile: mesmo painel claro do desktop, entregue pelo `.offcanvas` do
 // Bootstrap. Sem o `text-bg-dark` do tema anterior — as diretrizes de shell e de mobile pedem
 // drawer claro em qualquer viewport, sobre o scrim de 42% que o próprio

@@ -116,6 +116,50 @@ class RoleMenuVisibilityTest extends TestCase
         $response->assertSeeText('Fórum de Dúvidas');
     }
 
+    /**
+     *  the enrolled-course shortcuts render in BOTH renders (desktop
+     * `<aside>` and mobile Offcanvas), each with the pivot progress bar,
+     * plus the fixed "Ver todos os cursos" child. A completed enrollment
+     * never becomes a child .
+     */
+    public function test_aluno_sees_active_course_children_with_progress_in_both_renders(): void
+    {
+        $org = Organization::factory()->create();
+        $active = Course::factory()->for($org)->create(['title' => 'Curso Atalho']);
+        $completed = Course::factory()->for($org)->create(['title' => 'A Concluído']);
+        $aluno = User::factory()->create(['org_id' => $org->id]);
+        $aluno->assignRole(RolesEnum::ALUNO->value);
+        $aluno->courses()->attach($active->id, ['status' => 'active', 'enrolled_at' => now(), 'progress_percentage' => 42]);
+        $aluno->courses()->attach($completed->id, ['status' => 'completed', 'enrolled_at' => now()]);
+
+        $response = $this->actingAs($aluno)->get(route('student.courses.index'));
+        $html = $response->getContent();
+
+        $response->assertOk();
+        $this->assertStringContainsString('dusk="sidebar-course-'.$active->id.'-link"', $html);
+        $this->assertStringContainsString('dusk="sidebar-course-'.$active->id.'-link-mobile"', $html);
+        $this->assertStringContainsString('dusk="sidebar-see-all-link"', $html);
+        $this->assertStringContainsString('dusk="sidebar-see-all-link-mobile"', $html);
+        $response->assertSee(route('classroom.show', $active), false);
+        $response->assertSeeText('Ver todos os cursos');
+        //  progress bar fed by `course_user.progress_percentage`.
+        $this->assertStringContainsString('aria-valuenow="42"', $html);
+        $this->assertStringNotContainsString('dusk="sidebar-course-'.$completed->id.'-link"', $html);
+    }
+
+    public function test_aluno_without_enrollments_has_no_course_children(): void
+    {
+        $org = Organization::factory()->create();
+        $aluno = User::factory()->create(['org_id' => $org->id]);
+        $aluno->assignRole(RolesEnum::ALUNO->value);
+
+        $response = $this->actingAs($aluno)->get(route('student.courses.index'));
+
+        $response->assertOk();
+        $this->assertStringNotContainsString('dusk="sidebar-course-', $response->getContent());
+        $response->assertDontSeeText('Ver todos os cursos');
+    }
+
     public function test_active_item_highlight_is_applied_on_a_sub_route(): void
     {
         $org = Organization::factory()->create();

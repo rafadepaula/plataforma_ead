@@ -126,7 +126,11 @@ class StudentCourseControllerTest extends TestCase
         $response = $this->actingAs($aluno)->get(route('student.courses.index', ['status' => 'concluidos']));
 
         $response->assertOk();
-        $response->assertDontSee($activeCourse->title);
+        //  scoped to the tab's card: the active course's title
+        // legitimately appears page-wide now (sidebar submenu shortcuts
+        // list every active enrollment on any student page), so a
+        // page-wide `assertDontSee($title)` would false-positive.
+        $response->assertDontSee('dusk="course-card-'.$activeCourse->id.'"', false);
         $response->assertSee($completedCourse->title);
     }
 

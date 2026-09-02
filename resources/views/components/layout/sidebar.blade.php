@@ -16,21 +16,7 @@
             </div>
             <nav class="d-flex flex-column" dusk="sidebar-nav">
                 @foreach($section->items as $item)
-                    @php
-                        $isActive = $item['active'];
-                    @endphp
-                    <a href="{{ $item['url'] }}"
-                       dusk="sidebar-{{ $item['key'] }}-link"
-                       @if($isActive) aria-current="page" @endif
-                       class="sidebar-item {{ $isActive ? 'active' : '' }}">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">{!! $item['icon'] !!}</svg>
-                        <span>{{ $item['label'] }}</span>
-                        @if($item['badge'] !== null)
-                            <span class="sidebar-badge">
-                                {{ $item['badge'] }}
-                            </span>
-                        @endif
-                    </a>
+                    <x-layout.sidebar-item :item="$item" />
                 @endforeach
             </nav>
         @endforeach
@@ -71,21 +57,7 @@
                         {{ $section->title }}
                     </div>
                     @foreach($section->items as $item)
-                        @php
-                            $isActive = $item['active'];
-                        @endphp
-                        <a href="{{ $item['url'] }}"
-                           dusk="sidebar-{{ $item['key'] }}-link-mobile"
-                           @if($isActive) aria-current="page" @endif
-                           class="mobile-sidebar-item {{ $isActive ? 'active' : '' }}">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">{!! $item['icon'] !!}</svg>
-                            <span>{{ $item['label'] }}</span>
-                            @if($item['badge'] !== null)
-                                <span class="sidebar-badge">
-                                    {{ $item['badge'] }}
-                                </span>
-                            @endif
-                        </a>
+                        <x-layout.sidebar-item :item="$item" :mobile="true" />
                     @endforeach
                 @endforeach
             </nav>

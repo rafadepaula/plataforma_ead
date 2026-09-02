@@ -3,6 +3,7 @@
 namespace Tests\Unit;
 
 use App\Enums\Permissions\RolesEnum;
+use App\Http\Middleware\EnsureStudentIsEnrolled;
 use App\Models\Course;
 use App\Models\ForumReport;
 use App\Models\ForumTopic;
@@ -383,6 +384,188 @@ class NavigationServiceTest extends TestCase
         $this->assertSame(route('forum.index', $course), $forumItem['url']);
     }
 
+    // ──  "Meus Cursos" shortcut children ─────────────────────
+
+    /**
+     *  every ACTIVE enrollment becomes an always-visible classroom
+     * shortcut under "Meus Cursos": alphabetical by course title (not
+     * enrollment order), each carrying its `course_user.progress_percentage`
+     * and the synthetic "Ver todos os cursos" escape hatch at the end.
+     */
+    public function test_aluno_with_active_enrollments_gets_alphabetical_course_children(): void
+    {
+        $org = Organization::factory()->create();
+        $aluno = User::factory()->create(['org_id' => $org->id]);
+        $aluno->assignRole(RolesEnum::ALUNO->value);
+
+        $zulu = Course::factory()->for($org)->create(['title' => 'Zulu']);
+        $alfa = Course::factory()->for($org)->create(['title' => 'Alfa']);
+        $aluno->courses()->attach($zulu->id, ['status' => 'active', 'enrolled_at' => now(), 'progress_percentage' => 40]);
+        $aluno->courses()->attach($alfa->id, ['status' => 'active', 'enrolled_at' => now(), 'progress_percentage' => 0]);
+
+        $children = $this->findItem($aluno, 'student-courses')['children'];
+
+        $this->assertSame(['Alfa', 'Zulu', 'Ver todos os cursos'], array_column($children, 'label'));
+        $this->assertSame('course-'.$alfa->id, $children[0]['key']);
+        $this->assertSame(route('classroom.show', $alfa), $children[0]['url']);
+        $this->assertSame(0, $children[0]['progress']);
+        $this->assertSame(40, $children[1]['progress']);
+        //  the synthetic "Ver todos" child is a plain link to the
+        // catalog: no progress bar, no course binding.
+        $this->assertNull($children[2]['progress']);
+        $this->assertSame(route('student.courses.index'), $children[2]['url']);
+        //  no route is dispatched in a unit test, so no child can
+        // claim the active highlight here (covered against a bound
+        // `{course}` route below).
+        $this->assertFalse($children[0]['active']);
+    }
+
+    public function test_aluno_without_active_enrollments_gets_no_children(): void
+    {
+        $org = Organization::factory()->create();
+        $aluno = User::factory()->create(['org_id' => $org->id]);
+        $aluno->assignRole(RolesEnum::ALUNO->value);
+
+        $this->assertSame([], $this->findItem($aluno, 'student-courses')['children']);
+    }
+
+    /**
+     *  only `status = active` pivot rows become shortcuts —
+     * completed/cancelled enrollments stay on `/meus-cursos` and must
+     * never surface in the menu (same rule as the forum resolver).
+     */
+    public function test_completed_and_cancelled_enrollments_never_become_children(): void
+    {
+        $org = Organization::factory()->create();
+        $aluno = User::factory()->create(['org_id' => $org->id]);
+        $aluno->assignRole(RolesEnum::ALUNO->value);
+
+        $completed = Course::factory()->for($org)->create(['title' => 'A Concluído']);
+        $cancelled = Course::factory()->for($org)->create(['title' => 'B Cancelado']);
+        $aluno->courses()->attach($completed->id, ['status' => 'completed', 'enrolled_at' => now()]);
+        $aluno->courses()->attach($cancelled->id, ['status' => 'cancelled', 'enrolled_at' => now()]);
+
+        $this->assertSame([], $this->findItem($aluno, 'student-courses')['children']);
+    }
+
+    /**
+     *  the menu must not bloat for a heavily-enrolled Aluno: the
+     * alphabetical cap keeps the first ten titles and hands the rest to
+     * the fixed "Ver todos os cursos" child.
+     */
+    public function test_course_children_are_capped_at_ten_plus_ver_todos(): void
+    {
+        $org = Organization::factory()->create();
+        $aluno = User::factory()->create(['org_id' => $org->id]);
+        $aluno->assignRole(RolesEnum::ALUNO->value);
+
+        for ($i = 12; $i >= 1; $i--) {
+            $course = Course::factory()->for($org)->create(['title' => sprintf('Curso %02d', $i)]);
+            $aluno->courses()->attach($course->id, ['status' => 'active', 'enrolled_at' => now()]);
+        }
+
+        $children = $this->findItem($aluno, 'student-courses')['children'];
+        $labels = array_column($children, 'label');
+
+        $this->assertCount(11, $children, 'Children must be capped at 10 courses + "Ver todos os cursos".');
+        $this->assertSame('Curso 01', $labels[0]);
+        $this->assertSame('Curso 10', $labels[9]);
+        $this->assertSame('Ver todos os cursos', $labels[10]);
+        $this->assertNotContains('Curso 11', $labels);
+        $this->assertNotContains('Curso 12', $labels);
+    }
+
+    /**
+     * /security — the pivot is the enrollment boundary, but a course
+     * the Aluno never enrolled in must never appear, even when it
+     * belongs to a visible-and-published catalog of another Organization.
+     */
+    public function test_children_never_leak_unenrolled_courses_of_another_org(): void
+    {
+        $orgA = Organization::factory()->create();
+        $orgB = Organization::factory()->create();
+        $ownCourse = Course::factory()->for($orgA)->create(['title' => 'Meu Curso']);
+        Course::factory()->for($orgB)->create(['title' => 'Curso Alheio']);
+
+        $aluno = User::factory()->create(['org_id' => $orgA->id]);
+        $aluno->assignRole(RolesEnum::ALUNO->value);
+        $aluno->courses()->attach($ownCourse->id, ['status' => 'active', 'enrolled_at' => now()]);
+
+        $children = $this->findItem($aluno, 'student-courses')['children'];
+        $labels = array_column($children, 'label');
+
+        $this->assertSame(['Meu Curso', 'Ver todos os cursos'], $labels);
+    }
+
+    /**
+     *  a child is highlighted only when the dispatched route resolves
+     * to the *same* course. The classroom/lesson/quiz/forum routes type
+     * their `{course}` params as `int` (no implicit binding), so the raw
+     * param stays a scalar — the source of truth is the request attribute
+     * set by `EnsureStudentIsEnrolled`, which the sidebar reads.
+     */
+    public function test_child_is_active_when_the_request_resolves_the_same_course(): void
+    {
+        $org = Organization::factory()->create();
+        $aluno = User::factory()->create(['org_id' => $org->id]);
+        $aluno->assignRole(RolesEnum::ALUNO->value);
+
+        $alfa = Course::factory()->for($org)->create(['title' => 'Alfa']);
+        $zulu = Course::factory()->for($org)->create(['title' => 'Zulu']);
+        $aluno->courses()->attach($alfa->id, ['status' => 'active', 'enrolled_at' => now()]);
+        $aluno->courses()->attach($zulu->id, ['status' => 'active', 'enrolled_at' => now()]);
+
+        $route = (new Route('GET', 'courses/{course}/classroom', []))
+            ->name('classroom.show');
+        //  raw scalar, exactly as the framework delivers it on
+        // classroom routes (controllers type-hint `int`).
+        $route->parameters = ['course' => $alfa->id];
+
+        $request = Request::create("/courses/{$alfa->id}/classroom", 'GET');
+        $request->setRouteResolver(fn () => $route);
+        $request->attributes->set(EnsureStudentIsEnrolled::RESOLVED_COURSE_ATTRIBUTE, $alfa);
+
+        $service = new NavigationService(new NavigationRegistry, $request);
+
+        $children = collect($service->build($aluno))
+            ->flatMap(fn ($section) => $section->items)
+            ->firstWhere('key', 'student-courses')['children'];
+
+        $this->assertTrue($children[0]['active'], 'The child of the resolved course must be highlighted.');
+        $this->assertFalse($children[1]['active'], 'Unrelated course children must not be highlighted.');
+        $this->assertFalse($children[2]['active'], 'The synthetic "Ver todos" child is never course-bound.');
+    }
+
+    /**
+     *  fallback path — when the middleware attribute is absent (a
+     * route that binds `Course` implicitly), the raw bound model still
+     * matches the child.
+     */
+    public function test_child_is_active_falls_back_to_the_bound_course_parameter(): void
+    {
+        $org = Organization::factory()->create();
+        $aluno = User::factory()->create(['org_id' => $org->id]);
+        $aluno->assignRole(RolesEnum::ALUNO->value);
+
+        $alfa = Course::factory()->for($org)->create(['title' => 'Alfa']);
+        $aluno->courses()->attach($alfa->id, ['status' => 'active', 'enrolled_at' => now()]);
+
+        $route = (new Route('GET', 'courses/{course}/classroom', []))
+            ->name('classroom.show');
+        $route->parameters = ['course' => $alfa];
+
+        $request = Request::create("/courses/{$alfa->id}/classroom", 'GET');
+        $request->setRouteResolver(fn () => $route);
+
+        $service = new NavigationService(new NavigationRegistry, $request);
+
+        $children = collect($service->build($aluno))
+            ->flatMap(fn ($section) => $section->items)
+            ->firstWhere('key', 'student-courses')['children'];
+
+        $this->assertTrue($children[0]['active']);
+    }
+
     public function test_admin_audit_logs_route_resolves_to_admin_prefixed_route(): void
     {
         $admin = User::factory()->create(['org_id' => null]);
@@ -566,7 +749,7 @@ class NavigationServiceTest extends TestCase
     }
 
     /**
-     * @return array{key: string, label: string, url: string, active: bool, badge: int|string|null, icon: string, section: string}
+     * @return array{key: string, label: string, url: string, active: bool, badge: int|string|null, icon: string, section: string, children: list<array{key: string, label: string, url: string, active: bool, progress: int|null}>}
      */
     private function findItem(User $user, string $key): array
     {

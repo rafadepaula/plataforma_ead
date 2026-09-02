@@ -2,6 +2,7 @@
 
 namespace App\Services\Navigation;
 
+use App\Models\Course;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
 
@@ -21,6 +22,12 @@ final class NavigationRegistry
 {
     /** @var list<string> */
     private const ADMIN_GESTOR = ['admin', 'gestor'];
+
+    /**
+     *  max enrolled-course shortcuts rendered under "Meus
+     * Cursos" before the fixed "Ver todos os cursos" child takes over.
+     */
+    private const CHILDREN_LIMIT = 10;
 
     /**
      * @var list<string> Section labels, declared in display order.
@@ -203,6 +210,12 @@ final class NavigationRegistry
                 // discarded by `NavigationService::build()` when empty.
                 roles: ['aluno'],
                 section: 'Aprendizado',
+                //  always-visible shortcut children: the
+                // Aluno's active enrollments as direct classroom links.
+                // The parent keeps its own URL — without active
+                // enrollments the item renders without children,
+                // exactly as before .
+                childrenResolver: fn ($user) => $this->resolveStudentCourseChildren($user),
             ),
             new NavigationItem(
                 key: 'forum',
@@ -297,6 +310,57 @@ final class NavigationRegistry
         }
 
         return route('forum.index', $course);
+    }
+
+    /**
+     *  "Meus Cursos" shortcut children: one per ACTIVE
+     * enrollment of the acting Aluno — the same `status = active` pivot
+     * rule as {@see self::resolveForumRoute()} and the "Em andamento" tab
+     * of `StudentCourseController`; completed/cancelled enrollments stay
+     * on `/meus-cursos` . Alphabetically by course title,
+     * capped at 10 plus a fixed "Ver todos os cursos" child so a long
+     * enrollment list never bloats the menu. `withoutGlobalScope('org')`
+     * mirrors `StudentCourseController::index()`: the pivot row is the
+     * enrollment boundary (each `classroom.*` route re-checks it via
+     * `student.enrolled`), so the menu must not depend on `Auth::user()`
+     * being resolvable by the `OrgScope` global scope.
+     *
+     * @return list<array{key: string, label: string, url: string, course_id: int|null, progress: int|null}>
+     */
+    private function resolveStudentCourseChildren(User $user): array
+    {
+        $courses = $user->courses()
+            ->withoutGlobalScope('org')
+            ->wherePivot('status', 'active')
+            ->orderBy('courses.title')
+            ->limit(self::CHILDREN_LIMIT)
+            ->get();
+
+        $children = $courses
+            ->map(fn (Course $course): array => [
+                'key' => "course-{$course->id}",
+                'label' => $course->title,
+                'url' => route('classroom.show', $course),
+                'course_id' => $course->id,
+                'progress' => (int) ($course->pivot->progress_percentage ?? 0),
+            ])
+            ->all();
+
+        //  the fixed escape hatch to the full catalog,
+        // appended only when at least one shortcut exists. `null`
+        // `course_id`/`progress` marks it as a plain link to the view
+        // (no active-flag matching, no progress bar).
+        if ($children !== []) {
+            $children[] = [
+                'key' => 'see-all',
+                'label' => 'Ver todos os cursos',
+                'url' => route('student.courses.index'),
+                'course_id' => null,
+                'progress' => null,
+            ];
+        }
+
+        return $children;
     }
 
     // ── Icons (Modernist Design System — inline SVG, 17×17) ──────────

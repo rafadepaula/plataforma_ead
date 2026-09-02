@@ -518,6 +518,14 @@
             "selector": "help-placeholder-content-{{ $key }}"
         },
         {
+            "file": "components/layout/sidebar-item.blade.php",
+            "selector": "sidebar-{{ $child['key'] }}-link{{ $duskSuffix }}"
+        },
+        {
+            "file": "components/layout/sidebar-item.blade.php",
+            "selector": "sidebar-{{ $item['key'] }}-link{{ $duskSuffix }}"
+        },
+        {
             "file": "components/layout/sidebar.blade.php",
             "selector": "mobile-drawer"
         },
@@ -528,14 +536,6 @@
         {
             "file": "components/layout/sidebar.blade.php",
             "selector": "sidebar-nav"
-        },
-        {
-            "file": "components/layout/sidebar.blade.php",
-            "selector": "sidebar-{{ $item['key'] }}-link"
-        },
-        {
-            "file": "components/layout/sidebar.blade.php",
-            "selector": "sidebar-{{ $item['key'] }}-link-mobile"
         },
         {
             "file": "components/layout/topbar.blade.php",

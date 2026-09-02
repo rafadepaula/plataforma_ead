@@ -149,6 +149,32 @@ class NavigationMenuDuskTest extends DuskTestCase
                 // Continua sem qualquer superfície administrativa.
                 ->assertMissing('@sidebar-audit-logs-link')
                 ->assertMissing('@sidebar-settings-link');
+
+            // 3.  o atalho do curso matriculado aparece como filho
+            // sempre-visível de "Meus Cursos" e leva à sala de aula, onde
+            // ele mesmo fica destacado (binding `{course}` da rota).
+            $browser->assertPresent('@sidebar-course-'.$course->id.'-link')
+                ->assertPresent('@sidebar-see-all-link')
+                ->click('@sidebar-course-'.$course->id.'-link')
+                ->waitForLocation('/courses/'.$course->id.'/classroom');
+
+            $childClass = $browser->attribute('@sidebar-course-'.$course->id.'-link', 'class');
+            $this->assertStringContainsString(
+                'active',
+                (string) $childClass,
+                "Expected sidebar-course-{$course->id}-link to carry the 'active' class inside its own classroom."
+            );
+
+            // 4. Mobile: o mesmo atalho dentro do Offcanvas leva à
+            //    sala de aula também.
+            $browser->resize(375, 812)
+                ->visit(route('student.courses.index'))
+                ->waitFor('@course-card-'.$course->id)
+                ->click('@mobile-menu-button')
+                ->waitFor('@mobile-sidebar-nav')
+                ->assertPresent('@sidebar-course-'.$course->id.'-link-mobile')
+                ->click('@sidebar-course-'.$course->id.'-link-mobile')
+                ->waitForLocation('/courses/'.$course->id.'/classroom');
         });
     }
 

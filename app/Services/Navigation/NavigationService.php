@@ -2,6 +2,8 @@
 
 namespace App\Services\Navigation;
 
+use App\Http\Middleware\EnsureStudentIsEnrolled;
+use App\Models\Course;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -85,7 +87,13 @@ final class NavigationService
      * item-shaped array with the concrete `url`, `active` flag and
      * `badge` value, or `null` if the item must be hidden.
      *
-     * @return array{key: string, label: string, url: string, active: bool, badge: int|string|null, icon: string, section: string}|null
+     * `children` carries the item's always-visible sub-items
+     * ( the Aluno's enrolled-course shortcuts under "Meus
+     * Cursos"), each already URL-resolved and flagged `active` against
+     * the current request; it is `[]` for items without a
+     * `childrenResolver` or without children in the current context.
+     *
+     * @return array{key: string, label: string, url: string, active: bool, badge: int|string|null, icon: string, section: string, children: list<array{key: string, label: string, url: string, active: bool, progress: int|null>}}|null
      */
     private function resolve(NavigationItem $item, User $user): ?array
     {
@@ -117,7 +125,58 @@ final class NavigationService
             'badge' => $this->resolveBadge($item, $user),
             'icon' => $item->icon,
             'section' => $section,
+            'children' => $this->resolveChildren($item, $user),
         ];
+    }
+
+    /**
+     *  the resolver returns the raw, per-user children and each
+     * one gets its `active` flag computed here against the acting
+     * request. The parent keeps its own URL regardless — children never
+     * hide the parent item.
+     *
+     * @return list<array{key: string, label: string, url: string, active: bool, progress: int|null}>
+     */
+    private function resolveChildren(NavigationItem $item, User $user): array
+    {
+        if ($item->childrenResolver === null) {
+            return [];
+        }
+
+        $children = [];
+
+        foreach (($item->childrenResolver)($user) as $child) {
+            $children[] = [
+                'key' => $child['key'],
+                'label' => $child['label'],
+                'url' => $child['url'],
+                'active' => $this->isChildActive($child),
+                'progress' => $child['progress'],
+            ];
+        }
+
+        return $children;
+    }
+
+    /**
+     * A child is active when the dispatched route resolves to the same
+     * course: the classroom/lesson/quiz/forum routes all run
+     * `EnsureStudentIsEnrolled`, which exposes the resolved `Course` as a
+     * request attribute (their `{course}` params are raw ints — the
+     * controllers type-hint `int`, so no implicit binding substitutes a
+     * model). The fallback covers any route that does bind `Course`
+     * implicitly.
+     *
+     * @param  array{key: string, label: string, url: string, course_id: int|null, progress: int|null}  $child
+     */
+    private function isChildActive(array $child): bool
+    {
+        $routeCourse = $this->request->attributes->get(EnsureStudentIsEnrolled::RESOLVED_COURSE_ATTRIBUTE)
+            ?? $this->request->route('course');
+
+        return $child['course_id'] !== null
+            && $routeCourse instanceof Course
+            && $routeCourse->id === $child['course_id'];
     }
 
     /**

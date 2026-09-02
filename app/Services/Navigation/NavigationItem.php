@@ -30,6 +30,13 @@ use App\Models\User;
  *                        move to "Impersonate" and vanish in global
  *                        context, while a Gestor keeps them in
  *                        "Administração").
+ *  5. `childrenResolver` — optional closure returning this item's
+ *                        always-visible sub-items *for this user*
+ *                        ( the Aluno's enrolled-course shortcuts
+ *                        under "Meus Cursos"), or an empty array when
+ *                        the item has no children in the current
+ *                        context. Unlike the gates above it never hides
+ *                        the parent — the parent keeps its own URL.
  *
  * `activePatterns` are `routeIs()` wildcards — e.g. `['users.*']` keeps
  * the "Alunos & Usuários" parent highlighted on `users.create` /
@@ -44,6 +51,7 @@ final class NavigationItem
      * @param  callable(User): (string|null)|null  $routeResolver  Contextual URL resolver; `null` result hides the item.
      * @param  callable(User): (int|string|null)|null  $badgeCallback  Pending-count badge; `null`/0 renders no badge.
      * @param  callable(User): (string|null)|null  $sectionResolver  Contextual section heading; `null` result hides the item.
+     * @param  callable(User): list<array{key: string, label: string, url: string, course_id: int|null, progress: int|null}>|null  $childrenResolver  Per-user sub-items rendered below the parent (`course_id`/`progress` feed the child's active flag and progress bar).
      */
     public function __construct(
         public readonly string $key,
@@ -57,5 +65,6 @@ final class NavigationItem
         public $routeResolver = null,
         public $badgeCallback = null,
         public $sectionResolver = null,
+        public $childrenResolver = null,
     ) {}
 }
