@@ -1,8 +1,0 @@
-:root{
-  --ease-standard:cubic-bezier(.4,0,.2,1);
-  --ease-emphasized:cubic-bezier(.2,0,0,1);
-  --ease-decelerate:cubic-bezier(0,0,.2,1);
-  --duration-fast:120ms;--duration-base:200ms;--duration-slow:320ms;
-  --transition-base:all var(--duration-base) var(--ease-standard);
-  --transition-elevation:box-shadow var(--duration-base) var(--ease-standard),transform var(--duration-base) var(--ease-standard);
-}
