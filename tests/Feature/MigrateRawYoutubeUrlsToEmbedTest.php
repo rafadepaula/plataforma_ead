@@ -7,8 +7,10 @@ use App\Models\Lesson;
 use App\Models\Module;
 use App\Models\Organization;
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 /**
@@ -21,6 +23,12 @@ use Tests\TestCase;
  * execute, so the legacy rows are written afterwards (via the query builder,
  * bypassing the FormRequest sanitizer exactly like the legacy write paths did)
  * and the migration's `up()` is then invoked directly.
+ *
+ * The `2026_09_02_000001` migration later renamed `youtube_url` to
+ * `video_url` (multi-provider), so the legacy column this data migration
+ * targets no longer exists in the fresh schema. Each test re-creates it
+ * (and drops it again) to pin the historical behavior on its original
+ * schema shape.
  */
 class MigrateRawYoutubeUrlsToEmbedTest extends TestCase
 {
@@ -35,6 +43,21 @@ class MigrateRawYoutubeUrlsToEmbedTest extends TestCase
         $org = Organization::factory()->create();
         $course = Course::factory()->create(['org_id' => $org->id]);
         $this->module = Module::factory()->for($course)->create();
+
+        Schema::table('lessons', function (Blueprint $table): void {
+            $table->string('youtube_url')->nullable();
+        });
+    }
+
+    protected function tearDown(): void
+    {
+        if (Schema::hasColumn('lessons', 'youtube_url')) {
+            Schema::table('lessons', function (Blueprint $table): void {
+                $table->dropColumn('youtube_url');
+            });
+        }
+
+        parent::tearDown();
     }
 
     private function migration(): Migration
@@ -69,10 +92,10 @@ class MigrateRawYoutubeUrlsToEmbedTest extends TestCase
 
         $this->migration()->up();
 
-        $this->assertSame('https://www.youtube.com/embed/dQw4w9WgXcQ', $this->storedUrl($watch));
-        $this->assertSame('https://www.youtube.com/embed/9bZkp7q19f0', $this->storedUrl($watchNoWww));
-        $this->assertSame('https://www.youtube.com/embed/kJQP7kiw5Fk', $this->storedUrl($shortLink));
-        $this->assertSame('https://www.youtube.com/embed/dQw4w9WgXcQ', $this->storedUrl($watchWithExtraParams));
+        $this->assertSame('https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ', $this->storedUrl($watch));
+        $this->assertSame('https://www.youtube-nocookie.com/embed/9bZkp7q19f0', $this->storedUrl($watchNoWww));
+        $this->assertSame('https://www.youtube-nocookie.com/embed/kJQP7kiw5Fk', $this->storedUrl($shortLink));
+        $this->assertSame('https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ', $this->storedUrl($watchWithExtraParams));
     }
 
     public function test_it_leaves_already_sanitized_urls_untouched(): void
@@ -81,7 +104,11 @@ class MigrateRawYoutubeUrlsToEmbedTest extends TestCase
 
         $this->migration()->up();
 
-        $this->assertSame('https://www.youtube.com/embed/dQw4w9WgXcQ', $this->storedUrl($canonical));
+        // The migration canonicalizes every parseable row; the embed form is
+        // parseable, so it is re-stamped in the CURRENT canonical form (the
+        // privacy-enhanced host the sanitizer emits since the multi-provider
+        // refactor) — still a valid embed, just the current-generation form.
+        $this->assertSame('https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ', $this->storedUrl($canonical));
     }
 
     public function test_it_leaves_null_and_empty_urls_untouched(): void
@@ -118,7 +145,7 @@ class MigrateRawYoutubeUrlsToEmbedTest extends TestCase
         $this->migration()->up();
         $this->migration()->up();
 
-        $this->assertSame('https://www.youtube.com/embed/dQw4w9WgXcQ', $this->storedUrl($watch));
+        $this->assertSame('https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ', $this->storedUrl($watch));
         $this->assertSame('https://vimeo.com/123456789', $this->storedUrl($vimeo));
     }
 
@@ -129,6 +156,6 @@ class MigrateRawYoutubeUrlsToEmbedTest extends TestCase
 
         $this->migration()->up();
 
-        $this->assertSame('https://www.youtube.com/embed/dQw4w9WgXcQ', $this->storedUrl($trashed));
+        $this->assertSame('https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ', $this->storedUrl($trashed));
     }
 }

@@ -14,7 +14,7 @@ use Tests\TestCase;
 /**
  * POST /lessons/{lesson}/complete: manual completion is
  * only valid for text/PDF/image lessons (never `type=quiz` nor a lesson
- * carrying a `youtube_url`, which must go through the video-threshold
+ * carrying a `video_url`, which must go through the video-threshold
  * endpoint instead).
  */
 class LessonManualCompletionTest extends TestCase
@@ -88,7 +88,7 @@ class LessonManualCompletionTest extends TestCase
         ]);
     }
 
-    public function test_manual_completion_is_rejected_for_a_malformed_lesson_with_both_quiz_type_and_youtube_url(): void
+    public function test_manual_completion_is_rejected_for_a_malformed_lesson_with_both_quiz_type_and_video_url(): void
     {
         $org = Organization::factory()->create();
         $course = Course::factory()->create(['org_id' => $org->id]);

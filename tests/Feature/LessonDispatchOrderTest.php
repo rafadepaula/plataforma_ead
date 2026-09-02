@@ -16,7 +16,7 @@ use Tests\TestCase;
 /**
  * Guardrails for the unified lesson player:
  *
- * 1. the media dispatch order (quiz -> youtube -> pdf -> text/image) is
+ * 1. the media dispatch order (quiz -> video -> pdf -> text/image) is
  *    exclusive: exactly one format renders, even when a row carries
  *    conflicting content columns;
  * 2. the completion controls are toggled ONLY through the `d-none` class —
@@ -30,7 +30,8 @@ class LessonDispatchOrderTest extends TestCase
     {
         $lesson = $this->publishedLesson([
             'type' => 'quiz',
-            'youtube_url' => 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+            'video_provider' => 'youtube',
+            'video_url' => 'https://www.youtube.com/embed/dQw4w9WgXcQ',
             'pdf_path' => 'orgs/1/courses/1/pdfs/material.pdf',
             'content_text' => 'Texto que não deve aparecer.',
         ]);
@@ -49,7 +50,8 @@ class LessonDispatchOrderTest extends TestCase
     {
         $lesson = $this->publishedLesson([
             'type' => 'content',
-            'youtube_url' => 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+            'video_provider' => 'youtube',
+            'video_url' => 'https://www.youtube.com/embed/dQw4w9WgXcQ',
             'pdf_path' => 'orgs/1/courses/1/pdfs/material.pdf',
             'content_text' => 'Texto que não deve aparecer.',
         ]);
@@ -66,14 +68,14 @@ class LessonDispatchOrderTest extends TestCase
     public function test_video_lesson_with_an_unrecognizable_url_offers_manual_completion(): void
     {
         $lesson = $this->publishedLesson(['type' => 'content']);
-        DB::table('lessons')->where('id', $lesson->id)->update(['youtube_url' => 'https://vimeo.com/999999']);
+        DB::table('lessons')->where('id', $lesson->id)->update(['video_url' => 'https://vimeo.com/12345', 'video_provider' => null]);
 
         $response = $this->get(route('classroom.lesson', $lesson));
 
         $response->assertOk();
         $response->assertSee('dusk="video-unavailable-'.$lesson->id.'"', false);
         $response->assertSee('dusk="mark-complete-button"', false);
-        $response->assertDontSee('data-youtube-player', false);
+        $response->assertDontSee('data-video-player', false);
     }
 
     public function test_pdf_only_lesson_renders_the_pdf_viewer(): void
@@ -356,7 +358,8 @@ class LessonDispatchOrderTest extends TestCase
         /** @var Lesson $lesson */
         $lesson = Lesson::factory()->for($module)->create([
             'type' => 'content',
-            'youtube_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+            'video_provider' => 'youtube',
+            'video_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
             'is_published' => true,
         ]);
 
@@ -369,10 +372,11 @@ class LessonDispatchOrderTest extends TestCase
         $response = $this->get(route('classroom.lesson', $lesson));
 
         $response->assertOk();
-        // O player continua visível para conferência, mas sem o polling que o
-        // endpoint recusaria com 403 a cada 5 segundos.
+        // O player continua visível para conferência (fachada + controles
+        // customizados), mas sem o polling que o endpoint recusaria com 403
+        // a cada 5 segundos.
         $response->assertSee('dusk="video-player-'.$lesson->id.'"', false);
-        $response->assertDontSee('data-youtube-player', false);
+        $response->assertSee('data-video-player', false);
         $response->assertDontSee('data-progress-url', false);
 
         $this->postJson(route('lessons.progress', $lesson), [
@@ -385,13 +389,14 @@ class LessonDispatchOrderTest extends TestCase
     {
         $lesson = $this->publishedLesson([
             'type' => 'content',
-            'youtube_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+            'video_provider' => 'youtube',
+            'video_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
         ]);
 
         $response = $this->get(route('classroom.lesson', $lesson));
 
         $response->assertOk();
-        $response->assertSee('data-youtube-player', false);
+        $response->assertSee('data-video-player', false);
         $response->assertSee('data-progress-url', false);
     }
 

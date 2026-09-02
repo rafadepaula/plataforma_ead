@@ -17,8 +17,8 @@ use Tests\TestCase;
 
 /**
  *  Lesson multimedia CRUD: the four supported content kinds (Rich
- * Text, Imagem, PDF, Vídeo do YouTube), `FileUploadService`'s isolated
- * per-tenant/per-course storage path, and `YoutubeSanitizerService`'s
+ * Text, Imagem, PDF, Vídeo do YouTube/Vimeo), `FileUploadService`'s isolated
+ * per-tenant/per-course storage path, and `VideoUrlSanitizerManager`'s
  * embed sanitization (including XSS/embed-injection rejection).
  */
 class LessonMultimediaTest extends TestCase
@@ -217,48 +217,67 @@ class LessonMultimediaTest extends TestCase
         $this->post(route('modules.lessons.store', $module), [
             'title' => 'Lição em Vídeo',
             'type' => 'content',
-            'youtube_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+            'video_provider' => 'youtube',
+            'video_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
         ]);
 
         $lesson = $module->lessons()->sole();
-        $this->assertSame('https://www.youtube.com/embed/dQw4w9WgXcQ', $lesson->youtube_url);
+        $this->assertSame('youtube', $lesson->video_provider);
+        $this->assertSame('https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ', $lesson->video_url);
     }
 
-    public function test_a_malformed_youtube_url_is_rejected_with_a_validation_error(): void
+    public function test_gestor_can_create_a_vimeo_lesson_with_a_sanitized_embed_url(): void
+    {
+        [, , $module] = $this->makeCourseAndModule();
+
+        // Provedor não selecionado: a URL do Vimeo unlisted (com hash de
+        // path) basta para o servidor detectar o provedor e canonicalizar.
+        $this->post(route('modules.lessons.store', $module), [
+            'title' => 'Lição em Vídeo Vimeo',
+            'type' => 'content',
+            'video_url' => 'https://vimeo.com/76979871/abcdef12345',
+        ]);
+
+        $lesson = $module->lessons()->sole();
+        $this->assertSame('vimeo', $lesson->video_provider);
+        $this->assertSame('https://player.vimeo.com/video/76979871?h=abcdef12345', $lesson->video_url);
+    }
+
+    public function test_a_malformed_video_url_is_rejected_with_a_validation_error(): void
     {
         [, , $module] = $this->makeCourseAndModule();
 
         $response = $this->post(route('modules.lessons.store', $module), [
             'title' => 'Lição Inválida',
             'type' => 'content',
-            'youtube_url' => 'https://vimeo.com/12345',
+            'video_url' => 'https://vimeo.com/12345',
         ]);
 
-        $response->assertSessionHasErrors('youtube_url');
+        $response->assertSessionHasErrors('video_url');
         $this->assertDatabaseMissing('lessons', ['title' => 'Lição Inválida']);
     }
 
-    public function test_a_javascript_uri_disguised_as_a_youtube_url_is_rejected(): void
+    public function test_a_javascript_uri_disguised_as_a_video_url_is_rejected(): void
     {
         [, , $module] = $this->makeCourseAndModule();
 
         $response = $this->post(route('modules.lessons.store', $module), [
             'title' => 'Lição Maliciosa',
             'type' => 'content',
-            'youtube_url' => 'javascript:alert(1)',
+            'video_url' => 'javascript:alert(1)',
         ]);
 
-        $response->assertSessionHasErrors('youtube_url');
+        $response->assertSessionHasErrors('video_url');
         $this->assertDatabaseMissing('lessons', ['title' => 'Lição Maliciosa']);
     }
 
     /**
      * `StoreLessonRequest` and `UpdateLessonRequest` share the same
      * `withValidator` sanitize hook; this pins the UPDATE side of it (the
-     * store side is covered above) — a non-YouTube URL must fail validation
+     * store side is covered above) — a non-parseable URL must fail validation
      * before `$lesson->update()` ever runs, leaving the stored value intact.
      */
-    public function test_a_malformed_youtube_url_is_rejected_with_a_validation_error_on_update(): void
+    public function test_a_malformed_video_url_is_rejected_with_a_validation_error_on_update(): void
     {
         [, , $module] = $this->makeCourseAndModule();
         $lesson = Lesson::factory()->for($module)->richText()->create();
@@ -266,11 +285,11 @@ class LessonMultimediaTest extends TestCase
         $response = $this->put(route('lessons.update', $lesson), [
             'title' => $lesson->title,
             'type' => 'content',
-            'youtube_url' => 'https://vimeo.com/12345',
+            'video_url' => 'https://vimeo.com/12345',
         ]);
 
-        $response->assertSessionHasErrors('youtube_url');
-        $this->assertNull($lesson->fresh()->youtube_url);
+        $response->assertSessionHasErrors('video_url');
+        $this->assertNull($lesson->fresh()->video_url);
     }
 
     /**
@@ -470,7 +489,7 @@ class LessonMultimediaTest extends TestCase
      * `type = quiz` lessons hide the content fields client-side
      * (`LessonForm.js`), but the server must not require them: every
      * content field is `nullable` in the Form Request, so a quiz-type
-     * submission with no `content_text`/`images`/`pdfs`/`youtube_url`
+     * submission with no `content_text`/`images`/`pdfs`/`video_url`
      * still succeeds.
      */
     public function test_gestor_can_create_a_quiz_lesson_with_no_content_fields(): void

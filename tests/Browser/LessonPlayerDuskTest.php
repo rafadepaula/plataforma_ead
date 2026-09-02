@@ -54,7 +54,8 @@ class LessonPlayerDuskTest extends DuskTestCase
         $lesson = $this->lesson([
             'title' => 'Aula em Vídeo',
             'type' => 'content',
-            'youtube_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+            'video_provider' => 'youtube',
+            'video_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
             'order_index' => 1,
         ]);
 
@@ -69,6 +70,12 @@ class LessonPlayerDuskTest extends DuskTestCase
                 ->assertSee('Continue seus estudos e marque a lição como concluída ao terminar.')
                 ->assertSee('Voltar à sala de aula')
                 ->assertAttribute('@video-player-'.$lesson->id, 'data-video-id', 'dQw4w9WgXcQ')
+                ->assertAttribute('@video-player-'.$lesson->id, 'data-provider', 'youtube')
+                // Player customizado: a fachada é visível e os controles
+                // overlay (inertes até o boot) existem no DOM.
+                ->assertVisible('@video-facade-'.$lesson->id)
+                ->assertPresent('@video-play-'.$lesson->id)
+                ->assertPresent('@video-seek-'.$lesson->id)
                 ->assertMissing('@video-unavailable-'.$lesson->id)
                 ->assertMissing('@mark-complete-button')
                 ->assertSee('O progresso é salvo automaticamente ao assistir o vídeo.');
@@ -107,7 +114,7 @@ class LessonPlayerDuskTest extends DuskTestCase
             'type' => 'content',
             'order_index' => 6,
         ]);
-        DB::table('lessons')->where('id', $lesson->id)->update(['youtube_url' => 'https://vimeo.com/999999']);
+        DB::table('lessons')->where('id', $lesson->id)->update(['video_url' => 'https://vimeo.com/12345', 'video_provider' => null]);
 
         $this->browse(function (Browser $browser) use ($lesson): void {
             $browser->loginAs($this->student)
@@ -326,7 +333,8 @@ class LessonPlayerDuskTest extends DuskTestCase
     {
         return Lesson::factory()->create($attributes + [
             'module_id' => $this->module->id,
-            'youtube_url' => null,
+            'video_provider' => null,
+            'video_url' => null,
             'pdf_path' => null,
             'image_path' => null,
             'content_text' => null,

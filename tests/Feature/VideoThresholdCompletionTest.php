@@ -179,7 +179,7 @@ class VideoThresholdCompletionTest extends TestCase
         ]);
     }
 
-    public function test_progress_endpoint_is_rejected_for_a_malformed_lesson_with_both_quiz_type_and_youtube_url(): void
+    public function test_progress_endpoint_is_rejected_for_a_malformed_lesson_with_both_quiz_type_and_video_url(): void
     {
         $org = Organization::factory()->create();
         $course = Course::factory()->create(['org_id' => $org->id]);

@@ -113,7 +113,7 @@ class LessonProgressControllerTest extends TestCase
     }
 
     /**
-     * A `youtube_url` that cannot be resolved into a video id leaves the lesson
+     * A `video_url` that cannot be resolved into a video id leaves the lesson
      * without a player, so the 90% threshold can never fire. Manual completion
      * must stay open, otherwise the lesson blocks course progress forever.
      */
@@ -121,7 +121,7 @@ class LessonProgressControllerTest extends TestCase
     {
         [$course, $module] = $this->createCourseWithModule();
         $lesson = Lesson::factory()->for($module)->create(['is_published' => true]);
-        DB::table('lessons')->where('id', $lesson->id)->update(['youtube_url' => 'https://vimeo.com/999999']);
+        DB::table('lessons')->where('id', $lesson->id)->update(['video_url' => 'https://vimeo.com/12345', 'video_provider' => null]);
         $lesson->refresh();
 
         $aluno = $this->createEnrolledAluno($course);
@@ -147,7 +147,7 @@ class LessonProgressControllerTest extends TestCase
     {
         [$course, $module] = $this->createCourseWithModule();
         $lesson = Lesson::factory()->for($module)->create(['is_published' => true]);
-        DB::table('lessons')->where('id', $lesson->id)->update(['youtube_url' => 'https://vimeo.com/999999']);
+        DB::table('lessons')->where('id', $lesson->id)->update(['video_url' => 'https://vimeo.com/12345', 'video_provider' => null]);
         $lesson->refresh();
 
         $aluno = $this->createEnrolledAluno($course);

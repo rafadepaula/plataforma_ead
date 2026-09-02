@@ -7,13 +7,13 @@ use Tests\TestCase;
 
 /**
  * Render contract of the trail-builder wrapper components (sortable list/
- * row, file dropzone, YouTube field) and of the `confirmDusk` prop added to
+ * row, file dropzone, video field) and of the `confirmDusk` prop added to
  * `<x-ui.confirm-modal>`: the Dusk selector of the modal's confirm submit.
  *
  * These are pure rendering assertions (no HTTP), mirroring
  * `UiModalComponentTest`: they pin the DOM contract that
  * `ModuleReorder.js` (`[data-reorder-url]` / `[data-id]`), `LessonForm.js`
- * (`[data-file-drop]`, `[data-youtube-field]`) and the selector
+ * (`[data-file-drop]`, `[data-video-field]`) and the selector
  * contract (`delete-module-{id}` / `delete-lesson-{id}` on the modal submit)
  * are coded against.
  */
@@ -122,39 +122,54 @@ class UiSortableFieldComponentsTest extends TestCase
         );
     }
 
-    public function test_youtube_field_renders_pastel_empty_state_and_embedded_filled_state(): void
+    public function test_video_field_renders_provider_select_pastel_empty_state_and_embedded_filled_state(): void
     {
-        $empty = Blade::render('<x-ui.youtube-field dusk="lesson-youtube-input" />');
+        $empty = Blade::render('<x-ui.video-field dusk="lesson-video-input" />');
 
         $this->assertMatchesRegularExpression(
-            '/<input[^>]*name="youtube_url"[^>]*dusk="lesson-youtube-input"/',
+            '/<select[^>]*name="video_provider"[^>]*dusk="lesson-provider-select"/',
             $empty,
-            'The YouTube URL input must keep name=youtube_url and receive the dusk passthrough.'
+            'The provider select must emit name=video_provider and its own dusk selector.'
         );
         $this->assertMatchesRegularExpression(
-            '/ds-youtube-wash/',
+            '/<input[^>]*name="video_url"[^>]*dusk="lesson-video-input"/',
+            $empty,
+            'The video URL input must keep name=video_url and receive the dusk passthrough.'
+        );
+        $this->assertMatchesRegularExpression(
+            '/ds-video-wash/',
             $empty,
             'The empty state must render the pastel-wash block.'
         );
         $this->assertMatchesRegularExpression(
-            '/ds-youtube-play/',
+            '/ds-video-play/',
             $empty,
             'The empty state must render the circular play button.'
         );
 
         $filled = Blade::render(
-            '<x-ui.youtube-field value="https://www.youtube.com/watch?v=dQw4w9WgXcQ" dusk="lesson-youtube-input" />'
+            '<x-ui.video-field value="https://www.youtube.com/watch?v=dQw4w9WgXcQ" dusk="lesson-video-input" />'
         );
 
         $this->assertMatchesRegularExpression(
-            '/<iframe[^>]*src="https:\/\/www\.youtube\.com\/embed\/dQw4w9WgXcQ"/',
+            '/<iframe[^>]*src="https:\/\/www\.youtube-nocookie\.com\/embed\/dQw4w9WgXcQ"/',
             $filled,
-            'A stored watch URL must render as the sanitized /embed/ iframe.'
+            'A stored watch URL must render as the sanitized privacy-enhanced /embed/ iframe.'
         );
         $this->assertMatchesRegularExpression(
-            '/<iframe[^>]*dusk="youtube-preview"/',
+            '/<iframe[^>]*dusk="video-preview"/',
             $filled,
-            'The preview iframe must carry dusk="youtube-preview".'
+            'The preview iframe must carry dusk="video-preview".'
+        );
+
+        $vimeo = Blade::render(
+            '<x-ui.video-field value="https://vimeo.com/76979871/abcdef12345" dusk="lesson-video-input" />'
+        );
+
+        $this->assertMatchesRegularExpression(
+            '/<iframe[^>]*src="https:\/\/player\.vimeo\.com\/video\/76979871\?h=abcdef12345"/',
+            $vimeo,
+            'An unlisted Vimeo URL must render as the player.vimeo.com embed carrying the hash.'
         );
     }
 

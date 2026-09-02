@@ -1,626 +1,6 @@
 {
-    "count": 456,
+    "count": 464,
     "entries": [
-        {
-            "file": "forum/partials/_edit-history-modal.blade.php",
-            "selector": "edit-history-trigger-{{ $modalId }}"
-        },
-        {
-            "file": "forum/partials/_edit-history-modal.blade.php",
-            "selector": "edit-history-entry-{{ $edit->id }}"
-        },
-        {
-            "file": "forum/partials/_edit-history-modal.blade.php",
-            "selector": "edit-history-empty-{{ $modalId }}"
-        },
-        {
-            "file": "forum/partials/_topic.blade.php",
-            "selector": "topic-row-{{ $topic->id }}"
-        },
-        {
-            "file": "forum/partials/_topic.blade.php",
-            "selector": "pinned-badge-{{ $topic->id }}"
-        },
-        {
-            "file": "forum/partials/_topic.blade.php",
-            "selector": "open-topic-{{ $topic->id }}"
-        },
-        {
-            "file": "forum/partials/_topic.blade.php",
-            "selector": "pin-form-{{ $topic->id }}"
-        },
-        {
-            "file": "forum/partials/_topic.blade.php",
-            "selector": "pin-topic-{{ $topic->id }}"
-        },
-        {
-            "file": "forum/partials/_reply.blade.php",
-            "selector": "reply-{{ $reply->id }}"
-        },
-        {
-            "file": "forum/partials/_reply.blade.php",
-            "selector": "report-reply-{{ $reply->id }}"
-        },
-        {
-            "file": "forum/partials/_reply.blade.php",
-            "selector": "delete-reply-form-{{ $reply->id }}"
-        },
-        {
-            "file": "forum/partials/_reply.blade.php",
-            "selector": "delete-reply-{{ $reply->id }}"
-        },
-        {
-            "file": "forum/partials/_reply.blade.php",
-            "selector": "reply-content-{{ $reply->id }}"
-        },
-        {
-            "file": "forum/index.blade.php",
-            "selector": "new-topic-button"
-        },
-        {
-            "file": "forum/index.blade.php",
-            "selector": "no-topics"
-        },
-        {
-            "file": "forum/index.blade.php",
-            "selector": "empty-new-topic-button"
-        },
-        {
-            "file": "forum/index.blade.php",
-            "selector": "new-topic-fab"
-        },
-        {
-            "file": "forum/index.blade.php",
-            "selector": "new-topic-form"
-        },
-        {
-            "file": "forum/index.blade.php",
-            "selector": "new-topic-title"
-        },
-        {
-            "file": "forum/index.blade.php",
-            "selector": "new-topic-content"
-        },
-        {
-            "file": "forum/index.blade.php",
-            "selector": "new-topic-submit"
-        },
-        {
-            "file": "forum/edit.blade.php",
-            "selector": "edit-topic-form"
-        },
-        {
-            "file": "forum/edit.blade.php",
-            "selector": "edit-topic-title"
-        },
-        {
-            "file": "forum/edit.blade.php",
-            "selector": "edit-topic-content"
-        },
-        {
-            "file": "forum/edit.blade.php",
-            "selector": "edit-topic-submit"
-        },
-        {
-            "file": "forum/show.blade.php",
-            "selector": "back-to-forum"
-        },
-        {
-            "file": "forum/show.blade.php",
-            "selector": "topic-post"
-        },
-        {
-            "file": "forum/show.blade.php",
-            "selector": "pinned-badge-{{ $topic->id }}"
-        },
-        {
-            "file": "forum/show.blade.php",
-            "selector": "report-topic-{{ $topic->id }}"
-        },
-        {
-            "file": "forum/show.blade.php",
-            "selector": "edit-topic-{{ $topic->id }}"
-        },
-        {
-            "file": "forum/show.blade.php",
-            "selector": "pin-form-{{ $topic->id }}"
-        },
-        {
-            "file": "forum/show.blade.php",
-            "selector": "pin-topic-{{ $topic->id }}"
-        },
-        {
-            "file": "forum/show.blade.php",
-            "selector": "delete-topic-form"
-        },
-        {
-            "file": "forum/show.blade.php",
-            "selector": "delete-topic"
-        },
-        {
-            "file": "forum/show.blade.php",
-            "selector": "topic-content"
-        },
-        {
-            "file": "forum/show.blade.php",
-            "selector": "replies-list"
-        },
-        {
-            "file": "forum/show.blade.php",
-            "selector": "new-reply-form"
-        },
-        {
-            "file": "forum/show.blade.php",
-            "selector": "new-reply-content"
-        },
-        {
-            "file": "forum/show.blade.php",
-            "selector": "new-reply-submit"
-        },
-        {
-            "file": "forum/show.blade.php",
-            "selector": "report-form"
-        },
-        {
-            "file": "forum/show.blade.php",
-            "selector": "report-reason"
-        },
-        {
-            "file": "forum/show.blade.php",
-            "selector": "report-submit"
-        },
-        {
-            "file": "forum/moderation/index.blade.php",
-            "selector": "report-row-{{ $report->id }}"
-        },
-        {
-            "file": "forum/moderation/index.blade.php",
-            "selector": "dismiss-form-{{ $report->id }}"
-        },
-        {
-            "file": "forum/moderation/index.blade.php",
-            "selector": "dismiss-report-{{ $report->id }}"
-        },
-        {
-            "file": "forum/moderation/index.blade.php",
-            "selector": "remove-form-{{ $report->id }}"
-        },
-        {
-            "file": "forum/moderation/index.blade.php",
-            "selector": "remove-post-{{ $report->id }}"
-        },
-        {
-            "file": "forum/moderation/index.blade.php",
-            "selector": "no-pending-reports"
-        },
-        {
-            "file": "forum/create.blade.php",
-            "selector": "new-topic-form"
-        },
-        {
-            "file": "forum/create.blade.php",
-            "selector": "new-topic-title"
-        },
-        {
-            "file": "forum/create.blade.php",
-            "selector": "new-topic-content"
-        },
-        {
-            "file": "forum/create.blade.php",
-            "selector": "new-topic-submit"
-        },
-        {
-            "file": "convite/show.blade.php",
-            "selector": "invitation-form"
-        },
-        {
-            "file": "convite/show.blade.php",
-            "selector": "invitation-email"
-        },
-        {
-            "file": "convite/show.blade.php",
-            "selector": "invitation-existing-account-hint"
-        },
-        {
-            "file": "convite/show.blade.php",
-            "selector": "invitation-name"
-        },
-        {
-            "file": "convite/show.blade.php",
-            "selector": "invitation-cpf"
-        },
-        {
-            "file": "convite/show.blade.php",
-            "selector": "invitation-password"
-        },
-        {
-            "file": "convite/show.blade.php",
-            "selector": "invitation-password-confirmation"
-        },
-        {
-            "file": "convite/show.blade.php",
-            "selector": "invitation-consent"
-        },
-        {
-            "file": "convite/show.blade.php",
-            "selector": "invitation-submit"
-        },
-        {
-            "file": "auth/login.blade.php",
-            "selector": "login-form"
-        },
-        {
-            "file": "auth/login.blade.php",
-            "selector": "login-email"
-        },
-        {
-            "file": "auth/login.blade.php",
-            "selector": "login-password"
-        },
-        {
-            "file": "auth/login.blade.php",
-            "selector": "password-toggle"
-        },
-        {
-            "file": "auth/login.blade.php",
-            "selector": "login-remember"
-        },
-        {
-            "file": "auth/login.blade.php",
-            "selector": "login-submit"
-        },
-        {
-            "file": "auth/login.blade.php",
-            "selector": "forgot-password-link"
-        },
-        {
-            "file": "auth/forgot-password.blade.php",
-            "selector": "forgot-password-form"
-        },
-        {
-            "file": "auth/forgot-password.blade.php",
-            "selector": "forgot-password-email"
-        },
-        {
-            "file": "auth/forgot-password.blade.php",
-            "selector": "forgot-password-submit"
-        },
-        {
-            "file": "auth/forgot-password.blade.php",
-            "selector": "back-to-login-link"
-        },
-        {
-            "file": "auth/reset-password.blade.php",
-            "selector": "reset-password-form"
-        },
-        {
-            "file": "auth/reset-password.blade.php",
-            "selector": "reset-password-email"
-        },
-        {
-            "file": "auth/reset-password.blade.php",
-            "selector": "reset-password-password"
-        },
-        {
-            "file": "auth/reset-password.blade.php",
-            "selector": "reset-password-password-confirmation"
-        },
-        {
-            "file": "auth/reset-password.blade.php",
-            "selector": "reset-password-submit"
-        },
-        {
-            "file": "users/import.blade.php",
-            "selector": "csv-import-form"
-        },
-        {
-            "file": "users/import.blade.php",
-            "selector": "csv-course-select"
-        },
-        {
-            "file": "users/import.blade.php",
-            "selector": "csv-file-input"
-        },
-        {
-            "file": "users/import.blade.php",
-            "selector": "csv-import-progress-bar"
-        },
-        {
-            "file": "users/import.blade.php",
-            "selector": "csv-import-progress-wrapper"
-        },
-        {
-            "file": "users/import.blade.php",
-            "selector": "csv-import-progress"
-        },
-        {
-            "file": "users/import.blade.php",
-            "selector": "csv-import-progress-text"
-        },
-        {
-            "file": "users/import.blade.php",
-            "selector": "csv-import-results"
-        },
-        {
-            "file": "users/import.blade.php",
-            "selector": "csv-import-submit"
-        },
-        {
-            "file": "users/index.blade.php",
-            "selector": "import-users"
-        },
-        {
-            "file": "users/index.blade.php",
-            "selector": "new-user"
-        },
-        {
-            "file": "users/index.blade.php",
-            "selector": "user-row-{{ $user->id }}"
-        },
-        {
-            "file": "users/index.blade.php",
-            "selector": "user-status-{{ $user->id }}"
-        },
-        {
-            "file": "users/index.blade.php",
-            "selector": "user-status-{{ $user->id }}"
-        },
-        {
-            "file": "users/index.blade.php",
-            "selector": "edit-user-{{ $user->id }}"
-        },
-        {
-            "file": "users/index.blade.php",
-            "selector": "delete-user-{{ $user->id }}"
-        },
-        {
-            "file": "users/index.blade.php",
-            "selector": "delete-form-{{ $user->id }}"
-        },
-        {
-            "file": "users/edit.blade.php",
-            "selector": "user-form"
-        },
-        {
-            "file": "users/edit.blade.php",
-            "selector": "user-status-select"
-        },
-        {
-            "file": "users/edit.blade.php",
-            "selector": "user-status-reason"
-        },
-        {
-            "file": "users/edit.blade.php",
-            "selector": "user-submit"
-        },
-        {
-            "file": "users/create.blade.php",
-            "selector": "user-form"
-        },
-        {
-            "file": "users/create.blade.php",
-            "selector": "user-submit"
-        },
-        {
-            "file": "student/quizzes/_answer_key.blade.php",
-            "selector": "quiz-answer-key"
-        },
-        {
-            "file": "student/quizzes/_answer_key.blade.php",
-            "selector": "answer-key-question-{{ $question->id }}"
-        },
-        {
-            "file": "student/quizzes/_answer_key.blade.php",
-            "selector": "answer-key-option-{{ $option->id }}"
-        },
-        {
-            "file": "student/quizzes/_option.blade.php",
-            "selector": "quiz-option-{{ $question->id }}-{{ $option->id }}"
-        },
-        {
-            "file": "student/quizzes/_essay.blade.php",
-            "selector": "quiz-essay-{{ $question->id }}"
-        },
-        {
-            "file": "student/quizzes/show.blade.php",
-            "selector": "quiz-timer"
-        },
-        {
-            "file": "student/quizzes/show.blade.php",
-            "selector": "quiz-expired-attempt"
-        },
-        {
-            "file": "student/quizzes/show.blade.php",
-            "selector": "quiz-best-score"
-        },
-        {
-            "file": "student/quizzes/show.blade.php",
-            "selector": "quiz-pending-grading"
-        },
-        {
-            "file": "student/quizzes/show.blade.php",
-            "selector": "quiz-cannot-attempt"
-        },
-        {
-            "file": "student/quizzes/show.blade.php",
-            "selector": "back-to-lesson"
-        },
-        {
-            "file": "student/quizzes/show.blade.php",
-            "selector": "quiz-attempt-form"
-        },
-        {
-            "file": "student/quizzes/show.blade.php",
-            "selector": "quiz-question-{{ $question->id }}"
-        },
-        {
-            "file": "student/quizzes/show.blade.php",
-            "selector": "quiz-required-hint"
-        },
-        {
-            "file": "student/quizzes/show.blade.php",
-            "selector": "quiz-attempt-submit"
-        },
-        {
-            "file": "student/quizzes/show.blade.php",
-            "selector": "quiz-attempt-confirm"
-        },
-        {
-            "file": "student/courses/index.blade.php",
-            "selector": "tab-{{ Str::slug($tabKey, '-') }}"
-        },
-        {
-            "file": "student/courses/index.blade.php",
-            "selector": "no-enrollments"
-        },
-        {
-            "file": "student/courses/index.blade.php",
-            "selector": "course-card-{{ optional(data_get($row, 'course'))->id }}"
-        },
-        {
-            "file": "modules/lessons/_form.blade.php",
-            "selector": "lesson-type-select"
-        },
-        {
-            "file": "modules/lessons/_form.blade.php",
-            "selector": "lesson-image-input"
-        },
-        {
-            "file": "modules/lessons/_form.blade.php",
-            "selector": "lesson-pdf-input"
-        },
-        {
-            "file": "modules/lessons/_form.blade.php",
-            "selector": "lesson-youtube-input"
-        },
-        {
-            "file": "modules/lessons/_form.blade.php",
-            "selector": "youtube-preview"
-        },
-        {
-            "file": "modules/lessons/index.blade.php",
-            "selector": "new-lesson"
-        },
-        {
-            "file": "modules/lessons/index.blade.php",
-            "selector": "lesson-list"
-        },
-        {
-            "file": "modules/lessons/index.blade.php",
-            "selector": "lesson-row-{{ $lesson->id }}"
-        },
-        {
-            "file": "modules/lessons/index.blade.php",
-            "selector": "edit-lesson-{{ $lesson->id }}"
-        },
-        {
-            "file": "modules/lessons/index.blade.php",
-            "selector": "open-delete-lesson-{{ $lesson->id }}"
-        },
-        {
-            "file": "modules/lessons/index.blade.php",
-            "selector": "delete-lesson-form-{{ $lesson->id }}"
-        },
-        {
-            "file": "modules/lessons/index.blade.php",
-            "selector": "delete-lesson-{{ $lesson->id }}"
-        },
-        {
-            "file": "modules/lessons/edit.blade.php",
-            "selector": "lesson-form"
-        },
-        {
-            "file": "modules/lessons/edit.blade.php",
-            "selector": "lesson-submit"
-        },
-        {
-            "file": "modules/lessons/create.blade.php",
-            "selector": "lesson-form"
-        },
-        {
-            "file": "modules/lessons/create.blade.php",
-            "selector": "lesson-submit"
-        },
-        {
-            "file": "admin/users/index.blade.php",
-            "selector": "admin-users-index"
-        },
-        {
-            "file": "admin/users/index.blade.php",
-            "selector": "admin-users-filter-submit"
-        },
-        {
-            "file": "admin/users/index.blade.php",
-            "selector": "admin-users-filter-form"
-        },
-        {
-            "file": "admin/users/index.blade.php",
-            "selector": "admin-users-name-filter"
-        },
-        {
-            "file": "admin/users/index.blade.php",
-            "selector": "admin-users-email-filter"
-        },
-        {
-            "file": "admin/users/index.blade.php",
-            "selector": "admin-users-org-filter"
-        },
-        {
-            "file": "admin/users/index.blade.php",
-            "selector": "admin-users-status-filter"
-        },
-        {
-            "file": "admin/users/index.blade.php",
-            "selector": "admin-users-role-filter"
-        },
-        {
-            "file": "admin/users/index.blade.php",
-            "selector": "admin-users-created-from"
-        },
-        {
-            "file": "admin/users/index.blade.php",
-            "selector": "admin-users-created-to"
-        },
-        {
-            "file": "admin/users/index.blade.php",
-            "selector": "admin-users-table"
-        },
-        {
-            "file": "admin/users/index.blade.php",
-            "selector": "admin-user-row-{{ $user->id }}"
-        },
-        {
-            "file": "admin/users/index.blade.php",
-            "selector": "admin-user-role-{{ $user->id }}"
-        },
-        {
-            "file": "admin/users/index.blade.php",
-            "selector": "admin-user-status-{{ $user->id }}"
-        },
-        {
-            "file": "admin/users/index.blade.php",
-            "selector": "view-admin-user-{{ $user->id }}"
-        },
-        {
-            "file": "admin/users/index.blade.php",
-            "selector": "edit-admin-user-{{ $user->id }}"
-        },
-        {
-            "file": "admin/users/index.blade.php",
-            "selector": "delete-admin-user-{{ $user->id }}"
-        },
-        {
-            "file": "admin/users/index.blade.php",
-            "selector": "toggle-status-admin-user-{{ $user->id }}"
-        },
-        {
-            "file": "admin/users/index.blade.php",
-            "selector": "confirm-status-form-{{ $user->id }}"
-        },
-        {
-            "file": "admin/users/index.blade.php",
-            "selector": "confirm-delete-form-{{ $user->id }}"
-        },
         {
             "file": "admin/users/edit.blade.php",
             "selector": "admin-user-form"
@@ -635,15 +15,95 @@
         },
         {
             "file": "admin/users/edit.blade.php",
-            "selector": "admin-user-status-select"
-        },
-        {
-            "file": "admin/users/edit.blade.php",
             "selector": "admin-user-status-reason"
         },
         {
             "file": "admin/users/edit.blade.php",
+            "selector": "admin-user-status-select"
+        },
+        {
+            "file": "admin/users/edit.blade.php",
             "selector": "admin-user-submit"
+        },
+        {
+            "file": "admin/users/index.blade.php",
+            "selector": "admin-user-role-{{ $user->id }}"
+        },
+        {
+            "file": "admin/users/index.blade.php",
+            "selector": "admin-user-row-{{ $user->id }}"
+        },
+        {
+            "file": "admin/users/index.blade.php",
+            "selector": "admin-user-status-{{ $user->id }}"
+        },
+        {
+            "file": "admin/users/index.blade.php",
+            "selector": "admin-users-created-from"
+        },
+        {
+            "file": "admin/users/index.blade.php",
+            "selector": "admin-users-created-to"
+        },
+        {
+            "file": "admin/users/index.blade.php",
+            "selector": "admin-users-email-filter"
+        },
+        {
+            "file": "admin/users/index.blade.php",
+            "selector": "admin-users-filter-form"
+        },
+        {
+            "file": "admin/users/index.blade.php",
+            "selector": "admin-users-filter-submit"
+        },
+        {
+            "file": "admin/users/index.blade.php",
+            "selector": "admin-users-index"
+        },
+        {
+            "file": "admin/users/index.blade.php",
+            "selector": "admin-users-name-filter"
+        },
+        {
+            "file": "admin/users/index.blade.php",
+            "selector": "admin-users-org-filter"
+        },
+        {
+            "file": "admin/users/index.blade.php",
+            "selector": "admin-users-role-filter"
+        },
+        {
+            "file": "admin/users/index.blade.php",
+            "selector": "admin-users-status-filter"
+        },
+        {
+            "file": "admin/users/index.blade.php",
+            "selector": "admin-users-table"
+        },
+        {
+            "file": "admin/users/index.blade.php",
+            "selector": "confirm-delete-form-{{ $user->id }}"
+        },
+        {
+            "file": "admin/users/index.blade.php",
+            "selector": "confirm-status-form-{{ $user->id }}"
+        },
+        {
+            "file": "admin/users/index.blade.php",
+            "selector": "delete-admin-user-{{ $user->id }}"
+        },
+        {
+            "file": "admin/users/index.blade.php",
+            "selector": "edit-admin-user-{{ $user->id }}"
+        },
+        {
+            "file": "admin/users/index.blade.php",
+            "selector": "toggle-status-admin-user-{{ $user->id }}"
+        },
+        {
+            "file": "admin/users/index.blade.php",
+            "selector": "view-admin-user-{{ $user->id }}"
         },
         {
             "file": "admin/users/show.blade.php",
@@ -651,15 +111,11 @@
         },
         {
             "file": "admin/users/show.blade.php",
-            "selector": "back-to-admin-users"
+            "selector": "admin-user-show-cpf"
         },
         {
             "file": "admin/users/show.blade.php",
-            "selector": "edit-admin-user"
-        },
-        {
-            "file": "admin/users/show.blade.php",
-            "selector": "admin-user-show-name"
+            "selector": "admin-user-show-created-at"
         },
         {
             "file": "admin/users/show.blade.php",
@@ -667,7 +123,7 @@
         },
         {
             "file": "admin/users/show.blade.php",
-            "selector": "admin-user-show-cpf"
+            "selector": "admin-user-show-name"
         },
         {
             "file": "admin/users/show.blade.php",
@@ -683,191 +139,139 @@
         },
         {
             "file": "admin/users/show.blade.php",
-            "selector": "admin-user-show-created-at"
-        },
-        {
-            "file": "admin/users/show.blade.php",
             "selector": "admin-user-show-updated-at"
         },
         {
-            "file": "settings/edit.blade.php",
-            "selector": "settings-form"
+            "file": "admin/users/show.blade.php",
+            "selector": "back-to-admin-users"
         },
         {
-            "file": "settings/edit.blade.php",
-            "selector": "settings-submit"
+            "file": "admin/users/show.blade.php",
+            "selector": "edit-admin-user"
         },
         {
-            "file": "quizzes/partials/_question-form.blade.php",
-            "selector": "question-form-{{ $formSuffix }}"
+            "file": "audit-logs/index.blade.php",
+            "selector": "audit-log-row-{{ $log->id }}"
         },
         {
-            "file": "quizzes/partials/_question-form.blade.php",
-            "selector": "question-text-{{ $formSuffix }}"
+            "file": "audit-logs/index.blade.php",
+            "selector": "audit-logs-date-from"
         },
         {
-            "file": "quizzes/partials/_question-form.blade.php",
-            "selector": "question-type-{{ $formSuffix }}"
+            "file": "audit-logs/index.blade.php",
+            "selector": "audit-logs-date-to"
         },
         {
-            "file": "quizzes/partials/_question-form.blade.php",
-            "selector": "option-correct-{{ $formSuffix }}-{{ $i }}"
+            "file": "audit-logs/index.blade.php",
+            "selector": "audit-logs-event-filter"
         },
         {
-            "file": "quizzes/partials/_question-form.blade.php",
-            "selector": "option-text-{{ $formSuffix }}-{{ $i }}"
+            "file": "audit-logs/index.blade.php",
+            "selector": "audit-logs-filter-form"
         },
         {
-            "file": "quizzes/partials/_question-form.blade.php",
-            "selector": "remove-option-{{ $formSuffix }}-{{ $i }}"
+            "file": "audit-logs/index.blade.php",
+            "selector": "audit-logs-filter-submit"
         },
         {
-            "file": "quizzes/partials/_question-form.blade.php",
-            "selector": "option-correct-{{ $formSuffix }}-{{ $i }}"
+            "file": "audit-logs/index.blade.php",
+            "selector": "audit-logs-index"
         },
         {
-            "file": "quizzes/partials/_question-form.blade.php",
-            "selector": "option-text-{{ $formSuffix }}-{{ $i }}"
+            "file": "audit-logs/index.blade.php",
+            "selector": "audit-logs-org-filter"
         },
         {
-            "file": "quizzes/partials/_question-form.blade.php",
-            "selector": "remove-option-{{ $formSuffix }}-{{ $i }}"
+            "file": "audit-logs/index.blade.php",
+            "selector": "audit-logs-table"
         },
         {
-            "file": "quizzes/partials/_question-form.blade.php",
-            "selector": "add-option-{{ $formSuffix }}"
+            "file": "audit-logs/index.blade.php",
+            "selector": "audit-logs-user-filter"
         },
         {
-            "file": "quizzes/partials/_question-form.blade.php",
-            "selector": "question-submit-{{ $formSuffix }}"
+            "file": "audit-logs/index.blade.php",
+            "selector": "export-audit-logs-csv"
         },
         {
-            "file": "quizzes/partials/_question-list.blade.php",
-            "selector": "question-list"
+            "file": "audit-logs/index.blade.php",
+            "selector": "view-diff-{{ $log->id }}"
         },
         {
-            "file": "quizzes/partials/_question-list.blade.php",
-            "selector": "question-row-{{ $question->id }}"
+            "file": "audit-logs/partials/_diff-modal.blade.php",
+            "selector": "audit-diff-event"
         },
         {
-            "file": "quizzes/partials/_question-list.blade.php",
-            "selector": "edit-question-{{ $question->id }}"
+            "file": "audit-logs/partials/_diff-modal.blade.php",
+            "selector": "audit-diff-new"
         },
         {
-            "file": "quizzes/partials/_question-list.blade.php",
-            "selector": "delete-question-form-{{ $question->id }}"
+            "file": "audit-logs/partials/_diff-modal.blade.php",
+            "selector": "audit-diff-old"
         },
         {
-            "file": "quizzes/partials/_question-list.blade.php",
-            "selector": "delete-question-{{ $question->id }}"
+            "file": "auth/forgot-password.blade.php",
+            "selector": "back-to-login-link"
         },
         {
-            "file": "quizzes/partials/_question-list.blade.php",
-            "selector": "question-list-empty"
+            "file": "auth/forgot-password.blade.php",
+            "selector": "forgot-password-email"
         },
         {
-            "file": "quizzes/attempts/pending.blade.php",
-            "selector": "pending-attempt-row-{{ $attempt->id }}"
+            "file": "auth/forgot-password.blade.php",
+            "selector": "forgot-password-form"
         },
         {
-            "file": "quizzes/attempts/pending.blade.php",
-            "selector": "grade-attempt-{{ $attempt->id }}"
+            "file": "auth/forgot-password.blade.php",
+            "selector": "forgot-password-submit"
         },
         {
-            "file": "quizzes/attempts/pending.blade.php",
-            "selector": "pending-attempts-empty"
+            "file": "auth/login.blade.php",
+            "selector": "forgot-password-link"
         },
         {
-            "file": "quizzes/attempts/show.blade.php",
-            "selector": "back-to-pending"
+            "file": "auth/login.blade.php",
+            "selector": "login-email"
         },
         {
-            "file": "quizzes/attempts/show.blade.php",
-            "selector": "grade-attempt-form"
+            "file": "auth/login.blade.php",
+            "selector": "login-form"
         },
         {
-            "file": "quizzes/attempts/show.blade.php",
-            "selector": "essay-answer-{{ $question->id }}"
+            "file": "auth/login.blade.php",
+            "selector": "login-password"
         },
         {
-            "file": "quizzes/attempts/show.blade.php",
-            "selector": "grade-correct-{{ $answer?->id }}"
+            "file": "auth/login.blade.php",
+            "selector": "login-remember"
         },
         {
-            "file": "quizzes/attempts/show.blade.php",
-            "selector": "grade-incorrect-{{ $answer?->id }}"
+            "file": "auth/login.blade.php",
+            "selector": "login-submit"
         },
         {
-            "file": "quizzes/attempts/show.blade.php",
-            "selector": "grade-attempt-submit"
+            "file": "auth/login.blade.php",
+            "selector": "password-toggle"
         },
         {
-            "file": "quizzes/edit.blade.php",
-            "selector": "quiz-form"
+            "file": "auth/reset-password.blade.php",
+            "selector": "reset-password-email"
         },
         {
-            "file": "quizzes/edit.blade.php",
-            "selector": "quiz-title-input"
+            "file": "auth/reset-password.blade.php",
+            "selector": "reset-password-form"
         },
         {
-            "file": "quizzes/edit.blade.php",
-            "selector": "quiz-allow-retries"
+            "file": "auth/reset-password.blade.php",
+            "selector": "reset-password-password"
         },
         {
-            "file": "quizzes/edit.blade.php",
-            "selector": "quiz-max-attempts"
+            "file": "auth/reset-password.blade.php",
+            "selector": "reset-password-password-confirmation"
         },
         {
-            "file": "quizzes/edit.blade.php",
-            "selector": "quiz-time-limit"
-        },
-        {
-            "file": "quizzes/edit.blade.php",
-            "selector": "quiz-show-correct-answers"
-        },
-        {
-            "file": "quizzes/edit.blade.php",
-            "selector": "quiz-min-score"
-        },
-        {
-            "file": "quizzes/edit.blade.php",
-            "selector": "quiz-submit"
-        },
-        {
-            "file": "quizzes/edit.blade.php",
-            "selector": "new-question"
-        },
-        {
-            "file": "quizzes/create.blade.php",
-            "selector": "quiz-form"
-        },
-        {
-            "file": "quizzes/create.blade.php",
-            "selector": "quiz-title-input"
-        },
-        {
-            "file": "quizzes/create.blade.php",
-            "selector": "quiz-allow-retries"
-        },
-        {
-            "file": "quizzes/create.blade.php",
-            "selector": "quiz-max-attempts"
-        },
-        {
-            "file": "quizzes/create.blade.php",
-            "selector": "quiz-time-limit"
-        },
-        {
-            "file": "quizzes/create.blade.php",
-            "selector": "quiz-show-correct-answers"
-        },
-        {
-            "file": "quizzes/create.blade.php",
-            "selector": "quiz-min-score"
-        },
-        {
-            "file": "quizzes/create.blade.php",
-            "selector": "quiz-submit"
+            "file": "auth/reset-password.blade.php",
+            "selector": "reset-password-submit"
         },
         {
             "file": "certificates/index.blade.php",
@@ -880,6 +284,10 @@
         {
             "file": "certificates/index.blade.php",
             "selector": "certificate-status-{{ $certificate->id }}"
+        },
+        {
+            "file": "certificates/index.blade.php",
+            "selector": "confirm-revoke-{{ $certificate->id }}"
         },
         {
             "file": "certificates/index.blade.php",
@@ -898,68 +306,8 @@
             "selector": "revoke-reason-{{ $certificate->id }}"
         },
         {
-            "file": "certificates/index.blade.php",
-            "selector": "confirm-revoke-{{ $certificate->id }}"
-        },
-        {
-            "file": "gestor/students/index.blade.php",
-            "selector": "gestor-students-index"
-        },
-        {
-            "file": "gestor/students/index.blade.php",
-            "selector": "import-students"
-        },
-        {
-            "file": "gestor/students/index.blade.php",
-            "selector": "gestor-students-filter-form"
-        },
-        {
-            "file": "gestor/students/index.blade.php",
-            "selector": "gestor-students-search"
-        },
-        {
-            "file": "gestor/students/index.blade.php",
-            "selector": "student-row-{{ $student->id }}"
-        },
-        {
-            "file": "gestor/students/index.blade.php",
-            "selector": "student-status-{{ $student->id }}"
-        },
-        {
-            "file": "gestor/students/index.blade.php",
-            "selector": "student-status-{{ $student->id }}"
-        },
-        {
-            "file": "gestor/students/index.blade.php",
-            "selector": "edit-student-{{ $student->id }}"
-        },
-        {
-            "file": "gestor/students/index.blade.php",
-            "selector": "delete-student-{{ $student->id }}"
-        },
-        {
-            "file": "gestor/students/index.blade.php",
-            "selector": "delete-form-{{ $student->id }}"
-        },
-        {
-            "file": "gestor/students/edit.blade.php",
-            "selector": "student-form"
-        },
-        {
-            "file": "gestor/students/edit.blade.php",
-            "selector": "student-status-select"
-        },
-        {
-            "file": "gestor/students/edit.blade.php",
-            "selector": "student-status-reason"
-        },
-        {
-            "file": "gestor/students/edit.blade.php",
-            "selector": "student-submit"
-        },
-        {
-            "file": "classroom/partials/_pdf.blade.php",
-            "selector": "pdf-viewer-{{ $lesson->id }}{{ $suffix }}"
+            "file": "classroom/lesson.blade.php",
+            "selector": "back-to-classroom"
         },
         {
             "file": "classroom/partials/_pdf.blade.php",
@@ -970,28 +318,12 @@
             "selector": "pdf-unavailable-{{ $lesson->id }}{{ $suffix }}"
         },
         {
-            "file": "classroom/partials/_text-image.blade.php",
-            "selector": "lesson-image-{{ $lesson->id }}{{ $suffix }}"
+            "file": "classroom/partials/_pdf.blade.php",
+            "selector": "pdf-viewer-{{ $lesson->id }}{{ $suffix }}"
         },
         {
-            "file": "classroom/partials/_text-image.blade.php",
-            "selector": "image-unavailable-{{ $lesson->id }}{{ $suffix }}"
-        },
-        {
-            "file": "classroom/partials/_text-image.blade.php",
-            "selector": "lesson-content-{{ $lesson->id }}"
-        },
-        {
-            "file": "classroom/partials/_text-image.blade.php",
-            "selector": "lesson-empty-{{ $lesson->id }}"
-        },
-        {
-            "file": "classroom/partials/_video.blade.php",
-            "selector": "video-player-{{ $lesson->id }}"
-        },
-        {
-            "file": "classroom/partials/_video.blade.php",
-            "selector": "video-unavailable-{{ $lesson->id }}"
+            "file": "classroom/partials/_quiz-placeholder.blade.php",
+            "selector": "quiz-placeholder"
         },
         {
             "file": "classroom/partials/_quiz-placeholder.blade.php",
@@ -1006,176 +338,160 @@
             "selector": "start-quiz"
         },
         {
-            "file": "classroom/partials/_quiz-placeholder.blade.php",
-            "selector": "quiz-placeholder"
+            "file": "classroom/partials/_text-image.blade.php",
+            "selector": "image-unavailable-{{ $lesson->id }}{{ $suffix }}"
         },
         {
-            "file": "classroom/lesson.blade.php",
-            "selector": "back-to-classroom"
+            "file": "classroom/partials/_text-image.blade.php",
+            "selector": "lesson-content-{{ $lesson->id }}"
+        },
+        {
+            "file": "classroom/partials/_text-image.blade.php",
+            "selector": "lesson-empty-{{ $lesson->id }}"
+        },
+        {
+            "file": "classroom/partials/_text-image.blade.php",
+            "selector": "lesson-image-{{ $lesson->id }}{{ $suffix }}"
+        },
+        {
+            "file": "classroom/partials/_video.blade.php",
+            "selector": "video-facade-{{ $lesson->id }}"
+        },
+        {
+            "file": "classroom/partials/_video.blade.php",
+            "selector": "video-fullscreen-{{ $lesson->id }}"
+        },
+        {
+            "file": "classroom/partials/_video.blade.php",
+            "selector": "video-mute-{{ $lesson->id }}"
+        },
+        {
+            "file": "classroom/partials/_video.blade.php",
+            "selector": "video-play-{{ $lesson->id }}"
+        },
+        {
+            "file": "classroom/partials/_video.blade.php",
+            "selector": "video-player-{{ $lesson->id }}"
+        },
+        {
+            "file": "classroom/partials/_video.blade.php",
+            "selector": "video-seek-{{ $lesson->id }}"
+        },
+        {
+            "file": "classroom/partials/_video.blade.php",
+            "selector": "video-time-{{ $lesson->id }}"
+        },
+        {
+            "file": "classroom/partials/_video.blade.php",
+            "selector": "video-unavailable-{{ $lesson->id }}"
+        },
+        {
+            "file": "classroom/partials/_video.blade.php",
+            "selector": "video-volume-{{ $lesson->id }}"
         },
         {
             "file": "classroom/show.blade.php",
             "selector": "no-modules"
         },
         {
-            "file": "dashboard/index.blade.php",
-            "selector": "admin-dashboard"
+            "file": "components/classroom/certificate-card.blade.php",
+            "selector": "certificate-unavailable"
         },
         {
-            "file": "dashboard/index.blade.php",
-            "selector": "export-enrollments-csv"
+            "file": "components/classroom/certificate-card.blade.php",
+            "selector": "download-certificate"
         },
         {
-            "file": "dashboard/index.blade.php",
-            "selector": "export-certificates-csv"
+            "file": "components/classroom/completion-bar.blade.php",
+            "selector": "lesson-completed-badge"
         },
         {
-            "file": "dashboard/index.blade.php",
-            "selector": "filter-period-7d"
+            "file": "components/classroom/completion-bar.blade.php",
+            "selector": "mark-complete-button"
         },
         {
-            "file": "dashboard/index.blade.php",
-            "selector": "filter-period-30d"
+            "file": "components/classroom/lesson-row.blade.php",
+            "selector": "lesson-completed-{{ $lesson->id }}"
         },
         {
-            "file": "dashboard/index.blade.php",
-            "selector": "filter-period-year"
+            "file": "components/classroom/lesson-row.blade.php",
+            "selector": "lesson-{{ $lesson->id }}"
         },
         {
-            "file": "dashboard/index.blade.php",
-            "selector": "stat-active-students"
+            "file": "components/classroom/lesson-row.blade.php",
+            "selector": "open-lesson-{{ $lesson->id }}"
         },
         {
-            "file": "dashboard/index.blade.php",
-            "selector": "stat-certificates-issued"
+            "file": "components/classroom/module.blade.php",
+            "selector": "module-{{ $module->id }}"
         },
         {
-            "file": "dashboard/index.blade.php",
-            "selector": "stat-completion-rate"
+            "file": "components/classroom/progress-card.blade.php",
+            "selector": "course-progress-bar"
         },
         {
-            "file": "dashboard/index.blade.php",
-            "selector": "stat-courses-count"
+            "file": "components/classroom/progress-card.blade.php",
+            "selector": "course-progress-label"
         },
         {
-            "file": "dashboard/index.blade.php",
-            "selector": "recent-enrollments-table"
+            "file": "components/course/card-body.blade.php",
+            "selector": "course-progress-{{ $courseId }}"
         },
         {
-            "file": "dashboard/index.blade.php",
-            "selector": "enrollment-row"
+            "file": "components/course/card-footer.blade.php",
+            "selector": "course-continue-{{ $courseId }}"
         },
         {
-            "file": "dashboard/index.blade.php",
-            "selector": "organizations-summary-table"
+            "file": "components/course/card-header.blade.php",
+            "selector": "course-status-{{ $courseId }}"
         },
         {
-            "file": "dashboard/index.blade.php",
-            "selector": "organization-summary-row-{{ data_get($organization, 'id') }}"
+            "file": "components/course/card-row.blade.php",
+            "selector": "course-card-row-{{ $course->id }}"
         },
         {
-            "file": "dashboard/index.blade.php",
-            "selector": "org-summary-students-{{ data_get($organization, 'id') }}"
+            "file": "components/course/card-row.blade.php",
+            "selector": "mobile-delete-course-{{ $course->id }}"
         },
         {
-            "file": "dashboard/index.blade.php",
-            "selector": "org-summary-courses-{{ data_get($organization, 'id') }}"
+            "file": "components/course/card-row.blade.php",
+            "selector": "mobile-edit-course-{{ $course->id }}"
         },
         {
-            "file": "dashboard/index.blade.php",
-            "selector": "org-summary-certificates-{{ data_get($organization, 'id') }}"
+            "file": "components/course/card-row.blade.php",
+            "selector": "mobile-manage-completion-rules-{{ $course->id }}"
         },
         {
-            "file": "audit-logs/partials/_diff-modal.blade.php",
-            "selector": "audit-diff-event"
+            "file": "components/course/card-row.blade.php",
+            "selector": "mobile-manage-modules-{{ $course->id }}"
         },
         {
-            "file": "audit-logs/partials/_diff-modal.blade.php",
-            "selector": "audit-diff-old"
+            "file": "components/course/card.blade.php",
+            "selector": "course-card-{id}"
         },
         {
-            "file": "audit-logs/partials/_diff-modal.blade.php",
-            "selector": "audit-diff-new"
+            "file": "components/course/row-actions.blade.php",
+            "selector": "$deleteCourseDusk"
         },
         {
-            "file": "audit-logs/index.blade.php",
-            "selector": "audit-logs-index"
+            "file": "components/course/row-actions.blade.php",
+            "selector": "$deleteCourseDusk"
         },
         {
-            "file": "audit-logs/index.blade.php",
-            "selector": "export-audit-logs-csv"
+            "file": "components/course/row-actions.blade.php",
+            "selector": "$editCourseDusk"
         },
         {
-            "file": "audit-logs/index.blade.php",
-            "selector": "audit-logs-filter-submit"
+            "file": "components/course/row-actions.blade.php",
+            "selector": "$manageCompletionRulesDusk"
         },
         {
-            "file": "audit-logs/index.blade.php",
-            "selector": "audit-logs-filter-form"
+            "file": "components/course/row-actions.blade.php",
+            "selector": "$manageEnrollmentsDusk"
         },
         {
-            "file": "audit-logs/index.blade.php",
-            "selector": "audit-logs-date-from"
-        },
-        {
-            "file": "audit-logs/index.blade.php",
-            "selector": "audit-logs-date-to"
-        },
-        {
-            "file": "audit-logs/index.blade.php",
-            "selector": "audit-logs-org-filter"
-        },
-        {
-            "file": "audit-logs/index.blade.php",
-            "selector": "audit-logs-event-filter"
-        },
-        {
-            "file": "audit-logs/index.blade.php",
-            "selector": "audit-logs-user-filter"
-        },
-        {
-            "file": "audit-logs/index.blade.php",
-            "selector": "audit-logs-table"
-        },
-        {
-            "file": "audit-logs/index.blade.php",
-            "selector": "audit-log-row-{{ $log->id }}"
-        },
-        {
-            "file": "audit-logs/index.blade.php",
-            "selector": "view-diff-{{ $log->id }}"
-        },
-        {
-            "file": "landing/show.blade.php",
-            "selector": "landing-login-link"
-        },
-        {
-            "file": "landing/show.blade.php",
-            "selector": "landing-login-link"
-        },
-        {
-            "file": "landing/show.blade.php",
-            "selector": "landing-headline"
-        },
-        {
-            "file": "landing/show.blade.php",
-            "selector": "landing-cta-login"
-        },
-        {
-            "file": "landing/show.blade.php",
-            "selector": "landing-cta-login"
-        },
-        {
-            "file": "landing/show.blade.php",
-            "selector": "contact-button"
-        },
-        {
-            "file": "components/help-button.blade.php",
-            "selector": "help-button-{{ $key }}"
-        },
-        {
-            "file": "components/help-button.blade.php",
-            "selector": "help-modal-{{ $key }}"
+            "file": "components/course/row-actions.blade.php",
+            "selector": "$manageModulesDusk"
         },
         {
             "file": "components/help-button.blade.php",
@@ -1187,59 +503,19 @@
         },
         {
             "file": "components/help-button.blade.php",
+            "selector": "help-button-{{ $key }}"
+        },
+        {
+            "file": "components/help-button.blade.php",
+            "selector": "help-modal-{{ $key }}"
+        },
+        {
+            "file": "components/help-button.blade.php",
             "selector": "help-modal-{{ $key }}"
         },
         {
             "file": "components/help-button.blade.php",
             "selector": "help-placeholder-content-{{ $key }}"
-        },
-        {
-            "file": "components/layout/topbar.blade.php",
-            "selector": "mobile-menu-button"
-        },
-        {
-            "file": "components/layout/topbar.blade.php",
-            "selector": "mobile-menu-toggle"
-        },
-        {
-            "file": "components/layout/topbar.blade.php",
-            "selector": "topbar-brand"
-        },
-        {
-            "file": "components/layout/topbar.blade.php",
-            "selector": "topbar-impersonation"
-        },
-        {
-            "file": "components/layout/topbar.blade.php",
-            "selector": "topbar-active-org-badge"
-        },
-        {
-            "file": "components/layout/topbar.blade.php",
-            "selector": "active-org-badge"
-        },
-        {
-            "file": "components/layout/topbar.blade.php",
-            "selector": "exit-impersonate"
-        },
-        {
-            "file": "components/layout/topbar.blade.php",
-            "selector": "topbar-exit-impersonation"
-        },
-        {
-            "file": "components/layout/topbar.blade.php",
-            "selector": "user-menu-button"
-        },
-        {
-            "file": "components/layout/topbar.blade.php",
-            "selector": "topbar-profile-link"
-        },
-        {
-            "file": "components/layout/sidebar.blade.php",
-            "selector": "sidebar-nav"
-        },
-        {
-            "file": "components/layout/sidebar.blade.php",
-            "selector": "sidebar-{{ $item['key'] }}-link"
         },
         {
             "file": "components/layout/sidebar.blade.php",
@@ -1251,51 +527,95 @@
         },
         {
             "file": "components/layout/sidebar.blade.php",
+            "selector": "sidebar-nav"
+        },
+        {
+            "file": "components/layout/sidebar.blade.php",
+            "selector": "sidebar-{{ $item['key'] }}-link"
+        },
+        {
+            "file": "components/layout/sidebar.blade.php",
             "selector": "sidebar-{{ $item['key'] }}-link-mobile"
         },
         {
-            "file": "components/classroom/module.blade.php",
-            "selector": "module-{{ $module->id }}"
+            "file": "components/layout/topbar.blade.php",
+            "selector": "active-org-badge"
         },
         {
-            "file": "components/classroom/certificate-card.blade.php",
-            "selector": "download-certificate"
+            "file": "components/layout/topbar.blade.php",
+            "selector": "exit-impersonate"
         },
         {
-            "file": "components/classroom/certificate-card.blade.php",
-            "selector": "certificate-unavailable"
+            "file": "components/layout/topbar.blade.php",
+            "selector": "mobile-menu-button"
         },
         {
-            "file": "components/classroom/lesson-row.blade.php",
-            "selector": "lesson-{{ $lesson->id }}"
+            "file": "components/layout/topbar.blade.php",
+            "selector": "mobile-menu-toggle"
         },
         {
-            "file": "components/classroom/lesson-row.blade.php",
-            "selector": "open-lesson-{{ $lesson->id }}"
+            "file": "components/layout/topbar.blade.php",
+            "selector": "topbar-active-org-badge"
         },
         {
-            "file": "components/classroom/lesson-row.blade.php",
-            "selector": "lesson-completed-{{ $lesson->id }}"
+            "file": "components/layout/topbar.blade.php",
+            "selector": "topbar-brand"
         },
         {
-            "file": "components/classroom/progress-card.blade.php",
-            "selector": "course-progress-label"
+            "file": "components/layout/topbar.blade.php",
+            "selector": "topbar-exit-impersonation"
         },
         {
-            "file": "components/classroom/progress-card.blade.php",
-            "selector": "course-progress-bar"
+            "file": "components/layout/topbar.blade.php",
+            "selector": "topbar-impersonation"
         },
         {
-            "file": "components/classroom/completion-bar.blade.php",
-            "selector": "lesson-completed-badge"
+            "file": "components/layout/topbar.blade.php",
+            "selector": "topbar-profile-link"
         },
         {
-            "file": "components/classroom/completion-bar.blade.php",
-            "selector": "mark-complete-button"
+            "file": "components/layout/topbar.blade.php",
+            "selector": "user-menu-button"
         },
         {
-            "file": "components/ui/confirm-modal.blade.php",
-            "selector": "confirm-modal-{{ $id }}-close"
+            "file": "components/notifications-bell.blade.php",
+            "selector": "notifications-badge"
+        },
+        {
+            "file": "components/notifications-bell.blade.php",
+            "selector": "notifications-bell"
+        },
+        {
+            "file": "components/notifications-bell.blade.php",
+            "selector": "notifications-count"
+        },
+        {
+            "file": "components/notifications-bell.blade.php",
+            "selector": "notifications-dropdown"
+        },
+        {
+            "file": "components/notifications-bell.blade.php",
+            "selector": "notifications-empty"
+        },
+        {
+            "file": "components/notifications-bell.blade.php",
+            "selector": "notifications-item-{{ $notification->id }}"
+        },
+        {
+            "file": "components/notifications-bell.blade.php",
+            "selector": "notifications-mark-all-read"
+        },
+        {
+            "file": "components/notifications-bell.blade.php",
+            "selector": "notifications-toggle"
+        },
+        {
+            "file": "components/ui/alert.blade.php",
+            "selector": "alert-dismiss"
+        },
+        {
+            "file": "components/ui/checkbox.blade.php",
+            "selector": "error-{{ $name }}"
         },
         {
             "file": "components/ui/confirm-modal.blade.php",
@@ -1303,6 +623,10 @@
         },
         {
             "file": "components/ui/confirm-modal.blade.php",
+            "selector": "confirm-modal-{{ $id }}-close"
+        },
+        {
+            "file": "components/ui/confirm-modal.blade.php",
             "selector": "{{ $confirmDusk ?? 'confirm-modal-'.$id.'-confirm' }}"
         },
         {
@@ -1310,11 +634,19 @@
             "selector": "{{ $confirmDusk ?? 'confirm-modal-'.$id.'-confirm' }}"
         },
         {
-            "file": "components/ui/modal.blade.php",
-            "selector": "modal-{{ $modalId }}-close"
+            "file": "components/ui/delete-button.blade.php",
+            "selector": "delete-organization-{{ $org->id }}"
         },
         {
-            "file": "components/ui/checkbox.blade.php",
+            "file": "components/ui/field-stack.blade.php",
+            "selector": "user-fields"
+        },
+        {
+            "file": "components/ui/field-stack.blade.php",
+            "selector": "user-fields"
+        },
+        {
+            "file": "components/ui/file-drop.blade.php",
             "selector": "error-{{ $name }}"
         },
         {
@@ -1323,19 +655,23 @@
         },
         {
             "file": "components/ui/file-drop.blade.php",
-            "selector": "error-{{ $name }}"
-        },
-        {
-            "file": "components/ui/file-drop.blade.php",
             "selector": "remove-file-{{ $attachment['id'] }}"
         },
         {
-            "file": "components/ui/textarea.blade.php",
-            "selector": "error-{{ $name }}"
+            "file": "components/ui/filter-bar.blade.php",
+            "selector": "audit-logs-date-from"
         },
         {
-            "file": "components/ui/alert.blade.php",
-            "selector": "alert-dismiss"
+            "file": "components/ui/filter-bar.blade.php",
+            "selector": "audit-logs-filter-form"
+        },
+        {
+            "file": "components/ui/filter-bar.blade.php",
+            "selector": "{{ $resetDusk }}"
+        },
+        {
+            "file": "components/ui/filter-bar.blade.php",
+            "selector": "{{ $submitDusk }}"
         },
         {
             "file": "components/ui/form-actions.blade.php",
@@ -1346,40 +682,12 @@
             "selector": "user-submit"
         },
         {
-            "file": "components/ui/youtube-field.blade.php",
-            "selector": "error-{{ $name }}"
-        },
-        {
-            "file": "components/ui/youtube-field.blade.php",
-            "selector": "{{ $previewDusk }}"
-        },
-        {
-            "file": "components/ui/filter-bar.blade.php",
-            "selector": "audit-logs-filter-form"
-        },
-        {
-            "file": "components/ui/filter-bar.blade.php",
-            "selector": "audit-logs-date-from"
-        },
-        {
-            "file": "components/ui/filter-bar.blade.php",
-            "selector": "{{ $submitDusk }}"
-        },
-        {
-            "file": "components/ui/filter-bar.blade.php",
-            "selector": "{{ $resetDusk }}"
-        },
-        {
             "file": "components/ui/input.blade.php",
             "selector": "error-{{ $name }}"
         },
         {
-            "file": "components/ui/field-stack.blade.php",
-            "selector": "user-fields"
-        },
-        {
-            "file": "components/ui/field-stack.blade.php",
-            "selector": "user-fields"
+            "file": "components/ui/modal.blade.php",
+            "selector": "modal-{{ $modalId }}-close"
         },
         {
             "file": "components/ui/progress.blade.php",
@@ -1402,316 +710,56 @@
             "selector": "error-{{ $name }}"
         },
         {
-            "file": "components/ui/delete-button.blade.php",
-            "selector": "delete-organization-{{ $org->id }}"
+            "file": "components/ui/textarea.blade.php",
+            "selector": "error-{{ $name }}"
         },
         {
-            "file": "components/notifications-bell.blade.php",
-            "selector": "notifications-bell"
+            "file": "components/ui/video-field.blade.php",
+            "selector": "error-{{ $name }}"
         },
         {
-            "file": "components/notifications-bell.blade.php",
-            "selector": "notifications-toggle"
+            "file": "components/ui/video-field.blade.php",
+            "selector": "lesson-provider-select"
         },
         {
-            "file": "components/notifications-bell.blade.php",
-            "selector": "notifications-badge"
+            "file": "components/ui/video-field.blade.php",
+            "selector": "{{ $previewDusk }}"
         },
         {
-            "file": "components/notifications-bell.blade.php",
-            "selector": "notifications-count"
+            "file": "convite/show.blade.php",
+            "selector": "invitation-consent"
         },
         {
-            "file": "components/notifications-bell.blade.php",
-            "selector": "notifications-dropdown"
+            "file": "convite/show.blade.php",
+            "selector": "invitation-cpf"
         },
         {
-            "file": "components/notifications-bell.blade.php",
-            "selector": "notifications-mark-all-read"
+            "file": "convite/show.blade.php",
+            "selector": "invitation-email"
         },
         {
-            "file": "components/notifications-bell.blade.php",
-            "selector": "notifications-item-{{ $notification->id }}"
+            "file": "convite/show.blade.php",
+            "selector": "invitation-existing-account-hint"
         },
         {
-            "file": "components/notifications-bell.blade.php",
-            "selector": "notifications-empty"
+            "file": "convite/show.blade.php",
+            "selector": "invitation-form"
         },
         {
-            "file": "components/course/card-row.blade.php",
-            "selector": "course-card-row-{{ $course->id }}"
+            "file": "convite/show.blade.php",
+            "selector": "invitation-name"
         },
         {
-            "file": "components/course/card-row.blade.php",
-            "selector": "mobile-manage-modules-{{ $course->id }}"
+            "file": "convite/show.blade.php",
+            "selector": "invitation-password"
         },
         {
-            "file": "components/course/card-row.blade.php",
-            "selector": "mobile-manage-completion-rules-{{ $course->id }}"
+            "file": "convite/show.blade.php",
+            "selector": "invitation-password-confirmation"
         },
         {
-            "file": "components/course/card-row.blade.php",
-            "selector": "mobile-edit-course-{{ $course->id }}"
-        },
-        {
-            "file": "components/course/card-row.blade.php",
-            "selector": "mobile-delete-course-{{ $course->id }}"
-        },
-        {
-            "file": "components/course/card-footer.blade.php",
-            "selector": "course-continue-{{ $courseId }}"
-        },
-        {
-            "file": "components/course/card.blade.php",
-            "selector": "course-card-{id}"
-        },
-        {
-            "file": "components/course/card-body.blade.php",
-            "selector": "course-progress-{{ $courseId }}"
-        },
-        {
-            "file": "components/course/row-actions.blade.php",
-            "selector": "$manageModulesDusk"
-        },
-        {
-            "file": "components/course/row-actions.blade.php",
-            "selector": "$manageEnrollmentsDusk"
-        },
-        {
-            "file": "components/course/row-actions.blade.php",
-            "selector": "$manageCompletionRulesDusk"
-        },
-        {
-            "file": "components/course/row-actions.blade.php",
-            "selector": "$editCourseDusk"
-        },
-        {
-            "file": "components/course/row-actions.blade.php",
-            "selector": "$deleteCourseDusk"
-        },
-        {
-            "file": "components/course/row-actions.blade.php",
-            "selector": "$deleteCourseDusk"
-        },
-        {
-            "file": "components/course/card-header.blade.php",
-            "selector": "course-status-{{ $courseId }}"
-        },
-        {
-            "file": "public/certificates/lookup.blade.php",
-            "selector": "certificate-lookup-form"
-        },
-        {
-            "file": "public/certificates/lookup.blade.php",
-            "selector": "certificate-lookup-hash"
-        },
-        {
-            "file": "public/certificates/lookup.blade.php",
-            "selector": "certificate-lookup-submit"
-        },
-        {
-            "file": "public/certificates/show.blade.php",
-            "selector": "certificate-revoked-banner"
-        },
-        {
-            "file": "public/certificates/show.blade.php",
-            "selector": "certificate-revoke-reason"
-        },
-        {
-            "file": "public/certificates/show.blade.php",
-            "selector": "certificate-valid-banner"
-        },
-        {
-            "file": "public/certificates/show.blade.php",
-            "selector": "certificate-student-name"
-        },
-        {
-            "file": "public/certificates/show.blade.php",
-            "selector": "certificate-course-title"
-        },
-        {
-            "file": "public/certificates/show.blade.php",
-            "selector": "certificate-org-name"
-        },
-        {
-            "file": "public/certificates/show.blade.php",
-            "selector": "certificate-workload"
-        },
-        {
-            "file": "public/certificates/show.blade.php",
-            "selector": "certificate-issued-at"
-        },
-        {
-            "file": "profile/edit.blade.php",
-            "selector": "profile-form"
-        },
-        {
-            "file": "profile/edit.blade.php",
-            "selector": "profile-submit"
-        },
-        {
-            "file": "profile/edit.blade.php",
-            "selector": "password-form"
-        },
-        {
-            "file": "profile/edit.blade.php",
-            "selector": "password-submit"
-        },
-        {
-            "file": "organizations/_form.blade.php",
-            "selector": "organization-logo-preview"
-        },
-        {
-            "file": "organizations/index.blade.php",
-            "selector": "new-organization"
-        },
-        {
-            "file": "organizations/index.blade.php",
-            "selector": "exit-impersonation-form"
-        },
-        {
-            "file": "organizations/index.blade.php",
-            "selector": "exit-impersonation"
-        },
-        {
-            "file": "organizations/index.blade.php",
-            "selector": "organization-row-{{ $organization->id }}"
-        },
-        {
-            "file": "organizations/index.blade.php",
-            "selector": "impersonate-form-{{ $organization->id }}"
-        },
-        {
-            "file": "organizations/index.blade.php",
-            "selector": "impersonate-{{ $organization->id }}"
-        },
-        {
-            "file": "organizations/index.blade.php",
-            "selector": "edit-organization-{{ $organization->id }}"
-        },
-        {
-            "file": "organizations/index.blade.php",
-            "selector": "delete-organization-{{ $organization->id }}"
-        },
-        {
-            "file": "organizations/index.blade.php",
-            "selector": "delete-form-{{ $organization->id }}"
-        },
-        {
-            "file": "organizations/edit.blade.php",
-            "selector": "organization-form"
-        },
-        {
-            "file": "organizations/edit.blade.php",
-            "selector": "organization-submit"
-        },
-        {
-            "file": "organizations/create.blade.php",
-            "selector": "organization-form"
-        },
-        {
-            "file": "organizations/create.blade.php",
-            "selector": "organization-submit"
-        },
-        {
-            "file": "courses/invitation-links/index.blade.php",
-            "selector": "new-invitation-link"
-        },
-        {
-            "file": "courses/invitation-links/index.blade.php",
-            "selector": "invitation-link-row-{{ $invitationLink->id }}"
-        },
-        {
-            "file": "courses/invitation-links/index.blade.php",
-            "selector": "revoke-form-{{ $invitationLink->id }}"
-        },
-        {
-            "file": "courses/invitation-links/index.blade.php",
-            "selector": "revoke-invitation-link-{{ $invitationLink->id }}"
-        },
-        {
-            "file": "courses/invitation-links/create.blade.php",
-            "selector": "invitation-link-form"
-        },
-        {
-            "file": "courses/invitation-links/create.blade.php",
-            "selector": "invitation-link-submit"
-        },
-        {
-            "file": "courses/modules/index.blade.php",
-            "selector": "new-module"
-        },
-        {
-            "file": "courses/modules/index.blade.php",
-            "selector": "module-list-container"
-        },
-        {
-            "file": "courses/modules/edit.blade.php",
-            "selector": "module-form"
-        },
-        {
-            "file": "courses/modules/edit.blade.php",
-            "selector": "module-submit"
-        },
-        {
-            "file": "courses/modules/create.blade.php",
-            "selector": "module-form"
-        },
-        {
-            "file": "courses/modules/create.blade.php",
-            "selector": "module-submit"
-        },
-        {
-            "file": "courses/modules/_list.blade.php",
-            "selector": "module-list"
-        },
-        {
-            "file": "courses/modules/_list.blade.php",
-            "selector": "module-row-{{ $module->id }}"
-        },
-        {
-            "file": "courses/modules/_list.blade.php",
-            "selector": "manage-lessons-{{ $module->id }}"
-        },
-        {
-            "file": "courses/modules/_list.blade.php",
-            "selector": "edit-module-{{ $module->id }}"
-        },
-        {
-            "file": "courses/modules/_list.blade.php",
-            "selector": "delete-module-form-{{ $module->id }}"
-        },
-        {
-            "file": "courses/modules/_list.blade.php",
-            "selector": "delete-module-{{ $module->id }}"
-        },
-        {
-            "file": "courses/index.blade.php",
-            "selector": "new-course"
-        },
-        {
-            "file": "courses/index.blade.php",
-            "selector": "course-row-{{ $course->id }}"
-        },
-        {
-            "file": "courses/index.blade.php",
-            "selector": "manage-modules-{{ $course->id }}"
-        },
-        {
-            "file": "courses/index.blade.php",
-            "selector": "manage-completion-rules-{{ $course->id }}"
-        },
-        {
-            "file": "courses/index.blade.php",
-            "selector": "edit-course-{{ $course->id }}"
-        },
-        {
-            "file": "courses/index.blade.php",
-            "selector": "delete-course-{{ $course->id }}"
-        },
-        {
-            "file": "courses/index.blade.php",
-            "selector": "delete-form-{{ $course->id }}"
+            "file": "convite/show.blade.php",
+            "selector": "invitation-submit"
         },
         {
             "file": "courses/completion-rules/index.blade.php",
@@ -1719,15 +767,11 @@
         },
         {
             "file": "courses/completion-rules/index.blade.php",
-            "selector": "completion-rule-type"
-        },
-        {
-            "file": "courses/completion-rules/index.blade.php",
-            "selector": "completion-rule-target"
-        },
-        {
-            "file": "courses/completion-rules/index.blade.php",
             "selector": "completion-rule-percentage"
+        },
+        {
+            "file": "courses/completion-rules/index.blade.php",
+            "selector": "completion-rule-row-{{ $rule->id }}"
         },
         {
             "file": "courses/completion-rules/index.blade.php",
@@ -1735,7 +779,11 @@
         },
         {
             "file": "courses/completion-rules/index.blade.php",
-            "selector": "completion-rule-row-{{ $rule->id }}"
+            "selector": "completion-rule-target"
+        },
+        {
+            "file": "courses/completion-rules/index.blade.php",
+            "selector": "completion-rule-type"
         },
         {
             "file": "courses/completion-rules/index.blade.php",
@@ -1746,6 +794,14 @@
             "selector": "delete-completion-rule-{{ $rule->id }}"
         },
         {
+            "file": "courses/create.blade.php",
+            "selector": "course-form"
+        },
+        {
+            "file": "courses/create.blade.php",
+            "selector": "course-submit"
+        },
+        {
             "file": "courses/edit.blade.php",
             "selector": "course-form"
         },
@@ -1754,12 +810,16 @@
             "selector": "course-submit"
         },
         {
-            "file": "courses/create.blade.php",
-            "selector": "course-form"
+            "file": "courses/enrollments/create.blade.php",
+            "selector": "create-student-form"
         },
         {
-            "file": "courses/create.blade.php",
-            "selector": "course-submit"
+            "file": "courses/enrollments/create.blade.php",
+            "selector": "create-student-submit"
+        },
+        {
+            "file": "courses/enrollments/index.blade.php",
+            "selector": "create-student-link"
         },
         {
             "file": "courses/enrollments/index.blade.php",
@@ -1771,11 +831,27 @@
         },
         {
             "file": "courses/enrollments/index.blade.php",
-            "selector": "revoke-enrollment-form-{{ $student->id }}"
+            "selector": "manual-enroll-form"
         },
         {
             "file": "courses/enrollments/index.blade.php",
-            "selector": "revoke-enrollment-{{ $student->id }}"
+            "selector": "manual-enroll-results"
+        },
+        {
+            "file": "courses/enrollments/index.blade.php",
+            "selector": "manual-enroll-search"
+        },
+        {
+            "file": "courses/enrollments/index.blade.php",
+            "selector": "manual-enroll-selected"
+        },
+        {
+            "file": "courses/enrollments/index.blade.php",
+            "selector": "manual-enroll-submit"
+        },
+        {
+            "file": "courses/enrollments/index.blade.php",
+            "selector": "manual-enroll-user-id"
         },
         {
             "file": "courses/enrollments/index.blade.php",
@@ -1791,39 +867,995 @@
         },
         {
             "file": "courses/enrollments/index.blade.php",
-            "selector": "manual-enroll-form"
+            "selector": "revoke-enrollment-form-{{ $student->id }}"
         },
         {
             "file": "courses/enrollments/index.blade.php",
-            "selector": "manual-enroll-search"
+            "selector": "revoke-enrollment-{{ $student->id }}"
         },
         {
-            "file": "courses/enrollments/index.blade.php",
-            "selector": "manual-enroll-results"
+            "file": "courses/index.blade.php",
+            "selector": "course-row-{{ $course->id }}"
         },
         {
-            "file": "courses/enrollments/index.blade.php",
-            "selector": "manual-enroll-user-id"
+            "file": "courses/index.blade.php",
+            "selector": "delete-course-{{ $course->id }}"
         },
         {
-            "file": "courses/enrollments/index.blade.php",
-            "selector": "manual-enroll-selected"
+            "file": "courses/index.blade.php",
+            "selector": "delete-form-{{ $course->id }}"
         },
         {
-            "file": "courses/enrollments/index.blade.php",
-            "selector": "manual-enroll-submit"
+            "file": "courses/index.blade.php",
+            "selector": "edit-course-{{ $course->id }}"
         },
         {
-            "file": "courses/enrollments/index.blade.php",
-            "selector": "create-student-link"
+            "file": "courses/index.blade.php",
+            "selector": "manage-completion-rules-{{ $course->id }}"
         },
         {
-            "file": "courses/enrollments/create.blade.php",
-            "selector": "create-student-form"
+            "file": "courses/index.blade.php",
+            "selector": "manage-modules-{{ $course->id }}"
         },
         {
-            "file": "courses/enrollments/create.blade.php",
-            "selector": "create-student-submit"
+            "file": "courses/index.blade.php",
+            "selector": "new-course"
+        },
+        {
+            "file": "courses/invitation-links/create.blade.php",
+            "selector": "invitation-link-form"
+        },
+        {
+            "file": "courses/invitation-links/create.blade.php",
+            "selector": "invitation-link-submit"
+        },
+        {
+            "file": "courses/invitation-links/index.blade.php",
+            "selector": "invitation-link-row-{{ $invitationLink->id }}"
+        },
+        {
+            "file": "courses/invitation-links/index.blade.php",
+            "selector": "new-invitation-link"
+        },
+        {
+            "file": "courses/invitation-links/index.blade.php",
+            "selector": "revoke-form-{{ $invitationLink->id }}"
+        },
+        {
+            "file": "courses/invitation-links/index.blade.php",
+            "selector": "revoke-invitation-link-{{ $invitationLink->id }}"
+        },
+        {
+            "file": "courses/modules/_list.blade.php",
+            "selector": "delete-module-form-{{ $module->id }}"
+        },
+        {
+            "file": "courses/modules/_list.blade.php",
+            "selector": "delete-module-{{ $module->id }}"
+        },
+        {
+            "file": "courses/modules/_list.blade.php",
+            "selector": "edit-module-{{ $module->id }}"
+        },
+        {
+            "file": "courses/modules/_list.blade.php",
+            "selector": "manage-lessons-{{ $module->id }}"
+        },
+        {
+            "file": "courses/modules/_list.blade.php",
+            "selector": "module-list"
+        },
+        {
+            "file": "courses/modules/_list.blade.php",
+            "selector": "module-row-{{ $module->id }}"
+        },
+        {
+            "file": "courses/modules/create.blade.php",
+            "selector": "module-form"
+        },
+        {
+            "file": "courses/modules/create.blade.php",
+            "selector": "module-submit"
+        },
+        {
+            "file": "courses/modules/edit.blade.php",
+            "selector": "module-form"
+        },
+        {
+            "file": "courses/modules/edit.blade.php",
+            "selector": "module-submit"
+        },
+        {
+            "file": "courses/modules/index.blade.php",
+            "selector": "module-list-container"
+        },
+        {
+            "file": "courses/modules/index.blade.php",
+            "selector": "new-module"
+        },
+        {
+            "file": "dashboard/index.blade.php",
+            "selector": "admin-dashboard"
+        },
+        {
+            "file": "dashboard/index.blade.php",
+            "selector": "enrollment-row"
+        },
+        {
+            "file": "dashboard/index.blade.php",
+            "selector": "export-certificates-csv"
+        },
+        {
+            "file": "dashboard/index.blade.php",
+            "selector": "export-enrollments-csv"
+        },
+        {
+            "file": "dashboard/index.blade.php",
+            "selector": "filter-period-30d"
+        },
+        {
+            "file": "dashboard/index.blade.php",
+            "selector": "filter-period-7d"
+        },
+        {
+            "file": "dashboard/index.blade.php",
+            "selector": "filter-period-year"
+        },
+        {
+            "file": "dashboard/index.blade.php",
+            "selector": "org-summary-certificates-{{ data_get($organization, 'id') }}"
+        },
+        {
+            "file": "dashboard/index.blade.php",
+            "selector": "org-summary-courses-{{ data_get($organization, 'id') }}"
+        },
+        {
+            "file": "dashboard/index.blade.php",
+            "selector": "org-summary-students-{{ data_get($organization, 'id') }}"
+        },
+        {
+            "file": "dashboard/index.blade.php",
+            "selector": "organization-summary-row-{{ data_get($organization, 'id') }}"
+        },
+        {
+            "file": "dashboard/index.blade.php",
+            "selector": "organizations-summary-table"
+        },
+        {
+            "file": "dashboard/index.blade.php",
+            "selector": "recent-enrollments-table"
+        },
+        {
+            "file": "dashboard/index.blade.php",
+            "selector": "stat-active-students"
+        },
+        {
+            "file": "dashboard/index.blade.php",
+            "selector": "stat-certificates-issued"
+        },
+        {
+            "file": "dashboard/index.blade.php",
+            "selector": "stat-completion-rate"
+        },
+        {
+            "file": "dashboard/index.blade.php",
+            "selector": "stat-courses-count"
+        },
+        {
+            "file": "forum/create.blade.php",
+            "selector": "new-topic-content"
+        },
+        {
+            "file": "forum/create.blade.php",
+            "selector": "new-topic-form"
+        },
+        {
+            "file": "forum/create.blade.php",
+            "selector": "new-topic-submit"
+        },
+        {
+            "file": "forum/create.blade.php",
+            "selector": "new-topic-title"
+        },
+        {
+            "file": "forum/edit.blade.php",
+            "selector": "edit-topic-content"
+        },
+        {
+            "file": "forum/edit.blade.php",
+            "selector": "edit-topic-form"
+        },
+        {
+            "file": "forum/edit.blade.php",
+            "selector": "edit-topic-submit"
+        },
+        {
+            "file": "forum/edit.blade.php",
+            "selector": "edit-topic-title"
+        },
+        {
+            "file": "forum/index.blade.php",
+            "selector": "empty-new-topic-button"
+        },
+        {
+            "file": "forum/index.blade.php",
+            "selector": "new-topic-button"
+        },
+        {
+            "file": "forum/index.blade.php",
+            "selector": "new-topic-content"
+        },
+        {
+            "file": "forum/index.blade.php",
+            "selector": "new-topic-fab"
+        },
+        {
+            "file": "forum/index.blade.php",
+            "selector": "new-topic-form"
+        },
+        {
+            "file": "forum/index.blade.php",
+            "selector": "new-topic-submit"
+        },
+        {
+            "file": "forum/index.blade.php",
+            "selector": "new-topic-title"
+        },
+        {
+            "file": "forum/index.blade.php",
+            "selector": "no-topics"
+        },
+        {
+            "file": "forum/moderation/index.blade.php",
+            "selector": "dismiss-form-{{ $report->id }}"
+        },
+        {
+            "file": "forum/moderation/index.blade.php",
+            "selector": "dismiss-report-{{ $report->id }}"
+        },
+        {
+            "file": "forum/moderation/index.blade.php",
+            "selector": "no-pending-reports"
+        },
+        {
+            "file": "forum/moderation/index.blade.php",
+            "selector": "remove-form-{{ $report->id }}"
+        },
+        {
+            "file": "forum/moderation/index.blade.php",
+            "selector": "remove-post-{{ $report->id }}"
+        },
+        {
+            "file": "forum/moderation/index.blade.php",
+            "selector": "report-row-{{ $report->id }}"
+        },
+        {
+            "file": "forum/partials/_edit-history-modal.blade.php",
+            "selector": "edit-history-empty-{{ $modalId }}"
+        },
+        {
+            "file": "forum/partials/_edit-history-modal.blade.php",
+            "selector": "edit-history-entry-{{ $edit->id }}"
+        },
+        {
+            "file": "forum/partials/_edit-history-modal.blade.php",
+            "selector": "edit-history-trigger-{{ $modalId }}"
+        },
+        {
+            "file": "forum/partials/_reply.blade.php",
+            "selector": "delete-reply-form-{{ $reply->id }}"
+        },
+        {
+            "file": "forum/partials/_reply.blade.php",
+            "selector": "delete-reply-{{ $reply->id }}"
+        },
+        {
+            "file": "forum/partials/_reply.blade.php",
+            "selector": "reply-content-{{ $reply->id }}"
+        },
+        {
+            "file": "forum/partials/_reply.blade.php",
+            "selector": "reply-{{ $reply->id }}"
+        },
+        {
+            "file": "forum/partials/_reply.blade.php",
+            "selector": "report-reply-{{ $reply->id }}"
+        },
+        {
+            "file": "forum/partials/_topic.blade.php",
+            "selector": "open-topic-{{ $topic->id }}"
+        },
+        {
+            "file": "forum/partials/_topic.blade.php",
+            "selector": "pin-form-{{ $topic->id }}"
+        },
+        {
+            "file": "forum/partials/_topic.blade.php",
+            "selector": "pin-topic-{{ $topic->id }}"
+        },
+        {
+            "file": "forum/partials/_topic.blade.php",
+            "selector": "pinned-badge-{{ $topic->id }}"
+        },
+        {
+            "file": "forum/partials/_topic.blade.php",
+            "selector": "topic-row-{{ $topic->id }}"
+        },
+        {
+            "file": "forum/show.blade.php",
+            "selector": "back-to-forum"
+        },
+        {
+            "file": "forum/show.blade.php",
+            "selector": "delete-topic"
+        },
+        {
+            "file": "forum/show.blade.php",
+            "selector": "delete-topic-form"
+        },
+        {
+            "file": "forum/show.blade.php",
+            "selector": "edit-topic-{{ $topic->id }}"
+        },
+        {
+            "file": "forum/show.blade.php",
+            "selector": "new-reply-content"
+        },
+        {
+            "file": "forum/show.blade.php",
+            "selector": "new-reply-form"
+        },
+        {
+            "file": "forum/show.blade.php",
+            "selector": "new-reply-submit"
+        },
+        {
+            "file": "forum/show.blade.php",
+            "selector": "pin-form-{{ $topic->id }}"
+        },
+        {
+            "file": "forum/show.blade.php",
+            "selector": "pin-topic-{{ $topic->id }}"
+        },
+        {
+            "file": "forum/show.blade.php",
+            "selector": "pinned-badge-{{ $topic->id }}"
+        },
+        {
+            "file": "forum/show.blade.php",
+            "selector": "replies-list"
+        },
+        {
+            "file": "forum/show.blade.php",
+            "selector": "report-form"
+        },
+        {
+            "file": "forum/show.blade.php",
+            "selector": "report-reason"
+        },
+        {
+            "file": "forum/show.blade.php",
+            "selector": "report-submit"
+        },
+        {
+            "file": "forum/show.blade.php",
+            "selector": "report-topic-{{ $topic->id }}"
+        },
+        {
+            "file": "forum/show.blade.php",
+            "selector": "topic-content"
+        },
+        {
+            "file": "forum/show.blade.php",
+            "selector": "topic-post"
+        },
+        {
+            "file": "gestor/students/edit.blade.php",
+            "selector": "student-form"
+        },
+        {
+            "file": "gestor/students/edit.blade.php",
+            "selector": "student-status-reason"
+        },
+        {
+            "file": "gestor/students/edit.blade.php",
+            "selector": "student-status-select"
+        },
+        {
+            "file": "gestor/students/edit.blade.php",
+            "selector": "student-submit"
+        },
+        {
+            "file": "gestor/students/index.blade.php",
+            "selector": "delete-form-{{ $student->id }}"
+        },
+        {
+            "file": "gestor/students/index.blade.php",
+            "selector": "delete-student-{{ $student->id }}"
+        },
+        {
+            "file": "gestor/students/index.blade.php",
+            "selector": "edit-student-{{ $student->id }}"
+        },
+        {
+            "file": "gestor/students/index.blade.php",
+            "selector": "gestor-students-filter-form"
+        },
+        {
+            "file": "gestor/students/index.blade.php",
+            "selector": "gestor-students-index"
+        },
+        {
+            "file": "gestor/students/index.blade.php",
+            "selector": "gestor-students-search"
+        },
+        {
+            "file": "gestor/students/index.blade.php",
+            "selector": "import-students"
+        },
+        {
+            "file": "gestor/students/index.blade.php",
+            "selector": "student-row-{{ $student->id }}"
+        },
+        {
+            "file": "gestor/students/index.blade.php",
+            "selector": "student-status-{{ $student->id }}"
+        },
+        {
+            "file": "gestor/students/index.blade.php",
+            "selector": "student-status-{{ $student->id }}"
+        },
+        {
+            "file": "landing/show.blade.php",
+            "selector": "contact-button"
+        },
+        {
+            "file": "landing/show.blade.php",
+            "selector": "landing-cta-login"
+        },
+        {
+            "file": "landing/show.blade.php",
+            "selector": "landing-cta-login"
+        },
+        {
+            "file": "landing/show.blade.php",
+            "selector": "landing-headline"
+        },
+        {
+            "file": "landing/show.blade.php",
+            "selector": "landing-login-link"
+        },
+        {
+            "file": "landing/show.blade.php",
+            "selector": "landing-login-link"
+        },
+        {
+            "file": "modules/lessons/_form.blade.php",
+            "selector": "lesson-image-input"
+        },
+        {
+            "file": "modules/lessons/_form.blade.php",
+            "selector": "lesson-pdf-input"
+        },
+        {
+            "file": "modules/lessons/_form.blade.php",
+            "selector": "lesson-type-select"
+        },
+        {
+            "file": "modules/lessons/_form.blade.php",
+            "selector": "lesson-video-input"
+        },
+        {
+            "file": "modules/lessons/_form.blade.php",
+            "selector": "video-preview"
+        },
+        {
+            "file": "modules/lessons/create.blade.php",
+            "selector": "lesson-form"
+        },
+        {
+            "file": "modules/lessons/create.blade.php",
+            "selector": "lesson-submit"
+        },
+        {
+            "file": "modules/lessons/edit.blade.php",
+            "selector": "lesson-form"
+        },
+        {
+            "file": "modules/lessons/edit.blade.php",
+            "selector": "lesson-submit"
+        },
+        {
+            "file": "modules/lessons/index.blade.php",
+            "selector": "delete-lesson-form-{{ $lesson->id }}"
+        },
+        {
+            "file": "modules/lessons/index.blade.php",
+            "selector": "delete-lesson-{{ $lesson->id }}"
+        },
+        {
+            "file": "modules/lessons/index.blade.php",
+            "selector": "edit-lesson-{{ $lesson->id }}"
+        },
+        {
+            "file": "modules/lessons/index.blade.php",
+            "selector": "lesson-list"
+        },
+        {
+            "file": "modules/lessons/index.blade.php",
+            "selector": "lesson-row-{{ $lesson->id }}"
+        },
+        {
+            "file": "modules/lessons/index.blade.php",
+            "selector": "new-lesson"
+        },
+        {
+            "file": "modules/lessons/index.blade.php",
+            "selector": "open-delete-lesson-{{ $lesson->id }}"
+        },
+        {
+            "file": "organizations/_form.blade.php",
+            "selector": "organization-logo-preview"
+        },
+        {
+            "file": "organizations/create.blade.php",
+            "selector": "organization-form"
+        },
+        {
+            "file": "organizations/create.blade.php",
+            "selector": "organization-submit"
+        },
+        {
+            "file": "organizations/edit.blade.php",
+            "selector": "organization-form"
+        },
+        {
+            "file": "organizations/edit.blade.php",
+            "selector": "organization-submit"
+        },
+        {
+            "file": "organizations/index.blade.php",
+            "selector": "delete-form-{{ $organization->id }}"
+        },
+        {
+            "file": "organizations/index.blade.php",
+            "selector": "delete-organization-{{ $organization->id }}"
+        },
+        {
+            "file": "organizations/index.blade.php",
+            "selector": "edit-organization-{{ $organization->id }}"
+        },
+        {
+            "file": "organizations/index.blade.php",
+            "selector": "exit-impersonation"
+        },
+        {
+            "file": "organizations/index.blade.php",
+            "selector": "exit-impersonation-form"
+        },
+        {
+            "file": "organizations/index.blade.php",
+            "selector": "impersonate-form-{{ $organization->id }}"
+        },
+        {
+            "file": "organizations/index.blade.php",
+            "selector": "impersonate-{{ $organization->id }}"
+        },
+        {
+            "file": "organizations/index.blade.php",
+            "selector": "new-organization"
+        },
+        {
+            "file": "organizations/index.blade.php",
+            "selector": "organization-row-{{ $organization->id }}"
+        },
+        {
+            "file": "profile/edit.blade.php",
+            "selector": "password-form"
+        },
+        {
+            "file": "profile/edit.blade.php",
+            "selector": "password-submit"
+        },
+        {
+            "file": "profile/edit.blade.php",
+            "selector": "profile-form"
+        },
+        {
+            "file": "profile/edit.blade.php",
+            "selector": "profile-submit"
+        },
+        {
+            "file": "public/certificates/lookup.blade.php",
+            "selector": "certificate-lookup-form"
+        },
+        {
+            "file": "public/certificates/lookup.blade.php",
+            "selector": "certificate-lookup-hash"
+        },
+        {
+            "file": "public/certificates/lookup.blade.php",
+            "selector": "certificate-lookup-submit"
+        },
+        {
+            "file": "public/certificates/show.blade.php",
+            "selector": "certificate-course-title"
+        },
+        {
+            "file": "public/certificates/show.blade.php",
+            "selector": "certificate-issued-at"
+        },
+        {
+            "file": "public/certificates/show.blade.php",
+            "selector": "certificate-org-name"
+        },
+        {
+            "file": "public/certificates/show.blade.php",
+            "selector": "certificate-revoke-reason"
+        },
+        {
+            "file": "public/certificates/show.blade.php",
+            "selector": "certificate-revoked-banner"
+        },
+        {
+            "file": "public/certificates/show.blade.php",
+            "selector": "certificate-student-name"
+        },
+        {
+            "file": "public/certificates/show.blade.php",
+            "selector": "certificate-valid-banner"
+        },
+        {
+            "file": "public/certificates/show.blade.php",
+            "selector": "certificate-workload"
+        },
+        {
+            "file": "quizzes/attempts/pending.blade.php",
+            "selector": "grade-attempt-{{ $attempt->id }}"
+        },
+        {
+            "file": "quizzes/attempts/pending.blade.php",
+            "selector": "pending-attempt-row-{{ $attempt->id }}"
+        },
+        {
+            "file": "quizzes/attempts/pending.blade.php",
+            "selector": "pending-attempts-empty"
+        },
+        {
+            "file": "quizzes/attempts/show.blade.php",
+            "selector": "back-to-pending"
+        },
+        {
+            "file": "quizzes/attempts/show.blade.php",
+            "selector": "essay-answer-{{ $question->id }}"
+        },
+        {
+            "file": "quizzes/attempts/show.blade.php",
+            "selector": "grade-attempt-form"
+        },
+        {
+            "file": "quizzes/attempts/show.blade.php",
+            "selector": "grade-attempt-submit"
+        },
+        {
+            "file": "quizzes/attempts/show.blade.php",
+            "selector": "grade-correct-{{ $answer?->id }}"
+        },
+        {
+            "file": "quizzes/attempts/show.blade.php",
+            "selector": "grade-incorrect-{{ $answer?->id }}"
+        },
+        {
+            "file": "quizzes/create.blade.php",
+            "selector": "quiz-allow-retries"
+        },
+        {
+            "file": "quizzes/create.blade.php",
+            "selector": "quiz-form"
+        },
+        {
+            "file": "quizzes/create.blade.php",
+            "selector": "quiz-max-attempts"
+        },
+        {
+            "file": "quizzes/create.blade.php",
+            "selector": "quiz-min-score"
+        },
+        {
+            "file": "quizzes/create.blade.php",
+            "selector": "quiz-show-correct-answers"
+        },
+        {
+            "file": "quizzes/create.blade.php",
+            "selector": "quiz-submit"
+        },
+        {
+            "file": "quizzes/create.blade.php",
+            "selector": "quiz-time-limit"
+        },
+        {
+            "file": "quizzes/create.blade.php",
+            "selector": "quiz-title-input"
+        },
+        {
+            "file": "quizzes/edit.blade.php",
+            "selector": "new-question"
+        },
+        {
+            "file": "quizzes/edit.blade.php",
+            "selector": "quiz-allow-retries"
+        },
+        {
+            "file": "quizzes/edit.blade.php",
+            "selector": "quiz-form"
+        },
+        {
+            "file": "quizzes/edit.blade.php",
+            "selector": "quiz-max-attempts"
+        },
+        {
+            "file": "quizzes/edit.blade.php",
+            "selector": "quiz-min-score"
+        },
+        {
+            "file": "quizzes/edit.blade.php",
+            "selector": "quiz-show-correct-answers"
+        },
+        {
+            "file": "quizzes/edit.blade.php",
+            "selector": "quiz-submit"
+        },
+        {
+            "file": "quizzes/edit.blade.php",
+            "selector": "quiz-time-limit"
+        },
+        {
+            "file": "quizzes/edit.blade.php",
+            "selector": "quiz-title-input"
+        },
+        {
+            "file": "quizzes/partials/_question-form.blade.php",
+            "selector": "add-option-{{ $formSuffix }}"
+        },
+        {
+            "file": "quizzes/partials/_question-form.blade.php",
+            "selector": "option-correct-{{ $formSuffix }}-{{ $i }}"
+        },
+        {
+            "file": "quizzes/partials/_question-form.blade.php",
+            "selector": "option-correct-{{ $formSuffix }}-{{ $i }}"
+        },
+        {
+            "file": "quizzes/partials/_question-form.blade.php",
+            "selector": "option-text-{{ $formSuffix }}-{{ $i }}"
+        },
+        {
+            "file": "quizzes/partials/_question-form.blade.php",
+            "selector": "option-text-{{ $formSuffix }}-{{ $i }}"
+        },
+        {
+            "file": "quizzes/partials/_question-form.blade.php",
+            "selector": "question-form-{{ $formSuffix }}"
+        },
+        {
+            "file": "quizzes/partials/_question-form.blade.php",
+            "selector": "question-submit-{{ $formSuffix }}"
+        },
+        {
+            "file": "quizzes/partials/_question-form.blade.php",
+            "selector": "question-text-{{ $formSuffix }}"
+        },
+        {
+            "file": "quizzes/partials/_question-form.blade.php",
+            "selector": "question-type-{{ $formSuffix }}"
+        },
+        {
+            "file": "quizzes/partials/_question-form.blade.php",
+            "selector": "remove-option-{{ $formSuffix }}-{{ $i }}"
+        },
+        {
+            "file": "quizzes/partials/_question-form.blade.php",
+            "selector": "remove-option-{{ $formSuffix }}-{{ $i }}"
+        },
+        {
+            "file": "quizzes/partials/_question-list.blade.php",
+            "selector": "delete-question-form-{{ $question->id }}"
+        },
+        {
+            "file": "quizzes/partials/_question-list.blade.php",
+            "selector": "delete-question-{{ $question->id }}"
+        },
+        {
+            "file": "quizzes/partials/_question-list.blade.php",
+            "selector": "edit-question-{{ $question->id }}"
+        },
+        {
+            "file": "quizzes/partials/_question-list.blade.php",
+            "selector": "question-list"
+        },
+        {
+            "file": "quizzes/partials/_question-list.blade.php",
+            "selector": "question-list-empty"
+        },
+        {
+            "file": "quizzes/partials/_question-list.blade.php",
+            "selector": "question-row-{{ $question->id }}"
+        },
+        {
+            "file": "settings/edit.blade.php",
+            "selector": "settings-form"
+        },
+        {
+            "file": "settings/edit.blade.php",
+            "selector": "settings-submit"
+        },
+        {
+            "file": "student/courses/index.blade.php",
+            "selector": "course-card-{{ optional(data_get($row, 'course'))->id }}"
+        },
+        {
+            "file": "student/courses/index.blade.php",
+            "selector": "no-enrollments"
+        },
+        {
+            "file": "student/courses/index.blade.php",
+            "selector": "tab-{{ Str::slug($tabKey, '-') }}"
+        },
+        {
+            "file": "student/quizzes/_answer_key.blade.php",
+            "selector": "answer-key-option-{{ $option->id }}"
+        },
+        {
+            "file": "student/quizzes/_answer_key.blade.php",
+            "selector": "answer-key-question-{{ $question->id }}"
+        },
+        {
+            "file": "student/quizzes/_answer_key.blade.php",
+            "selector": "quiz-answer-key"
+        },
+        {
+            "file": "student/quizzes/_essay.blade.php",
+            "selector": "quiz-essay-{{ $question->id }}"
+        },
+        {
+            "file": "student/quizzes/_option.blade.php",
+            "selector": "quiz-option-{{ $question->id }}-{{ $option->id }}"
+        },
+        {
+            "file": "student/quizzes/show.blade.php",
+            "selector": "back-to-lesson"
+        },
+        {
+            "file": "student/quizzes/show.blade.php",
+            "selector": "quiz-attempt-confirm"
+        },
+        {
+            "file": "student/quizzes/show.blade.php",
+            "selector": "quiz-attempt-form"
+        },
+        {
+            "file": "student/quizzes/show.blade.php",
+            "selector": "quiz-attempt-submit"
+        },
+        {
+            "file": "student/quizzes/show.blade.php",
+            "selector": "quiz-best-score"
+        },
+        {
+            "file": "student/quizzes/show.blade.php",
+            "selector": "quiz-cannot-attempt"
+        },
+        {
+            "file": "student/quizzes/show.blade.php",
+            "selector": "quiz-expired-attempt"
+        },
+        {
+            "file": "student/quizzes/show.blade.php",
+            "selector": "quiz-pending-grading"
+        },
+        {
+            "file": "student/quizzes/show.blade.php",
+            "selector": "quiz-question-{{ $question->id }}"
+        },
+        {
+            "file": "student/quizzes/show.blade.php",
+            "selector": "quiz-required-hint"
+        },
+        {
+            "file": "student/quizzes/show.blade.php",
+            "selector": "quiz-timer"
+        },
+        {
+            "file": "users/create.blade.php",
+            "selector": "user-form"
+        },
+        {
+            "file": "users/create.blade.php",
+            "selector": "user-submit"
+        },
+        {
+            "file": "users/edit.blade.php",
+            "selector": "user-form"
+        },
+        {
+            "file": "users/edit.blade.php",
+            "selector": "user-status-reason"
+        },
+        {
+            "file": "users/edit.blade.php",
+            "selector": "user-status-select"
+        },
+        {
+            "file": "users/edit.blade.php",
+            "selector": "user-submit"
+        },
+        {
+            "file": "users/import.blade.php",
+            "selector": "csv-course-select"
+        },
+        {
+            "file": "users/import.blade.php",
+            "selector": "csv-file-input"
+        },
+        {
+            "file": "users/import.blade.php",
+            "selector": "csv-import-form"
+        },
+        {
+            "file": "users/import.blade.php",
+            "selector": "csv-import-progress"
+        },
+        {
+            "file": "users/import.blade.php",
+            "selector": "csv-import-progress-bar"
+        },
+        {
+            "file": "users/import.blade.php",
+            "selector": "csv-import-progress-text"
+        },
+        {
+            "file": "users/import.blade.php",
+            "selector": "csv-import-progress-wrapper"
+        },
+        {
+            "file": "users/import.blade.php",
+            "selector": "csv-import-results"
+        },
+        {
+            "file": "users/import.blade.php",
+            "selector": "csv-import-submit"
+        },
+        {
+            "file": "users/index.blade.php",
+            "selector": "delete-form-{{ $user->id }}"
+        },
+        {
+            "file": "users/index.blade.php",
+            "selector": "delete-user-{{ $user->id }}"
+        },
+        {
+            "file": "users/index.blade.php",
+            "selector": "edit-user-{{ $user->id }}"
+        },
+        {
+            "file": "users/index.blade.php",
+            "selector": "import-users"
+        },
+        {
+            "file": "users/index.blade.php",
+            "selector": "new-user"
+        },
+        {
+            "file": "users/index.blade.php",
+            "selector": "user-row-{{ $user->id }}"
+        },
+        {
+            "file": "users/index.blade.php",
+            "selector": "user-status-{{ $user->id }}"
+        },
+        {
+            "file": "users/index.blade.php",
+            "selector": "user-status-{{ $user->id }}"
         }
     ]
 }

@@ -224,9 +224,10 @@ class ModuleAndLessonManagementDuskTest extends DuskTestCase
                     ->waitFor('@lesson-form')
                     ->type('title', 'Lição Multimídia do Dusk')
                     ->select('@lesson-type-select', 'content')
-                    ->type('@lesson-youtube-input', 'https://www.youtube.com/watch?v=dQw4w9WgXcQ')
-                    ->waitFor('@youtube-preview')
-                    ->assertAttributeContains('@youtube-preview', 'src', 'https://www.youtube.com/embed/dQw4w9WgXcQ');
+                    ->select('@lesson-provider-select', 'youtube')
+                    ->type('@lesson-video-input', 'https://www.youtube.com/watch?v=dQw4w9WgXcQ')
+                    ->waitFor('@video-preview')
+                    ->assertAttributeContains('@video-preview', 'src', 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ');
                 $this->attachManyFiles($browser, 'lesson-image-input', [$firstImage, $secondImage]);
                 $this->attachManyFiles($browser, 'lesson-pdf-input', [$firstPdf, $secondPdf]);
                 $browser->click('@lesson-submit')
@@ -245,8 +246,8 @@ class ModuleAndLessonManagementDuskTest extends DuskTestCase
                 $this->assertStringStartsWith("orgs/{$org->id}/courses/{$course->id}/images/", $path);
             });
             $this->assertSame(
-                'https://www.youtube.com/embed/dQw4w9WgXcQ',
-                $created->fresh()->youtube_url,
+                'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ',
+                $created->fresh()->video_url,
             );
 
             $this->browse(function (Browser $browser) use ($gestor, $module, $first, $second, $created): void {
@@ -257,10 +258,10 @@ class ModuleAndLessonManagementDuskTest extends DuskTestCase
                     ->visit(route('lessons.edit', $second))
                     ->waitFor('@lesson-form')
                     ->select('@lesson-type-select', 'quiz')
-                    ->assertMissing('@lesson-youtube-input')
+                    ->assertMissing('@lesson-video-input')
                     ->assertMissing('@lesson-pdf-input')
                     ->select('@lesson-type-select', 'content')
-                    ->assertVisible('@lesson-youtube-input')
+                    ->assertVisible('@lesson-video-input')
                     ->assertVisible('@lesson-pdf-input')
 
                     // 4. edit-lesson-{id} from the listing (assert only —
@@ -354,7 +355,7 @@ class ModuleAndLessonManagementDuskTest extends DuskTestCase
     /**
      * Exception-flow coverage that the happy-path lifecycle chain
      * above never exercises: an invalid YouTube URL rejected with a
-     * validation error rendered on `error-youtube_url`, an oversized image
+     * validation error rendered on `error-video_url`, an oversized image
      * rejected client-side by `LessonForm.js` (`.is-invalid` + message on
      * the dropzone, no server round-trip), and an oversized PDF plus a
      * non-PDF file named `.pdf` rejected by the SERVER with a 422-driven
@@ -384,10 +385,12 @@ class ModuleAndLessonManagementDuskTest extends DuskTestCase
                     // 1. Invalid YouTube URL: server-rendered validation
                     //    error surfaces on `error-youtube_url` and no
                     //    lesson is persisted.
-                    ->type('@lesson-youtube-input', 'https://vimeo.com/12345')
+                    ->type('@lesson-video-input', 'https://vimeo.com/12345')
                     ->click('@lesson-submit')
-                    ->waitFor('@error-youtube_url')
-                    ->assertSeeIn('@error-youtube_url', 'YouTube')
+                    ->waitFor('@error-video_url')
+                    // O select continua em YouTube (a URL não casa com
+                    // nenhum provedor), então a mensagem é a do YouTube.
+                    ->assertSeeIn('@error-video_url', 'YouTube')
                     ->assertInputValue('title', 'Lição Rejeitada');
 
                 $this->assertDatabaseMissing('lessons', ['title' => 'Lição Rejeitada']);
