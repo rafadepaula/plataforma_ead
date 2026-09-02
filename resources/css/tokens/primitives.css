@@ -40,7 +40,10 @@ a {
   transition: color var(--duration-fast) var(--ease-standard);
 }
 
-a:hover {
+/* `:not(.btn)` isenta os botões-âncora (`x-ui.button` com `href`): botão de
+   ação nunca recebe sublinhado — nem no hover, nem no foco. O sublinhado de
+   hover continua valendo para links de texto comuns. */
+a:hover:not(.btn) {
   color: var(--primary-hover);
   text-decoration: underline;
 }

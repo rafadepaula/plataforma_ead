@@ -107,6 +107,48 @@
     box-shadow: var(--elev-primary);
 }
 
+// Par container/on-container do preenchimento menta, espelhando
+// `.btn-primary`: sem este override o Bootstrap calcula texto PRETO sobre
+// `--success` (o contraste WCAG do preto vence o do branco), mas o par
+// declarado do design system para o fill menta é branco (`--on-secondary`,
+// mesma semântica de `--on-primary`). Estados seguem a mesma régua do
+// primary: hover `--secondary-hover` (mint-700) e pressed mint-800 — um
+// passo além do hover, como blue-700/blue-800.
+.btn-success {
+    --bs-btn-color: var(--on-secondary);
+    --bs-btn-bg: var(--success);
+    --bs-btn-border-color: var(--success);
+    --bs-btn-hover-color: var(--on-secondary);
+    --bs-btn-hover-bg: var(--secondary-hover);
+    --bs-btn-hover-border-color: var(--secondary-hover);
+    --bs-btn-active-color: var(--on-secondary);
+    --bs-btn-active-bg: var(--mint-800);
+    --bs-btn-active-border-color: var(--mint-800);
+    --bs-btn-disabled-color: var(--on-secondary);
+    --bs-btn-disabled-bg: var(--success);
+    --bs-btn-disabled-border-color: var(--success);
+}
+
+// Outline do par menta (`secondary`): sem este override o Bootstrap repete
+// no hover o mesmo cálculo automático de contraste que pinta o texto de
+// PRETO sobre o fill mint-600 (caso do `.btn-success` acima). O outline
+// preenche com o próprio tom no hover e afunda um passo no press, na
+// mesma régua dos botões preenchidos. O sublinhado do `a:hover` global
+// (primitives) permanece — é o comportamento desejado.
+.btn-outline-secondary {
+    --bs-btn-color: var(--secondary);
+    --bs-btn-border-color: var(--secondary);
+    --bs-btn-hover-color: var(--on-secondary);
+    --bs-btn-hover-bg: var(--secondary);
+    --bs-btn-hover-border-color: var(--secondary);
+    --bs-btn-active-color: var(--on-secondary);
+    --bs-btn-active-bg: var(--secondary-hover);
+    --bs-btn-active-border-color: var(--secondary-hover);
+    --bs-btn-disabled-color: var(--secondary);
+    --bs-btn-disabled-bg: transparent;
+    --bs-btn-disabled-border-color: var(--secondary);
+}
+
 .btn-ghost {
     color: var(--text-primary);
     background-color: transparent;
