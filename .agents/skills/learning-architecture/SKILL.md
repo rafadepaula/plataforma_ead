@@ -209,15 +209,25 @@ tabs by the **raw pivot `status`**, not the derived display status —
 reads `nao_iniciado`/`em_andamento`/`expirado`; `concluidos` is every
 `completed` row; `todos` is both. Each row becomes one plain `object` view
 model (`course`, `organization`, `pivotStatus`, `displayStatus`,
-`progressPercentage`, `ctaLabel`, `ctaHref`, `lessonsCount`,
-`workloadHours`, `deadlineLabel`) consumed by `<x-course.card>` and its 3
-sub-components (`card-header`/`card-body`/`card-footer`). Two rules any
+`progressPercentage`, `ctaLabel`, `ctaHref`, `secondaryCtaLabel`,
+`secondaryCtaHref`, `lessonsCount`, `workloadHours`, `deadlineLabel`)
+consumed by `<x-course.card>` and its 3
+sub-components (`card-header`/`card-body`/`card-footer`). Three rules any
 change to this pipeline must preserve:
 
+- **A `concluido` row ALWAYS resolves the classroom CTA**: its primary CTA
+  is `["Ver sala de aula", route('classroom.show', $course)]` — never the
+  certificate. `EnsureStudentIsEnrolled` and the forum policies admit a
+  `completed` pivot, so a finished student must keep a clickable path back
+  into the content and the full forum. The certificate travels on the row's
+  secondary CTA slot instead ("Baixar certificado" link once issued, the
+  neutral "Certificado em emissão" placeholder with `secondaryCtaHref =
+  null` while it hasn't).
 - **CTA degrades to `null`, never a 404 link**: a course with zero
-  published Lessons, or a `concluido` row whose Certificate has not been
-  issued yet, gets `ctaHref = null` — `<x-course.card-footer>` renders a
-  disabled button instead of linking to a route that would 404/403.
+  published Lessons gets `ctaHref = null` — `<x-course.card-footer>`
+  renders a disabled button instead of linking to a route that would
+  404/403; a secondary slot with a label but `null` href degrades to plain
+  text, never a dead link.
 - **2% visual progress floor**: any row that is not `nao_iniciado` shows
   at least a 2% bar even at 0 real progress (e.g. an `expirado` row the
   student never started), so the bar never reads as a rendering bug. A

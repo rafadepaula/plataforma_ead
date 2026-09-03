@@ -37,7 +37,7 @@ class StudentCoursesCatalogUiTest extends DuskTestCase
         Lesson::factory()->for($inProgressModule)->create(['is_published' => true, 'order_index' => 1]);
 
         // "Concluído": pivot status completed, a Certificate already issued
-        // — CTA is "Baixar certificado".
+        // — primary CTA is "Ver sala de aula", secondary is the certificate.
         $completedCourse = Course::factory()->create(['org_id' => $org->id, 'title' => 'Curso Concluido', 'workload_hours' => 2]);
         $completedModule = Module::factory()->for($completedCourse)->create(['order_index' => 0]);
         Lesson::factory()->for($completedModule)->create(['is_published' => true, 'order_index' => 0]);
@@ -99,12 +99,15 @@ class StudentCoursesCatalogUiTest extends DuskTestCase
 
             // 2. "Concluídos" tab: a plain GET reload (no client-side panel
             //    swap) surfaces only the completed course, chip "Concluído",
-            //    CTA "Baixar certificado" pointing at the issued certificate.
+            //    primary CTA "Ver sala de aula" pointing at the classroom,
+            //    plus the secondary "Baixar certificado" link for the issued
+            //    certificate.
             $browser->click('@tab-concluidos')
                 ->waitFor('@course-card-'.$completedCourse->id)
                 ->assertMissing('@course-card-'.$inProgressCourse->id)
                 ->assertMissing('@course-card-'.$expiredCourse->id)
-                ->assertSeeIn('@course-continue-'.$completedCourse->id, 'Baixar certificado');
+                ->assertSeeIn('@course-continue-'.$completedCourse->id, 'Ver sala de aula')
+                ->assertSeeIn('@course-certificate-'.$completedCourse->id, 'Baixar certificado');
 
             // 3. "Todos" tab: every non-cancelled enrollment shows, including
             //    the expired one with its "Prazo encerrado" chip and the

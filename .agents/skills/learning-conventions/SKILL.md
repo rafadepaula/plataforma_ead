@@ -269,7 +269,8 @@ card.blade.php`) that forwards `$attributes` (the `dusk="course-card-{id}"`
 selector) plus one `enrollment` prop into 3 sibling sub-components —
 `card-header` (168px media band + status chip), `card-body` (org overline,
 clamped title/summary, 10px progress bar), `card-footer` (contextual CTA
-button + `"{N} aulas · {N}h · Prazo: ..."` caption). Every sub-component
+button, the optional secondary certificate link/hint of a `concluido` row,
+and the `"{N} aulas · {N}h · Prazo: ..."` caption). Every sub-component
 reads its fields through `data_get($enrollment, '...')`, never `$enrollment
 ->course`, so the component tree works whether the controller hands a
 plain array or an object, and every field defensively degrades (missing
@@ -284,8 +285,12 @@ each is unit-tested in isolation by
 passed in by the controller: `concluido`/`expirado` render `tonal`,
 `nao_iniciado`/`em_andamento` render `primary`; only `em_andamento` (and
 only with a resolved `ctaHref`) shows the trailing `chevron-right` icon.
-Keep that branching inside `card-footer.blade.php` — do not move it into
-the controller's view model, which only supplies `ctaLabel`/`ctaHref`, not
+A `concluido` row's certificate lives on the secondary slot: a resolved
+`secondaryCtaHref` renders the `dusk="course-certificate-{id}"` link, a
+label without one renders plain muted text — never a dead link. Keep that
+branching inside `card-footer.blade.php` — do not move it into
+the controller's view model, which only supplies `ctaLabel`/`ctaHref`
+(and the secondary pair), not
 button styling.
 
 ## `resolveResumeLesson()`: One Algorithm, Two Callers

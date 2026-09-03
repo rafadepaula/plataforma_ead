@@ -1,5 +1,5 @@
 {
-    "count": 464,
+    "count": 465,
     "entries": [
         {
             "file": "admin/users/edit.blade.php",
@@ -436,6 +436,10 @@
         {
             "file": "components/course/card-body.blade.php",
             "selector": "course-progress-{{ $courseId }}"
+        },
+        {
+            "file": "components/course/card-footer.blade.php",
+            "selector": "course-certificate-{{ $courseId }}"
         },
         {
             "file": "components/course/card-footer.blade.php",

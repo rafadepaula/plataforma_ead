@@ -98,7 +98,9 @@ class StudentCourseController extends Controller
     /**
      * Builds the lightweight per-card view model for one enrollment: the
      * derived status chip, the visually-clamped progress percentage, the
-     * resolved CTA target/label for that status, and the metadata a card
+     * resolved CTA target/label for that status, the optional secondary
+     * CTA slot (a `concluido` row's certificate link, or its
+     * "Certificado em emissão" placeholder), and the metadata a card
      * footer needs ("{N} aulas · {N}h · Prazo: DD/MM/AAAA").
      */
     private function buildRow(Course $course, Collection $certificates): object
@@ -109,7 +111,10 @@ class StudentCourseController extends Controller
         $publishedLessons = $this->publishedLessonsInOrder($course);
         $lessonsCount = $publishedLessons->count();
 
-        [$ctaLabel, $ctaHref] = $this->resolveCta($course, $displayStatus, $publishedLessons, $certificates);
+        [$ctaLabel, $ctaHref] = $this->resolveCta($course, $displayStatus, $publishedLessons);
+        [$secondaryCtaLabel, $secondaryCtaHref] = $displayStatus === 'concluido'
+            ? $this->certificateCta($certificates)
+            : [null, null];
 
         return (object) [
             'course' => $course,
@@ -119,6 +124,8 @@ class StudentCourseController extends Controller
             'progressPercentage' => $this->visualProgressPercentage((int) ($pivot->progress_percentage ?? 0), $displayStatus),
             'ctaLabel' => $ctaLabel,
             'ctaHref' => $ctaHref,
+            'secondaryCtaLabel' => $secondaryCtaLabel,
+            'secondaryCtaHref' => $secondaryCtaHref,
             'lessonsCount' => $lessonsCount,
             'workloadHours' => (int) $course->workload_hours,
             'deadlineLabel' => $this->resolveDeadlineLabel($pivot, $displayStatus),
@@ -143,19 +150,21 @@ class StudentCourseController extends Controller
 
     /**
      * @param  Collection<int, Lesson>  $publishedLessons
-     * @param  Collection<int, Certificate>  $certificates
      * @return array{0: ?string, 1: ?string} [label, href] — both `null`
      *                                       when no CTA can be resolved (e.g. a course with no published
-     *                                       Lessons yet, or a `concluido` enrollment whose Certificate has
-     *                                       not been issued yet). Callers must degrade the button rather
-     *                                       than link to a 404.
+     *                                       Lessons yet). Callers must degrade the button rather than link
+     *                                       to a 404. A `concluido` row ALWAYS resolves the classroom — the
+     *                                       enrollment gate (`EnsureStudentIsEnrolled`) and the forum
+     *                                       policies admit a `completed` pivot, so a finished student must
+     *                                       keep a clickable path back into the content; the certificate
+     *                                       travels on the row's secondary CTA slot instead.
      */
-    private function resolveCta(Course $course, string $displayStatus, Collection $publishedLessons, Collection $certificates): array
+    private function resolveCta(Course $course, string $displayStatus, Collection $publishedLessons): array
     {
         return match ($displayStatus) {
             'nao_iniciado' => $this->lessonCta($publishedLessons->first(), 'Começar curso'),
             'em_andamento' => $this->lessonCta($this->resumeLessonFor($publishedLessons), 'Continuar'),
-            'concluido' => $this->certificateCta($certificates),
+            'concluido' => ['Ver sala de aula', route('classroom.show', $course)],
             'expirado' => ['Ver o que você fez', route('classroom.show', $course)],
             default => [null, null],
         };
@@ -174,6 +183,12 @@ class StudentCourseController extends Controller
     }
 
     /**
+     * The secondary CTA slot of a `concluido` row: "Baixar certificado"
+     * when a non-revoked Certificate was already issued, or the neutral
+     * "Certificado em emissão" placeholder (no link — the button/link
+     * must degrade rather than 404) while it hasn't. The primary CTA is
+     * the classroom either way.
+     *
      * @param  Collection<int, Certificate>  $certificates  this student's non-revoked
      *                                                      Certificates for the Course, newest `issued_at` first (see
      *                                                      the `index()` batch query) — never a fresh DB round-trip

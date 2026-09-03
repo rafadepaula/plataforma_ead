@@ -317,7 +317,7 @@ class StudentCourseControllerTest extends TestCase
         });
     }
 
-    public function test_concluido_status_offers_certificate_download_when_certificate_is_issued(): void
+    public function test_concluido_status_always_resolves_the_classroom_cta_and_offers_certificate_download_when_issued(): void
     {
         $aluno = $this->makeAluno();
         $org = Organization::factory()->create();
@@ -335,10 +335,17 @@ class StudentCourseControllerTest extends TestCase
         $response = $this->actingAs($aluno)->get(route('student.courses.index', ['status' => 'concluidos']));
 
         $response->assertOk();
-        $response->assertViewHas('rows', fn ($rows) => $rows->first()->ctaHref === route('certificates.download', $certificate));
+        $response->assertViewHas('rows', function ($rows) use ($course, $certificate) {
+            $row = $rows->first();
+
+            return $row->ctaLabel === 'Ver sala de aula'
+                && $row->ctaHref === route('classroom.show', $course)
+                && $row->secondaryCtaLabel === 'Baixar certificado'
+                && $row->secondaryCtaHref === route('certificates.download', $certificate);
+        });
     }
 
-    public function test_concluido_status_degrades_gracefully_when_certificate_has_not_been_issued_yet(): void
+    public function test_concluido_status_still_links_the_classroom_and_degrades_the_certificate_gracefully_when_not_issued_yet(): void
     {
         $aluno = $this->makeAluno();
         $org = Organization::factory()->create();
@@ -354,7 +361,14 @@ class StudentCourseControllerTest extends TestCase
         $response = $this->actingAs($aluno)->get(route('student.courses.index', ['status' => 'concluidos']));
 
         $response->assertOk();
-        $response->assertViewHas('rows', fn ($rows) => $rows->first()->ctaHref === null);
+        $response->assertViewHas('rows', function ($rows) use ($course) {
+            $row = $rows->first();
+
+            return $row->ctaLabel === 'Ver sala de aula'
+                && $row->ctaHref === route('classroom.show', $course)
+                && $row->secondaryCtaLabel === 'Certificado em emissão'
+                && $row->secondaryCtaHref === null;
+        });
     }
 
     public function test_a_course_with_no_published_lessons_does_not_crash_and_degrades_its_cta(): void

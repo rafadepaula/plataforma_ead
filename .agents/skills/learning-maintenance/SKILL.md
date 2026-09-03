@@ -70,8 +70,10 @@ Tests guard this module's contract. Must stay green (PHPUnit, no Pest):
   badge counts, a `cancelled` enrollment never appearing in any tab, all 4
   derived statuses (`concluido` winning over a past `expires_at`
   included), the 2%-visual-minimum floor on an `expirado` row with zero
-  real progress, certificate-issued vs certificate-not-yet-issued CTA
-  degradation, a zero-published-lesson course not crashing, soft-deleted
+  real progress, the `concluido` CTA contract (classroom primary in both
+  certificate states, secondary slot carrying the issued download link or
+  the "Certificado em emissão" no-link placeholder), a
+  zero-published-lesson course not crashing, soft-deleted
   Course exclusion, an unpublished-but-enrolled Course still rendering
   read-only, and a `role:gestor` 403.
 - `tests/Feature/ClassroomOverviewRenderingTest.php` — 18 tests
@@ -200,7 +202,8 @@ which leave `public/hot` behind and break every Dusk run (see
 - **Selector rename**: the pre-rebuild catalog used
   `org-group-{id}`/`student-course-{id}`/`open-classroom-{id}`. These are
   retired — current selectors are `course-card-{id}`, `course-status-
-  {id}`, `course-progress-{id}`, `course-continue-{id}` (on the
+  {id}`, `course-progress-{id}`, `course-continue-{id}`,
+  `course-certificate-{id}` (on the
   `<x-course.card>` family; see `learning-conventions`). If a Dusk test
   still references the old names it is asserting against the pre-refactor
   layout — update it, and update
@@ -215,7 +218,10 @@ which leave `public/hot` behind and break every Dusk run (see
 - **Card CTA disabled state**: when `ctaHref` is `null` (see
   `learning-architecture`'s CTA-degrades-to-null rule), `course-continue-
   {id}` renders a disabled `<x-ui.button>`, not a missing element — assert
-  `disabled`, don't assert the selector is absent.
+  `disabled`, don't assert the selector is absent. A `concluido` row never
+  hits this path: its primary CTA is the classroom unconditionally, and an
+  unissued certificate only degrades the secondary `course-certificate-
+  {id}` slot to plain text.
 
 ## Auto-Update Protocol
 
