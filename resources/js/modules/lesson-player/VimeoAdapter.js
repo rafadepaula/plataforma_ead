@@ -32,21 +32,43 @@ export class VimeoAdapter extends VideoPlayerAdapter {
             byline: false,
             portrait: false,
             dnt: true,
-            responsive: false,
-            width: '100%',
-            height: '100%',
+            // `responsive: true` faz o SDK preencher o stage 16:9 sozinho;
+            // `width`/`height` do SDK são pixels numéricos — as strings
+            // '100%' eram ignoradas e o iframe caía no tamanho padrão,
+            // minúsculo no canto do player. O preenchimento é reforçado
+            // pelo `.ds-player-stage iframe` em _video-player.scss.
+            responsive: true,
         });
 
         this.player.on('timeupdate', ({ seconds, duration }) => {
             this.cachedTime = seconds;
             this.cachedDuration = duration || this.cachedDuration;
+
+            // Auto-correção: frames avançando provam reprodução — se o estado
+            // ficou preso em 'unstarted'/'buffering' (o `bufferend` correu
+            // antes do primeiro tick e o `cachedTime` ainda era 0), o botão
+            // de pausa chamaria `play()` para sempre e nunca pausaria.
+            // 'paused'/'ended' nunca são tocados aqui: um seek com o vídeo
+            // pausado também emite ticks e não pode "ressuscitar" o estado.
+            if (seconds > 0 && (this.getState() === 'unstarted' || this.getState() === 'buffering')) {
+                this.setState('playing');
+            }
+
             this.emit('timeupdate', { currentTime: seconds, duration: this.cachedDuration });
         });
         this.player.on('play', () => this.setState('playing'));
         this.player.on('pause', () => this.setState('paused'));
         this.player.on('ended', () => this.setState('ended'));
-        this.player.on('bufferstart', () => this.setState('buffering'));
-        this.player.on('bufferend', () => this.setState(this.cachedTime > 0 ? 'playing' : 'unstarted'));
+        // Seek com o vídeo pausado/encerrado também gera buffering — o estado
+        // pertence ao usuário (pausado/encerrado), não ao rebuffer.
+        this.player.on('bufferstart', () => {
+            if (this.getState() === 'paused' || this.getState() === 'ended') return;
+            this.setState('buffering');
+        });
+        this.player.on('bufferend', () => {
+            if (this.getState() === 'paused' || this.getState() === 'ended') return;
+            this.setState(this.cachedTime > 0 ? 'playing' : 'unstarted');
+        });
         this.player.on('error', () => this.emit('error'));
 
         await this.player.ready();

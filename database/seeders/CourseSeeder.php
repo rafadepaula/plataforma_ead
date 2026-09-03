@@ -196,13 +196,16 @@ class CourseSeeder extends Seeder
             ]
         );
 
+        // Demo usa Big Buck Bunny (Blender Foundation, CC): o ID anterior
+        // (dQw4w9WgXcQ) tem playback fora do YouTube bloqueado pelo detentor
+        // e todo banco seedado exibia "This video is unavailable" no player.
         Lesson::firstOrCreate(
             ['module_id' => $module->id, 'title' => 'Videoaula — Circuito Residencial Passo a Passo'],
             [
                 'type' => 'content',
                 'content_text' => 'Assista à videoaula completa antes de realizar a avaliação final.',
                 'video_provider' => 'youtube',
-                'video_url' => app(YoutubeSanitizerService::class)->sanitize('https://www.youtube.com/watch?v=dQw4w9WgXcQ'),
+                'video_url' => app(YoutubeSanitizerService::class)->sanitize('https://www.youtube.com/watch?v=aqz-KE-bpKQ'),
                 'order_index' => 1,
                 'is_published' => true,
             ]

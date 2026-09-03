@@ -19,7 +19,7 @@
  *    `removed_media[]` ao form (o servidor apaga o registro e o arquivo).
  */
 const VIDEO_PATTERNS = {
-    youtube: /^https?:\/\/(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{11})(?:[&?][^\s]*)?$/i,
+    youtube: /^https?:\/\/(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/)|youtube-nocookie\.com\/embed\/|youtu\.be\/)([A-Za-z0-9_-]{11})(?:[&?][^\s]*)?$/i,
     vimeo: /^https?:\/\/(?:www\.)?(?:player\.)?vimeo\.com\/(?:video\/)?(\d{6,})(?:\/([A-Za-z0-9]+))?(?:[&?][^\s]*)?$/i,
 };
 

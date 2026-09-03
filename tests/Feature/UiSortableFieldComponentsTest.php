@@ -162,6 +162,19 @@ class UiSortableFieldComponentsTest extends TestCase
             'The preview iframe must carry dusk="video-preview".'
         );
 
+        // Regressão: a URL canônica já salva (nocookie /embed/) precisa
+        // pré-visualizar — antes o regex do campo não a reconhecia e a
+        // edição de uma lição salva mostrava o estado vazio.
+        $canonical = Blade::render(
+            '<x-ui.video-field value="https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ" dusk="lesson-video-input" />'
+        );
+
+        $this->assertMatchesRegularExpression(
+            '/<iframe[^>]*src="https:\/\/www\.youtube-nocookie\.com\/embed\/dQw4w9WgXcQ"/',
+            $canonical,
+            'An already-sanitized nocookie embed URL must still render the preview iframe.'
+        );
+
         $vimeo = Blade::render(
             '<x-ui.video-field value="https://vimeo.com/76979871/abcdef12345" dusk="lesson-video-input" />'
         );

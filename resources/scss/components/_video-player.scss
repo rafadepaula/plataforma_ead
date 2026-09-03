@@ -36,6 +36,19 @@
 }
 
 // ---
+// O iframe do Vimeo é neto do `.ds-player` (vive dentro do stage), então o
+// `.ds-ratio > *` não o alcança — sem preenchimento explícito ele renderiza
+// no tamanho padrão, minúsculo no canto do player. O iframe do YouTube vira
+// filho direto e já é coberto, mas a regra é inofensiva para ele.
+// ---
+.ds-player-stage iframe {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: 0;
+}
+
+// ---
 // Fachada: wash pastel + botão circular de play (mesma linguagem do
 // `x-ui.video-field`), sobre o estágio vazio.
 // ---

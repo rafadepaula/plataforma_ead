@@ -74,7 +74,7 @@
             :value="$lesson->video_url"
             :provider="$lesson->video_provider"
             label="URL do vídeo"
-            hint="O servidor revalida o link no envio: apenas vídeos do YouTube ou Vimeo são aceitos."
+            hint="O servidor revalida o link no envio: apenas vídeos do YouTube ou Vimeo são aceitos. Use vídeo Público ou Não listado — vídeo Privado do YouTube não reproduz em player incorporado."
             dusk="lesson-video-input"
             preview-dusk="video-preview"
         />

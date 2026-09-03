@@ -58,7 +58,7 @@ class LessonVideoRenderingTest extends TestCase
         $videoLesson = Lesson::where('title', 'Videoaula — Circuito Residencial Passo a Passo')->first();
         $this->assertNotNull($videoLesson);
         $this->assertSame(
-            'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ',
+            'https://www.youtube-nocookie.com/embed/aqz-KE-bpKQ',
             $videoLesson->video_url
         );
     }

@@ -34,7 +34,7 @@
     // URL já identifica o provedor e o formulário não veio de um erro
     // (old vazio), o select segue a detecção.
     $previewSrc = null;
-    if (preg_match('/^https?:\/\/(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{11})(?:[&?][^\s]*)?$/i', $currentUrl, $matches)) {
+    if (preg_match('/^https?:\/\/(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/)|youtube-nocookie\.com\/embed\/|youtu\.be\/)([A-Za-z0-9_-]{11})(?:[&?][^\s]*)?$/i', $currentUrl, $matches)) {
         $previewSrc = 'https://www.youtube-nocookie.com/embed/'.$matches[1];
         $currentProvider = $currentProvider ?: 'youtube';
     } elseif (preg_match('/^https?:\/\/(?:www\.)?(?:player\.)?vimeo\.com\/(?:video\/)?(\d{6,})(?:\/([A-Za-z0-9]+))?(?:[?&][^\s]*)?$/i', $currentUrl, $matches)) {
