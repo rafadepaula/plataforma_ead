@@ -183,10 +183,10 @@ class LessonMediaTest extends TestCase
 
     public function test_student_lesson_view_renders_every_media_pdf(): void
     {
-        Storage::fake('public');
+        Storage::fake('local');
 
         $lesson = Lesson::factory()->for($this->makeModule())->media(images: 0, pdfs: 2)->create(['is_published' => true]);
-        $lesson->pdfs()->get()->each(fn ($media) => Storage::disk('public')->put($media->path, '%PDF-1.4'));
+        $lesson->pdfs()->get()->each(fn ($media) => Storage::disk('local')->put($media->path, '%PDF-1.4'));
         $this->actingAsEnrolledStudent($lesson);
 
         $response = $this->get(route('classroom.lesson', $lesson));
@@ -194,16 +194,17 @@ class LessonMediaTest extends TestCase
         $response->assertOk();
         $lesson->pdfs()->orderBy('id')->get()->each(function ($media, int $index) use ($response, $lesson): void {
             $suffix = $index > 0 ? "-{$index}" : '';
-            $response->assertSee('src="'.Storage::url($media->path), false);
+            $response->assertSee('data-pdf-url="'.route('lessons.pdf.show', [$lesson, $index]), false);
             $response->assertSee('dusk="pdf-viewer-'.$lesson->id.$suffix.'"', false);
-            $response->assertSee('dusk="pdf-download-'.$lesson->id.$suffix.'"', false);
+            $response->assertSee('dusk="pdf-mode-toggle-'.$lesson->id.$suffix.'"', false);
+            $response->assertDontSee('dusk="pdf-download-'.$lesson->id.$suffix.'"', false);
         });
     }
 
     public function test_student_lesson_view_falls_back_to_the_legacy_pdf_column(): void
     {
-        Storage::fake('public');
-        Storage::disk('public')->put('orgs/1/courses/1/pdfs/legacy.pdf', '%PDF-1.4');
+        Storage::fake('local');
+        Storage::disk('local')->put('orgs/1/courses/1/pdfs/legacy.pdf', '%PDF-1.4');
 
         $lesson = Lesson::factory()->for($this->makeModule())->withPdf()->create([
             'pdf_path' => 'orgs/1/courses/1/pdfs/legacy.pdf',
@@ -214,8 +215,9 @@ class LessonMediaTest extends TestCase
         $response = $this->get(route('classroom.lesson', $lesson));
 
         $response->assertOk();
-        $response->assertSee('src="'.Storage::url('orgs/1/courses/1/pdfs/legacy.pdf'), false);
+        $response->assertSee('data-pdf-url="'.route('lessons.pdf.show', [$lesson, 0]), false);
         $response->assertSee('dusk="pdf-viewer-'.$lesson->id.'"', false);
-        $response->assertSee('dusk="pdf-download-'.$lesson->id.'"', false);
+        $response->assertSee('dusk="pdf-mode-toggle-'.$lesson->id.'"', false);
+        $response->assertDontSee('dusk="pdf-download-'.$lesson->id.'"', false);
     }
 }

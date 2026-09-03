@@ -19,6 +19,7 @@ use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\InvitationLinkController;
 use App\Http\Controllers\LandingPageController;
 use App\Http\Controllers\LessonController;
+use App\Http\Controllers\LessonPdfController;
 use App\Http\Controllers\LessonProgressController;
 use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\NotificationController;
@@ -274,6 +275,7 @@ Route::middleware(['auth', 'role:aluno'])->group(function (): void {
 Route::middleware(['auth', 'student.enrolled'])->group(function (): void {
     Route::get('courses/{course}/classroom', [ClassroomController::class, 'show'])->name('classroom.show');
     Route::get('lessons/{lesson}', [ClassroomController::class, 'showLesson'])->name('classroom.lesson');
+    Route::get('lessons/{lesson}/pdf/{index}', [LessonPdfController::class, 'show'])->whereNumber('index')->name('lessons.pdf.show');
     Route::post('lessons/{lesson}/complete', [LessonProgressController::class, 'complete'])->name('lessons.complete');
     Route::post('lessons/{lesson}/progress', [LessonProgressController::class, 'updateProgress'])->name('lessons.progress');
 

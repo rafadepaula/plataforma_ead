@@ -1,5 +1,5 @@
 {
-    "count": 465,
+    "count": 475,
     "entries": [
         {
             "file": "admin/users/edit.blade.php",
@@ -311,7 +311,47 @@
         },
         {
             "file": "classroom/partials/_pdf.blade.php",
-            "selector": "pdf-download-{{ $lesson->id }}{{ $suffix }}"
+            "selector": "pdf-viewer-{{ $lesson->id }}{{ $suffix }}"
+        },
+        {
+            "file": "classroom/partials/_pdf.blade.php",
+            "selector": "pdf-prev-{{ $lesson->id }}{{ $suffix }}"
+        },
+        {
+            "file": "classroom/partials/_pdf.blade.php",
+            "selector": "pdf-page-{{ $lesson->id }}{{ $suffix }}"
+        },
+        {
+            "file": "classroom/partials/_pdf.blade.php",
+            "selector": "pdf-next-{{ $lesson->id }}{{ $suffix }}"
+        },
+        {
+            "file": "classroom/partials/_pdf.blade.php",
+            "selector": "pdf-mode-toggle-{{ $lesson->id }}{{ $suffix }}"
+        },
+        {
+            "file": "classroom/partials/_pdf.blade.php",
+            "selector": "pdf-search-{{ $lesson->id }}{{ $suffix }}"
+        },
+        {
+            "file": "classroom/partials/_pdf.blade.php",
+            "selector": "pdf-search-input-{{ $lesson->id }}{{ $suffix }}"
+        },
+        {
+            "file": "classroom/partials/_pdf.blade.php",
+            "selector": "pdf-search-count-{{ $lesson->id }}{{ $suffix }}"
+        },
+        {
+            "file": "classroom/partials/_pdf.blade.php",
+            "selector": "pdf-search-prev-{{ $lesson->id }}{{ $suffix }}"
+        },
+        {
+            "file": "classroom/partials/_pdf.blade.php",
+            "selector": "pdf-search-next-{{ $lesson->id }}{{ $suffix }}"
+        },
+        {
+            "file": "classroom/partials/_pdf.blade.php",
+            "selector": "pdf-stage-{{ $lesson->id }}{{ $suffix }}"
         },
         {
             "file": "classroom/partials/_pdf.blade.php",
@@ -319,7 +359,7 @@
         },
         {
             "file": "classroom/partials/_pdf.blade.php",
-            "selector": "pdf-viewer-{{ $lesson->id }}{{ $suffix }}"
+            "selector": "modal-pdf-fullscreen-{{ $lesson->id }}{{ $suffix }}"
         },
         {
             "file": "classroom/partials/_quiz-placeholder.blade.php",

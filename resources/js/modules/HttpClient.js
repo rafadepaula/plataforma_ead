@@ -91,6 +91,34 @@ export class HttpClient {
         return this.request(url, { ...options, method: 'GET' });
     }
 
+    /**
+     * Fetches a URL as raw bytes (`Uint8Array`), for the PDF viewer: the
+     * gated `lessons.pdf.show` endpoint streams `application/pdf`, which the
+     * JSON-oriented `request()` above would misread as text.
+     *
+     * Sends `X-Requested-With: XMLHttpRequest` (same-origin) so a denial
+     * surfaces as a domain 401/403 error instead of a followed login-page
+     * redirect that pdf.js would then fail to parse.
+     */
+    async getBinary(url) {
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            credentials: 'same-origin',
+        });
+
+        if (!response.ok) {
+            const error = new Error(`HTTP error! Status: ${response.status}`);
+            error.status = response.status;
+            error.response = response;
+            throw error;
+        }
+
+        return new Uint8Array(await response.arrayBuffer());
+    }
+
     async post(url, data = null, options = {}) {
         return this.request(url, { ...options, method: 'POST', body: data });
     }

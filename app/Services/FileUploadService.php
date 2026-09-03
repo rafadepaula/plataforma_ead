@@ -7,9 +7,13 @@ use App\Models\Course;
 use Illuminate\Http\UploadedFile;
 
 /**
- * stores Lesson media (cover images, PDFs) on the `public`
- * disk under a per-tenant, per-course isolated path:
- * `storage/app/public/orgs/{org_id}/courses/{course_id}/{images|pdfs}/...`.
+ * stores Lesson media under a per-tenant, per-course isolated path:
+ * `orgs/{org_id}/courses/{course_id}/{images|pdfs}/...`.
+ *
+ * Images stay on the `public` disk (`storage/app/public`, served via
+ * `public/storage`). PDFs live on the `local` disk (`storage/app/private`,
+ * never symlinked): the gated `lessons.pdf.show` route is the only read
+ * path, so no `/storage/...pdfs/...` URL ever resolves.
  *
  * The tenant is resolved primarily from the given `Course` model's own
  * `org_id` (never from the currently logged-in Gestor alone) so an Admin
@@ -28,7 +32,7 @@ class FileUploadService
 
     public function storePdf(UploadedFile $file, Course $course): string
     {
-        return $this->store($file, $course, 'pdfs');
+        return $this->store($file, $course, 'pdfs', 'local');
     }
 
     /**
@@ -56,18 +60,18 @@ class FileUploadService
     public function storePdfs(array $files, Course $course): array
     {
         return array_map(
-            fn (UploadedFile $file): string => $this->store($file, $course, 'pdfs'),
+            fn (UploadedFile $file): string => $this->store($file, $course, 'pdfs', 'local'),
             array_values($files),
         );
     }
 
-    protected function store(UploadedFile $file, Course $course, string $kind): string
+    protected function store(UploadedFile $file, Course $course, string $kind, string $disk = 'public'): string
     {
         $orgId = $this->resolveOrgId($course);
 
         $path = "orgs/{$orgId}/courses/{$course->id}/{$kind}";
 
-        return $file->store($path, 'public');
+        return $file->store($path, $disk);
     }
 
     protected function resolveOrgId(Course $course): int

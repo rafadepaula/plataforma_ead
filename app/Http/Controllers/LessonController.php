@@ -198,9 +198,11 @@ class LessonController extends Controller
         if ($removedIds !== []) {
             // Ownership guard: scoping to the Lesson's own media means an id
             // belonging to another Lesson (possibly another org's) is ignored.
+            // PDFs live on the `local` disk, images on `public`.
             $lesson->media()->whereIn('id', $removedIds)->get()
                 ->each(function (LessonMedia $media): void {
-                    Storage::disk('public')->delete($media->path);
+                    $disk = $media->kind === LessonMedia::KIND_PDF ? 'local' : 'public';
+                    Storage::disk($disk)->delete($media->path);
                     $media->delete();
                 });
             $changed = true;

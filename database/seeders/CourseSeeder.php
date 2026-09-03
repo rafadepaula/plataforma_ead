@@ -12,6 +12,7 @@ use App\Models\QuizOption;
 use App\Models\QuizQuestion;
 use App\Models\User;
 use App\Services\YoutubeSanitizerService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Storage;
@@ -21,10 +22,17 @@ class CourseSeeder extends Seeder
     use WithoutModelEvents;
 
     /**
-     * Path, on the `public` disk, of the support PDF attached to the
-     * safety module's lesson.
+     * Path, on the `local` (private) disk, of the support PDF attached to
+     * the safety module's lesson — served only through the gated
+     * `lessons.pdf.show` route, never via `/storage`.
      */
     private const PDF_PATH = 'courses/docs/apostila-seguranca-eletricista.pdf';
+
+    /**
+     * Path, on the `local` (private) disk, of the 3-page demo PDF used to
+     * exercise pagination, watermark repetition and the fullscreen modal.
+     */
+    private const THREE_PAGE_PDF_PATH = 'courses/docs/demo-tres-paginas.pdf';
 
     /**
      * Seed the single development course of "Liga Certo": "Curso de
@@ -49,6 +57,7 @@ class CourseSeeder extends Seeder
         }
 
         $this->ensurePdfAttachment();
+        $this->ensureThreePagePdfAttachment();
 
         $course = Course::withoutGlobalScopes()->firstOrCreate(
             ['org_id' => $ligaCerto?->id, 'title' => 'Curso de Eletricista'],
@@ -145,15 +154,33 @@ class CourseSeeder extends Seeder
             ]
         );
 
+        Lesson::firstOrCreate(
+            ['module_id' => $module->id, 'title' => 'Demonstração — PDF com 3 páginas'],
+            [
+                'type' => 'content',
+                'content_text' => 'Aula de demonstração do visualizador: navegue entre as 3 páginas e abra a tela cheia.',
+                'pdf_path' => self::THREE_PAGE_PDF_PATH,
+                'order_index' => 2,
+                'is_published' => true,
+            ]
+        );
+
         $quizLesson = Lesson::firstOrCreate(
             ['module_id' => $module->id, 'title' => 'Avaliação — Segurança e Normas'],
             [
                 'type' => 'quiz',
                 'content_text' => null,
-                'order_index' => 2,
+                'order_index' => 3,
                 'is_published' => true,
             ]
         );
+
+        // A demo entrou na posição 2 depois do quiz já existir com `order_index`
+        // 2 em bancos seedados antes dela: realinha uma única vez para a ordem
+        // ficar idêntica em bancos novos e antigos.
+        if ($quizLesson->order_index !== 3) {
+            $quizLesson->forceFill(['order_index' => 3])->saveQuietly();
+        }
 
         $quiz = $this->quizFor(
             $quizLesson,
@@ -336,15 +363,52 @@ class CourseSeeder extends Seeder
     }
 
     /**
-     * Writes the module 2 handout to the `public` disk once — the
-     * classroom PDF viewer links to it through `/storage`.
+     * Writes the module 2 handout to the `local` (private) disk once — the
+     * classroom PDF viewer streams it through the gated `lessons.pdf.show`
+     * route, so it must never land on the publicly served `public` disk.
      */
     private function ensurePdfAttachment(): void
     {
-        $disk = Storage::disk('public');
+        $disk = Storage::disk('local');
 
         if (! $disk->exists(self::PDF_PATH)) {
             $disk->put(self::PDF_PATH, $this->pdfAttachment());
+        }
+
+        // Limpa a cópia legada que o seeder gravava no disk público antes
+        // do visualizador gated: URL `/storage` antiga não pode continuar
+        // baixável (a data migration cobre o mesmo caso em produção).
+        if (Storage::disk('public')->exists(self::PDF_PATH)) {
+            Storage::disk('public')->delete(self::PDF_PATH);
+        }
+    }
+
+    /**
+     * Writes the 3-page demo PDF to the `local` (private) disk once, via
+     * dompdf (the same renderer as the certificates pipeline), so the
+     * classroom viewer has a multi-page document to paginate.
+     */
+    private function ensureThreePagePdfAttachment(): void
+    {
+        $disk = Storage::disk('local');
+
+        if (! $disk->exists(self::THREE_PAGE_PDF_PATH)) {
+            $pages = '';
+
+            foreach ([1, 2, 3] as $page) {
+                $break = $page < 3 ? 'page-break-after: always;' : '';
+                $pages .= "<div style=\"{$break}\"><h1>Página {$page} de 3</h1>"
+                    ."<p>Demonstração do visualizador de PDF: esta é a página {$page}.</p></div>";
+            }
+
+            $disk->put(
+                self::THREE_PAGE_PDF_PATH,
+                Pdf::loadHTML("<html><body>{$pages}</body></html>")->output()
+            );
+        }
+
+        if (Storage::disk('public')->exists(self::THREE_PAGE_PDF_PATH)) {
+            Storage::disk('public')->delete(self::THREE_PAGE_PDF_PATH);
         }
     }
 

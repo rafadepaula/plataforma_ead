@@ -80,8 +80,8 @@ class LessonDispatchOrderTest extends TestCase
 
     public function test_pdf_only_lesson_renders_the_pdf_viewer(): void
     {
-        Storage::fake('public');
-        Storage::disk('public')->put('orgs/1/courses/1/pdfs/material.pdf', '%PDF-1.4');
+        Storage::fake('local');
+        Storage::disk('local')->put('orgs/1/courses/1/pdfs/material.pdf', '%PDF-1.4');
 
         $lesson = $this->publishedLesson([
             'type' => 'content',
@@ -93,7 +93,10 @@ class LessonDispatchOrderTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('dusk="pdf-viewer-'.$lesson->id.'"', false);
-        $response->assertSee('dusk="pdf-download-'.$lesson->id.'"', false);
+        $response->assertSee('dusk="pdf-mode-toggle-'.$lesson->id.'"', false);
+        $response->assertSee('dusk="pdf-search-'.$lesson->id.'"', false);
+        $response->assertSee('dusk="modal-pdf-fullscreen-'.$lesson->id.'"', false);
+        $response->assertDontSee('dusk="pdf-download-'.$lesson->id.'"', false);
         $response->assertDontSee('dusk="video-player-'.$lesson->id.'"', false);
         $response->assertDontSee('dusk="lesson-content-'.$lesson->id.'"', false);
     }
@@ -283,7 +286,7 @@ class LessonDispatchOrderTest extends TestCase
 
     public function test_pdf_lesson_whose_file_is_missing_shows_a_notice_instead_of_an_empty_viewer(): void
     {
-        Storage::fake('public');
+        Storage::fake('local');
 
         $lesson = $this->publishedLesson([
             'type' => 'content',
@@ -295,15 +298,16 @@ class LessonDispatchOrderTest extends TestCase
         $response->assertOk();
         $response->assertDontSee('dusk="pdf-viewer-'.$lesson->id.'"', false);
         $response->assertDontSee('dusk="pdf-download-'.$lesson->id.'"', false);
+        $response->assertDontSee('dusk="pdf-mode-toggle-'.$lesson->id.'"', false);
         $response->assertSee('dusk="pdf-unavailable-'.$lesson->id.'"', false);
         $response->assertSee('Documento indisponível');
         $response->assertSee('dusk="mark-complete-button"', false);
     }
 
-    public function test_pdf_lesson_whose_file_exists_renders_the_viewer_and_the_download_link(): void
+    public function test_pdf_lesson_whose_file_exists_renders_the_viewer_without_a_download_link(): void
     {
-        Storage::fake('public');
-        Storage::disk('public')->put('orgs/1/courses/1/pdfs/material.pdf', '%PDF-1.4');
+        Storage::fake('local');
+        Storage::disk('local')->put('orgs/1/courses/1/pdfs/material.pdf', '%PDF-1.4');
 
         $lesson = $this->publishedLesson([
             'type' => 'content',
@@ -314,7 +318,8 @@ class LessonDispatchOrderTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('dusk="pdf-viewer-'.$lesson->id.'"', false);
-        $response->assertSee('dusk="pdf-download-'.$lesson->id.'"', false);
+        $response->assertSee('dusk="pdf-mode-toggle-'.$lesson->id.'"', false);
+        $response->assertDontSee('dusk="pdf-download-'.$lesson->id.'"', false);
         $response->assertDontSee('dusk="pdf-unavailable-'.$lesson->id.'"', false);
     }
 

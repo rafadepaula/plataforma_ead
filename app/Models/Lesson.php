@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Collection;
 
 /**
  * Cascade-inherited: org is implied by `module.course.org_id`. Do NOT
@@ -248,5 +249,41 @@ class Lesson extends Model
     public function progress(): HasMany
     {
         return $this->hasMany(LessonProgress::class);
+    }
+
+    /**
+     *  the single source of this lesson's PDF list, in render order.
+     * Prefers the `media` relation (kind=pdf, ordered by id); when it is
+     * empty, falls back to a synthetic transient `LessonMedia` built from
+     * the deprecated flat `pdf_path` column so legacy single-file lessons
+     * keep rendering. Returns an empty collection when neither exists.
+     *
+     * Consumers (classroom partial, gated stream endpoint) must read
+     * through here — never through `media` + `pdf_path` inline — so the
+     * fallback rule lives in exactly one place.
+     *
+     * @return Collection<int, LessonMedia>
+     */
+    public function pdfAttachments(): Collection
+    {
+        $pdfs = $this->relationLoaded('media')
+            ? $this->media->where('kind', LessonMedia::KIND_PDF)->sortBy('id')->values()
+            : $this->pdfs()->orderBy('id')->get();
+
+        if ($pdfs->isNotEmpty()) {
+            return $pdfs->values();
+        }
+
+        if (filled($this->pdf_path)) {
+            return collect([
+                new LessonMedia([
+                    'kind' => LessonMedia::KIND_PDF,
+                    'path' => $this->pdf_path,
+                    'original_name' => basename($this->pdf_path),
+                ]),
+            ]);
+        }
+
+        return collect();
     }
 }

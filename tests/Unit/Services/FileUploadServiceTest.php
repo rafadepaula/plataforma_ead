@@ -32,9 +32,10 @@ class FileUploadServiceTest extends TestCase
         Storage::disk('public')->assertExists($path);
     }
 
-    public function test_store_pdf_writes_to_the_courses_isolated_org_path(): void
+    public function test_store_pdf_writes_to_the_private_disk_in_the_courses_isolated_org_path(): void
     {
         Storage::fake('public');
+        Storage::fake('local');
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org);
         $course = Course::factory()->create(['org_id' => $org->id]);
@@ -43,7 +44,8 @@ class FileUploadServiceTest extends TestCase
         $path = $service->storePdf(UploadedFile::fake()->create('apostila.pdf', 100, 'application/pdf'), $course);
 
         $this->assertStringStartsWith("orgs/{$org->id}/courses/{$course->id}/pdfs/", $path);
-        Storage::disk('public')->assertExists($path);
+        Storage::disk('local')->assertExists($path);
+        Storage::disk('public')->assertMissing($path);
     }
 
     public function test_path_is_derived_from_the_courses_org_id_not_the_acting_admins_impersonated_org(): void

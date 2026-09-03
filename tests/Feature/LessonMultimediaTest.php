@@ -94,6 +94,7 @@ class LessonMultimediaTest extends TestCase
     public function test_gestor_can_upload_multiple_images_and_pdfs_in_a_single_request(): void
     {
         Storage::fake('public');
+        Storage::fake('local');
         [$org, $course, $module] = $this->makeCourseAndModule();
 
         $response = $this->post(route('modules.lessons.store', $module), [
@@ -121,7 +122,7 @@ class LessonMultimediaTest extends TestCase
         });
         $lesson->media()->where('kind', 'pdf')->pluck('path')->each(function (string $path) use ($org, $course): void {
             $this->assertStringStartsWith("orgs/{$org->id}/courses/{$course->id}/pdfs/", $path);
-            Storage::disk('public')->assertExists($path);
+            Storage::disk('local')->assertExists($path);
         });
 
         $this->assertSame($lesson->media()->where('kind', 'image')->orderBy('id')->value('path'), $lesson->image_path);
@@ -147,6 +148,7 @@ class LessonMultimediaTest extends TestCase
     public function test_an_image_larger_than_2mb_is_rejected_atomically(): void
     {
         Storage::fake('public');
+        Storage::fake('local');
         [, , $module] = $this->makeCourseAndModule();
 
         $response = $this->post(route('modules.lessons.store', $module), [
@@ -160,11 +162,13 @@ class LessonMultimediaTest extends TestCase
         $this->assertDatabaseMissing('lessons', ['title' => 'Lição com Imagem Pesada']);
         $this->assertDatabaseCount('lesson_media', 0);
         Storage::disk('public')->assertDirectoryEmpty('/');
+        Storage::disk('local')->assertDirectoryEmpty('/');
     }
 
     public function test_a_pdf_larger_than_10mb_is_rejected(): void
     {
         Storage::fake('public');
+        Storage::fake('local');
         [, , $module] = $this->makeCourseAndModule();
 
         $response = $this->post(route('modules.lessons.store', $module), [
@@ -195,6 +199,7 @@ class LessonMultimediaTest extends TestCase
     public function test_gestor_can_create_a_pdf_lesson_stored_in_the_courses_isolated_org_path(): void
     {
         Storage::fake('public');
+        Storage::fake('local');
         [$org, $course, $module] = $this->makeCourseAndModule();
 
         $this->post(route('modules.lessons.store', $module), [
@@ -206,7 +211,8 @@ class LessonMultimediaTest extends TestCase
         $lesson = $module->lessons()->sole();
         $media = $lesson->media()->where('kind', 'pdf')->sole();
         $this->assertStringStartsWith("orgs/{$org->id}/courses/{$course->id}/pdfs/", $media->path);
-        Storage::disk('public')->assertExists($media->path);
+        Storage::disk('local')->assertExists($media->path);
+        Storage::disk('public')->assertMissing($media->path);
         $this->assertSame($media->path, $lesson->pdf_path);
     }
 
@@ -392,7 +398,7 @@ class LessonMultimediaTest extends TestCase
 
     public function test_removing_every_pdf_nulls_the_legacy_pdf_path(): void
     {
-        Storage::fake('public');
+        Storage::fake('local');
         [, , $module] = $this->makeCourseAndModule();
         $lesson = Lesson::factory()->for($module)->create([
             'pdf_path' => 'orgs/1/courses/1/pdfs/old.pdf',
@@ -403,7 +409,7 @@ class LessonMultimediaTest extends TestCase
             'original_name' => 'old.pdf',
             'size_bytes' => 10,
         ]);
-        Storage::disk('public')->put('orgs/1/courses/1/pdfs/old.pdf', 'fake-contents');
+        Storage::disk('local')->put('orgs/1/courses/1/pdfs/old.pdf', 'fake-contents');
 
         $this->put(route('lessons.update', $lesson), [
             'title' => $lesson->title,

@@ -9,6 +9,33 @@
 // cor/raio/sombra.
 // =============================================================================
 
+// Variante 90vw × 90vh do visualizador de PDF em tela cheia: o mesmo stage
+// de canvas é movido para o `.modal-body` via JS, sem refetch.
+.modal-dialog-pdf-fullscreen {
+    width: 90vw;
+    max-width: 90vw;
+    height: 90vh;
+    margin: auto;
+
+    .modal-content {
+        height: 100%;
+    }
+
+    .modal-body {
+        overflow: hidden;
+        padding: 0;
+
+        .ds-pdf-toolbar {
+            border-top: var(--border-width) solid var(--divider);
+        }
+
+        .ds-pdf-stage {
+            height: calc(90vh - 190px);
+            max-height: 100%;
+        }
+    }
+}
+
 @include media-breakpoint-down(sm) {
     .modal-dialog {
         width: 100%;

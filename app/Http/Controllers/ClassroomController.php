@@ -161,7 +161,7 @@ class ClassroomController extends Controller
             return [];
         }
 
-        $rendersPdf = ! empty($lesson->pdf_path);
+        $rendersPdf = ! empty($lesson->pdf_path) || $lesson->hasPdfAttachment();
         $kind = $rendersPdf ? LessonMedia::KIND_PDF : LessonMedia::KIND_IMAGE;
         $legacyPath = $rendersPdf ? $lesson->pdf_path : $lesson->image_path;
 
@@ -175,7 +175,8 @@ class ClassroomController extends Controller
             $paths = collect([$legacyPath])->filter();
         }
 
-        $disk = Storage::disk('public');
+        /** PDFs vivem no disk `local` (nunca expostos via `/storage`); imagens seguem no `public`. */
+        $disk = $rendersPdf ? Storage::disk('local') : Storage::disk('public');
 
         return $paths
             ->unique()

@@ -17,6 +17,7 @@ import ModuleReorder       from './ModuleReorder';
 import NotificationBell    from './NotificationBell';
 import NotificationService from './NotificationService';
 import PasswordToggle      from './PasswordToggle';
+import PdfViewer           from './PdfViewer';
 import QuizBuilder         from './QuizBuilder';
 import QuizTaking          from './QuizTaking';
 import QuizTimer           from './QuizTimer';
@@ -43,6 +44,7 @@ export default {
     ModuleReorder:       new ModuleReorder(httpClient, notifications),
     NotificationBell:    new NotificationBell(httpClient),
     PasswordToggle:      new PasswordToggle(),
+    PdfViewer:           new PdfViewer(httpClient),
     QuizBuilder:         new QuizBuilder(notifications),
     QuizTaking:          new QuizTaking(),
     QuizTimer:           new QuizTimer(),
