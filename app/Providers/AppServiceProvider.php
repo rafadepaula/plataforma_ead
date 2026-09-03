@@ -51,6 +51,6 @@ class AppServiceProvider extends ServiceProvider
 
         // The role-aware root breadcrumb shared by every forum screen —
         // computed once here instead of copy-pasted into each view.
-        View::composer(['forum.index', 'forum.create', 'forum.edit', 'forum.show'], ForumBreadcrumbComposer::class);
+        View::composer(['forum.index', 'forum.create', 'forum.edit', 'forum.show', 'forum.replies.edit'], ForumBreadcrumbComposer::class);
     }
 }

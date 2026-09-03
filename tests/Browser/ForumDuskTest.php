@@ -78,7 +78,31 @@ class ForumDuskTest extends DuskTestCase
                 'content' => 'Minha resposta ao tópico.',
             ]);
 
-            // 3.  o autor edita o tópico...
+            // 3. ...e edita a própria resposta pela tela dedicada
+            //    (`forum-replies.edit`, mesmo contrato do editar tópico).
+            $reply = ForumReply::query()->where('topic_id', $topic->id)->firstOrFail();
+
+            $browser->visit(route('forum.show', [$course, $topic]))
+                ->waitFor('@edit-reply-'.$reply->id)
+                ->click('@edit-reply-'.$reply->id)
+                ->waitFor('@edit-reply-form')
+                ->assertInputValue('content', 'Minha resposta ao tópico.')
+                ->type('content', 'Resposta atualizada pelo autor.')
+                ->click('@edit-reply-submit')
+                ->waitForText('Resposta atualizada pelo autor.')
+                ->assertSee('Resposta atualizada pelo autor.');
+
+            $this->assertDatabaseHas('forum_replies', [
+                'id' => $reply->id,
+                'content' => 'Resposta atualizada pelo autor.',
+            ]);
+            $this->assertDatabaseHas('forum_post_edits', [
+                'postable_type' => ForumReply::class,
+                'postable_id' => $reply->id,
+                'editor_user_id' => $student->id,
+            ]);
+
+            // 4. o autor edita o tópico...
             $browser->visit(route('forum.show', [$course, $topic]))
                 ->waitFor('@edit-topic-'.$topic->id)
                 ->click('@edit-topic-'.$topic->id)
@@ -99,7 +123,7 @@ class ForumDuskTest extends DuskTestCase
                 'editor_user_id' => $student->id,
             ]);
 
-            // 4. ...e o histórico público mostra a versão anterior.
+            // 5. ...e o histórico público mostra a versão anterior.
             $browser->waitFor('@edit-history-trigger-edit-history-topic-'.$topic->id)
                 ->click('@edit-history-trigger-edit-history-topic-'.$topic->id)
                 ->waitForText('Conteúdo original da dúvida.')

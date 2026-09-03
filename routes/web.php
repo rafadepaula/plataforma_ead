@@ -311,6 +311,7 @@ Route::middleware(['auth', 'student.enrolled'])->prefix('courses/{course}/forum'
     Route::delete('/topics/{topic}', [ForumTopicController::class, 'destroy'])->name('forum.destroy');
 
     Route::post('/topics/{topic}/replies', [ForumReplyController::class, 'store'])->name('forum-replies.store');
+    Route::get('/topics/{topic}/replies/{reply}/edit', [ForumReplyController::class, 'edit'])->name('forum-replies.edit');
     Route::put('/topics/{topic}/replies/{reply}', [ForumReplyController::class, 'update'])->name('forum-replies.update');
     Route::delete('/topics/{topic}/replies/{reply}', [ForumReplyController::class, 'destroy'])->name('forum-replies.destroy');
     Route::get('/topics/{topic}/replies/fetch', [ForumReplyController::class, 'fetchNew'])

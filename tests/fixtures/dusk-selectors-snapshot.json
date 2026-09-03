@@ -1,5 +1,5 @@
 {
-    "count": 475,
+    "count": 479,
     "entries": [
         {
             "file": "admin/users/edit.blade.php",
@@ -1900,6 +1900,22 @@
         {
             "file": "users/index.blade.php",
             "selector": "user-status-{{ $user->id }}"
+        },
+        {
+            "file": "forum/partials/_reply.blade.php",
+            "selector": "edit-reply-{{ $reply->id }}"
+        },
+        {
+            "file": "forum/replies/edit.blade.php",
+            "selector": "edit-reply-form"
+        },
+        {
+            "file": "forum/replies/edit.blade.php",
+            "selector": "edit-reply-content"
+        },
+        {
+            "file": "forum/replies/edit.blade.php",
+            "selector": "edit-reply-submit"
         }
     ]
 }

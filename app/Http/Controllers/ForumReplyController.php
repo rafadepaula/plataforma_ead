@@ -11,6 +11,7 @@ use App\Models\Course;
 use App\Models\ForumReply;
 use App\Models\ForumTopic;
 use App\Services\ForumContentSanitizerService;
+use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -55,6 +56,20 @@ class ForumReplyController extends Controller
 
         return redirect()->route('forum.show', [$course, $topic])
             ->with('success', 'Resposta publicada com sucesso.');
+    }
+
+    public function edit(Request $request, int $course, int $topic, int $reply): View
+    {
+        $topicModel = $this->resolveTopic($topic, $course);
+        $replyModel = $this->resolveReply($reply, $topic);
+
+        Gate::authorize('update', $replyModel);
+
+        return view('forum.replies.edit', [
+            'course' => $topicModel->course()->withoutGlobalScopes()->firstOrFail(),
+            'topic' => $topicModel,
+            'reply' => $replyModel,
+        ]);
     }
 
     public function update(UpdateForumReplyRequest $request, int $course, int $topic, int $reply): RedirectResponse

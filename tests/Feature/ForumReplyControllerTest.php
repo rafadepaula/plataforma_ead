@@ -114,6 +114,33 @@ class ForumReplyControllerTest extends TestCase
         $this->assertDatabaseCount('forum_replies', 0);
     }
 
+    public function test_edit_screen_renders_for_the_reply_author_with_the_current_content(): void
+    {
+        $course = $this->publishedCourse();
+        $student = $this->enrolledStudent($course);
+        $topic = $this->topicFor($course, $student);
+        $reply = ForumReply::factory()->for($topic, 'topic')->for($student)->create(['content' => 'Minha resposta original.']);
+
+        $this->actingAs($student)
+            ->get(route('forum-replies.edit', [$course, $topic, $reply]))
+            ->assertOk()
+            ->assertSee('Minha resposta original.')
+            ->assertSee(route('forum-replies.update', [$course, $topic, $reply]), false);
+    }
+
+    public function test_edit_screen_refuses_an_unrelated_aluno_of_the_same_course(): void
+    {
+        $course = $this->publishedCourse();
+        $author = $this->enrolledStudent($course);
+        $otherStudent = $this->enrolledStudent($course);
+        $topic = $this->topicFor($course, $author);
+        $reply = ForumReply::factory()->for($topic, 'topic')->for($author)->create();
+
+        $this->actingAs($otherStudent)
+            ->get(route('forum-replies.edit', [$course, $topic, $reply]))
+            ->assertForbidden();
+    }
+
     public function test_update_records_an_edit_history_row_and_stamps_edited_at(): void
     {
         $course = $this->publishedCourse();

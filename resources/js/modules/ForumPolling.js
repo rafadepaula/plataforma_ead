@@ -262,9 +262,10 @@ export class ForumPolling {
         metaWrapper.appendChild(textMeta);
         header.appendChild(metaWrapper);
 
-        // Only the viewer-independent action is cloned. "Apagar" depends on
-        // per-reply permissions the polling payload does not carry, so an
-        // injected reply stays un-moderatable until the page is reloaded.
+        // Only the viewer-independent action is cloned. "Editar"/"Apagar"
+        // depend on per-reply permissions the polling payload does not
+        // carry, so an injected reply stays un-editable and un-moderatable
+        // until the page is reloaded.
         const actions = document.createElement('div');
         actions.className = 'd-flex gap-2';
 

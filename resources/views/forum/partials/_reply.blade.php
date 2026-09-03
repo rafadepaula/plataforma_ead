@@ -61,6 +61,15 @@
             >Denunciar</x-ui.button>
 
             @if($isReplyAuthor || $canModerate)
+                <x-ui.button
+                    variant="ghost"
+                    size="sm"
+                    :href="route('forum-replies.edit', [$course, $topic, $reply])"
+                    dusk="edit-reply-{{ $reply->id }}"
+                >Editar</x-ui.button>
+            @endif
+
+            @if($isReplyAuthor || $canModerate)
                 {{--
                     Regra dura: toda remoção passa por confirm-modal.
                     `x-ui.confirm-modal` já é o dono do `<form>` real
