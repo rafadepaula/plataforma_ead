@@ -318,8 +318,11 @@ final class NavigationRegistry
      * rule as {@see self::resolveForumRoute()} and the "Em andamento" tab
      * of `StudentCourseController`; completed/cancelled enrollments stay
      * on `/meus-cursos` . Alphabetically by course title,
-     * capped at 10 plus a fixed "Ver todos os cursos" child so a long
-     * enrollment list never bloats the menu. `withoutGlobalScope('org')`
+     * capped at 10; the fixed "Ver todos os cursos" child is appended
+     * ONLY when the cap actually truncated the list (more than
+     * `self::CHILDREN_LIMIT` active enrollments) . The query
+     * fetches `CHILDREN_LIMIT + 1` rows so the truncation is detected
+     * without a second count query. `withoutGlobalScope('org')`
      * mirrors `StudentCourseController::index()`: the pivot row is the
      * enrollment boundary (each `classroom.*` route re-checks it via
      * `student.enrolled`), so the menu must not depend on `Auth::user()`
@@ -333,10 +336,11 @@ final class NavigationRegistry
             ->withoutGlobalScope('org')
             ->wherePivot('status', 'active')
             ->orderBy('courses.title')
-            ->limit(self::CHILDREN_LIMIT)
+            ->limit(self::CHILDREN_LIMIT + 1)
             ->get();
 
         $children = $courses
+            ->take(self::CHILDREN_LIMIT)
             ->map(fn (Course $course): array => [
                 'key' => "course-{$course->id}",
                 'label' => $course->title,
@@ -346,11 +350,11 @@ final class NavigationRegistry
             ])
             ->all();
 
-        //  the fixed escape hatch to the full catalog,
-        // appended only when at least one shortcut exists. `null`
-        // `course_id`/`progress` marks it as a plain link to the view
-        // (no active-flag matching, no progress bar).
-        if ($children !== []) {
+        //  the escape hatch to the full catalog — only for a
+        // truncated list. `null` `course_id`/`progress` marks it as a
+        // plain link to the view (no active-flag matching, no progress
+        // bar).
+        if ($courses->count() > self::CHILDREN_LIMIT) {
             $children[] = [
                 'key' => 'see-all',
                 'label' => 'Ver todos os cursos',

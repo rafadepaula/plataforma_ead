@@ -153,8 +153,9 @@ class NavigationMenuDuskTest extends DuskTestCase
             // 3.  o atalho do curso matriculado aparece como filho
             // sempre-visível de "Meus Cursos" e leva à sala de aula, onde
             // ele mesmo fica destacado (binding `{course}` da rota).
+            // Sem truncamento (1 curso), não há filho "Ver todos".
             $browser->assertPresent('@sidebar-course-'.$course->id.'-link')
-                ->assertPresent('@sidebar-see-all-link')
+                ->assertMissing('@sidebar-see-all-link')
                 ->click('@sidebar-course-'.$course->id.'-link')
                 ->waitForLocation('/courses/'.$course->id.'/classroom');
 

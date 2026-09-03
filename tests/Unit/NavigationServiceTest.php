@@ -389,8 +389,8 @@ class NavigationServiceTest extends TestCase
     /**
      *  every ACTIVE enrollment becomes an always-visible classroom
      * shortcut under "Meus Cursos": alphabetical by course title (not
-     * enrollment order), each carrying its `course_user.progress_percentage`
-     * and the synthetic "Ver todos os cursos" escape hatch at the end.
+     * enrollment order), each carrying its `course_user.progress_percentage`.
+     * With the cap intact (10 or fewer) there is no "Ver todos" child.
      */
     public function test_aluno_with_active_enrollments_gets_alphabetical_course_children(): void
     {
@@ -405,15 +405,13 @@ class NavigationServiceTest extends TestCase
 
         $children = $this->findItem($aluno, 'student-courses')['children'];
 
-        $this->assertSame(['Alfa', 'Zulu', 'Ver todos os cursos'], array_column($children, 'label'));
+        $this->assertSame(['Alfa', 'Zulu'], array_column($children, 'label'));
         $this->assertSame('course-'.$alfa->id, $children[0]['key']);
         $this->assertSame(route('classroom.show', $alfa), $children[0]['url']);
         $this->assertSame(0, $children[0]['progress']);
         $this->assertSame(40, $children[1]['progress']);
-        //  the synthetic "Ver todos" child is a plain link to the
-        // catalog: no progress bar, no course binding.
-        $this->assertNull($children[2]['progress']);
-        $this->assertSame(route('student.courses.index'), $children[2]['url']);
+        //  no truncation, no "Ver todos" child.
+        $this->assertNotContains('Ver todos os cursos', array_column($children, 'label'));
         //  no route is dispatched in a unit test, so no child can
         // claim the active highlight here (covered against a bound
         // `{course}` route below).
@@ -494,7 +492,7 @@ class NavigationServiceTest extends TestCase
         $children = $this->findItem($aluno, 'student-courses')['children'];
         $labels = array_column($children, 'label');
 
-        $this->assertSame(['Meu Curso', 'Ver todos os cursos'], $labels);
+        $this->assertSame(['Meu Curso'], $labels);
     }
 
     /**
@@ -533,7 +531,6 @@ class NavigationServiceTest extends TestCase
 
         $this->assertTrue($children[0]['active'], 'The child of the resolved course must be highlighted.');
         $this->assertFalse($children[1]['active'], 'Unrelated course children must not be highlighted.');
-        $this->assertFalse($children[2]['active'], 'The synthetic "Ver todos" child is never course-bound.');
     }
 
     /**
@@ -564,6 +561,30 @@ class NavigationServiceTest extends TestCase
             ->firstWhere('key', 'student-courses')['children'];
 
         $this->assertTrue($children[0]['active']);
+    }
+
+    /**
+     *  the "Ver todos os cursos" child exists ONLY when the cap
+     * actually truncated the list: exactly 10 active enrollments render
+     * ten shortcuts and nothing else.
+     */
+    public function test_exactly_ten_courses_render_no_ver_todos_child(): void
+    {
+        $org = Organization::factory()->create();
+        $aluno = User::factory()->create(['org_id' => $org->id]);
+        $aluno->assignRole(RolesEnum::ALUNO->value);
+
+        for ($i = 10; $i >= 1; $i--) {
+            $course = Course::factory()->for($org)->create(['title' => sprintf('Curso %02d', $i)]);
+            $aluno->courses()->attach($course->id, ['status' => 'active', 'enrolled_at' => now()]);
+        }
+
+        $children = $this->findItem($aluno, 'student-courses')['children'];
+
+        $this->assertCount(10, $children);
+        $this->assertSame('Curso 01', $children[0]['label']);
+        $this->assertSame('Curso 10', $children[9]['label']);
+        $this->assertNotContains('Ver todos os cursos', array_column($children, 'label'));
     }
 
     public function test_admin_audit_logs_route_resolves_to_admin_prefixed_route(): void

@@ -118,9 +118,10 @@ class RoleMenuVisibilityTest extends TestCase
 
     /**
      *  the enrolled-course shortcuts render in BOTH renders (desktop
-     * `<aside>` and mobile Offcanvas), each with the pivot progress bar,
-     * plus the fixed "Ver todos os cursos" child. A completed enrollment
-     * never becomes a child .
+     * `<aside>` and mobile Offcanvas), each with the pivot progress bar.
+     * A completed enrollment never becomes a child , and
+     * "Ver todos os cursos" only exists when the 10-child cap truncated
+     * the list  — a single active enrollment shows no such link.
      */
     public function test_aluno_sees_active_course_children_with_progress_in_both_renders(): void
     {
@@ -138,10 +139,9 @@ class RoleMenuVisibilityTest extends TestCase
         $response->assertOk();
         $this->assertStringContainsString('dusk="sidebar-course-'.$active->id.'-link"', $html);
         $this->assertStringContainsString('dusk="sidebar-course-'.$active->id.'-link-mobile"', $html);
-        $this->assertStringContainsString('dusk="sidebar-see-all-link"', $html);
-        $this->assertStringContainsString('dusk="sidebar-see-all-link-mobile"', $html);
         $response->assertSee(route('classroom.show', $active), false);
-        $response->assertSeeText('Ver todos os cursos');
+        $this->assertStringNotContainsString('dusk="sidebar-see-all-link"', $html);
+        $response->assertDontSeeText('Ver todos os cursos');
         //  progress bar fed by `course_user.progress_percentage`.
         $this->assertStringContainsString('aria-valuenow="42"', $html);
         $this->assertStringNotContainsString('dusk="sidebar-course-'.$completed->id.'-link"', $html);
