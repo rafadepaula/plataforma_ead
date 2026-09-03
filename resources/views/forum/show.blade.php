@@ -41,7 +41,7 @@
         {{-- Original Topic Post Card --}}
         <div class="card ds-card shadow-sm mb-4" dusk="topic-post" data-topic-id="{{ $topic->id }}">
             <div class="card-body p-4">
-                <div class="d-flex align-items-start justify-content-between gap-3 mb-3">
+                <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap mb-3">
                     <div class="d-flex align-items-center gap-3">
                         <x-ui.avatar :initials="$topic->user->initials" size="lg" />
 
@@ -63,7 +63,7 @@
                         </div>
                     </div>
 
-                    <div class="d-flex gap-2">
+                    <div class="d-flex gap-2 flex-wrap">
                         <x-ui.button
                             type="button"
                             variant="ghost"
@@ -149,28 +149,38 @@
                     'canModerate' => $canModerate,
                 ])
             @endforeach
+
+            {{-- Atributo de dado, não `dusk=` — contrato congelado não amplia.
+                 `ForumPolling.js::appendReply()` remove este nó ao injetar a
+                 primeira resposta em tempo real. --}}
+            @if($replies->isEmpty())
+                <x-ui.empty-state
+                    icon="message-square"
+                    title="Nenhuma resposta ainda"
+                    description="Seja a primeira pessoa a responder este tópico."
+                    data-forum-empty-replies
+                />
+            @endif
         </div>
 
         {{-- Reply Form --}}
-        <x-ui.card class="mb-5">
+        <x-ui.card class="mb-5" surface="white">
             <form method="POST" action="{{ route('forum-replies.store', [$course, $topic]) }}" dusk="new-reply-form">
                 @csrf
-                <x-ui.input
-                    type="textarea"
+                <x-ui.textarea
                     name="content"
                     label="Responder à discussão"
                     rows="4"
                     placeholder="Escreva sua resposta para a turma..."
                     required
                     dusk="new-reply-content"
-                    class="mb-3"
                 />
 
-                <div class="d-flex justify-content-end">
+                <x-ui.form-actions align="end">
                     <x-ui.button type="submit" variant="primary" icon="message-square" dusk="new-reply-submit">
                         Responder
                     </x-ui.button>
-                </div>
+                </x-ui.form-actions>
             </form>
         </x-ui.card>
     </div>

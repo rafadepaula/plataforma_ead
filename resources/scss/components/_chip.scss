@@ -53,6 +53,17 @@
     background-color: var(--info-container);
 }
 
+// Variante outline do `x-ui.badge`: `.ds-muted` mora nos tokens (importados
+// ANTES do Bootstrap) e o `.badge` do Bootstrap reafirma `color:
+// var(--bs-badge-color)` = branco depois, sem definir background — texto
+// branco sobre card branco. Reafirmar o par aqui, na camada de componente
+// (importada DEPOIS do Bootstrap), restaura a cascata para todos os badges
+// outline da plataforma, incluindo os emitidos por `ForumPolling.js`.
+.badge.ds-muted {
+    color: var(--text-secondary);
+    background-color: transparent;
+}
+
 // Badge segue o componente publicado pelo design system: 32px de altura,
 // padding lateral de 14px e ponto de status opcional. A variante grande usa
 // 38px e 18px, sem herdar o padding compacto do Bootstrap.

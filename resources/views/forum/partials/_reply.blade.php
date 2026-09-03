@@ -51,6 +51,7 @@
             <x-ui.button
                 type="button"
                 variant="ghost"
+                size="sm"
                 data-forum-report-button
                 data-postable-type="forum_reply"
                 data-postable-id="{{ $reply->id }}"
@@ -71,6 +72,7 @@
                 <div dusk="delete-reply-form-{{ $reply->id }}">
                     <x-ui.button type="button"
                                  variant="ghost"
+                                 size="sm"
                                  data-bs-toggle="modal"
                                  data-bs-target="#delete-reply-modal-{{ $reply->id }}"
                                  dusk="delete-reply-{{ $reply->id }}">Apagar</x-ui.button>

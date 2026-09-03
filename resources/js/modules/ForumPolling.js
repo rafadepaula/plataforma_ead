@@ -195,6 +195,11 @@ export class ForumPolling {
         if (!reply || !reply.id) return;
         if (container.querySelector(`[data-reply-id="${reply.id}"]`)) return;
 
+        // A thread vazia renderiza o "Nenhuma resposta ainda" (atributo de
+        // dado, não `dusk=` — o contrato de seletores é congelado). A primeira
+        // resposta em tempo real encerra o estado vazio, sem reload.
+        container.querySelector('[data-forum-empty-replies]')?.remove();
+
         // Mirrors `forum/partials/_reply.blade.php`'s card markup — avatar,
         // author name, role chip, timestamp and body — keep the two in sync:
         // a polled reply must be visually indistinguishable from a
@@ -265,7 +270,7 @@ export class ForumPolling {
 
         const reportButton = document.createElement('button');
         reportButton.type = 'button';
-        reportButton.className = 'btn btn-ghost ds-state-layer';
+        reportButton.className = 'btn btn-ghost ds-state-layer btn-sm';
         reportButton.setAttribute('data-forum-report-button', '');
         reportButton.setAttribute('data-postable-type', 'forum_reply');
         reportButton.setAttribute('data-postable-id', String(reply.id));
