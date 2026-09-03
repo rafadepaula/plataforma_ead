@@ -16,6 +16,12 @@
     cursor: default;
     outline-offset: -2px;
 
+    // Duplo clique alterna fullscreen em vez de selecionar o conteúdo do
+    // player (o "tudo azul"). Herda para controles, tempos e fachada. Sem
+    // autoprefixer no build, o prefixo webkit vai na mão.
+    -webkit-user-select: none;
+    user-select: none;
+
     &:focus-visible {
         outline: 2px solid var(--primary);
     }

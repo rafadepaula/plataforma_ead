@@ -64,6 +64,7 @@ export class PlayerController {
 
         this.facade.addEventListener('click', () => this.boot());
         this.bindStageClickToToggle();
+        this.bindDoubleClickToFullscreen();
         this.bindControls();
         this.bindKeyboard();
         this.bindFullscreenState();
@@ -129,6 +130,25 @@ export class PlayerController {
 
             this.togglePlay();
             this.showControls(true);
+        });
+    }
+
+    /**
+     * Duplo clique na área de vídeo alterna a tela cheia (padrão
+     * YouTube/Vimeo). Os dois cliques simples do gesto alternam play/pause
+     * duas vezes e se anulam, então a reprodução sai ilesa — só o
+     * fullscreen alterna. Na barra de controles e no aviso de erro o duplo
+     * clique não faz nada (a precisão do seek fica preservada). Funciona
+     * antes mesmo do boot: `toggleFullscreen()` só fala com a API de
+     * fullscreen, sem depender do adapter.
+     */
+    bindDoubleClickToFullscreen() {
+        this.container.addEventListener('dblclick', (event) => {
+            if (event.target.closest('[data-player-controls]')) return;
+            if (event.target.closest('[data-player-error]')) return;
+
+            event.preventDefault();
+            this.toggleFullscreen();
         });
     }
 
