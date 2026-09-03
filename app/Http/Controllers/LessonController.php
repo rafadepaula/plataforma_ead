@@ -151,6 +151,11 @@ class LessonController extends Controller
         $data = $request->validated();
         unset($data['images'], $data['pdfs'], $data['removed_media']);
 
+        // Switch desmarcado não é enviado no request, então normaliza para
+        // `false` — sem isso, despublicar nunca persistiria e publicar
+        // dependeria só da validação aceitar o campo.
+        $data['is_published'] = $request->boolean('is_published');
+
         if (blank($data['video_url'] ?? null)) {
             $data['video_url'] = null;
             $data['video_provider'] = null;

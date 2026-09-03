@@ -539,4 +539,42 @@ class LessonMultimediaTest extends TestCase
         $this->assertNotNull($media->fresh());
         Storage::disk('public')->assertExists($media->path);
     }
+
+    /**
+     * Regressão: o switch "Publicado" do formulário precisa persistir.
+     * Sem `is_published` nas rules, o `validated()` descartava o campo e
+     * a lição ficava sempre como "Não publicada".
+     */
+    public function test_gestor_can_publish_and_unpublish_lesson_via_form(): void
+    {
+        [, , $module] = $this->makeCourseAndModule();
+
+        $this->post(route('modules.lessons.store', $module), [
+            'title' => 'Lição Publicada',
+            'type' => 'content',
+            'content_text' => '<p>Visível</p>',
+            'is_published' => '1',
+        ])->assertRedirect(route('modules.lessons.index', $module));
+
+        $lesson = $module->lessons()->sole();
+        $this->assertTrue((bool) $lesson->refresh()->is_published);
+
+        // Switch desmarcado não envia o campo — precisa normalizar para false.
+        $this->put(route('lessons.update', $lesson), [
+            'title' => 'Lição Publicada',
+            'type' => 'content',
+            'content_text' => '<p>Visível</p>',
+        ])->assertRedirect(route('modules.lessons.index', $module));
+
+        $this->assertFalse((bool) $lesson->refresh()->is_published);
+
+        $this->put(route('lessons.update', $lesson), [
+            'title' => 'Lição Publicada',
+            'type' => 'content',
+            'content_text' => '<p>Visível</p>',
+            'is_published' => '1',
+        ])->assertRedirect(route('modules.lessons.index', $module));
+
+        $this->assertTrue((bool) $lesson->refresh()->is_published);
+    }
 }

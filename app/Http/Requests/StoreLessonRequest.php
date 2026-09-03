@@ -45,6 +45,7 @@ class StoreLessonRequest extends FormRequest
             'pdfs.*' => ['file', 'mimes:pdf', 'max:10240'],
             'video_provider' => ['nullable', Rule::in(VideoUrlSanitizerManager::PROVIDERS)],
             'video_url' => ['nullable', 'url'],
+            'is_published' => ['sometimes', 'boolean'],
         ];
     }
 

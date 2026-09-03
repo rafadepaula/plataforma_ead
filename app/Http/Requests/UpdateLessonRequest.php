@@ -39,6 +39,7 @@ class UpdateLessonRequest extends FormRequest
             'removed_media.*' => ['integer'],
             'video_provider' => ['nullable', Rule::in(VideoUrlSanitizerManager::PROVIDERS)],
             'video_url' => ['nullable', 'url'],
+            'is_published' => ['sometimes', 'boolean'],
         ];
     }
 
