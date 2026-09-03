@@ -7,7 +7,7 @@
     dusk="quiz-answer-key"
     title="Gabarito"
     :subtitle="$latestAttempt && $latestAttempt->completed_at ? 'Referente à sua tentativa corrigida em ' . $latestAttempt->completed_at->format('d/m/Y') . '.' : null"
-    surface="body"
+    surface="white"
 >
     <div class="d-flex flex-column gap-4">
         @foreach($quiz->questions as $index => $question)

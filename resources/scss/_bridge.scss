@@ -71,6 +71,10 @@ $btn-padding-x: 24px; // --pad-btn-x
 $input-height: 52px; // --field-height
 $input-border-radius: 14px; // --radius-md
 $input-focus-box-shadow: 0 0 0 4px rgba(76, 111, 231, .28); // --focus-ring-alpha
+// Campo ativo é a superfície branca (--surface), nunca o fundo cinza da página —
+// o default do Bootstrap herda --bs-body-bg e some sobre o fundo #f6f8fc.
+$input-bg: #ffffff; // --surface
+$input-disabled-bg: #f6f8fc; // --surface-body
 
 // Cards
 $card-border-radius: 20px; // --radius-lg

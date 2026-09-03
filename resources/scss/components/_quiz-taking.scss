@@ -48,10 +48,10 @@
 
 // -----------------------------------------------------------------------------
 // Cronômetro (§3.1): nó único, sobrescrito por `textContent` a cada segundo.
-// `tabular-nums` evita que a largura oscile a cada tique. No estado expirado o
-// nó recebe `.ds-tone-attention`, cujo container cinza fica quase idêntico ao
-// `bg-body-secondary` da cápsula que o envolve — o contorno interno abaixo
-// devolve o contraste sem precisar de uma classe extra na cápsula.
+// `tabular-nums` evita que a largura oscile a cada tique. A cápsula que o
+// envolve é superfície branca (`ds-surface` + borda, na Blade); no estado
+// expirado o nó recebe `.ds-tone-attention` — o contorno interno abaixo
+// separa o tom do branco da cápsula sem precisar de uma classe extra nela.
 // -----------------------------------------------------------------------------
 [data-quiz-timer] {
     font-variant-numeric: tabular-nums;

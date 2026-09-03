@@ -32,7 +32,7 @@
             :subtitle="$quiz->questions->count() === 1 ? 'Existe uma questão.' : 'São '.$quiz->questions->count().' questões.'">
             @if($quiz->time_limit_minutes && $canAttempt && $attemptStartedAt !== null)
                 <x-slot:actions>
-                    <div class="d-inline-flex align-items-center gap-2 px-3 py-2 bg-body-secondary rounded-pill fw-semibold">
+                    <div class="d-inline-flex align-items-center gap-2 px-3 py-2 ds-surface border rounded-pill fw-semibold">
                         <x-ui.icon name="clock" size="18" />
                         <span data-quiz-timer data-started-at="{{ $attemptStartedAt->toIso8601String() }}" data-time-limit-minutes="{{ $quiz->time_limit_minutes }}" dusk="quiz-timer"></span>
                     </div>
@@ -87,7 +87,7 @@
 
         {{-- 5. Formulário de realização da prova --}}
         @if(filled($quiz->instructions))
-            <x-ui.card class="mb-4" surface="body">
+            <x-ui.card class="mb-4" surface="white">
                 <div class="d-flex align-items-center gap-2 mb-2 text-primary fw-semibold">
                     <x-ui.icon name="info" size="18" />
                     <span>Antes de começar</span>
@@ -105,7 +105,7 @@
                     $essayValue = data_get(old('answers'), $question->id.'.essay_answer', '');
                 @endphp
 
-                <x-ui.card class="mb-4" data-question-id="{{ $question->id }}" dusk="quiz-question-{{ $question->id }}" surface="body">
+                <x-ui.card class="mb-4" data-question-id="{{ $question->id }}" dusk="quiz-question-{{ $question->id }}" surface="white">
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <span class="ds-overline text-body-secondary">
                             Questão {{ $loop->iteration }} de {{ $quiz->questions->count() }}
