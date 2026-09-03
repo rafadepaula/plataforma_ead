@@ -59,10 +59,10 @@ Tests guard this module's contract. Must stay green (PHPUnit, no Pest):
   without completing, auto-complete at/above 90%.
 - `tests/Browser/MultiOrgStudentClassroomTest.php`,
   `tests/Browser/LessonPlayerDuskTest.php` (Dusk E2E) — full browser flow;
-  the video threshold case in `LessonPlayerDuskTest`
-  (`test_video_lesson_shows_the_player_shell_and_auto_completes_at_the_threshold`)
-  drive `window.LessonPlayer.reportProgress()` directly rather than real
-  YouTube embed.
+  `LessonPlayerDuskTest` tem só os dois casos de assistir (YouTube e Vimeo,
+  com reprodução real). O seam público
+  `window.LessonPlayer.reportProgress()` continua existindo no produto, mas
+  nenhum teste Dusk o dirige diretamente.
 - `tests/Feature/StudentCourseControllerTest.php` — 19 tests:
   multi-org enrollment aggregation (including duplicate course titles
   across orgs resolving to the right org per card, N+1-free), all 3 tabs
