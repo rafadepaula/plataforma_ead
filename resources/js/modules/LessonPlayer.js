@@ -191,6 +191,21 @@ export class LessonPlayer {
         }
     }
 
+    /**
+     * Read-only probe of one lesson's adapter state
+     * ('unstarted'|'buffering'|'playing'|'paused'|'ended'), or `null` when
+     * no player is booted for it. E2E seam alongside `reportProgress` —
+     * lets tests assert playback without poking CSS classes (which flicker
+     * while the provider buffers) or cross-origin iframe internals.
+     */
+    playerState(lessonId) {
+        const controller = this.playerControllers.find(
+            (candidate) => candidate.lessonId === String(lessonId)
+        );
+
+        return controller?.adapter?.getState() ?? null;
+    }
+
     resolveProgressUrl(lessonId) {
         const container = document.querySelector(
             `[data-video-player][data-lesson-id="${lessonId}"], [data-lesson-id="${lessonId}"][data-progress-url], #video-player-${lessonId}, [dusk="video-player-${lessonId}"]`

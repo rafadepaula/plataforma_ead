@@ -63,6 +63,7 @@ export class PlayerController {
         if (!this.facade || !this.stage) return;
 
         this.facade.addEventListener('click', () => this.boot());
+        this.bindStageClickToToggle();
         this.bindControls();
         this.bindKeyboard();
         this.bindFullscreenState();
@@ -104,6 +105,31 @@ export class PlayerController {
 
         this.applyStoredVolume();
         this.startProgressPolling();
+
+        // O clique na fachada FOI a intenção de reproduzir — começar a tocar
+        // imediatamente também tira o embed do estado "unstarted", onde o
+        // YouTube sobrepuja o próprio botão vermelho gigante e o chrome de
+        // título. Se a política de autoplay bloquear (SDK demorou demais
+        // após o gesto), o clique na área do vídeo inicia normalmente.
+        this.adapter?.play();
+    }
+
+    /**
+     * Clique em qualquer ponto da área de vídeo alterna play/pause (padrão
+     * de todo player). O iframe do provedor é `pointer-events: none`, então
+     * o clique chega ao container em vez de acionar a UI nativa do YouTube.
+     * Cliques na própria barra de controles são ignorados aqui — cada
+     * controle trata o seu.
+     */
+    bindStageClickToToggle() {
+        this.container.addEventListener('click', (event) => {
+            if (!this.booted) return;
+            if (event.target.closest('[data-player-controls]')) return;
+            if (event.target.closest('[data-player-error]')) return;
+
+            this.togglePlay();
+            this.showControls(true);
+        });
     }
 
     onTimeUpdate(currentTime, duration) {

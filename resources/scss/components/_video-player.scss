@@ -22,6 +22,20 @@
 }
 
 // ---
+// O iframe do provedor nunca recebe ponteiro: com ele mudo para o mouse,
+// nenhum clique "vaza" para a UI nativa (toggle/play do próprio YouTube,
+// link "Watch on YouTube", legendas) — o container é quem alterna
+// play/pause, e os controles 100% nossos ficam inatingíveis pelo iframe.
+// O Vimeo mantém o iframe DENTRO do stage; o YouTube substitui o stage pelo
+// iframe, por isso o seletor cobre os dois formatos.
+// ---
+.ds-player-stage,
+.ds-player-stage iframe,
+.ds-player > iframe {
+    pointer-events: none;
+}
+
+// ---
 // Fachada: wash pastel + botão circular de play (mesma linguagem do
 // `x-ui.video-field`), sobre o estágio vazio.
 // ---
@@ -56,13 +70,20 @@
 }
 
 // ---
-// Controles overlay: faixa inferior sobre o vídeo. Ícones em par trocam por
-// classe de estado no container (play/pause, som/mudo, maximize/minimize).
+// Controles overlay: faixa inferior sobre o vídeo. Especificidade 0.2.0 de
+// propósito: `.ds-ratio > *` (definida em _classroom.scss, importada DEPOIS
+// desta camada) empurra todo filho direto para top:0/height:100% — sem o
+// prefixo, a barra de controles vira um overlay de altura total centralizado
+// sobre o vídeo e o input de seek atravessa a área de clique do vídeo.
+// Ícones em par trocam por classe de estado no container (play/pause,
+// som/mudo, maximize/minimize).
 // ---
-.ds-player-controls {
+.ds-player > .ds-player-controls {
     position: absolute;
-    inset-inline: 0;
+    top: auto;
     bottom: 0;
+    height: auto;
+    inset-inline: 0;
     z-index: 2;
     display: flex;
     align-items: center;

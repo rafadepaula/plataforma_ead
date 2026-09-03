@@ -107,6 +107,98 @@ class LessonPlayerDuskTest extends DuskTestCase
         ]);
     }
 
+    /**
+     *  Os controles do player são dirigidos por CLIQUE REAL do Selenium —
+     * não por `script()` — porque é exatamente o hit-testing de ponteiro que
+     * quebra quando o overlay de controles herda `top:0/height:100%` de
+     * `.ds-ratio > *` (barra centralizada sobre o vídeo, seek atravessando a
+     * área de clique). Fluxo: clique na fachada boota o adapter (que já
+     * inicia a reprodução), clique no MEIO do vídeo pausa, novo clique
+     * retoma e o botão da barra pausa de novo. Requer rede no Selenium para
+     * carregar a IFrame API do YouTube.
+     */
+    public function test_video_player_real_clicks_toggle_playback_through_our_controls(): void
+    {
+        $lesson = $this->lesson([
+            'title' => 'Aula em Vídeo com Clique Real',
+            'type' => 'content',
+            'video_provider' => 'youtube',
+            'video_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+            'order_index' => 8,
+        ]);
+
+        $playerState = "return window.LessonPlayer.playerState({$lesson->id});";
+        // Um único `return <expressão>`: o executeScript do php-webdriver não
+        // digere múltiplos statements (um `const` antes do return volta null).
+        $isPlaying = "return ['playing', 'buffering'].includes(window.LessonPlayer.playerState({$lesson->id}));";
+
+        $this->browse(function (Browser $browser) use ($lesson, $playerState, $isPlaying): void {
+            $browser->loginAs($this->student)
+                ->visit(route('classroom.lesson', $lesson))
+                ->waitFor('@video-player-'.$lesson->id)
+                ->click('@video-facade-'.$lesson->id)
+                ->waitFor('@video-play-'.$lesson->id);
+
+            // O embed do YouTube nasce SEM legendas.
+            $iframeSrc = (string) $browser->script(
+                "return document.querySelector('[data-video-player] iframe').src;"
+            )[0];
+            self::assertStringContainsString('cc_load_policy=0', $iframeSrc);
+
+            // O boot tenta autoplay com a ativação do clique na fachada, mas
+            // a política de autoplay pode descartá-la (SDK carregou tarde) —
+            // nesse estado o vídeo fica parado e o CLIQUE no meio do vídeo
+            // (área pointer-events:none do iframe, handler do container)
+            // inicia. Espera o player assentar pós-boot: um playVideo atirado
+            // durante o init do embed é engolido pelo próprio YouTube. As
+            // transições assertam o ESTADO do adapter — pausa é
+            // determinística; reprodução aceita 'buffering' porque a rede do
+            // Selenium faz o vídeo oscilar playing/buffering.
+            $browser->pause(2500);
+
+            // O YouTube engole playVideo perdido durante o init do embed ou
+            // sob política de autoplay restritiva: como um usuário real,
+            // clica de novo (até 3 tentativas) enquanto não houver
+            // reprodução. Se já estiver tocando (autoplay venceu), não clica.
+            $attempts = 0;
+            while (! (bool) $browser->script($isPlaying)[0] && $attempts < 3) {
+                $attempts++;
+                $browser->click('@video-player-'.$lesson->id);
+                $browser->pause(1500);
+            }
+
+            $browser->waitUsing(10, 250, function () use ($browser, $isPlaying): bool {
+                self::assertTrue((bool) $browser->script($isPlaying)[0], 'O vídeo deveria estar em reprodução (playing ou buffering).');
+
+                return true;
+            });
+
+            // Clique no MEIO do vídeo pausa: estado vai a 'paused'.
+            $browser->click('@video-player-'.$lesson->id)
+                ->waitUsing(5, 200, function () use ($browser, $playerState): bool {
+                    self::assertSame('paused', (string) $browser->script($playerState)[0]);
+
+                    return true;
+                });
+
+            // Clique de novo no vídeo retoma.
+            $browser->click('@video-player-'.$lesson->id)
+                ->waitUsing(10, 250, function () use ($browser, $isPlaying): bool {
+                    self::assertTrue((bool) $browser->script($isPlaying)[0], 'O vídeo deveria ter retomado.');
+
+                    return true;
+                });
+
+            // O botão da barra (no rodapé do player) pausa também.
+            $browser->click('@video-play-'.$lesson->id)
+                ->waitUsing(5, 200, function () use ($browser, $playerState): bool {
+                    self::assertSame('paused', (string) $browser->script($playerState)[0]);
+
+                    return true;
+                });
+        });
+    }
+
     public function test_video_lesson_with_an_unrecognizable_url_falls_back_to_manual_completion(): void
     {
         $lesson = $this->lesson([

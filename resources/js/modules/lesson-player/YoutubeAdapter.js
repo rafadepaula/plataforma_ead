@@ -24,14 +24,25 @@ export class YoutubeAdapter extends VideoPlayerAdapter {
                 disablekb: 1,
                 playsinline: 1,
                 fs: 0,
+                // Legendas nascem DESLIGADAS: sem isso o embed pode carregar
+                // a track de legenda por conta própria e, com os controles
+                // nativos ocultos, o aluno não tem como desligar.
+                cc_load_policy: 0,
+                cc_lang_pref: 'pt',
+                hl: 'pt-BR',
+                iv_load_policy: 3,
             },
             events: {
                 onReady: () => {
                     this.cachedDuration = this.player.getDuration() || 0;
+                    this.disableCaptions();
                     this.startMonitor();
                     this.emit('ready');
                 },
                 onStateChange: (event) => {
+                    // Reforço no primeiro play: alguns vídeos re-habilitam a
+                    // track de legenda padrão ao iniciar.
+                    this.disableCaptions();
                     this.setState(this.mapState(event.data));
                 },
                 onError: () => {
@@ -39,6 +50,21 @@ export class YoutubeAdapter extends VideoPlayerAdapter {
                 },
             },
         });
+    }
+
+    /**
+     * Mata a track de legenda ativa por via API (além do playerVar), para
+     * o caso de o embed persistir a preferência legenda-ligada do espectador.
+     * Ambas as chamadas são best-effort: a API de módulos falha calada em
+     * vídeos sem legendas.
+     */
+    disableCaptions() {
+        try {
+            this.player?.unloadModule?.('captions');
+            this.player?.setOption?.('captions', 'track', {});
+        } catch (error) {
+            // Sem track de legenda o módulo nem existe — nada a fazer.
+        }
     }
 
     /**
