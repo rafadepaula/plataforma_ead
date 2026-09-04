@@ -301,6 +301,34 @@ class LessonPdfViewerDuskTest extends DuskTestCase
         $this->assertSame(0, (int) $scrollY, 'Rolar o visualizador não pode rolar a página.');
     }
 
+    public function test_pdf_lesson_whose_file_is_missing_shows_a_notice_and_still_completes(): void
+    {
+        $lesson = $this->lesson([
+            'title' => 'PDF Ausente',
+            'type' => 'content',
+            'pdf_path' => 'lessons/dusk-inexistente-'.uniqid().'.pdf',
+            'order_index' => 5,
+        ]);
+
+        $this->browse(function (Browser $browser) use ($lesson): void {
+            $browser->loginAs($this->student)
+                ->visit(route('classroom.lesson', $lesson))
+                ->waitFor('@pdf-unavailable-'.$lesson->id)
+                ->assertSeeIn('@pdf-unavailable-'.$lesson->id, 'Documento indisponível')
+                ->assertMissing('@pdf-viewer-'.$lesson->id)
+                ->waitFor('@mark-complete-button')
+                ->click('@mark-complete-button')
+                ->waitFor('@lesson-completed-badge');
+        });
+
+        $this->assertDatabaseHas('lesson_progress', [
+            'user_id' => $this->student->id,
+            'lesson_id' => $lesson->id,
+            'is_completed' => true,
+            'completion_source' => 'manual_click',
+        ]);
+    }
+
     private function waitForCount(Browser $browser, Lesson $lesson, string $expected): void
     {
         $browser->waitUsing(10, 200, function () use ($browser, $lesson, $expected): bool {
