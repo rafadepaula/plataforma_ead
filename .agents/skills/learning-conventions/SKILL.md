@@ -20,7 +20,7 @@ metadata:
 
 Never `LessonProgress::updateOrCreate()`/manual save from controller.
 Route every completion through `app/Actions/MarkLessonCompleteAction.php`
-so idempotency, `GREATEST(watched_seconds)`, transition-gated
+so idempotency, the union-of-played-ranges merge, transition-gated
 `LessonMarkedAsCompleted` dispatch stay in one place:
 
 ```php
@@ -28,17 +28,27 @@ $progress = $this->markLessonCompleteAction->execute(
     $lesson,
     $request->user(),
     'video_threshold', // or 'manual_click' / (future) 'quiz_passed'
-    $watchedSeconds,   // null for non-video completions
+    $watchedSegments,  // null for non-video completions; raw [{start, end}] batches otherwise
+    $durationSeconds,
 );
 ```
 
 One exception: video endpoint's **below-threshold** path
 (`LessonProgressController::updateProgress()`). Persisting in-progress
-`watched_seconds` not yet past 90% is not completion, so it writes
-`LessonProgress` directly (`firstOrNew` + `GREATEST` + `save()`) instead of
+watched ranges not yet past 90% is not completion, so it writes
+`LessonProgress` directly (`firstOrNew` + `applyWatchedSegments()` +
+`save()`) instead of
 calling Action. Do not route that branch through
 `MarkLessonCompleteAction` — it would wrongly dispatch
 `LessonMarkedAsCompleted` for unfinished view.
+
+Wherever ranges merge — action or below-threshold branch — the math must go
+through `LessonProgress::applyWatchedSegments()` (which delegates to
+`VideoWatchCalculator`). Never re-implement interval merging inline, and
+never read the completion threshold from anything but
+`watched_unique_seconds / duration_seconds` via
+`VideoWatchCalculator::reachedCompletion()`; the old
+`GREATEST(playhead)` rule is gone because a forward seek inflated it.
 
 ## The 422 Shape-Guard Pattern on Both Progress Endpoints
 
@@ -152,13 +162,19 @@ $lesson->module->setRelation('course', $course);
 feedback through same `reflectCompletion()`/`notify()` helpers, so manual
 click and video auto-completion look identical to student.
 
-`reportProgress(lessonId, watchedSeconds, durationSeconds)` is
+`reportProgress(lessonId, segments, durationSeconds, positionSeconds)` is
 **intentionally public**: it is real 5s-poll callback, and also exact seam
 `tests/Browser/VideoThresholdCompletionTest.php` calls directly
 (`window.LessonPlayer.reportProgress(...)`) to simulate crossing 90%
 threshold without depending on YouTube's real IFrame API inside headless
-Dusk. Do not rename it, do not make it private. Dusk regression here means
-test file needs updating in lockstep, not JS.
+Dusk. Do not rename it, do not make it private. `segments` is a list of
+`[start, end)` second ranges actually replayed (from `WatchTracker`), never
+a playhead position; `positionSeconds` is the current playhead (the
+resume bookmark, tracked in ANY state, nullable). The payload carries
+`{ duration_seconds, segments: [{start, end}], position_seconds }` and the
+server derives the percentage. Changing the
+payload shape means updating this seam and any Dusk driver in lockstep, not
+renaming the method.
 
 ## Badge/Button Visibility: Toggle Bootstrap's `.d-none`, Never `hidden`/`style.display`
 

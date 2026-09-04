@@ -154,8 +154,8 @@ class LessonProgressControllerTest extends TestCase
         $this->actingAs($aluno);
 
         $this->postJson(route('lessons.progress', $lesson), [
-            'watched_seconds' => 95,
             'duration_seconds' => 100,
+            'segments' => [['start' => 0, 'end' => 95]],
         ])->assertStatus(422)->assertJson(['message' => 'Esta lição não é um vídeo.']);
 
         $this->assertDatabaseMissing('lesson_progress', [
@@ -196,7 +196,7 @@ class LessonProgressControllerTest extends TestCase
         $response->assertForbidden();
     }
 
-    public function test_video_progress_update_below_threshold_only_persists_watched_seconds(): void
+    public function test_video_progress_update_below_threshold_only_persists_watched_ranges(): void
     {
         Event::fake([LessonMarkedAsCompleted::class]);
 
@@ -207,27 +207,27 @@ class LessonProgressControllerTest extends TestCase
         $this->actingAs($aluno);
 
         $response = $this->postJson(route('lessons.progress', $lesson), [
-            'watched_seconds' => 45,
             'duration_seconds' => 100,
+            'segments' => [['start' => 0, 'end' => 45]],
         ]);
 
         $response->assertOk()
             ->assertJson([
-                'watched_seconds' => 45,
+                'watched_unique_seconds' => 45,
                 'is_completed' => false,
             ]);
 
         $this->assertDatabaseHas('lesson_progress', [
             'user_id' => $aluno->id,
             'lesson_id' => $lesson->id,
-            'watched_seconds' => 45,
+            'watched_unique_seconds' => 45,
             'is_completed' => false,
         ]);
 
         Event::assertNotDispatched(LessonMarkedAsCompleted::class);
     }
 
-    public function test_video_progress_reaching_90_percent_auto_completes_lesson(): void
+    public function test_video_progress_reaching_90_percent_of_unique_seconds_auto_completes_lesson(): void
     {
         Event::fake([LessonMarkedAsCompleted::class]);
 
@@ -238,20 +238,20 @@ class LessonProgressControllerTest extends TestCase
         $this->actingAs($aluno);
 
         $response = $this->postJson(route('lessons.progress', $lesson), [
-            'watched_seconds' => 90,
             'duration_seconds' => 100,
+            'segments' => [['start' => 0, 'end' => 90]],
         ]);
 
         $response->assertOk()
             ->assertJson([
-                'watched_seconds' => 90,
+                'watched_unique_seconds' => 90,
                 'is_completed' => true,
             ]);
 
         $this->assertDatabaseHas('lesson_progress', [
             'user_id' => $aluno->id,
             'lesson_id' => $lesson->id,
-            'watched_seconds' => 90,
+            'watched_unique_seconds' => 90,
             'is_completed' => true,
             'completion_source' => 'video_threshold',
         ]);
@@ -273,8 +273,8 @@ class LessonProgressControllerTest extends TestCase
         $this->actingAs($aluno);
 
         $response = $this->postJson(route('lessons.progress', $lesson), [
-            'watched_seconds' => 90,
             'duration_seconds' => 100,
+            'segments' => [['start' => 0, 'end' => 90]],
         ]);
 
         $response->assertStatus(422)
@@ -297,8 +297,8 @@ class LessonProgressControllerTest extends TestCase
         $this->actingAs($aluno);
 
         $response = $this->postJson(route('lessons.progress', $lesson), [
-            'watched_seconds' => 90,
             'duration_seconds' => 100,
+            'segments' => [['start' => 0, 'end' => 90]],
         ]);
 
         $response->assertStatus(422)
@@ -316,8 +316,8 @@ class LessonProgressControllerTest extends TestCase
         $this->actingAs($aluno);
 
         $response = $this->postJson(route('lessons.progress', $lesson), [
-            'watched_seconds' => 90,
             'duration_seconds' => 100,
+            'segments' => [['start' => 0, 'end' => 90]],
         ]);
 
         $response->assertNotFound();
@@ -334,8 +334,8 @@ class LessonProgressControllerTest extends TestCase
         $this->actingAs($aluno);
 
         $response = $this->postJson(route('lessons.progress', $lesson), [
-            'watched_seconds' => 90,
             'duration_seconds' => 100,
+            'segments' => [['start' => 0, 'end' => 90]],
         ]);
 
         $response->assertForbidden();
@@ -350,11 +350,12 @@ class LessonProgressControllerTest extends TestCase
         $this->actingAs($aluno);
 
         $response = $this->postJson(route('lessons.progress', $lesson), [
-            'watched_seconds' => -5,
+            'watched_seconds' => -5, // campo legado: ignorado, nunca valida
             'duration_seconds' => 0,
+            'segments' => [['start' => -5, 'end' => 1]],
         ]);
 
         $response->assertStatus(422)
-            ->assertJsonValidationErrors(['watched_seconds', 'duration_seconds']);
+            ->assertJsonValidationErrors(['duration_seconds', 'segments.0.start']);
     }
 }

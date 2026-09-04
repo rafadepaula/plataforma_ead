@@ -21,8 +21,14 @@ metadata:
 
 Tests guard this module's contract. Must stay green (PHPUnit, no Pest):
 
+- `tests/Unit/Services/VideoWatchCalculatorTest.php` — the pure interval
+  math behind video tracking: the task's own example (0–2min + 8–9min of a
+  10min video = 180 unique seconds = 30%, no completion), overlap/adjacency
+  unification, replay never double-counting, unknown-duration guards,
+  `[0, duration]` clamping.
 - `tests/Unit/Actions/MarkLessonCompleteActionTest.php` — idempotent
-  completion, `GREATEST(watched_seconds)`, `completed_at` set only on
+  completion, watched time persisted as the UNION of played ranges (never
+  `GREATEST`), `completed_at` set only on
   first completion, `LessonMarkedAsCompleted` dispatched only on `false`
   -> `true` transition.
 - `tests/Unit/Listeners/RecalculateCourseProgressTest.php` — percentage
@@ -55,8 +61,11 @@ Tests guard this module's contract. Must stay green (PHPUnit, no Pest):
   /lessons/{lesson}/complete` 422 for quiz/video lessons, succeed for
   text/PDF/image.
 - `tests/Feature/VideoThresholdCompletionTest.php` (Feature) — `POST
-  /lessons/{lesson}/progress` persist sub-threshold `watched_seconds`
-  without completing, auto-complete at/above 90%.
+  /lessons/{lesson}/progress` persists sub-threshold `watched_ranges`
+  without completing, auto-completes at/above 90% of UNIQUE seconds
+  (including the forward-seek example: playhead at 95% with 5s watched must
+  NOT complete), clamps overshooting segments, validates the `segments`
+  shape.
 - `tests/Browser/MultiOrgStudentClassroomTest.php`,
   `tests/Browser/LessonPlayerDuskTest.php` (Dusk E2E) — full browser flow;
   `LessonPlayerDuskTest` tem só os dois casos de assistir (YouTube e Vimeo,
@@ -126,6 +135,7 @@ Tests guard this module's contract. Must stay green (PHPUnit, no Pest):
 Run narrowest first after touch module:
 
 ```bash
+vendor/bin/sail artisan test --filter=VideoWatchCalculatorTest
 vendor/bin/sail artisan test --filter=MarkLessonCompleteActionTest
 vendor/bin/sail artisan test --filter=RecalculateCourseProgressTest
 vendor/bin/sail artisan test --filter=EnsureStudentIsEnrolledTest
@@ -306,6 +316,46 @@ Full rule: `testing-conventions`. Chain debugging: `testing-maintenance`.
   `@course-progress-bar` and will catch it.
 
 ## Lesson Player Failure Modes
+
+- **A forward seek completes a video, or progress keeps climbing while
+  paused**: the tracking regressed to the playhead. The threshold must read
+  `watched_unique_seconds` via `VideoWatchCalculator::reachedCompletion()`,
+  the payload must carry `segments`, and `WatchTracker` must sample only in
+  the `playing` state — a `getCurrentTime()` read in the poll, or a
+  `watched/duration` comparison on the client, is the old bug (ClickUp
+  task 86e32nupm) back.
+- **Reload resumes at the wrong spot**: resume is the EXACT last playhead
+  (`last_position_seconds`, latest-reported wins so a backward seek can move
+  the bookmark back) — never the end of the last watched range, never the
+  first-unwatched-gap fallback when a bookmark exists. The bookmark travels
+  on the 5s poll AND on three immediate flushes: seek (bar change / keyboard
+  skip, debounced ~800ms with the seek target as explicit override — the
+  Vimeo adapter emits no `timeupdate` while paused), PAUSE (never buffering:
+  every seek passes through buffering, and a flush there would report the
+  still-stale pre-seek position and drag the bookmark BACKWARD — the bug
+  where reload landed ~10s before the seek target), and page
+  lifecycle (visibilitychange hidden / pagehide). Two guards keep the
+  bookmark honest: the override survives a later override-less schedule
+  (pause must not erase a seek's target), and the flush reads the adapter's
+  live `getCurrentTime()` when no override exists. If reloads replay a seen
+  stretch from 0, one of those regressed — OR `segments` was put back to
+  `required` in `UpdateLessonProgressRequest`, which rejects the EMPTY
+  array of a position-only batch (that rejection was the original bug:
+  seek + immediate F5 silently dropped the bookmark).
+- **Seek bar shows no green watched intervals (or the % indicator never
+  moves)**: `paintWatchedOverlay()` needs a known duration and non-empty
+  `watched_ranges` — it repaints from every progress RESPONSE
+  (`watched_ranges` travels back), and the initial paint comes from
+  `data-watched-ranges`/`data-duration-seconds` on the container. A stale
+  `public/build` or a removed `appearance: none` on `.ds-player-seek`
+  (the gradient lives on the slider background) are the usual causes.
+- **The poll 422s with every batch**: the client and
+  `UpdateLessonProgressRequest` disagree on shape. Client sends
+  `{ duration_seconds, segments: [{start, end}], position_seconds }` —
+  `segments` may be EMPTY (position-only batch), which is why the rule is
+  `present`, never `required`; anything else
+  (`watched_seconds`, bare `[start, end]` pairs without keys) is rejected.
+  Keep both sides in lockstep via the `reportProgress` seam contract.
 
 - **`DuskSelectorContractTest` fails with a count mismatch after touching
   the lesson screen**: `lesson-completed-badge`/`mark-complete-button` now

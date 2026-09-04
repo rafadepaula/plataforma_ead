@@ -29,11 +29,20 @@ writes `lesson_progress` and `course_user.progress_percentage`/`status`/
 
 | Table | Key columns | Tenancy |
 | --- | --- | --- |
-| `lesson_progress` | `user_id`, `lesson_id`, `is_completed`, `completion_source` (enum: `manual_click`\|`video_threshold`\|`quiz_passed`, nullable), `watched_seconds` (nullable), `completed_at` | **Cascade-inherited** via `lesson.module.course.org_id` — no own `org_id`, no `OrgScope` (see `tenancy-architecture`) |
+| `lesson_progress` | `user_id`, `lesson_id`, `is_completed`, `completion_source` (enum: `manual_click`\|`video_threshold`\|`quiz_passed`, nullable), `watched_ranges` (JSON of disjoint `[start, end)` second intervals, nullable), `watched_unique_seconds` (int, default 0), `duration_seconds` (nullable), `last_position_seconds` (nullable — latest reported playhead, the resume bookmark), `completed_at` | **Cascade-inherited** via `lesson.module.course.org_id` — no own `org_id`, no `OrgScope` (see `tenancy-architecture`) |
 | `course_user` (pivot, owned by the courses domain) | `progress_percentage`, `status`, `completed_at` | Written by this module listener, not owned by it |
 
 `lesson_progress` has unique `(user_id, lesson_id)` constraint. One row per
 student per lesson, upserted via `firstOrNew()`, never inserted twice.
+
+`watched_ranges` replaced the old single `watched_seconds` playhead column
+(ClickUp task 86e32nupm): the playhead was inflated by any forward seek,
+while the union of played intervals expresses time actually watched
+(0–2min + 8–9min of a 10min video = 3min = 30%). All interval math lives in
+`App\Services\VideoWatchCalculator` (normalize / merge / uniqueSeconds /
+percent / reachedCompletion — pure, stateless) and reaches the row through
+`LessonProgress::applyWatchedSegments()`, the single place the merge
+happens for both write paths.
 
 ## The Completion-Source Rule Per Lesson Type
 
@@ -42,7 +51,7 @@ differ by lesson shape:
 
 | Lesson shape | Trigger | `completion_source` | Endpoint |
 | --- | --- | --- | --- |
-| Video (`video_url` set, id resolves — YouTube or Vimeo) | provider adapter polling reports `watched_seconds` ≥ 90% of `duration_seconds` | `video_threshold` | `POST /lessons/{lesson}/progress` |
+| Video (`video_url` set, id resolves — YouTube or Vimeo) | unique watched seconds (`watched_unique_seconds`) reach ≥ 90% of `duration_seconds` | `video_threshold` | `POST /lessons/{lesson}/progress` |
 | Text/PDF/Image (no `video_url`) | Explicit "Marcar como concluída" click | `manual_click` | `POST /lessons/{lesson}/complete` |
 | Quiz (`type = quiz`) | `SubmitQuizAttemptAction` when `quiz_attempts.is_passed = true` | `quiz_passed` | none — no manual button ever renders for quiz lesson |
 
@@ -61,9 +70,11 @@ for `SubmitQuizAttemptAction` too. Contract:
 - **Idempotent**: once `is_completed = true`, calling again never flips it
   back to `false`, never re-sets `completed_at`, never re-dispatches
   `LessonMarkedAsCompleted`.
-- **`watched_seconds` never decreases**: persisted as `GREATEST(current,
-  reported)`. Passing `null` (manual completions) leaves stored value
-  untouched.
+- **Watched time is a union, never a maximum**: passing played segments
+  (video completions) unions them into `watched_ranges` via
+  `applyWatchedSegments()` and refreshes `watched_unique_seconds` — a
+  forward seek cannot inflate the figure and replay cannot double-count.
+  Passing `null` (manual completions) leaves stored ranges untouched.
 - **Event dispatch is transition-gated**: `LessonMarkedAsCompleted` fires
   only on `false` -> `true` transition, never on repeat call. Keeps
   `RecalculateCourseProgress` from redundantly recomputing on every idle
@@ -281,8 +292,14 @@ would silently regress it into the generic "not yet issued" copy.
 ## Unified Lesson Player — One Card, One Format, Exclusive Dispatch
 
 `GET lessons/{lesson}` (`ClassroomController::showLesson`, `auth` +
-`student.enrolled`) hands `classroom.lesson` **6 keys** — `lesson`,
-`course`, `isCompleted`, `watchedSeconds`, `tracksProgress`,
+`student.enrolled`) hands `classroom.lesson` **9 keys** — `lesson`,
+`course`, `isCompleted`, `watchedSeconds` (unique watched seconds, read
+from `watched_unique_seconds`), `resumeSeconds` (the EXACT playhead of the
+last session — `last_position_seconds`, the latest position the client
+reported; falls back to `VideoWatchCalculator::resumePosition()`'s first
+unwatched second only when no bookmark exists), `watchedRanges` (the
+merged intervals, for the seek-bar overlay), `durationSeconds`,
+`tracksProgress`,
 `mediaAvailability` — and the Blade layer picks **exactly one** media
 format from a frozen `@if/@elseif` chain in
 `resources/views/classroom/lesson.blade.php`:
@@ -325,7 +342,27 @@ First facade click boots a `VideoPlayerAdapter`
 `play/pause/seek/setVolume/setMuted/getCurrentTime/getDuration/getState/on`,
 events `ready/timeupdate/statechange/error`. `PlayerController` owns the
 overlay controls, keyboard shortcuts, fullscreen, auto-hide and the 5s poll
-that funnels through `LessonPlayer.reportProgress`. Zero third-party JS loads
+that funnels through `LessonPlayer.reportProgress`. Sampling lives in
+`WatchTracker` (`resources/js/modules/lesson-player/WatchTracker.js`): it
+adds `floor(currentTime)` to a per-second `Set` only while the adapter
+reports `playing` — pause, buffering and seek stop the clock, and the `Set`
+itself dedupes replays. Each poll converts the new seconds into contiguous
+`[start, end)` ranges and POSTs `{ duration_seconds, segments: [{start,
+end}] }`; empty batches (nothing watched since the last POST) skip the
+request, failed batches are restored to the pending set, and
+`flushProgress()` fires one last batch when the adapter is destroyed.
+Resume: `_video` ships `data-resume-seconds` on the container and
+`PlayerController` seeks there right before the boot `play()` (clamped
+against the provider duration, consumed once) — the value is the exact
+playhead of the last session, so seek 0:20 → 0:50 + reload lands on 0:50
+even though second 50 was never watched. The server response echoes
+`watched_ranges`/`duration_seconds`, which repaint (a) the seek bar's
+watched overlay — each watched interval is a green `linear-gradient` stop
+painted onto the `appearance:none` slider by
+`PlayerController.paintWatchedOverlay()` — and (b) the watched-%
+indicator `_video` renders to the right of the video
+(`data-watch-progress`: "X% assistido · 90% necessário para concluir",
+driven through `x-ui.progress`'s `data-progress-bar` hook). Zero third-party JS loads
 before the student clicks; adapter `error` swaps the shell to the neutral
 unavailable notice (runtime-degraded video, provider removed it).
 

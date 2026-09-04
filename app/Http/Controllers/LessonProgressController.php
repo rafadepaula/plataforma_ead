@@ -9,6 +9,7 @@ use App\Models\Course;
 use App\Models\Lesson;
 use App\Models\LessonProgress;
 use App\Models\User;
+use App\Services\VideoWatchCalculator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -67,10 +68,15 @@ class LessonProgressController extends Controller
      * video lessons: a `type=quiz` lesson (checked first, since quiz
      * completion is reserved for 's `SubmitQuizAttemptAction` even
      * if malformed data also carries a `video_url`) or a lesson without a
-     * resolvable video id is rejected with a 422. Below the 90%
-     * threshold, persists `watched_seconds` (GREATEST) without
-     * completing; at/above it, delegates to `MarkLessonCompleteAction`
-     * with `completion_source=video_threshold`.
+     * resolvable video id is rejected with a 422.
+     *
+     * The client reports raw played segments (`[{start, end}]`), never a
+     * percentage: they are unioned into `lesson_progress.watched_ranges`
+     * and the 90% threshold reads `watched_unique_seconds` — so a forward
+     * seek cannot inflate progress and replay cannot double-count. Below
+     * the threshold the row persists without completing (the one write that
+     * bypasses `MarkLessonCompleteAction`, per the learning conventions);
+     * at/above it the action completes with `completion_source=video_threshold`.
      */
     public function updateProgress(UpdateLessonProgressRequest $request, Lesson $lesson): JsonResponse
     {
@@ -89,25 +95,47 @@ class LessonProgressController extends Controller
             ], 422);
         }
 
-        $watchedSeconds = (int) $request->validated('watched_seconds');
-        $durationSeconds = (int) $request->validated('duration_seconds');
+        $data = $request->validated();
+        $durationSeconds = (int) $data['duration_seconds'];
+        $lastPositionSeconds = isset($data['position_seconds']) ? (int) $data['position_seconds'] : null;
         $user = $request->user();
 
-        $reachedThreshold = ($watchedSeconds / $durationSeconds) >= 0.90;
+        $progress = LessonProgress::query()->firstOrNew([
+            'user_id' => $user->id,
+            'lesson_id' => $lesson->id,
+        ]);
+        $uniqueSeconds = $progress->applyWatchedSegments($data['segments'], $durationSeconds);
 
-        if ($reachedThreshold) {
-            $progress = $this->markLessonCompleteAction->execute($lesson, $user, 'video_threshold', $watchedSeconds);
+        if (VideoWatchCalculator::reachedCompletion($uniqueSeconds, $durationSeconds)) {
+            // The union is idempotent, so the action re-merging the same
+            // batch against the persisted row reproduces exactly the
+            // `$uniqueSeconds` computed above — threshold and stored state
+            // can never disagree.
+            $progress = $this->markLessonCompleteAction->execute(
+                $lesson,
+                $user,
+                'video_threshold',
+                $data['segments'],
+                $durationSeconds,
+                $lastPositionSeconds,
+            );
         } else {
-            $progress = LessonProgress::query()->firstOrNew([
-                'user_id' => $user->id,
-                'lesson_id' => $lesson->id,
-            ]);
-            $progress->watched_seconds = max($watchedSeconds, (int) ($progress->watched_seconds ?? 0));
+            // Latest playhead wins (not GREATEST): a backward seek must be
+            // able to move the resume bookmark back.
+            if ($lastPositionSeconds !== null) {
+                $progress->last_position_seconds = $lastPositionSeconds;
+            }
             $progress->save();
         }
 
+        // The watched ranges travel back so the client can repaint the seek
+        // bar's watched overlay and the watched-% indicator from the
+        // server's authority instead of mirroring its own accounting.
         return response()->json([
-            'watched_seconds' => $progress->watched_seconds,
+            'watched_unique_seconds' => $progress->watched_unique_seconds,
+            'watched_ranges' => $progress->watched_ranges ?? [],
+            'duration_seconds' => $progress->duration_seconds,
+            'last_position_seconds' => $progress->last_position_seconds,
             'is_completed' => $progress->is_completed,
         ]);
     }

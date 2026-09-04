@@ -8,6 +8,7 @@ use App\Models\Course;
 use App\Models\Lesson;
 use App\Models\LessonMedia;
 use App\Models\LessonProgress;
+use App\Services\VideoWatchCalculator;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -136,7 +137,14 @@ class ClassroomController extends Controller
             'lesson' => $lesson,
             'course' => $course,
             'isCompleted' => (bool) ($progress?->is_completed),
-            'watchedSeconds' => $progress?->watched_seconds,
+            'watchedSeconds' => $progress?->watched_unique_seconds,
+            // "Retomar de onde parou" é o PLAYHEAD exato: a última posição
+            // reportada vence; sem ela (linha antiga/nunca reportada), cai
+            // para o primeiro segundo ainda não assistido.
+            'resumeSeconds' => $progress?->last_position_seconds
+                ?? VideoWatchCalculator::resumePosition($progress?->watched_ranges ?? []),
+            'watchedRanges' => $progress?->watched_ranges ?? [],
+            'durationSeconds' => $progress?->duration_seconds,
             'tracksProgress' => $user->hasActiveOrCompletedEnrollment($course),
             'mediaAvailability' => $this->resolveMediaAvailability($lesson),
         ]);

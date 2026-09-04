@@ -385,8 +385,8 @@ class LessonDispatchOrderTest extends TestCase
         $response->assertDontSee('data-progress-url', false);
 
         $this->postJson(route('lessons.progress', $lesson), [
-            'watched_seconds' => 10,
             'duration_seconds' => 100,
+            'segments' => [['start' => 0, 'end' => 10]],
         ])->assertForbidden();
     }
 

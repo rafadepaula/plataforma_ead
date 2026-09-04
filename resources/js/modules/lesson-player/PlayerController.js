@@ -1,4 +1,5 @@
 import { createAdapter } from './createAdapter';
+import WatchTracker from './WatchTracker';
 
 /** Cadência do POST de progresso para `lessons.progress` (contrato vivo). */
 const PROGRESS_POLL_MS = 5000;
@@ -15,6 +16,16 @@ const CONTROLS_IDLE_HIDE_MS = 2500;
 
 const VOLUME_STORAGE_KEY = 'ds-player-volume';
 const MUTED_STORAGE_KEY = 'ds-player-muted';
+
+/** Threshold de conclusão anunciado no indicador de % assistido. */
+const REQUIRED_WATCHED_PERCENT = 90;
+
+/**
+ * Atraso do flush debounced do bookmark de retomada: rápido o bastante para
+ * sobreviver a um F5 logo após o seek, espaçado o bastante para um arrasto
+ * contínuo na barra não virar rajada de POSTs.
+ */
+const POSITION_FLUSH_DELAY_MS = 800;
 
 /**
  * Dirige UM container `[data-video-player]`: fachada click-to-load, controles
@@ -33,11 +44,26 @@ export class PlayerController {
         this.embedUrl = container.getAttribute('data-video-embed');
         this.videoHash = container.getAttribute('data-video-hash');
         this.progressUrl = container.getAttribute('data-progress-url');
+        // "Retomar de onde parou": PLAYHEAD exato da última sessão (o
+        // servidor manda last_position_seconds; cai para o primeiro segundo
+        // não assistido quando não há bookmark). Consumido no boot.
+        this.resumeSeconds = Number(container.getAttribute('data-resume-seconds')) || 0;
+        // Estado inicial dos intervalos assistidos (server-rendered) para
+        // pintar o overlay verde do seek e a barra de % antes do 1º POST.
+        this.watchedRanges = this.parseWatchedRanges(
+            container.getAttribute('data-watched-ranges'),
+        );
+        this.reportedDuration = Number(container.getAttribute('data-duration-seconds')) || 0;
+        this.lastReportedPosition = null;
+        this.pendingPositionOverride = null;
+        this.positionFlushTimer = null;
+        this.pageLifecycleBound = false;
         this.adapter = null;
         this.booted = false;
         this.booting = false;
         this.seeking = false;
         this.duration = 0;
+        this.tracker = new WatchTracker();
         this.progressInterval = null;
         this.progressFailures = 0;
         this.hideTimer = null;
@@ -68,6 +94,23 @@ export class PlayerController {
         this.bindControls();
         this.bindKeyboard();
         this.bindFullscreenState();
+        this.bindPageLifecycle();
+    }
+
+    /**
+     * O F5 não espera o poll de 5s: escondendo a aba ou saindo da página,
+     * o bookmark de retomada e os segundos pendentes saem na hora
+     * (best-effort — a requisição pode não completar, por isso o seek e a
+     * pausa também disparam flush próprio).
+     */
+    bindPageLifecycle() {
+        if (this.pageLifecycleBound || typeof document === 'undefined') return;
+        this.pageLifecycleBound = true;
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) this.flushProgress();
+        });
+        window.addEventListener('pagehide', () => this.flushProgress());
     }
 
     async boot() {
@@ -105,7 +148,22 @@ export class PlayerController {
         if (this.controls) this.controls.classList.remove('d-none');
 
         this.applyStoredVolume();
+        this.paintWatchedOverlay();
         this.startProgressPolling();
+
+        // Retomada: seek ANTES do play para que a reprodução comece no
+        // primeiro segundo não assistido. Duração ainda desconhecida no
+        // ready, então o clamp contra ela acontece aqui — se o vídeo mudou
+        // e a retomada caiu além do fim, assiste do zero.
+        if (this.resumeSeconds > 0) {
+            const duration = this.adapter?.getDuration() || 0;
+
+            if (duration <= 0 || this.resumeSeconds < Math.floor(duration)) {
+                this.adapter?.seek(this.resumeSeconds);
+            }
+
+            this.resumeSeconds = 0;
+        }
 
         // O clique na fachada FOI a intenção de reproduzir — começar a tocar
         // imediatamente também tira o embed do estado "unstarted", onde o
@@ -154,6 +212,8 @@ export class PlayerController {
 
     onTimeUpdate(currentTime, duration) {
         this.duration = duration || this.duration;
+        this.tracker.onTimeUpdate(currentTime, this.duration);
+        this.paintWatchedOverlay();
 
         if (this.durationLabel && this.duration > 0) {
             this.durationLabel.textContent = this.formatTime(this.duration);
@@ -170,6 +230,15 @@ export class PlayerController {
     }
 
     onStateChange(state) {
+        this.tracker.onStateChange(state);
+
+        // Pausar numa posição inédita precisa gravar o bookmark logo — o
+        // poll de 5s pode não chegar antes do F5. Buffering NÃO agenda:
+        // todo seek passa por buffering, e um flush aqui sairia com a
+        // posição AINDA ANTIGA (o provedor reporta o alvo só ao terminar de
+        // carregar) — era o que fazia o reload voltar para o ponto pré-seek.
+        if (state === 'paused') this.schedulePositionFlush();
+
         const playing = state === 'playing';
         this.container.classList.toggle('ds-player-playing', playing);
         this.container.classList.toggle('ds-player-buffering', state === 'buffering');
@@ -182,6 +251,8 @@ export class PlayerController {
     }
 
     showUnavailable() {
+        this.flushProgress();
+
         if (this.adapter) {
             this.adapter.destroy();
             this.adapter = null;
@@ -213,7 +284,9 @@ export class PlayerController {
             });
             this.seekBar.addEventListener('change', () => {
                 this.seeking = false;
-                this.adapter?.seek(Number(this.seekBar.value));
+                const target = Number(this.seekBar.value);
+                this.adapter?.seek(target);
+                this.schedulePositionFlush(POSITION_FLUSH_DELAY_MS, Math.round(target));
             });
         }
 
@@ -364,6 +437,7 @@ export class PlayerController {
             this.duration || Number.MAX_SAFE_INTEGER
         );
         this.adapter.seek(target);
+        this.schedulePositionFlush(POSITION_FLUSH_DELAY_MS, Math.round(target));
     }
 
     // ------------------------------------------------------------------
@@ -419,27 +493,226 @@ export class PlayerController {
 
             if (durationSeconds <= 0) return;
 
-            const watchedSeconds = Math.floor(this.adapter?.getCurrentTime() || 0);
+            // Intervalos de segundos EFETIVAMENTE reproduzidos desde o último
+            // POST — nunca a posição do playhead, que um seek para frente
+            // inflaria. O POST dispara com segundos novos OU com o playhead
+            // movido (pausado em posição inédita também atualiza o bookmark
+            // de retomada).
+            const positionSeconds = this.resolveCurrentPosition();
+            const ranges = this.tracker.takePendingRanges();
+            const positionChanged = positionSeconds !== null
+                && positionSeconds !== this.lastReportedPosition;
+
+            if (ranges.length === 0 && !positionChanged) return;
 
             // O intervalo não é um `await`: a rejeição é engolida aqui para
-            // nunca virar unhandled rejection — `reportProgress` já notificou
-            // e, estourado o orçamento de falhas, o polling para abaixo.
+            // nunca virar unhandled rejection — `reportProgress` já notificou,
+            // os intervalos voltam ao pendente e, estourado o orçamento de
+            // falhas, o polling para abaixo.
             this.lessonPlayer
-                .reportProgress(this.lessonId, watchedSeconds, durationSeconds)
+                .reportProgress(this.lessonId, ranges, durationSeconds, positionSeconds)
                 .then((data) => {
+                    this.applyProgressResponse(data, positionSeconds);
+
                     if (data && data.is_completed) this.stopProgressPolling();
                 })
                 .catch(() => {
+                    this.tracker.restore(ranges);
                     this.progressFailures += 1;
                     if (this.progressFailures >= MAX_PROGRESS_FAILURES) this.stopProgressPolling();
                 });
         }, PROGRESS_POLL_MS);
     }
 
+    /**
+     * Consumo comum das respostas de progresso (poll e flush): a resposta do
+     * servidor é a autoridade — repinta overlay e barra de % com a união
+     * persistida e marca a posição reportada como confirmada.
+     */
+    applyProgressResponse(data, positionSeconds) {
+        if (positionSeconds !== null && positionSeconds !== undefined) {
+            this.lastReportedPosition = positionSeconds;
+        }
+
+        if (!data) return;
+
+        if (Array.isArray(data.watched_ranges)) this.watchedRanges = data.watched_ranges;
+        if (data.duration_seconds) this.reportedDuration = data.duration_seconds;
+        this.paintWatchedOverlay();
+        this.updateWatchedIndicator(data);
+    }
+
     stopProgressPolling() {
         if (this.progressInterval) {
             clearInterval(this.progressInterval);
             this.progressInterval = null;
+        }
+    }
+
+    /**
+     * Pinta os intervalos já assistidos no próprio slider de seek: cada
+     * trecho vira um stop verde num gradiente de background, com o trilho
+     * translúcido nos buracos. Duração desconhecida (primeiro timeupdate
+     * ainda não chegou) limpa o overlay — ele volta no próximo tick.
+     */
+    paintWatchedOverlay() {
+        if (!this.seekBar) return;
+
+        const duration = this.duration || this.reportedDuration || 0;
+        const ranges = (Array.isArray(this.watchedRanges) ? [...this.watchedRanges] : [])
+            .map(([start, end]) => [Number(start), Number(end)])
+            .filter(([start, end]) => Number.isFinite(start) && Number.isFinite(end) && end > start)
+            .sort((a, b) => a[0] - b[0]);
+
+        if (duration <= 0 || ranges.length === 0) {
+            this.seekBar.style.removeProperty('background-image');
+            return;
+        }
+
+        const watched = 'var(--success)';
+        const track = 'color-mix(in srgb, var(--grey-50) 30%, transparent)';
+        const stops = [];
+        let cursor = 0;
+
+        ranges.forEach(([start, end]) => {
+            if (end <= cursor) return;
+
+            const gapStart = (cursor / duration) * 100;
+            const watchedStart = (Math.max(start, cursor) / duration) * 100;
+            const watchedEnd = (end / duration) * 100;
+
+            if (watchedStart > gapStart) {
+                stops.push(`${track} ${gapStart}% ${watchedStart}%`);
+            }
+
+            stops.push(`${watched} ${watchedStart}% ${watchedEnd}%`);
+            cursor = end;
+        });
+
+        if (cursor < duration) {
+            stops.push(`${track} ${(cursor / duration) * 100}% 100%`);
+        }
+
+        this.seekBar.style.backgroundImage = `linear-gradient(to right, ${stops.join(', ')})`;
+    }
+
+    /**
+     * Atualiza o indicador "% assistido · % necessário" que vive ao lado
+     * do vídeo (fora do container do player). A porcentagem Necessária é a
+     * mesma do threshold do servidor (90%).
+     */
+    updateWatchedIndicator(data) {
+        const scope = document.querySelector(
+            `[data-watch-progress][data-lesson-id="${this.lessonId}"]`,
+        );
+
+        if (!scope) return;
+
+        const duration = data.duration_seconds || this.duration || this.reportedDuration || 0;
+        const percent = duration > 0
+            ? Math.min(100, Math.round((Number(data.watched_unique_seconds) / duration) * 100))
+            : 0;
+
+        const bar = scope.querySelector('[data-progress-bar]');
+
+        if (bar) {
+            bar.style.width = `${percent}%`;
+            bar.closest('[role="progressbar"]')?.setAttribute('aria-valuenow', String(percent));
+        }
+
+        const label = scope.querySelector('[data-watch-progress-text]');
+
+        if (label) {
+            label.textContent = `${percent}% assistido · ${REQUIRED_WATCHED_PERCENT}% necessário para concluir`;
+        }
+    }
+
+    /**
+     * Flush debounced do bookmark de retomada: seek na barra, skip de
+     * teclado e pausa chegam aqui. Sem isso o bookmark só viajaria no poll
+     * de 5s — seek + F5 imediato voltaria a página para o ponto antigo
+     * (exatamente o bug que motivou este método).
+     *
+     * `positionOverride`: o alvo do seek conhecido NO ato. O Vimeo não emite
+     * `timeupdate` pausado, então o tracker pode não saber do novo ponto
+     * quando o flush disparar — o alvo explícito cobre esse buraco.
+     */
+    schedulePositionFlush(delay = POSITION_FLUSH_DELAY_MS, positionOverride = null) {
+        if (!this.progressUrl || !this.lessonId || !this.booted) return;
+
+        // O override só é SOBRESCRITO por outro override (novo seek mais
+        // recente vence). Um agendamento sem override (pausa) NÃO o limpa —
+        // senão o flush dispararia com a posição antiga do tracker e faria o
+        // bookmark regredir logo após um seek.
+        if (positionOverride !== null) this.pendingPositionOverride = positionOverride;
+
+        if (this.positionFlushTimer) clearTimeout(this.positionFlushTimer);
+
+        this.positionFlushTimer = setTimeout(() => {
+            this.positionFlushTimer = null;
+            this.flushProgress();
+        }, delay);
+    }
+
+    /**
+     * Posição mais fresca disponível: o relógio do adapter (síncrono, com
+     * o seek já aplicado 800ms depois do flush agendado), caindo para o
+     * último timeupdate do tracker quando o adapter não tem valor.
+     */
+    resolveCurrentPosition() {
+        const live = Math.floor(this.adapter?.getCurrentTime() || 0);
+
+        return live > 0 ? live : this.tracker.lastPosition;
+    }
+
+    /**
+     * Último POST antes do adapter/container sumirem (falha do provedor,
+     * teardown, aba escondida): o que foi assistido e ainda não confirmado
+     * não pode morrer no `Set`, e o bookmark de retomada viaja MESMO sem
+     * segundos novos — batch só-de-posição (`segments: []`). Fire-and-forget —
+     * na falha, os intervalos voltam ao pendente do tracker, que morre junto
+     * com o controller; não há o que recuperar.
+     */
+    flushProgress() {
+        if (!this.progressUrl || !this.lessonId || !this.booted) return;
+
+        if (this.positionFlushTimer) {
+            clearTimeout(this.positionFlushTimer);
+            this.positionFlushTimer = null;
+        }
+
+        const durationSeconds = Math.floor(this.adapter?.getDuration() || 0);
+
+        if (durationSeconds <= 0) return;
+
+        const positionSeconds = this.pendingPositionOverride ?? this.resolveCurrentPosition();
+        this.pendingPositionOverride = null;
+
+        const ranges = this.tracker.takePendingRanges();
+        const positionUnreported = positionSeconds !== null
+            && positionSeconds !== this.lastReportedPosition;
+
+        if (ranges.length === 0 && !positionUnreported) return;
+
+        this.lessonPlayer
+            .reportProgress(this.lessonId, ranges, durationSeconds, positionSeconds)
+            .then((data) => this.applyProgressResponse(data, positionSeconds))
+            .catch(() => this.tracker.restore(ranges));
+    }
+
+    /**
+     * @param {string|null} raw JSON `[[start, end], ...]` server-rendered
+     * @returns {Array<[number, number]>}
+     */
+    parseWatchedRanges(raw) {
+        if (!raw) return [];
+
+        try {
+            const parsed = JSON.parse(raw);
+
+            return Array.isArray(parsed) ? parsed : [];
+        } catch (error) {
+            return [];
         }
     }
 
@@ -455,8 +728,10 @@ export class PlayerController {
     }
 
     destroy() {
+        this.flushProgress();
         this.stopProgressPolling();
         if (this.hideTimer) clearTimeout(this.hideTimer);
+        if (this.positionFlushTimer) clearTimeout(this.positionFlushTimer);
         this.adapter?.destroy();
     }
 }

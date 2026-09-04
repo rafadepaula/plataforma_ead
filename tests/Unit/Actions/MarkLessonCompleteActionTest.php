@@ -6,6 +6,7 @@ use App\Actions\MarkLessonCompleteAction;
 use App\Events\LessonMarkedAsCompleted;
 use App\Models\Course;
 use App\Models\Lesson;
+use App\Models\LessonProgress;
 use App\Models\Module;
 use App\Models\Organization;
 use App\Models\User;
@@ -14,9 +15,10 @@ use Tests\TestCase;
 
 /**
  * `MarkLessonCompleteAction` is the single write path for
- * `lesson_progress`: idempotent completion, `GREATEST` watched_seconds,
- * `completed_at` set once, `LessonMarkedAsCompleted` dispatched only on
- * the false -> true transition.
+ * `lesson_progress`: idempotent completion, watched time persisted as the
+ * UNION of played ranges (never `GREATEST` of a playhead), `completed_at`
+ * set once, `LessonMarkedAsCompleted` dispatched only on the false -> true
+ * transition.
  */
 class MarkLessonCompleteActionTest extends TestCase
 {
@@ -80,37 +82,50 @@ class MarkLessonCompleteActionTest extends TestCase
         $this->assertTrue($firstCompletedAt->equalTo($second->completed_at));
     }
 
-    public function test_watched_seconds_is_persisted_as_the_greatest_of_current_and_reported(): void
+    public function test_watched_time_is_persisted_as_the_union_of_played_ranges(): void
     {
         $lesson = $this->makeLesson();
         $user = User::factory()->create();
 
-        (new MarkLessonCompleteAction)->execute($lesson, $user, 'video_threshold', 120);
+        $progress = (new MarkLessonCompleteAction)->execute(
+            $lesson,
+            $user,
+            'video_threshold',
+            [['start' => 0, 'end' => 120]],
+            600,
+        );
 
-        $this->assertDatabaseHas('lesson_progress', [
-            'user_id' => $user->id,
-            'lesson_id' => $lesson->id,
-            'watched_seconds' => 120,
-        ]);
+        $this->assertSame(120, $progress->watched_unique_seconds);
+        $this->assertSame([[0, 120]], $progress->watched_ranges);
+        $this->assertSame(600, $progress->duration_seconds);
 
-        (new MarkLessonCompleteAction)->execute($lesson, $user, 'video_threshold', 50);
+        // A later batch reporting a forward-seeked segment extends the union
+        // instead of inflating it — 0–2min + 8–9min of a 10min video is 3min.
+        $progress = (new MarkLessonCompleteAction)->execute(
+            $lesson,
+            $user,
+            'video_threshold',
+            [['start' => 480, 'end' => 540]],
+            600,
+        );
 
-        $this->assertDatabaseHas('lesson_progress', [
-            'user_id' => $user->id,
-            'lesson_id' => $lesson->id,
-            'watched_seconds' => 120,
-        ]);
+        $this->assertSame(180, $progress->watched_unique_seconds);
+        $this->assertSame([[0, 120], [480, 540]], $progress->watched_ranges);
 
-        (new MarkLessonCompleteAction)->execute($lesson, $user, 'video_threshold', 200);
+        // Replaying an already-covered stretch never double-counts.
+        $progress = (new MarkLessonCompleteAction)->execute(
+            $lesson,
+            $user,
+            'video_threshold',
+            [['start' => 30, 'end' => 90]],
+            600,
+        );
 
-        $this->assertDatabaseHas('lesson_progress', [
-            'user_id' => $user->id,
-            'lesson_id' => $lesson->id,
-            'watched_seconds' => 200,
-        ]);
+        $this->assertSame(180, $progress->watched_unique_seconds);
+        $this->assertSame([[0, 120], [480, 540]], $progress->watched_ranges);
     }
 
-    public function test_manual_completion_without_watched_seconds_leaves_it_null(): void
+    public function test_manual_completion_without_watched_segments_leaves_the_ranges_empty(): void
     {
         $lesson = $this->makeLesson();
         $user = User::factory()->create();
@@ -120,7 +135,15 @@ class MarkLessonCompleteActionTest extends TestCase
         $this->assertDatabaseHas('lesson_progress', [
             'user_id' => $user->id,
             'lesson_id' => $lesson->id,
-            'watched_seconds' => null,
+            'watched_unique_seconds' => 0,
         ]);
+
+        $progress = LessonProgress::query()
+            ->where('user_id', $user->id)
+            ->where('lesson_id', $lesson->id)
+            ->first();
+
+        $this->assertNull($progress->watched_ranges);
+        $this->assertNull($progress->duration_seconds);
     }
 }

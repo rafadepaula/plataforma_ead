@@ -12,20 +12,27 @@ use App\Models\User;
  * `LessonProgressController` (manual click / video threshold, bucket 2)
  * and, eventually, 's `SubmitQuizAttemptAction`.
  *
- * `is_completed` is idempotent (never unset once `true`); `watched_seconds`
- * is persisted as `GREATEST(current, reported)` whenever a value is passed
- * (video lessons only — manual completions call this with `null`);
+ * `is_completed` is idempotent (never unset once `true`); watched seconds
+ * are persisted as the UNION of played intervals
+ * (`LessonProgress::applyWatchedSegments()`) whenever segments are passed
+ * (video lessons only — manual completions call this with `null`), so a
+ * forward seek can never inflate the figure and replay never double-counts;
  * `completed_at` is set on first completion only; `LessonMarkedAsCompleted`
  * is dispatched only on the `false` → `true` transition, never on a
  * repeat/idempotent call.
  */
 class MarkLessonCompleteAction
 {
+    /**
+     * @param  list<array<string, int>>|list<array{0: int, 1: int}>|null  $watchedSegments
+     */
     public function execute(
         Lesson $lesson,
         User $user,
         string $completionSource,
-        ?int $watchedSeconds = null,
+        ?array $watchedSegments = null,
+        ?int $durationSeconds = null,
+        ?int $lastPositionSeconds = null,
     ): LessonProgress {
         $progress = LessonProgress::query()->firstOrNew([
             'user_id' => $user->id,
@@ -34,8 +41,12 @@ class MarkLessonCompleteAction
 
         $wasCompleted = (bool) $progress->is_completed;
 
-        if ($watchedSeconds !== null) {
-            $progress->watched_seconds = max($watchedSeconds, (int) ($progress->watched_seconds ?? 0));
+        if ($watchedSegments !== null) {
+            $progress->applyWatchedSegments($watchedSegments, $durationSeconds);
+        }
+
+        if ($lastPositionSeconds !== null) {
+            $progress->last_position_seconds = $lastPositionSeconds;
         }
 
         $progress->completion_source = $completionSource;

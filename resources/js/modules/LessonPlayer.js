@@ -4,10 +4,12 @@
  * Responsibilities:
  * - Video lessons: mounts a {@link PlayerController} against every
  *   `[data-video-player]` container (click-to-load facade + provider adapter
- *   + overlay controls). The controller polls the adapter every 5s and funnels
- *   { watched_seconds, duration_seconds } through the public test hook
- *   `window.LessonPlayer.reportProgress(lessonId, watched, duration)` — the
- *   deterministic E2E seam (do NOT rename or privatize).
+ *   + overlay controls). The controller samples the seconds actually played
+ *   (WatchTracker — PLAYING only, replay-deduped) and funnels batches of
+ *   `{ duration_seconds, segments: [{start, end}] }` through the public test
+ *   hook `window.LessonPlayer.reportProgress(lessonId, segments, duration)` —
+ *   the deterministic E2E seam (do NOT rename or privatize). The server, not
+ *   the client, derives the percentage from the union of segments.
  * - Manual completion (text, image, PDF): binds click handlers on completion buttons
  *   (`[data-mark-complete-url]`, `[data-action="complete-lesson"]`, `[dusk="mark-complete-button"]`),
  *   POSTs to `lessons.complete`, manages loading state ('Marcando...'), and updates UI.
@@ -147,20 +149,31 @@ export class LessonPlayer {
     }
 
     /**
-     * POSTs watched/duration seconds to `lessons.progress` for the given lesson.
-     * Public test hook and progress reporter seam for E2E tests — driven
-     * directly by the 5s poll (via `PlayerController`) AND by Dusk, which
-     * calls it with no player booted at all; it must never depend on any
-     * adapter existing.
+     * POSTs the batch of played ranges (and the video duration) to
+     * `lessons.progress` for the given lesson. Public test hook and progress
+     * reporter seam for E2E tests — driven directly by the 5s poll (via
+     * `PlayerController`) AND callable with no player booted at all; it must
+     * never depend on any adapter existing.
+     *
+     * @param {string|number} lessonId
+     * @param {Array<[number, number]>} segments intervals `[start, end)` of
+     *   seconds actually replayed — never the playhead position
+     * @param {number} durationSeconds provider-reported video length
+     * @param {number|null} [positionSeconds] current playhead — the resume
+     *   bookmark ("retomar de onde parou"), tracked in ANY state
      */
-    async reportProgress(lessonId, watchedSeconds, durationSeconds) {
+    async reportProgress(lessonId, segments, durationSeconds, positionSeconds = null) {
         const progressUrl = this.resolveProgressUrl(lessonId);
         if (!progressUrl) return;
 
         try {
             const response = await this.httpClient.post(progressUrl, {
-                watched_seconds: Number(watchedSeconds),
                 duration_seconds: Number(durationSeconds),
+                segments: (segments || []).map(([start, end]) => ({
+                    start: Number(start),
+                    end: Number(end),
+                })),
+                position_seconds: positionSeconds === null ? null : Number(positionSeconds),
             });
 
             this.notifiedProgressErrors.delete(String(lessonId));

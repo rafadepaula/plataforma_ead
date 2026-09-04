@@ -160,7 +160,44 @@
 .ds-player-seek {
     flex: 1 1 auto;
     min-width: 60px;
-    accent-color: var(--primary);
+
+    // appearance:none é o que permite o background-image em gradiente que o
+    // `PlayerController.paintWatchedOverlay()` usa para pintar de verde os
+    // intervalos já assistidos (o accent nativo não expõe o trilho). O
+    // trilho é o próprio input; o polegar volta a ser desenhado à mão abaixo.
+    appearance: none;
+    -webkit-appearance: none;
+    height: 6px;
+    padding: 0;
+    border: 0;
+    background-color: color-mix(in srgb, var(--grey-50) 30%, transparent);
+    background-repeat: no-repeat;
+    cursor: pointer;
+
+    &::-webkit-slider-thumb {
+        appearance: none;
+        -webkit-appearance: none;
+        width: 14px;
+        height: 14px;
+        background: var(--surface);
+        border: 2px solid var(--primary);
+        border-radius: var(--radius-pill);
+        box-shadow: var(--elev-1);
+    }
+
+    &::-moz-range-thumb {
+        width: 14px;
+        height: 14px;
+        background: var(--surface);
+        border: 2px solid var(--primary);
+        border-radius: var(--radius-pill);
+        box-shadow: var(--elev-1);
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--primary);
+        outline-offset: 2px;
+    }
 }
 
 .ds-player-volume {

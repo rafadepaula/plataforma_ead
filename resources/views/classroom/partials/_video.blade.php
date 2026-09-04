@@ -7,6 +7,15 @@
      * escrita com 403 e a tela viraria uma fila de toasts de erro a cada 5s.
      */
     $pollsProgress = $videoId !== null && ($tracksProgress ?? true);
+
+    // Estado assistido server-rendered: pinta o overlay do seek e o
+    // indicador de % antes do primeiro POST do player.
+    $watchedRanges = $watchedRanges ?? [];
+    $durationForPercent = (int) ($durationSeconds ?? 0);
+    $watchedUnique = (int) ($watchedSeconds ?? 0);
+    $watchedPercent = $durationForPercent > 0
+        ? (int) round(min(100, ($watchedUnique / $durationForPercent) * 100))
+        : 0;
 @endphp
 
 <div class="ds-player ds-ratio ds-ratio-16x9 mb-4"
@@ -21,6 +30,11 @@
          data-provider="{{ $lesson->video_provider }}"
          data-video-id="{{ $videoId }}"
          data-video-embed="{{ $embedUrl }}"
+         {{-- "Retomar de onde parou": o PLAYHEAD da última sessão. --}}
+         data-resume-seconds="{{ $resumeSeconds ?? 0 }}"
+         {{-- Intervalos já assistidos (união do servidor) para o overlay verde do seek. --}}
+         data-watched-ranges="{{ json_encode($watchedRanges) }}"
+         data-duration-seconds="{{ $durationForPercent > 0 ? $durationForPercent : '' }}"
          @if($pollsProgress) data-progress-url="{{ route('lessons.progress', $lesson) }}" @endif
      @endif
 >
@@ -122,6 +136,31 @@
         </div>
     @endif
 </div>
+
+{{--
+    Indicador de consumo à direita do vídeo: % único assistido (a união dos
+    intervalos, não o playhead) e o threshold de 90% que declara o vídeo
+    assistido. `data-watch-progress` é o hook do `PlayerController`, que
+    reescreve barra e rótulo a cada resposta do endpoint de progresso.
+--}}
+@if($pollsProgress)
+    <div class="d-flex align-items-center justify-content-end gap-2 mt-2"
+         data-watch-progress
+         data-lesson-id="{{ $lesson->id }}">
+        <span class="small text-body-secondary" data-watch-progress-text>
+            {{ $watchedPercent }}% assistido · 90% necessário para concluir
+        </span>
+        <div class="w-25">
+            <x-ui.progress
+                :value="$watchedUnique"
+                :max="$durationForPercent > 0 ? $durationForPercent : 100"
+                variant="success"
+                :height="4"
+                label="Percentual do vídeo assistido"
+            />
+        </div>
+    </div>
+@endif
 
 {{--
     Só o vídeo reconhecido conclui sozinho a 90%. Sem id de vídeo não existe
