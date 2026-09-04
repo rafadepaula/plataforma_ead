@@ -33,10 +33,16 @@ class QuizAttemptPolicy
         return $attempt->quiz->lesson->module->course()->withoutGlobalScopes()->firstOrFail();
     }
 
+    /**
+     * Admin: unrestricted. Gestor: only within their own Org. Professor
+     * atribuído: pode ver/corrigir tentativas somente dos cursos a ele
+     * atribuídos (`User::teaches()` — a pivot é o único filtro, mesmo
+     * dentro da própria Organização).
+     */
     protected function authorizeForCourse(User $user, Course $course): bool
     {
         if (! $user->hasAnyRole([RolesEnum::ADMIN->value, RolesEnum::GESTOR->value])) {
-            return false;
+            return $user->hasRole(RolesEnum::PROFESSOR->value) && $user->teaches($course);
         }
 
         if ($user->hasRole(RolesEnum::GESTOR->value) && (int) $user->org_id !== (int) $course->org_id) {

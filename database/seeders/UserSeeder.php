@@ -58,6 +58,23 @@ class UserSeeder extends Seeder
             if (! $aluno->hasRole(RolesEnum::ALUNO->value)) {
                 $aluno->assignRole(RolesEnum::ALUNO->value);
             }
+
+            $professor = User::firstOrCreate(
+                ['email' => 'professor.ligacerto@plataforma.com'],
+                [
+                    'name' => 'Professor Liga Certo',
+                    'password' => Hash::make('password'),
+                    'org_id' => $ligaCerto?->id,
+                    'cpf' => '333.333.333-33',
+                    'status' => 'active',
+                ]
+            );
+            if (! $professor->email_verified_at) {
+                $professor->forceFill(['email_verified_at' => now()])->save();
+            }
+            if (! $professor->hasRole(RolesEnum::PROFESSOR->value)) {
+                $professor->assignRole(RolesEnum::PROFESSOR->value);
+            }
         });
     }
 }

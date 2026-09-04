@@ -15,12 +15,17 @@ class UserHomeResolver
 {
     /**
      * Resolve the role-specific home URL for the given user.
-     * Admin/Gestor -> admin.dashboard, Aluno -> student.courses.index, fallback /.
+     * Admin/Gestor -> admin.dashboard, Professor -> professor.dashboard,
+     * Aluno -> student.courses.index, fallback /.
      */
     public function resolve(User $user): string
     {
         if ($user->hasAnyRole([RolesEnum::ADMIN->value, RolesEnum::GESTOR->value])) {
             return Route::has('admin.dashboard') ? route('admin.dashboard') : '/';
+        }
+
+        if ($user->hasRole(RolesEnum::PROFESSOR->value)) {
+            return Route::has('professor.dashboard') ? route('professor.dashboard') : '/';
         }
 
         return Route::has('student.courses.index') ? route('student.courses.index') : '/';

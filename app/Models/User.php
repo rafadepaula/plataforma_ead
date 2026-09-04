@@ -88,6 +88,7 @@ class User extends Authenticatable
             RolesEnum::ADMIN->value => 'Admin',
             RolesEnum::GESTOR->value => 'Gestor',
             RolesEnum::ALUNO->value => 'Aluno',
+            RolesEnum::PROFESSOR->value => 'Professor',
             default => 'Membro',
         });
     }
@@ -119,6 +120,36 @@ class User extends Authenticatable
             ->using(CourseUser::class)
             ->withPivot(['enrolled_at', 'status', 'progress_percentage', 'completed_at', 'expires_at'])
             ->withTimestamps();
+    }
+
+    /**
+     * Courses this Professor is explicitly assigned to teach via the
+     * `course_professor` pivot. Mirrors `courses()`'s pivot conventions
+     * (`courses.org_id` is the tenant boundary; the pivot row itself is
+     * the access boundary — same-org-without-assignment is still 403).
+     *
+     * @return BelongsToMany<Course, $this>
+     */
+    public function taughtCourses(): BelongsToMany
+    {
+        return $this->belongsToMany(Course::class, 'course_professor')
+            ->withPivot(['assigned_by'])
+            ->withTimestamps();
+    }
+
+    /**
+     * The canonical "can this staff account act on `$course` as its
+     * teacher?" helper — the ONLY place that consults the `course_professor`
+     * pivot for access decisions. Policies (`ModulePolicy`,
+     * `LessonPolicy`, `QuizAttemptPolicy`, `ForumTopicPolicy`,
+     * `ForumReplyPolicy`) and `EnsureStudentIsEnrolled` branch on it
+     * instead of duplicating the query.
+     */
+    public function teaches(Course $course): bool
+    {
+        return $this->taughtCourses()
+            ->wherePivot('course_id', $course->id)
+            ->exists();
     }
 
     /**

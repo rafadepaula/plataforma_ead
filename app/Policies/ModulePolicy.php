@@ -60,11 +60,16 @@ class ModulePolicy
      * Role check identical to `CoursePolicy`, plus an explicit
      * `org_id` comparison for a Gestor — `Module` has no `OrgScope` to
      * fall back on, so this must be verified here rather than assumed.
+     *
+     * An assigned Professor gets full content authoring on the Course's
+     * modules (`User::teaches()` being the single source of that
+     * assignment) — but never the Course's own metadata, which stays
+     * `CoursePolicy`-gated (`courses.edit` remains 403 to them).
      */
     protected function authorizeForCourse(User $user, Course $course): bool
     {
         if (! $user->hasAnyRole([RolesEnum::ADMIN->value, RolesEnum::GESTOR->value])) {
-            return false;
+            return $user->hasRole(RolesEnum::PROFESSOR->value) && $user->teaches($course);
         }
 
         if ($user->hasRole(RolesEnum::GESTOR->value) && (int) $user->org_id !== (int) $course->org_id) {

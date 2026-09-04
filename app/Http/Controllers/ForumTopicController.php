@@ -65,7 +65,7 @@ class ForumTopicController extends Controller
             'course' => $courseModel,
             'topics' => $topics,
             'canCreateTopic' => (bool) $user->can('create', [ForumTopic::class, $courseModel]),
-            'canPin' => $this->isGestorOrAdminForCourse($user, $courseModel),
+            'canPin' => $this->canModerateCourse($user, $courseModel),
         ]);
     }
 
@@ -144,7 +144,7 @@ class ForumTopicController extends Controller
             'canEditTopic' => (bool) $user->can('update', $topicModel),
             'canDeleteTopic' => (bool) $user->can('delete', $topicModel),
             'canPin' => (bool) $user->can('pin', $topicModel),
-            'canModerate' => $this->isGestorOrAdminForCourse($user, $courseModel),
+            'canModerate' => $this->canModerateCourse($user, $courseModel),
             'lastReplyId' => (int) ($replies->max('id') ?? 0),
         ]);
     }
@@ -210,6 +210,22 @@ class ForumTopicController extends Controller
             ->withoutGlobalScope('org')
             ->where('course_id', $course->id)
             ->findOrFail($topic);
+    }
+
+    /**
+     * Moderation flag for the forum views (`canPin`/`canModerate`):
+     * Admin → true; Gestor same-org → true; Professor atribuído → true
+     * (`User::teaches()`), mirroring `ForumTopicPolicy::canModerateCourse()`
+     * — the views' pin/moderation buttons light up for whoever the
+     * policies would actually authorize, so no dead button renders.
+     */
+    protected function canModerateCourse(User $user, Course $course): bool
+    {
+        if ($this->isGestorOrAdminForCourse($user, $course)) {
+            return true;
+        }
+
+        return $user->hasRole(RolesEnum::PROFESSOR->value) && $user->teaches($course);
     }
 
     protected function isGestorOrAdminForCourse(User $user, Course $course): bool

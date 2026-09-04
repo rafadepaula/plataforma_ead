@@ -29,7 +29,7 @@ class ForumTopicPolicy
 
     public function create(User $user, Course $course): bool
     {
-        return $this->hasCourseAccess($user, $course);
+        return $this->canCreateInCourse($user, $course);
     }
 
     public function update(User $user, ForumTopic $topic): bool
@@ -38,7 +38,7 @@ class ForumTopicPolicy
             return true;
         }
 
-        return $this->isGestorOrAdminForCourse($user, $this->parentCourse($topic));
+        return $this->canModerateCourse($user, $this->parentCourse($topic));
     }
 
     public function delete(User $user, ForumTopic $topic): bool
@@ -48,7 +48,7 @@ class ForumTopicPolicy
 
     public function pin(User $user, ForumTopic $topic): bool
     {
-        return $this->isGestorOrAdminForCourse($user, $this->parentCourse($topic));
+        return $this->canModerateCourse($user, $this->parentCourse($topic));
     }
 
     /**
@@ -64,20 +64,52 @@ class ForumTopicPolicy
     }
 
     /**
-     * Admin: unrestricted. Gestor: only within their own Org. Aluno:
-     * only with an active/completed enrollment in the Course .
+     * READ access to a Course's forum. Admin: unrestricted. Gestor: only
+     * within their own Org. Professor atribuído: leitura liberada
+     * (`User::teaches()` — visualizar é parte do papel docente).
+     * Aluno: only with an active/completed enrollment in the Course.
      */
     protected function hasCourseAccess(User $user, Course $course): bool
     {
-        if ($user->hasRole(RolesEnum::ADMIN->value)) {
+        if ($this->isGestorOrAdminForCourse($user, $course)) {
             return true;
         }
 
-        if ($user->hasRole(RolesEnum::GESTOR->value)) {
-            return (int) $user->org_id === (int) $course->org_id;
+        if ($user->hasRole(RolesEnum::PROFESSOR->value)) {
+            return $user->teaches($course);
         }
 
         return $user->hasActiveOrCompletedEnrollment($course);
+    }
+
+    /**
+     * WRITE access (posting a new topic): deliberately NARROWER than
+     * {@see self::hasCourseAccess()} — a Professor visualiza e modera,
+     * mas não cria tópicos (evolução futura deliberada). Gestor/Admin e
+     * Aluno matriculado mantêm o comportamento de sempre.
+     */
+    protected function canCreateInCourse(User $user, Course $course): bool
+    {
+        if ($this->isGestorOrAdminForCourse($user, $course)) {
+            return true;
+        }
+
+        return $user->hasActiveOrCompletedEnrollment($course);
+    }
+
+    /**
+     * Moderation over OTHERS' posts: Admin → true; Gestor same-org →
+     * true; Professor atribuído → true. Feeds `update`/`delete` of
+     * foreign posts and `pin` — the same actions the two staff roles
+     * already had, now shared with the assigned docente.
+     */
+    protected function canModerateCourse(User $user, Course $course): bool
+    {
+        if ($this->isGestorOrAdminForCourse($user, $course)) {
+            return true;
+        }
+
+        return $user->hasRole(RolesEnum::PROFESSOR->value) && $user->teaches($course);
     }
 
     protected function isGestorOrAdminForCourse(User $user, Course $course): bool

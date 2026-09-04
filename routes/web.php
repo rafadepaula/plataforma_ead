@@ -6,6 +6,7 @@ use App\Http\Controllers\CertificateController;
 use App\Http\Controllers\ClassroomController;
 use App\Http\Controllers\CourseCompletionRuleController;
 use App\Http\Controllers\CourseController;
+use App\Http\Controllers\CourseProfessorController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EnrollmentController;
 use App\Http\Controllers\EssayGradingController;
@@ -13,6 +14,7 @@ use App\Http\Controllers\ForumModerationController;
 use App\Http\Controllers\ForumReplyController;
 use App\Http\Controllers\ForumReportController;
 use App\Http\Controllers\ForumTopicController;
+use App\Http\Controllers\GestorProfessorController;
 use App\Http\Controllers\GestorStudentController;
 use App\Http\Controllers\ImpersonateOrgController;
 use App\Http\Controllers\InvitationController;
@@ -25,6 +27,8 @@ use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\PasswordController;
+use App\Http\Controllers\ProfessorCourseController;
+use App\Http\Controllers\ProfessorDashboardController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicCertificateController;
 use App\Http\Controllers\QuizController;
@@ -110,13 +114,38 @@ Route::middleware(['auth', 'role:gestor'])->group(function (): void {
     Route::get('gestor/students/{user}/edit', [GestorStudentController::class, 'edit'])->name('gestor.students.edit');
     Route::put('gestor/students/{user}', [GestorStudentController::class, 'update'])->name('gestor.students.update');
     Route::delete('gestor/students/{user}', [GestorStudentController::class, 'destroy'])->name('gestor.students.destroy');
+
+    //  the Gestor's exclusive Professor directory:
+    // creates/edits/deletes the `professor` accounts of their own
+    // Organization (`gestor.professors.*`, see `GestorProfessorController`).
+    // Distinct from the Admin-only `admin.users.*` cross-org screen by the
+    // same middleware-first boundary that separates `gestor.students.*`
+    // from `users.*`. Assigning a Professor to a Course lives on the
+    // Course side (`courses.professors.*` below), never here.
+    Route::get('gestor/professors', [GestorProfessorController::class, 'index'])->name('gestor.professors.index');
+    Route::get('gestor/professors/create', [GestorProfessorController::class, 'create'])->name('gestor.professors.create');
+    Route::post('gestor/professors', [GestorProfessorController::class, 'store'])->name('gestor.professors.store');
+    Route::get('gestor/professors/{user}/edit', [GestorProfessorController::class, 'edit'])->name('gestor.professors.edit');
+    Route::put('gestor/professors/{user}', [GestorProfessorController::class, 'update'])->name('gestor.professors.update');
+    Route::delete('gestor/professors/{user}', [GestorProfessorController::class, 'destroy'])->name('gestor.professors.destroy');
 });
 
-// Course/Module/Lesson CRUD + AJAX reorder,
-// restricted to Admin/Gestor (see the `courses-conventions` skill).
+// Course CRUD, restricted to Admin/Gestor (see the `courses-conventions`
+// skill). Deliberately SEPARATE from the Module/Lesson block below: an
+// assigned Professor authors the Course's content (modules/lessons) but
+// never its metadata (`courses.edit` stays 403 to them).
 Route::middleware(['auth', 'role:admin|gestor'])->group(function (): void {
     Route::resource('courses', CourseController::class)->except(['show']);
+});
 
+// Module/Lesson content CRUD + AJAX reorder. `role:admin|gestor|professor`
+// since the Professor role: a Professor assigned to the Course
+// (`User::teaches()`, enforced by `ModulePolicy`/`LessonPolicy`
+// `authorizeForCourse()`) creates/edits/deletes/reorders its modules and
+// lessons on the same screens the Gestor uses — the middleware only widens
+// reachability, the policies keep non-assigned professors (and everyone
+// else) out.
+Route::middleware(['auth', 'role:admin|gestor|professor'])->group(function (): void {
     Route::post('courses/{course}/modules/reorder', [ModuleController::class, 'reorder'])
         ->name('modules.reorder');
     Route::resource('courses.modules', ModuleController::class)->shallow()->except(['show']);
@@ -151,10 +180,14 @@ Route::middleware(['auth', 'role:admin|gestor'])->group(function (): void {
         ->name('quiz-questions.update');
     Route::delete('quiz-questions/{quiz_question}', [QuizQuestionController::class, 'destroy'])
         ->name('quiz-questions.destroy');
+});
 
-    // the Gestor's pending manual-grading queue + grade
-    // action, gated by `QuizAttemptPolicy` rather than a Course/Module
-    // /Lesson route parameter.
+// the pending manual-grading queue + grade action, in its own
+// `role:admin|gestor|professor` group: the same queue serves Admin/Gestor
+// (their whole Org) and the Professor (only the Courses assigned to them —
+// see `EssayGradingController::pending()`), with the per-attempt scope
+// staying on `QuizAttemptPolicy::authorizeForCourse()`.
+Route::middleware(['auth', 'role:admin|gestor|professor'])->group(function (): void {
     Route::get('quiz-attempts/pending', [EssayGradingController::class, 'pending'])->name('quiz-attempts.pending');
     Route::get('quiz-attempts/{quizAttempt}', [EssayGradingController::class, 'show'])->name('quiz-attempts.show');
     Route::post('quiz-attempts/{quizAttempt}/grade', [EssayGradingController::class, 'grade'])->name('quiz-attempts.grade');
@@ -235,6 +268,21 @@ Route::middleware(['auth', 'role:admin|gestor'])->group(function (): void {
         ->name('courses.enrollments.destroy');
     Route::post('courses/{course}/enrollments/{user}/restore', [EnrollmentController::class, 'restore'])
         ->name('courses.enrollments.restore');
+
+    //  per-course Professor assignment panel (`courses.professors.*`),
+    // modeled on the `courses.enrollments.*` block immediately above:
+    // pivot-only (`course_professor`, no model/policy), nested under
+    // `{course}` and authorized against the parent `Course` via
+    // `CoursePolicy::update`. NOT enrollment — attaching here never
+    // touches `course_user`. Who assigns: the Gestor of the Course's own
+    // Organization, or an Admin impersonating it (a context-unresolved
+    // Admin is already rejected by `Course`'s `OrgScope` on the binding).
+    Route::get('courses/{course}/professors', [CourseProfessorController::class, 'index'])
+        ->name('courses.professors.index');
+    Route::post('courses/{course}/professors', [CourseProfessorController::class, 'store'])
+        ->name('courses.professors.store');
+    Route::delete('courses/{course}/professors/{user}', [CourseProfessorController::class, 'destroy'])
+        ->name('courses.professors.destroy');
 });
 
 // public, unauthenticated Smart Invitation flow: a
@@ -264,6 +312,19 @@ Route::middleware('guest')->group(function (): void {
 // `StudentCourseController`).
 Route::middleware(['auth', 'role:aluno'])->group(function (): void {
     Route::get('meus-cursos', [StudentCourseController::class, 'index'])->name('student.courses.index');
+});
+
+// the Professor role's own surfaces: the post-login
+// dashboard and the "Meus Cursos" listing of courses assigned to them
+// (`role:professor`, own controllers — see
+// `ProfessorDashboardController`/`ProfessorCourseController`). Content
+// management, grading and forum moderation are NOT here: they reuse the
+// Admin/Gestor routes widened to `role:admin|gestor|professor` elsewhere
+// in this file, with the per-course scope enforced by the policies
+// (`User::teaches()`).
+Route::middleware(['auth', 'role:professor'])->group(function (): void {
+    Route::get('professor/dashboard', [ProfessorDashboardController::class, 'index'])->name('professor.dashboard');
+    Route::get('professor/courses', [ProfessorCourseController::class, 'index'])->name('professor.courses.index');
 });
 
 // the student-facing classroom/lesson/progress routes,
@@ -321,12 +382,15 @@ Route::middleware(['auth', 'student.enrolled'])->prefix('courses/{course}/forum'
     Route::post('/report', [ForumReportController::class, 'store'])->name('forum-reports.store');
 });
 
-// Gestor/Admin-only forum moderation: the direct
-// pin toggle (independent of any report) and the pending-report queue's
-// dismiss/remove actions, restricted to `role:admin|gestor` rather than
-// `student.enrolled` (mirrors `quiz-attempts.pending`'s same role-gated,
+// Forum moderation: the direct pin toggle
+// (independent of any report) and the pending-report queue's
+// dismiss/remove actions. `role:admin|gestor|professor` — the assigned
+// Professor moderates exactly the forums of the Courses they teach (the
+// queue revalidates each `postable()` with the policies, whose
+// professor-atribuído read/delete branches scope it) rather than
+// `student.enrolled` (mirrors `quiz-attempts.pending`'s role-gated,
 // Policy-scoped-within-the-controller convention above).
-Route::middleware(['auth', 'role:admin|gestor'])->group(function (): void {
+Route::middleware(['auth', 'role:admin|gestor|professor'])->group(function (): void {
     Route::post('courses/{course}/forum/topics/{topic}/pin', [ForumTopicController::class, 'pin'])
         ->name('forum.pin');
 

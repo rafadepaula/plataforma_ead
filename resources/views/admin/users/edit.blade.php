@@ -57,7 +57,7 @@
                             name="role"
                             label="Papel"
                             required
-                            :options="['admin' => 'Administrador', 'gestor' => 'Gestor', 'aluno' => 'Aluno']"
+                            :options="['admin' => 'Administrador', 'gestor' => 'Gestor', 'aluno' => 'Aluno', 'professor' => 'Professor']"
                             :selected="old('role', $user->getRoleNames()->first())"
                             dusk="admin-user-role-select"
                         />

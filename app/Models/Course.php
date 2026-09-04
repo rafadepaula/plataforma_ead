@@ -82,6 +82,22 @@ class Course extends Model
     }
 
     /**
+     * Professors explicitly assigned to this Course via the
+     * `course_professor` pivot. Not enrollments (`course_user` is
+     * untouched — no progress, no `hasActiveEnrollments()` impact, no row
+     * in the Gestor's alunos column); the pivot row is the access
+     * boundary checked by `User::teaches()`.
+     *
+     * @return BelongsToMany<User, $this>
+     */
+    public function professors(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'course_professor')
+            ->withPivot(['assigned_by'])
+            ->withTimestamps();
+    }
+
+    /**
      * @return HasMany<InvitationLink, $this>
      */
     public function invitationLinks(): HasMany

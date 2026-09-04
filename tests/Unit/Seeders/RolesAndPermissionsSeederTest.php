@@ -8,22 +8,22 @@ use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 /**
- * seeds exactly the 3 fundamental, global (non-team-scoped)
+ * seeds exactly the 4 fundamental, global (non-team-scoped)
  * roles backing `RolesEnum`.
  */
 class RolesAndPermissionsSeederTest extends TestCase
 {
-    public function test_it_creates_exactly_the_three_fundamental_roles(): void
+    public function test_it_creates_exactly_the_four_fundamental_roles(): void
     {
         // The `create_permission_tables` migration already seeds these
         // roles as part of `RefreshDatabase`; assert the seeder is
         // idempotent (`findOrCreate`) and the end result is still exactly
-        // the 3 fundamental roles.
+        // the 4 fundamental roles.
         (new RolesAndPermissionsSeeder)->run();
 
         $roleNames = Role::query()->pluck('name')->sort()->values()->all();
 
-        $this->assertSame(['admin', 'aluno', 'gestor'], $roleNames);
+        $this->assertSame(['admin', 'aluno', 'gestor', 'professor'], $roleNames);
     }
 
     public function test_running_the_seeder_twice_does_not_duplicate_roles(): void
@@ -31,7 +31,7 @@ class RolesAndPermissionsSeederTest extends TestCase
         (new RolesAndPermissionsSeeder)->run();
         (new RolesAndPermissionsSeeder)->run();
 
-        $this->assertSame(3, Role::query()->count());
+        $this->assertSame(4, Role::query()->count());
     }
 
     public function test_every_rolesenum_case_has_a_matching_seeded_role(): void

@@ -104,6 +104,7 @@
                     <option value="admin" @selected(request('role') === 'admin')>Administrador</option>
                     <option value="gestor" @selected(request('role') === 'gestor')>Gestor</option>
                     <option value="aluno" @selected(request('role') === 'aluno')>Aluno</option>
+                    <option value="professor" @selected(request('role') === 'professor')>Professor</option>
                 </x-ui.select>
             </div>
 

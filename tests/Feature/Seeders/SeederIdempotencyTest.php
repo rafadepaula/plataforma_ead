@@ -40,7 +40,7 @@ class SeederIdempotencyTest extends TestCase
         // Test RolesAndPermissionsSeeder idempotency
         $this->artisan('db:seed', ['--class' => 'RolesAndPermissionsSeeder'])->assertExitCode(0);
         $this->artisan('db:seed', ['--class' => 'RolesAndPermissionsSeeder'])->assertExitCode(0);
-        $this->assertSame(3, Role::count());
+        $this->assertSame(4, Role::count());
 
         // Test AdminSeeder idempotency
         $this->artisan('db:seed', ['--class' => 'AdminSeeder'])->assertExitCode(0);

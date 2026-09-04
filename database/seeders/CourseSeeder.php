@@ -79,6 +79,16 @@ class CourseSeeder extends Seeder
                 $aluno->id => ['enrolled_at' => now(), 'status' => 'active', 'progress_percentage' => 0],
             ]);
         }
+
+        //  o Professor demo é atribuído ao curso de demonstração
+        // (pivot `course_professor`), para o login
+        // `professor.ligacerto@plataforma.com` já cair num cenário com
+        // curso, fórum e fila de correção.
+        $professor = User::where('email', 'professor.ligacerto@plataforma.com')->first();
+
+        if ($professor) {
+            $course->professors()->syncWithoutDetaching([$professor->id => ['assigned_by' => null]]);
+        }
     }
 
     /**

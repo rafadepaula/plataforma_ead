@@ -42,7 +42,7 @@ final class NavigationRegistry
      * is "Meus Cursos" — the old "Aprendizado" grouping died when each
      * enrollment became its own block .
      */
-    private const SECTION_ORDER = ['Administração', 'Impersonate', 'Meus Cursos'];
+    private const SECTION_ORDER = ['Administração', 'Impersonate', 'Ensino', 'Meus Cursos'];
 
     /**
      *  the "am I impersonating?" rule is shared with the topbar
@@ -114,6 +114,20 @@ final class NavigationRegistry
                 label: 'Alunos',
                 route: 'gestor.students.index',
                 activePatterns: ['gestor.students.*'],
+                icon: $this->usersIcon(),
+                roles: ['gestor'],
+                section: 'Administração',
+            ),
+            //  the Gestor's exclusive Professor directory
+            // (`gestor.professors.*`, `role:gestor`) — the Docente
+            // counterpart of the `students` item above. Course
+            // ASSIGNMENT is not done here (that lives on the Course's
+            // own management screens, `courses.professors.*`).
+            new NavigationItem(
+                key: 'professors',
+                label: 'Professores',
+                route: 'gestor.professors.index',
+                activePatterns: ['gestor.professors.*'],
                 icon: $this->usersIcon(),
                 roles: ['gestor'],
                 section: 'Administração',
@@ -233,6 +247,53 @@ final class NavigationRegistry
             // generalist sidebar entry exists: it is reached from within
             // the classroom (`classroom.show`), where the `{course}`
             // context is unambiguous.
+
+            // ── Ensino (Professor) ──────────────────────────────────
+            //
+            //  the 4th role's own surfaces. "Correções" and
+            // "Moderação do Fórum" reuse the SAME routes as the
+            // Administração items above (`quiz-attempts.pending` /
+            // `forum-moderation.index`) — one route, two audiences — so
+            // these extra entries exist only to give the Professor its
+            // own section, dusk selectors and labels; the Administração
+            // items' `roles` stay untouched. The per-course scope is the
+            // pivot (`User::teaches()`), enforced by the policies.
+            new NavigationItem(
+                key: 'professor-dashboard',
+                label: 'Dashboard',
+                route: 'professor.dashboard',
+                activePatterns: ['professor.dashboard'],
+                icon: $this->dashboardIcon(),
+                roles: ['professor'],
+                section: 'Ensino',
+            ),
+            new NavigationItem(
+                key: 'professor-courses',
+                label: 'Meus Cursos',
+                route: 'professor.courses.index',
+                activePatterns: ['professor.courses.*'],
+                icon: $this->bookIcon(),
+                roles: ['professor'],
+                section: 'Ensino',
+            ),
+            new NavigationItem(
+                key: 'professor-grading',
+                label: 'Correções',
+                route: 'quiz-attempts.pending',
+                activePatterns: ['quiz-attempts.*'],
+                icon: $this->clipboardIcon(),
+                roles: ['professor'],
+                section: 'Ensino',
+            ),
+            new NavigationItem(
+                key: 'professor-moderation',
+                label: 'Moderação do Fórum',
+                route: 'forum-moderation.index',
+                activePatterns: ['forum-moderation.*'],
+                icon: $this->shieldIcon(),
+                roles: ['professor'],
+                section: 'Ensino',
+            ),
         ];
     }
 

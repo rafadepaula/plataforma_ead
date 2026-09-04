@@ -26,7 +26,7 @@ class ForumReplyPolicy
 
     public function create(User $user, ForumTopic $topic): bool
     {
-        return $this->hasCourseAccess($user, $this->parentTopicCourse($topic));
+        return $this->canCreateInCourse($user, $this->parentTopicCourse($topic));
     }
 
     public function update(User $user, ForumReply $reply): bool
@@ -35,7 +35,7 @@ class ForumReplyPolicy
             return true;
         }
 
-        return $this->isGestorOrAdminForCourse($user, $this->parentCourse($reply));
+        return $this->canModerateCourse($user, $this->parentCourse($reply));
     }
 
     public function delete(User $user, ForumReply $reply): bool
@@ -63,20 +63,49 @@ class ForumReplyPolicy
     }
 
     /**
-     * Admin: unrestricted. Gestor: only within their own Org. Aluno:
-     * only with an active/completed enrollment in the Course .
+     * READ access to the reply. Admin: unrestricted. Gestor: only within
+     * their own Org. Professor atribuído: leitura liberada
+     * (`User::teaches()`). Aluno: only with an active/completed
+     * enrollment in the Course.
      */
     protected function hasCourseAccess(User $user, Course $course): bool
     {
-        if ($user->hasRole(RolesEnum::ADMIN->value)) {
+        if ($this->isGestorOrAdminForCourse($user, $course)) {
             return true;
         }
 
-        if ($user->hasRole(RolesEnum::GESTOR->value)) {
-            return (int) $user->org_id === (int) $course->org_id;
+        if ($user->hasRole(RolesEnum::PROFESSOR->value)) {
+            return $user->teaches($course);
         }
 
         return $user->hasActiveOrCompletedEnrollment($course);
+    }
+
+    /**
+     * WRITE access (posting a reply): deliberately NARROWER than
+     * {@see self::hasCourseAccess()} — a Professor visualiza e modera,
+     * mas não responde (evolução futura deliberada).
+     */
+    protected function canCreateInCourse(User $user, Course $course): bool
+    {
+        if ($this->isGestorOrAdminForCourse($user, $course)) {
+            return true;
+        }
+
+        return $user->hasActiveOrCompletedEnrollment($course);
+    }
+
+    /**
+     * Moderation over OTHERS' replies: Admin → true; Gestor same-org →
+     * true; Professor atribuído → true (via `User::teaches()`).
+     */
+    protected function canModerateCourse(User $user, Course $course): bool
+    {
+        if ($this->isGestorOrAdminForCourse($user, $course)) {
+            return true;
+        }
+
+        return $user->hasRole(RolesEnum::PROFESSOR->value) && $user->teaches($course);
     }
 
     protected function isGestorOrAdminForCourse(User $user, Course $course): bool

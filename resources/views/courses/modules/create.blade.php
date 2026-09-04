@@ -1,8 +1,16 @@
 @extends('layouts.app')
 
+@php
+    // mesma gestão de conteúdo atende Admin/Gestor e Professor atribuído
+    // — a raiz do breadcrumb aponta para a home de quem está logado.
+    $coursesRoot = auth()->user()?->hasRole('professor')
+        ? ['label' => 'Meus Cursos', 'url' => route('professor.courses.index')]
+        : ['label' => 'Cursos', 'url' => route('courses.index')];
+@endphp
+
 @section('content')
     <x-layout.page-header
-        :breadcrumb="[['label' => 'Cursos', 'url' => route('courses.index')], ['label' => $course->title, 'url' => route('courses.modules.index', $course)], ['label' => 'Novo Módulo']]"
+        :breadcrumb="[$coursesRoot, ['label' => $course->title, 'url' => route('courses.modules.index', $course)], ['label' => 'Novo Módulo']]"
         :kicker="$course->title"
         title="Novo Módulo"
         subtitle="Módulos agrupam as lições na ordem em que o aluno vai percorrer o curso."

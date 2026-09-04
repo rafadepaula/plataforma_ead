@@ -92,4 +92,19 @@ class UserFactory extends Factory
             $user->assignRole(RolesEnum::GESTOR->value);
         });
     }
+
+    /**
+     *  assign the `professor` Spatie role after creation. A professor
+     * belongs to exactly one Organization (same rule as `gestor`); one is
+     * auto-created if not already set. Course assignments are NOT made
+     * here — tests attach them explicitly through `Course::professors()`.
+     */
+    public function professor(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'org_id' => $attributes['org_id'] ?? Organization::factory(),
+        ])->afterCreating(function (User $user): void {
+            $user->assignRole(RolesEnum::PROFESSOR->value);
+        });
+    }
 }

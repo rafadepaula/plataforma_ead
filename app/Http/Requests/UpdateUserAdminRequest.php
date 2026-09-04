@@ -12,7 +12,7 @@ use Illuminate\Validation\Rule;
  * validates the full-profile edit on the global Admin
  * user-management screen (`admin.users.update`). Unlike
  * {@see UpdateUserRequest} (the operational `users.update` counterpart):
- *  - `role` allows all 3 {@see RolesEnum} values, not just aluno/gestor;
+ *  - `role` allows all 4 {@see RolesEnum} values, not just aluno/gestor;
  *  - `org_id` is editable (this is the cross-org "full profile" editor),
  *    required whenever `role` is not `admin` (an admin has no
  *    Organization), forbidden/nullable when it is.
@@ -61,6 +61,7 @@ class UpdateUserAdminRequest extends FormRequest
                 RolesEnum::ADMIN->value,
                 RolesEnum::GESTOR->value,
                 RolesEnum::ALUNO->value,
+                RolesEnum::PROFESSOR->value,
             ])],
             'org_id' => [
                 Rule::requiredIf(fn () => $this->input('role') !== RolesEnum::ADMIN->value),

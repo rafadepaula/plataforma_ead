@@ -41,13 +41,15 @@ class DatabaseSeederDevelopmentTest extends TestCase
         Mail::assertNothingSent();
         Notification::assertNothingSent();
 
-        // 1. One organization, its organizer and its single student
-        //    (plus the global Super Admin from the baseline seeders).
+        // 1. One organization, its organizer, its single student and its
+        //    professor (plus the global Super Admin from the baseline
+        //    seeders).
         $this->assertSame(1, Organization::query()->count());
         $this->assertSame('Liga Certo', Organization::query()->first()->name);
-        $this->assertSame(3, User::query()->count());
+        $this->assertSame(4, User::query()->count());
         $this->assertSame(1, User::query()->where('email', 'gestor.ligacerto@plataforma.com')->count());
         $this->assertSame(1, User::query()->where('email', 'aluno.ligacerto@plataforma.com')->count());
+        $this->assertSame(1, User::query()->where('email', 'professor.ligacerto@plataforma.com')->count());
 
         // 2. One course with exactly three modules.
         $course = Course::query()->withoutGlobalScopes()->sole();

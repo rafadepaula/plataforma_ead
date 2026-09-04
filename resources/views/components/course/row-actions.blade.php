@@ -2,6 +2,7 @@
     'course',
     'manageModulesDusk' => null,
     'manageEnrollmentsDusk' => null,
+    'manageProfessorsDusk' => null,
     'forumDusk' => null,
     'manageCompletionRulesDusk' => null,
     'editCourseDusk' => null,
@@ -12,6 +13,7 @@
     $activeStudentsCount = (int) $course->active_students_count;
     $manageModulesDusk ??= 'manage-modules-'.$course->id;
     $manageEnrollmentsDusk ??= 'manage-enrollments-'.$course->id;
+    $manageProfessorsDusk ??= 'manage-professors-'.$course->id;
     $forumDusk ??= 'course-forum-'.$course->id;
     $manageCompletionRulesDusk ??= 'manage-completion-rules-'.$course->id;
     $editCourseDusk ??= 'edit-course-'.$course->id;
@@ -28,6 +30,11 @@
                  size="sm"
                  :href="route('courses.enrollments.index', $course)"
                  :dusk="$manageEnrollmentsDusk">Matrículas</x-ui.button>
+
+    <x-ui.button variant="ghost"
+                 size="sm"
+                 :href="route('courses.professors.index', $course)"
+                 :dusk="$manageProfessorsDusk">Professores</x-ui.button>
 
     {{-- Fórum já é autorizado a Admin/Gestor no backend; este botão
          torna o caminho descobrível a partir do catálogo (86e33p9va). --}}

@@ -1,5 +1,5 @@
 {
-    "count": 486,
+    "count": 529,
     "entries": [
         {
             "file": "admin/users/edit.blade.php",
@@ -550,6 +550,10 @@
             "selector": "$manageModulesDusk"
         },
         {
+            "file": "components/course/row-actions.blade.php",
+            "selector": "$manageProfessorsDusk"
+        },
+        {
             "file": "components/help-button.blade.php",
             "selector": "help-article-content-{{ $key }}"
         },
@@ -1046,6 +1050,42 @@
             "selector": "new-module"
         },
         {
+            "file": "courses/professors/index.blade.php",
+            "selector": "course-professors-index"
+        },
+        {
+            "file": "courses/professors/index.blade.php",
+            "selector": "course-professor-row-{{ $professor->id }}"
+        },
+        {
+            "file": "courses/professors/index.blade.php",
+            "selector": "detach-professor-form-{{ $professor->id }}"
+        },
+        {
+            "file": "courses/professors/index.blade.php",
+            "selector": "detach-professor-{{ $professor->id }}"
+        },
+        {
+            "file": "courses/professors/index.blade.php",
+            "selector": "detach-professor-confirm-{{ $professor->id }}"
+        },
+        {
+            "file": "courses/professors/index.blade.php",
+            "selector": "course-professors-search"
+        },
+        {
+            "file": "courses/professors/index.blade.php",
+            "selector": "available-professor-row-{{ $professor->id }}"
+        },
+        {
+            "file": "courses/professors/index.blade.php",
+            "selector": "attach-professor-form-{{ $professor->id }}"
+        },
+        {
+            "file": "courses/professors/index.blade.php",
+            "selector": "attach-professor-{{ $professor->id }}"
+        },
+        {
             "file": "dashboard/index.blade.php",
             "selector": "admin-dashboard"
         },
@@ -1322,6 +1362,70 @@
             "selector": "topic-post"
         },
         {
+            "file": "gestor/professors/create.blade.php",
+            "selector": "professor-form"
+        },
+        {
+            "file": "gestor/professors/create.blade.php",
+            "selector": "professor-submit"
+        },
+        {
+            "file": "gestor/professors/edit.blade.php",
+            "selector": "professor-form"
+        },
+        {
+            "file": "gestor/professors/edit.blade.php",
+            "selector": "professor-status-select"
+        },
+        {
+            "file": "gestor/professors/edit.blade.php",
+            "selector": "professor-status-reason"
+        },
+        {
+            "file": "gestor/professors/edit.blade.php",
+            "selector": "professor-submit"
+        },
+        {
+            "file": "gestor/professors/index.blade.php",
+            "selector": "gestor-professors-index"
+        },
+        {
+            "file": "gestor/professors/index.blade.php",
+            "selector": "create-professor"
+        },
+        {
+            "file": "gestor/professors/index.blade.php",
+            "selector": "gestor-professors-filter-form"
+        },
+        {
+            "file": "gestor/professors/index.blade.php",
+            "selector": "gestor-professors-search"
+        },
+        {
+            "file": "gestor/professors/index.blade.php",
+            "selector": "professor-row-{{ $professor->id }}"
+        },
+        {
+            "file": "gestor/professors/index.blade.php",
+            "selector": "professor-status-{{ $professor->id }}"
+        },
+        {
+            "file": "gestor/professors/index.blade.php",
+            "selector": "professor-status-{{ $professor->id }}"
+        },
+        {
+            "file": "gestor/professors/index.blade.php",
+            "selector": "edit-professor-{{ $professor->id }}"
+        },
+        {
+            "file": "gestor/professors/index.blade.php",
+            "selector": "delete-professor-{{ $professor->id }}"
+        },
+        {
+            "file": "gestor/professors/index.blade.php",
+            "selector": "delete-form-{{ $professor->id }}"
+        },
+        {
             "file": "gestor/students/edit.blade.php",
             "selector": "student-form"
         },
@@ -1520,6 +1624,74 @@
         {
             "file": "organizations/index.blade.php",
             "selector": "organization-row-{{ $organization->id }}"
+        },
+        {
+            "file": "professor/courses/index.blade.php",
+            "selector": "professor-courses-index"
+        },
+        {
+            "file": "professor/courses/index.blade.php",
+            "selector": "professor-courses-grid"
+        },
+        {
+            "file": "professor/courses/index.blade.php",
+            "selector": "professor-course-card-{{ $course->id }}"
+        },
+        {
+            "file": "professor/courses/index.blade.php",
+            "selector": "professor-course-essays-{{ $course->id }}"
+        },
+        {
+            "file": "professor/courses/index.blade.php",
+            "selector": "professor-course-reports-{{ $course->id }}"
+        },
+        {
+            "file": "professor/courses/index.blade.php",
+            "selector": "professor-courses-empty"
+        },
+        {
+            "file": "professor/dashboard/index.blade.php",
+            "selector": "professor-dashboard"
+        },
+        {
+            "file": "professor/dashboard/index.blade.php",
+            "selector": "stat-taught-courses"
+        },
+        {
+            "file": "professor/dashboard/index.blade.php",
+            "selector": "stat-pending-essays"
+        },
+        {
+            "file": "professor/dashboard/index.blade.php",
+            "selector": "stat-pending-reports"
+        },
+        {
+            "file": "professor/dashboard/index.blade.php",
+            "selector": "professor-dashboard-attempt-{{ $attempt->id }}"
+        },
+        {
+            "file": "professor/dashboard/index.blade.php",
+            "selector": "grade-attempt-{{ $attempt->id }}"
+        },
+        {
+            "file": "professor/dashboard/index.blade.php",
+            "selector": "professor-dashboard-essays-empty"
+        },
+        {
+            "file": "professor/dashboard/index.blade.php",
+            "selector": "professor-dashboard-forum-activity"
+        },
+        {
+            "file": "professor/dashboard/index.blade.php",
+            "selector": "forum-topics-count"
+        },
+        {
+            "file": "professor/dashboard/index.blade.php",
+            "selector": "forum-replies-count"
+        },
+        {
+            "file": "professor/dashboard/index.blade.php",
+            "selector": "professor-dashboard-course-{{ $course->id }}"
         },
         {
             "file": "profile/edit.blade.php",

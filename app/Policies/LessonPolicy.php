@@ -51,10 +51,16 @@ class LessonPolicy
         return $module->course()->withoutGlobalScopes()->firstOrFail();
     }
 
+    /**
+     * Mirrors `ModulePolicy::authorizeForCourse()`: Admin unrestricted,
+     * Gestor same-org, and an assigned Professor (`User::teaches()`)
+     * gets full content authoring on the Course's lessons — the
+     * Course's own metadata stays `CoursePolicy`-gated.
+     */
     protected function authorizeForCourse(User $user, Course $course): bool
     {
         if (! $user->hasAnyRole([RolesEnum::ADMIN->value, RolesEnum::GESTOR->value])) {
-            return false;
+            return $user->hasRole(RolesEnum::PROFESSOR->value) && $user->teaches($course);
         }
 
         if ($user->hasRole(RolesEnum::GESTOR->value) && (int) $user->org_id !== (int) $course->org_id) {

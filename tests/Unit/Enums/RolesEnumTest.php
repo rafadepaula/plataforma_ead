@@ -6,16 +6,16 @@ use App\Enums\Permissions\RolesEnum;
 use PHPUnit\Framework\TestCase;
 
 /**
- * RolesEnum backs the 3 fundamental Spatie roles and exposes
+ * RolesEnum backs the 4 fundamental Spatie roles and exposes
  * a human-readable label per role.
  */
 class RolesEnumTest extends TestCase
 {
-    public function test_it_has_exactly_the_three_fundamental_roles(): void
+    public function test_it_has_exactly_the_four_fundamental_roles(): void
     {
         $values = array_map(fn (RolesEnum $role) => $role->value, RolesEnum::cases());
 
-        $this->assertSame(['admin', 'gestor', 'aluno'], $values);
+        $this->assertSame(['admin', 'gestor', 'aluno', 'professor'], $values);
     }
 
     public function test_admin_value(): void
@@ -33,11 +33,17 @@ class RolesEnumTest extends TestCase
         $this->assertSame('aluno', RolesEnum::ALUNO->value);
     }
 
+    public function test_professor_value(): void
+    {
+        $this->assertSame('professor', RolesEnum::PROFESSOR->value);
+    }
+
     public function test_label_returns_expected_human_readable_labels(): void
     {
         $this->assertSame('Administrador do Sistema', RolesEnum::label(RolesEnum::ADMIN->value));
         $this->assertSame('Gestor de Organização', RolesEnum::label(RolesEnum::GESTOR->value));
         $this->assertSame('Aluno Capacitando', RolesEnum::label(RolesEnum::ALUNO->value));
+        $this->assertSame('Professor', RolesEnum::label(RolesEnum::PROFESSOR->value));
     }
 
     public function test_label_falls_back_to_the_raw_role_for_unknown_values(): void

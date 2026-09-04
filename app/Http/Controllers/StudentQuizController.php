@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Actions\OpenQuizAttemptAction;
 use App\Actions\SubmitQuizAttemptAction;
+use App\Enums\Permissions\RolesEnum;
 use App\Http\Requests\SubmitQuizAttemptRequest;
 use App\Models\Lesson;
 use App\Models\QuizAttempt;
@@ -26,6 +27,8 @@ class StudentQuizController extends Controller
 
     public function show(Lesson $lesson): View
     {
+        $this->abortIfProfessor();
+
         $course = $lesson->module->course()->withoutGlobalScopes()->firstOrFail();
         $lesson->module->setRelation('course', $course);
 
@@ -95,6 +98,8 @@ class StudentQuizController extends Controller
 
     public function submit(SubmitQuizAttemptRequest $request, Lesson $lesson): RedirectResponse
     {
+        $this->abortIfProfessor();
+
         $answers = collect($request->validated('answers'))
             ->map(fn (array $answer, string $questionId): array => $answer + ['question_id' => (int) $questionId])
             ->values()
@@ -120,5 +125,18 @@ class StudentQuizController extends Controller
             : "Prova enviada. Nota: {$attempt->score_percentage}%. Você não atingiu a nota mínima.";
 
         return redirect()->route('classroom.lesson', $lesson)->with('success', $message);
+    }
+
+    /**
+     * Fazer prova é exclusivo do Aluno matriculado. Desde que o papel
+     * `professor` passou a transitar pelo `student.enrolled` (docência),
+     * o middleware sozinho deixaria um Professor atribuído abrir/responder
+     * o quiz como se fosse aluno — criando `QuizAttempt` em nome próprio,
+     * tentativa que desaguaria na fila de correção que ele mesmo atende.
+     * Admin/Gestor seguem liberados (preview, comportamento pré-existente).
+     */
+    protected function abortIfProfessor(): void
+    {
+        abort_if(request()->user()?->hasRole(RolesEnum::PROFESSOR->value), 403);
     }
 }

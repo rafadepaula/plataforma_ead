@@ -51,6 +51,17 @@ class EnsureStudentIsEnrolled
             return $next($request);
         }
 
+        //  o middleware passa a significar "matrícula OU
+        // docência": um Professor atribuído ao Course (`User::teaches()`)
+        // navega pelo conteúdo (fórum incluso) sem linha em `course_user`.
+        // Denial é 403 direto — diferente do Aluno, o Professor não tem
+        // catálogo de matrículas para onde redirecionar.
+        if ($user->hasRole(RolesEnum::PROFESSOR->value)) {
+            abort_unless($user->teaches($course), 403);
+
+            return $next($request);
+        }
+
         if (! $user->hasActiveOrCompletedEnrollment($course)) {
             return $this->denyEnrollment($request);
         }

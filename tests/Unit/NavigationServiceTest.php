@@ -221,8 +221,8 @@ class NavigationServiceTest extends TestCase
      *  non-regression — a Gestor always operates inside their own
      * Organization, so nothing moves for them: the operational items stay
      * in "Administração" and no "Impersonate" heading is ever emitted.
-     * `users`/`audit-logs` are Admin-only now; `students` is the
-     * Gestor-exclusive people-management item.
+     * `users`/`audit-logs` are Admin-only now; `students` and `professors`
+     * are the Gestor-exclusive people-management items.
      */
     public function test_gestor_keeps_the_operational_items_in_administracao_and_never_sees_impersonate(): void
     {
@@ -231,8 +231,9 @@ class NavigationServiceTest extends TestCase
         $gestor->assignRole(RolesEnum::GESTOR->value);
 
         $this->assertNotContains('Impersonate', $this->sectionTitlesFor($gestor));
+        $this->assertNotContains('Ensino', $this->sectionTitlesFor($gestor));
         $this->assertSame(
-            ['dashboard', 'students', 'courses', 'quiz-attempts', 'forum-moderation'],
+            ['dashboard', 'students', 'professors', 'courses', 'quiz-attempts', 'forum-moderation'],
             $this->keysInSection($gestor, 'Administração'),
         );
     }
