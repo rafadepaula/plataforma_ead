@@ -109,7 +109,12 @@ class StudentCourseControllerTest extends TestCase
 
         $response->assertOk();
         $response->assertSee($activeCourse->title);
-        $response->assertDontSee($completedCourse->title);
+        //  scoped to the tab's card: the completed course's title
+        // legitimately appears page-wide now (the "Meus Cursos" sidebar
+        // blocks list every active AND completed enrollment on any
+        // student page), so a page-wide `assertDontSee($title)` would
+        // false-positive.
+        $response->assertDontSee('dusk="course-card-'.$completedCourse->id.'"', false);
     }
 
     public function test_concluidos_tab_filters_to_completed_enrollments_only(): void

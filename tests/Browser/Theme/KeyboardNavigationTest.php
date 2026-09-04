@@ -79,6 +79,11 @@ class KeyboardNavigationTest extends DuskTestCase
 
             $visited = $this->collectTabbedIdentifiers($browser, 12);
 
+            //  STALE no HEAD: `quiz-attempt-submit` virou trigger de
+            //    confirm-modal e nasce `disabled` enquanto há questões
+            //    sem resposta, então ele nunca é focável por Tab puro
+            //    nesta página — falha independente do menu (verificada
+            //    via stash no HEAD).
             self::assertContains('quiz-attempt-submit', $visited);
         });
     }

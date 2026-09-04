@@ -88,12 +88,14 @@ final class NavigationService
      * `badge` value, or `null` if the item must be hidden.
      *
      * `children` carries the item's always-visible sub-items
-     * ( the Aluno's enrolled-course shortcuts under "Meus
+     * ( the Aluno's enrolled-course blocks under "Meus
      * Cursos"), each already URL-resolved and flagged `active` against
      * the current request; it is `[]` for items without a
      * `childrenResolver` or without children in the current context.
+     * `childrenOnly` marks a pure group item — the Blade layer skips
+     * the parent anchor entirely ( the "Meus Cursos" section).
      *
-     * @return array{key: string, label: string, url: string, active: bool, badge: int|string|null, icon: string, section: string, children: list<array{key: string, label: string, url: string, active: bool, progress: int|null>}}|null
+     * @return array{key: string, label: string, url: string, active: bool, badge: int|string|null, icon: string, section: string, childrenOnly: bool, children: list<array{key: string, label: string, url: string, course_id: int|null, active: bool, progress: int|null, is_course: bool, lessons_completed: int|null, lessons_total: int|null, forum_url: string|null, certificate_url: string|null}>}|null
      */
     private function resolve(NavigationItem $item, User $user): ?array
     {
@@ -125,6 +127,7 @@ final class NavigationService
             'badge' => $this->resolveBadge($item, $user),
             'icon' => $item->icon,
             'section' => $section,
+            'childrenOnly' => $item->childrenOnly,
             'children' => $this->resolveChildren($item, $user),
         ];
     }
@@ -133,9 +136,10 @@ final class NavigationService
      *  the resolver returns the raw, per-user children and each
      * one gets its `active` flag computed here against the acting
      * request. The parent keeps its own URL regardless — children never
-     * hide the parent item.
+     * hide the parent item. The rich-course fields ride along as `null`
+     * for synthetic children ( "Ver todos os cursos").
      *
-     * @return list<array{key: string, label: string, url: string, active: bool, progress: int|null}>
+     * @return list<array{key: string, label: string, url: string, course_id: int|null, active: bool, progress: int|null, is_course: bool, lessons_completed: int|null, lessons_total: int|null, forum_url: string|null, certificate_url: string|null}>
      */
     private function resolveChildren(NavigationItem $item, User $user): array
     {
@@ -150,8 +154,14 @@ final class NavigationService
                 'key' => $child['key'],
                 'label' => $child['label'],
                 'url' => $child['url'],
+                'course_id' => $child['course_id'],
                 'active' => $this->isChildActive($child),
                 'progress' => $child['progress'],
+                'is_course' => $child['is_course'] ?? false,
+                'lessons_completed' => $child['lessons_completed'] ?? null,
+                'lessons_total' => $child['lessons_total'] ?? null,
+                'forum_url' => $child['forum_url'] ?? null,
+                'certificate_url' => $child['certificate_url'] ?? null,
             ];
         }
 

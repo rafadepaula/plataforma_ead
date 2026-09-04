@@ -2,7 +2,10 @@
 
 namespace App\Services\Navigation;
 
+use App\Models\Certificate;
 use App\Models\Course;
+use App\Models\Lesson;
+use App\Models\LessonProgress;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
 
@@ -24,8 +27,8 @@ final class NavigationRegistry
     private const ADMIN_GESTOR = ['admin', 'gestor'];
 
     /**
-     *  max enrolled-course shortcuts rendered under "Meus
-     * Cursos" before the fixed "Ver todos os cursos" child takes over.
+     *  max enrolled-course blocks rendered under "Meus
+     * Cursos" before the fixed "Ver todos os cursos" child caps the list.
      */
     private const CHILDREN_LIMIT = 10;
 
@@ -35,9 +38,11 @@ final class NavigationRegistry
      *  `Impersonate` sits between the two: it groups the
      * Organization-scoped items a system Admin only reaches while
      * impersonating, keeping them visibly separate from the global
-     * system-administration surface above it.
+     * system-administration surface above it. The Aluno-facing section
+     * is "Meus Cursos" — the old "Aprendizado" grouping died when each
+     * enrollment became its own block .
      */
-    private const SECTION_ORDER = ['Administração', 'Impersonate', 'Aprendizado'];
+    private const SECTION_ORDER = ['Administração', 'Impersonate', 'Meus Cursos'];
 
     /**
      *  the "am I impersonating?" rule is shared with the topbar
@@ -196,26 +201,33 @@ final class NavigationRegistry
                 section: 'Administração',
             ),
 
-            // ── Aprendizado ──────────────────────────────────────────
+            // ── Meus Cursos (Aluno) ──────────────────────────────────
+            //
+            //  a pure GROUP item (`childrenOnly`): the
+            // section heading IS "Meus Cursos", so the old parent anchor
+            // is redundant and never renders — every enrollment becomes
+            // its own rich block, and the fixed "Ver todos os cursos"
+            // child closes the list. The declared `route`/`label` stay
+            // for documentation and the (unrendered) resolved shape.
             new NavigationItem(
                 key: 'student-courses',
                 label: 'Meus Cursos',
                 route: 'student.courses.index',
-                activePatterns: ['student.courses.*', 'classroom.*'],
-                icon: $this->homeIcon(),
+                //  the parent anchor never renders (children-only),
+                // so there is no highlight to compute; the per-course
+                // children carry their own active flag via
+                // `isChildActive()`.
+                activePatterns: [],
+                icon: '',
                 //  neither the Admin nor the Gestor is a
                 // learner: "Meus Cursos" is Aluno-only, mirroring the
                 // route's own `role:aluno` middleware. Staff accounts
-                // lose the "Aprendizado" section, which is therefore
+                // lose the section entirely, which is therefore
                 // discarded by `NavigationService::build()` when empty.
                 roles: ['aluno'],
-                section: 'Aprendizado',
-                //  always-visible shortcut children: the
-                // Aluno's active enrollments as direct classroom links.
-                // The parent keeps its own URL — without active
-                // enrollments the item renders without children,
-                // exactly as before .
+                section: 'Meus Cursos',
                 childrenResolver: fn ($user) => $this->resolveStudentCourseChildren($user),
+                childrenOnly: true,
             ),
             //  the forum is scoped to ONE course, so no
             // generalist sidebar entry exists: it is reached from within
@@ -279,56 +291,118 @@ final class NavigationRegistry
     }
 
     /**
-     *  "Meus Cursos" shortcut children: one per ACTIVE
-     * enrollment of the acting Aluno — the same `status = active` pivot
-     * rule as the "Em andamento" tab
-     * of `StudentCourseController`; completed/cancelled enrollments stay
-     * on `/meus-cursos` . Alphabetically by course title,
-     * capped at 10; the fixed "Ver todos os cursos" child is appended
-     * ONLY when the cap actually truncated the list (more than
-     * `self::CHILDREN_LIMIT` active enrollments) . The query
-     * fetches `CHILDREN_LIMIT + 1` rows so the truncation is detected
-     * without a second count query. `withoutGlobalScope('org')`
-     * mirrors `StudentCourseController::index()`: the pivot row is the
+     *  "Meus Cursos" blocks: one per ACTIVE **or COMPLETED**
+     * enrollment of the acting Aluno. Completed enrollments belong here
+     * too — the certificate is issued exactly when the pivot flips to
+     * `completed` (`RecalculateCourseProgress` → `CourseCompletedByStudent`),
+     * so excluding them would make the certificate line unreachable
+     * from the menu. `cancelled` stays out (same pivot rule as
+     * `EnsureStudentIsEnrolled`). Alphabetically by course title,
+     * capped at `self::CHILDREN_LIMIT` (the query fetches
+     * `CHILDREN_LIMIT + 1` rows so the cap truncates without a second
+     * count); the fixed "Ver todos os cursos" child is ALWAYS appended —
+     * with the parent anchor gone, it is the only menu path to
+     * `student.courses.index` (the "Em andamento"/"Concluídos" tabs and
+     * the empty state), including for a zero-enrollment Aluno.
+     *
+     * `withoutGlobalScope('org')` mirrors
+     * `StudentCourseController::index()`: the pivot row is the
      * enrollment boundary (each `classroom.*` route re-checks it via
      * `student.enrolled`), so the menu must not depend on `Auth::user()`
      * being resolvable by the `OrgScope` global scope.
      *
-     * @return list<array{key: string, label: string, url: string, course_id: int|null, progress: int|null}>
+     *  the query budget is CONSTANT, never per course: the
+     * enrollment fetch plus three companion queries — one grouped COUNT
+     * of published lesson totals, one grouped COUNT of completed
+     * lessons (the same published-lesson/non-deleted-module universe
+     * `ClassroomController` counts) and ONE `certificates` fetch indexed
+     * by `course_id`.
+     *
+     * @return list<array{key: string, label: string, url: string, course_id: int|null, progress: int|null, is_course: bool, lessons_completed: int|null, lessons_total: int|null, forum_url: string|null, certificate_url: string|null}>
      */
     private function resolveStudentCourseChildren(User $user): array
     {
         $courses = $user->courses()
             ->withoutGlobalScope('org')
-            ->wherePivot('status', 'active')
+            ->wherePivotIn('status', ['active', 'completed'])
             ->orderBy('courses.title')
             ->limit(self::CHILDREN_LIMIT + 1)
             ->get();
 
-        $children = $courses
-            ->take(self::CHILDREN_LIMIT)
+        $seeAll = [
+            'key' => 'see-all',
+            'label' => 'Ver todos os cursos',
+            'url' => route('student.courses.index'),
+            'course_id' => null,
+            'progress' => null,
+            'is_course' => false,
+            'lessons_completed' => null,
+            'lessons_total' => null,
+            'forum_url' => null,
+            'certificate_url' => null,
+        ];
+
+        $shown = $courses->take(self::CHILDREN_LIMIT);
+
+        if ($shown->isEmpty()) {
+            return [$seeAll];
+        }
+
+        $courseIds = $shown->pluck('id')->all();
+
+        //  same lesson universe the classroom counts: published
+        // lessons of non-deleted modules, aggregated per course in a
+        // single grouped query.
+        $lessonTotals = Lesson::query()
+            ->join('modules', 'modules.id', '=', 'lessons.module_id')
+            ->whereNull('modules.deleted_at')
+            ->whereIn('modules.course_id', $courseIds)
+            ->where('lessons.is_published', true)
+            ->selectRaw('modules.course_id, count(*) as aggregate')
+            ->groupBy('modules.course_id')
+            ->pluck('aggregate', 'modules.course_id');
+
+        $completedCounts = LessonProgress::query()
+            ->join('lessons', 'lessons.id', '=', 'lesson_progress.lesson_id')
+            ->join('modules', 'modules.id', '=', 'lessons.module_id')
+            ->whereNull('modules.deleted_at')
+            ->where('lesson_progress.user_id', $user->id)
+            ->where('lesson_progress.is_completed', true)
+            ->whereIn('modules.course_id', $courseIds)
+            ->where('lessons.is_published', true)
+            ->selectRaw('modules.course_id, count(*) as aggregate')
+            ->groupBy('modules.course_id')
+            ->pluck('aggregate', 'modules.course_id');
+
+        //  ONE fetch for the whole list, indexed by course.
+        // Revocation is logical (`revoked_at`), so a revoked certificate
+        // filters out here the same way the classroom card treats it:
+        // no line at all, never a "pending" state in the menu.
+        $certificates = Certificate::query()
+            ->where('user_id', $user->id)
+            ->whereIn('course_id', $courseIds)
+            ->whereNull('revoked_at')
+            ->get(['id', 'course_id'])
+            ->keyBy('course_id');
+
+        $children = $shown
             ->map(fn (Course $course): array => [
                 'key' => "course-{$course->id}",
                 'label' => $course->title,
                 'url' => route('classroom.show', $course),
                 'course_id' => $course->id,
                 'progress' => (int) ($course->pivot->progress_percentage ?? 0),
+                'is_course' => true,
+                'lessons_completed' => (int) ($completedCounts[$course->id] ?? 0),
+                'lessons_total' => (int) ($lessonTotals[$course->id] ?? 0),
+                'forum_url' => route('forum.index', $course),
+                'certificate_url' => isset($certificates[$course->id])
+                    ? route('certificates.download', ['certificate' => $certificates[$course->id]->id])
+                    : null,
             ])
             ->all();
 
-        //  the escape hatch to the full catalog — only for a
-        // truncated list. `null` `course_id`/`progress` marks it as a
-        // plain link to the view (no active-flag matching, no progress
-        // bar).
-        if ($courses->count() > self::CHILDREN_LIMIT) {
-            $children[] = [
-                'key' => 'see-all',
-                'label' => 'Ver todos os cursos',
-                'url' => route('student.courses.index'),
-                'course_id' => null,
-                'progress' => null,
-            ];
-        }
+        $children[] = $seeAll;
 
         return $children;
     }
@@ -373,10 +447,5 @@ final class NavigationRegistry
     private function settingsIcon(): string
     {
         return '<circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>';
-    }
-
-    private function homeIcon(): string
-    {
-        return '<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>';
     }
 }

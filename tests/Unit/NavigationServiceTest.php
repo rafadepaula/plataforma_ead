@@ -4,10 +4,12 @@ namespace Tests\Unit;
 
 use App\Enums\Permissions\RolesEnum;
 use App\Http\Middleware\EnsureStudentIsEnrolled;
+use App\Models\Certificate;
 use App\Models\Course;
 use App\Models\ForumReport;
 use App\Models\ForumTopic;
 use App\Models\Lesson;
+use App\Models\LessonProgress;
 use App\Models\Module;
 use App\Models\Organization;
 use App\Models\Quiz;
@@ -268,28 +270,28 @@ class NavigationServiceTest extends TestCase
 
     /**
      *  "Meus Cursos" is gone from the Admin's menu, which leaves
-     * the "Aprendizado" section empty and therefore dropped entirely by
-     * `build()`, in both contexts.
+     * the section empty and therefore dropped entirely by `build()`, in
+     * both contexts.
      */
-    public function test_admin_never_sees_the_aprendizado_section(): void
+    public function test_admin_never_sees_the_meus_cursos_section(): void
     {
         $admin = User::factory()->create(['org_id' => null]);
         $admin->assignRole(RolesEnum::ADMIN->value);
 
-        $this->assertNotContains('Aprendizado', $this->sectionTitlesFor($admin));
+        $this->assertNotContains('Meus Cursos', $this->sectionTitlesFor($admin));
         $this->assertNotContains('student-courses', $this->keysFor($admin));
 
         session(['active_org_id' => Organization::factory()->create()->id]);
 
-        $this->assertNotContains('Aprendizado', $this->sectionTitlesFor($admin));
+        $this->assertNotContains('Meus Cursos', $this->sectionTitlesFor($admin));
         $this->assertNotContains('student-courses', $this->keysFor($admin));
     }
 
     /**
      *  "Meus Cursos" is Aluno-only (`role:aluno` parity — staff
-     * accounts are not learners): the Gestor's "Aprendizado" section is
-     * empty and therefore dropped entirely by `build()`, while the Aluno
-     * keeps both the section and the item.
+     * accounts are not learners): the Gestor's section is empty and
+     * therefore dropped entirely by `build()`, while the Aluno keeps
+     * both the section and the group item.
      */
     public function test_only_the_aluno_still_sees_meus_cursos(): void
     {
@@ -297,13 +299,13 @@ class NavigationServiceTest extends TestCase
 
         $gestor = User::factory()->create(['org_id' => $org->id]);
         $gestor->assignRole(RolesEnum::GESTOR->value);
-        $this->assertNotContains('Aprendizado', $this->sectionTitlesFor($gestor));
+        $this->assertNotContains('Meus Cursos', $this->sectionTitlesFor($gestor));
         $this->assertNotContains('student-courses', $this->keysFor($gestor));
 
         $aluno = User::factory()->create(['org_id' => $org->id]);
         $aluno->assignRole(RolesEnum::ALUNO->value);
-        $this->assertContains('Aprendizado', $this->sectionTitlesFor($aluno));
-        $this->assertContains('student-courses', $this->keysInSection($aluno, 'Aprendizado'));
+        $this->assertContains('Meus Cursos', $this->sectionTitlesFor($aluno));
+        $this->assertContains('student-courses', $this->keysInSection($aluno, 'Meus Cursos'));
     }
 
     public function test_admin_impersonating_an_org_sees_the_users_item_again(): void
@@ -374,15 +376,18 @@ class NavigationServiceTest extends TestCase
         $this->assertContains('student-courses', $keys);
     }
 
-    // ──  "Meus Cursos" shortcut children ─────────────────────
+    // ──  "Meus Cursos" course blocks ─────────────────────────
 
     /**
-     *  every ACTIVE enrollment becomes an always-visible classroom
-     * shortcut under "Meus Cursos": alphabetical by course title (not
-     * enrollment order), each carrying its `course_user.progress_percentage`.
-     * With the cap intact (10 or fewer) there is no "Ver todos" child.
+     *  every ACTIVE (or completed, below) enrollment becomes an
+     * always-visible block under "Meus Cursos": alphabetical by course
+     * title (not enrollment order), each carrying its
+     * `course_user.progress_percentage`, lesson counts, forum URL and —
+     * when issued — the certificate URL. The fixed "Ver todos os
+     * cursos" child is ALWAYS appended now: with the parent anchor
+     * gone, it is the only menu path to `student.courses.index`.
      */
-    public function test_aluno_with_active_enrollments_gets_alphabetical_course_children(): void
+    public function test_aluno_with_active_enrollments_gets_alphabetical_course_blocks(): void
     {
         $org = Organization::factory()->create();
         $aluno = User::factory()->create(['org_id' => $org->id]);
@@ -395,34 +400,107 @@ class NavigationServiceTest extends TestCase
 
         $children = $this->findItem($aluno, 'student-courses')['children'];
 
-        $this->assertSame(['Alfa', 'Zulu'], array_column($children, 'label'));
+        $this->assertSame(['Alfa', 'Zulu', 'Ver todos os cursos'], array_column($children, 'label'));
         $this->assertSame('course-'.$alfa->id, $children[0]['key']);
         $this->assertSame(route('classroom.show', $alfa), $children[0]['url']);
         $this->assertSame(0, $children[0]['progress']);
         $this->assertSame(40, $children[1]['progress']);
-        //  no truncation, no "Ver todos" child.
-        $this->assertNotContains('Ver todos os cursos', array_column($children, 'label'));
+        //  the escape hatch to the full catalog is persistent —
+        // it closes the list for every Aluno, truncated or not.
+        $this->assertSame('see-all', $children[2]['key']);
+        $this->assertSame(route('student.courses.index'), $children[2]['url']);
+        $this->assertFalse($children[2]['is_course']);
         //  no route is dispatched in a unit test, so no child can
         // claim the active highlight here (covered against a bound
         // `{course}` route below).
         $this->assertFalse($children[0]['active']);
     }
 
-    public function test_aluno_without_active_enrollments_gets_no_children(): void
+    /**
+     *  the rich block payload: forum link always (any enrollment the
+     * middleware accepts reaches `forum.index`), certificate ONLY when
+     * issued and NOT revoked, lesson counts from the classroom universe
+     * (published lessons of non-deleted modules — an unpublished lesson
+     * counts in NEITHER number).
+     */
+    public function test_course_blocks_carry_counts_forum_and_certificate_payload(): void
     {
         $org = Organization::factory()->create();
         $aluno = User::factory()->create(['org_id' => $org->id]);
         $aluno->assignRole(RolesEnum::ALUNO->value);
 
-        $this->assertSame([], $this->findItem($aluno, 'student-courses')['children']);
+        $certified = Course::factory()->for($org)->create(['title' => 'A Certificado']);
+        $revoked = Course::factory()->for($org)->create(['title' => 'B Revogado']);
+        $uncertified = Course::factory()->for($org)->create(['title' => 'C Sem Certificado']);
+
+        $moduleCertified = Module::factory()->for($certified)->create();
+        $done = Lesson::factory()->for($moduleCertified)->create(['is_published' => true]);
+        Lesson::factory()->for($moduleCertified)->create(['is_published' => true]);
+        Lesson::factory()->for($moduleCertified)->create(['is_published' => false]);
+        LessonProgress::query()->create([
+            'user_id' => $aluno->id,
+            'lesson_id' => $done->id,
+            'is_completed' => true,
+            'completed_at' => now(),
+        ]);
+
+        foreach ([$certified, $revoked, $uncertified] as $course) {
+            $aluno->courses()->attach($course->id, ['status' => 'active', 'enrolled_at' => now()]);
+        }
+
+        Certificate::factory()->create(['user_id' => $aluno->id, 'course_id' => $certified->id]);
+        Certificate::factory()->revoked()->create(['user_id' => $aluno->id, 'course_id' => $revoked->id]);
+
+        $children = collect($this->findItem($aluno, 'student-courses')['children'])
+            ->filter(fn ($child) => $child['is_course'])
+            ->values()
+            ->all();
+
+        $this->assertSame(
+            [$certified->id, $revoked->id, $uncertified->id],
+            array_column($children, 'course_id'),
+        );
+
+        [$certifiedChild, $revokedChild, $uncertifiedChild] = $children;
+
+        // 1. Counts follow the classroom universe (2 published, 1 done;
+        //    the unpublished lesson stays out of the denominator).
+        $this->assertSame(1, $certifiedChild['lessons_completed']);
+        $this->assertSame(2, $certifiedChild['lessons_total']);
+
+        // 2. Forum: every enrollment block carries its own forum URL.
+        $this->assertSame(route('forum.index', $certified), $certifiedChild['forum_url']);
+        $this->assertSame(route('forum.index', $uncertified), $uncertifiedChild['forum_url']);
+
+        // 3. Certificate: issued-and-live only; revoked and never-issued
+        //    both render NO line at all.
+        $this->assertSame(route('certificates.download', ['certificate' => Certificate::query()->where('course_id', $certified->id)->firstOrFail()->id]), $certifiedChild['certificate_url']);
+        $this->assertNull($revokedChild['certificate_url']);
+        $this->assertNull($uncertifiedChild['certificate_url']);
+    }
+
+    public function test_aluno_without_enrollments_gets_only_the_ver_todos_child(): void
+    {
+        $org = Organization::factory()->create();
+        $aluno = User::factory()->create(['org_id' => $org->id]);
+        $aluno->assignRole(RolesEnum::ALUNO->value);
+
+        $children = $this->findItem($aluno, 'student-courses')['children'];
+
+        //  the persistent "Ver todos os cursos" child keeps the
+        // zero-enrollment Aluno a menu path to `/meus-cursos` (the old
+        // parent anchor's job).
+        $this->assertSame(['see-all'], array_column($children, 'key'));
     }
 
     /**
-     *  only `status = active` pivot rows become shortcuts —
-     * completed/cancelled enrollments stay on `/meus-cursos` and must
-     * never surface in the menu (same rule as the forum resolver).
+     *  completed enrollments ARE blocks now — the certificate is
+     * issued exactly when the pivot flips to `completed`, so excluding
+     * them would make the certificate line unreachable from the menu.
+     * `cancelled` stays out (same pivot rule as
+     * `EnsureStudentIsEnrolled`).
      */
-    public function test_completed_and_cancelled_enrollments_never_become_children(): void
+    public function test_completed_enrollments_render_blocks_and_cancelled_ones_never_do(): void
     {
         $org = Organization::factory()->create();
         $aluno = User::factory()->create(['org_id' => $org->id]);
@@ -433,7 +511,15 @@ class NavigationServiceTest extends TestCase
         $aluno->courses()->attach($completed->id, ['status' => 'completed', 'enrolled_at' => now()]);
         $aluno->courses()->attach($cancelled->id, ['status' => 'cancelled', 'enrolled_at' => now()]);
 
-        $this->assertSame([], $this->findItem($aluno, 'student-courses')['children']);
+        $children = $this->findItem($aluno, 'student-courses')['children'];
+
+        $this->assertSame(
+            [$completed->id, null],
+            array_column($children, 'course_id'),
+            'The completed enrollment renders as a block; cancelled never does.',
+        );
+        $this->assertSame('A Concluído', $children[0]['label']);
+        $this->assertSame('Ver todos os cursos', $children[1]['label']);
     }
 
     /**
@@ -482,7 +568,7 @@ class NavigationServiceTest extends TestCase
         $children = $this->findItem($aluno, 'student-courses')['children'];
         $labels = array_column($children, 'label');
 
-        $this->assertSame(['Meu Curso'], $labels);
+        $this->assertSame(['Meu Curso', 'Ver todos os cursos'], $labels);
     }
 
     /**
@@ -554,11 +640,44 @@ class NavigationServiceTest extends TestCase
     }
 
     /**
-     *  the "Ver todos os cursos" child exists ONLY when the cap
-     * actually truncated the list: exactly 10 active enrollments render
-     * ten shortcuts and nothing else.
+     *  the course block also highlights on the course FORUM — the
+     * forum routes run the same `student.enrolled` middleware, which
+     * exposes the resolved `Course` attribute the sidebar reads.
      */
-    public function test_exactly_ten_courses_render_no_ver_todos_child(): void
+    public function test_child_is_active_on_the_course_forum_route_too(): void
+    {
+        $org = Organization::factory()->create();
+        $aluno = User::factory()->create(['org_id' => $org->id]);
+        $aluno->assignRole(RolesEnum::ALUNO->value);
+
+        $alfa = Course::factory()->for($org)->create(['title' => 'Alfa']);
+        $zulu = Course::factory()->for($org)->create(['title' => 'Zulu']);
+        $aluno->courses()->attach($alfa->id, ['status' => 'active', 'enrolled_at' => now()]);
+        $aluno->courses()->attach($zulu->id, ['status' => 'active', 'enrolled_at' => now()]);
+
+        $route = (new Route('GET', 'courses/{course}/forum', []))
+            ->name('forum.index');
+        $route->parameters = ['course' => $alfa->id];
+
+        $request = Request::create("/courses/{$alfa->id}/forum", 'GET');
+        $request->setRouteResolver(fn () => $route);
+        $request->attributes->set(EnsureStudentIsEnrolled::RESOLVED_COURSE_ATTRIBUTE, $alfa);
+
+        $service = new NavigationService(new NavigationRegistry, $request);
+
+        $children = collect($service->build($aluno))
+            ->flatMap(fn ($section) => $section->items)
+            ->firstWhere('key', 'student-courses')['children'];
+
+        $this->assertTrue($children[0]['active'], 'The block of the forum course must be highlighted.');
+        $this->assertFalse($children[1]['active'], 'Unrelated course blocks must not be highlighted.');
+    }
+
+    /**
+     *  exactly at the cap there is no truncation to announce, but the
+     * persistent "Ver todos os cursos" child still closes the list.
+     */
+    public function test_exactly_ten_courses_render_ten_blocks_plus_ver_todos(): void
     {
         $org = Organization::factory()->create();
         $aluno = User::factory()->create(['org_id' => $org->id]);
@@ -571,10 +690,10 @@ class NavigationServiceTest extends TestCase
 
         $children = $this->findItem($aluno, 'student-courses')['children'];
 
-        $this->assertCount(10, $children);
+        $this->assertCount(11, $children);
         $this->assertSame('Curso 01', $children[0]['label']);
         $this->assertSame('Curso 10', $children[9]['label']);
-        $this->assertNotContains('Ver todos os cursos', array_column($children, 'label'));
+        $this->assertSame('Ver todos os cursos', $children[10]['label']);
     }
 
     public function test_admin_audit_logs_route_resolves_to_admin_prefixed_route(): void
@@ -760,7 +879,7 @@ class NavigationServiceTest extends TestCase
     }
 
     /**
-     * @return array{key: string, label: string, url: string, active: bool, badge: int|string|null, icon: string, section: string, children: list<array{key: string, label: string, url: string, active: bool, progress: int|null}>}
+     * @return array{key: string, label: string, url: string, active: bool, badge: int|string|null, icon: string, section: string, childrenOnly: bool, children: list<array{key: string, label: string, url: string, active: bool, progress: int|null, is_course: bool, lessons_completed: int|null, lessons_total: int|null, forum_url: string|null, certificate_url: string|null}>}
      */
     private function findItem(User $user, string $key): array
     {

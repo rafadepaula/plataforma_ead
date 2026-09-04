@@ -1,5 +1,5 @@
 {
-    "count": 483,
+    "count": 486,
     "entries": [
         {
             "file": "admin/users/edit.blade.php",
@@ -572,6 +572,18 @@
         {
             "file": "components/help-button.blade.php",
             "selector": "help-placeholder-content-{{ $key }}"
+        },
+        {
+            "file": "components/layout/sidebar-item.blade.php",
+            "selector": "sidebar-{{ $child['key'] }}-certificate{{ $duskSuffix }}"
+        },
+        {
+            "file": "components/layout/sidebar-item.blade.php",
+            "selector": "sidebar-{{ $child['key'] }}-forum{{ $duskSuffix }}"
+        },
+        {
+            "file": "components/layout/sidebar-item.blade.php",
+            "selector": "sidebar-{{ $child['key'] }}-link{{ $duskSuffix }}"
         },
         {
             "file": "components/layout/sidebar-item.blade.php",

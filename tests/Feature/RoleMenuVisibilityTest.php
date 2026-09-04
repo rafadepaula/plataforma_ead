@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\Permissions\RolesEnum;
+use App\Models\Certificate;
 use App\Models\Course;
 use App\Models\Organization;
 use App\Models\User;
@@ -91,12 +92,12 @@ class RoleMenuVisibilityTest extends TestCase
 
     /**
      *  the forum is scoped to ONE course, so the sidebar never offers
-     * a generalist "Fórum de Dúvidas" entry — not even for an Aluno with
-     * active enrollments (the absence is structural, not
-     * enrollment-dependent). The entry point is the classroom card,
-     * asserted on `classroom.show` in the second half of this chain.
+     * a GENERALIST "Fórum" entry (`sidebar-forum-link` stays structurally
+     * dead); what it does offer now is the per-course forum link inside
+     * each "Meus Cursos" block. The classroom card remains a parallel
+     * entry point.
      */
-    public function test_forum_is_absent_from_the_sidebar_and_reached_from_the_classroom(): void
+    public function test_no_generalist_forum_item_exists_but_each_course_block_links_its_own_forum(): void
     {
         $org = Organization::factory()->create();
         $course = Course::factory()->for($org)->create();
@@ -104,16 +105,18 @@ class RoleMenuVisibilityTest extends TestCase
         $aluno->assignRole(RolesEnum::ALUNO->value);
         $aluno->courses()->attach($course->id, ['status' => 'active', 'enrolled_at' => now()]);
 
-        // 1. No sidebar, em NENHUM render, mesmo com matrícula ativa.
         $response = $this->actingAs($aluno)->get(route('student.courses.index'));
         $html = $response->getContent();
 
         $response->assertOk();
-        $response->assertDontSeeText('Fórum de Dúvidas');
+        // 1. O item generalista segue morto, em ambos os renders.
         $this->assertStringNotContainsString('dusk="sidebar-forum-link"', $html);
         $this->assertStringNotContainsString('dusk="sidebar-forum-link-mobile"', $html);
-
-        // 2. O ponto de entrada é o card na sala de aula.
+        // 2. O link POR CURSO é o novo caminho do bloco.
+        $this->assertStringContainsString('dusk="sidebar-course-'.$course->id.'-forum"', $html);
+        $this->assertStringContainsString('dusk="sidebar-course-'.$course->id.'-forum-mobile"', $html);
+        $response->assertSee(route('forum.index', $course), false);
+        // 3. O card da sala de aula segue de pé.
         $classroom = $this->actingAs($aluno)->get(route('classroom.show', $course));
 
         $classroom->assertOk();
@@ -122,37 +125,45 @@ class RoleMenuVisibilityTest extends TestCase
     }
 
     /**
-     *  the enrolled-course shortcuts render in BOTH renders (desktop
-     * `<aside>` and mobile Offcanvas), each with the pivot progress bar.
-     * A completed enrollment never becomes a child , and
-     * "Ver todos os cursos" only exists when the 10-child cap truncated
-     * the list  — a single active enrollment shows no such link.
+     *  the enrolled-course blocks render in BOTH renders (desktop
+     * `<aside>` and mobile Offcanvas): active AND completed enrollments
+     * (the certificate is born exactly at completion, so completed
+     * blocks must render), each with the pivot progress bar, lesson
+     * counts and forum link. `cancelled` never renders, and the
+     * "Ver todos os cursos" child is persistent — with the parent
+     * anchor gone it is the only menu path to `/meus-cursos`.
      */
-    public function test_aluno_sees_active_course_children_with_progress_in_both_renders(): void
+    public function test_aluno_sees_course_blocks_with_progress_in_both_renders(): void
     {
         $org = Organization::factory()->create();
         $active = Course::factory()->for($org)->create(['title' => 'Curso Atalho']);
         $completed = Course::factory()->for($org)->create(['title' => 'A Concluído']);
+        $cancelled = Course::factory()->for($org)->create(['title' => 'B Cancelado']);
         $aluno = User::factory()->create(['org_id' => $org->id]);
         $aluno->assignRole(RolesEnum::ALUNO->value);
         $aluno->courses()->attach($active->id, ['status' => 'active', 'enrolled_at' => now(), 'progress_percentage' => 42]);
         $aluno->courses()->attach($completed->id, ['status' => 'completed', 'enrolled_at' => now()]);
+        $aluno->courses()->attach($cancelled->id, ['status' => 'cancelled', 'enrolled_at' => now()]);
 
         $response = $this->actingAs($aluno)->get(route('student.courses.index'));
         $html = $response->getContent();
 
         $response->assertOk();
-        $this->assertStringContainsString('dusk="sidebar-course-'.$active->id.'-link"', $html);
-        $this->assertStringContainsString('dusk="sidebar-course-'.$active->id.'-link-mobile"', $html);
+        foreach ([$active, $completed] as $course) {
+            $this->assertStringContainsString('dusk="sidebar-course-'.$course->id.'-link"', $html);
+            $this->assertStringContainsString('dusk="sidebar-course-'.$course->id.'-link-mobile"', $html);
+        }
+        $this->assertStringNotContainsString('dusk="sidebar-course-'.$cancelled->id.'-link"', $html);
         $response->assertSee(route('classroom.show', $active), false);
-        $this->assertStringNotContainsString('dusk="sidebar-see-all-link"', $html);
-        $response->assertDontSeeText('Ver todos os cursos');
         //  progress bar fed by `course_user.progress_percentage`.
         $this->assertStringContainsString('aria-valuenow="42"', $html);
-        $this->assertStringNotContainsString('dusk="sidebar-course-'.$completed->id.'-link"', $html);
+        //  the persistent escape hatch, in both renders.
+        $this->assertStringContainsString('dusk="sidebar-see-all-link"', $html);
+        $this->assertStringContainsString('dusk="sidebar-see-all-link-mobile"', $html);
+        $response->assertSee('Ver todos os cursos');
     }
 
-    public function test_aluno_without_enrollments_has_no_course_children(): void
+    public function test_aluno_without_enrollments_gets_only_the_ver_todos_link(): void
     {
         $org = Organization::factory()->create();
         $aluno = User::factory()->create(['org_id' => $org->id]);
@@ -162,7 +173,49 @@ class RoleMenuVisibilityTest extends TestCase
 
         $response->assertOk();
         $this->assertStringNotContainsString('dusk="sidebar-course-', $response->getContent());
-        $response->assertDontSeeText('Ver todos os cursos');
+        $this->assertStringContainsString('dusk="sidebar-see-all-link"', $response->getContent());
+        $response->assertSee('Ver todos os cursos');
+    }
+
+    /**
+     *  the block's certificate line follows the issuance rule: a
+     * button ONLY for a live (non-revoked) certificate — revoked and
+     * never-issued render NOTHING — and the link is the download route
+     * the owner can actually follow.
+     */
+    public function test_course_block_shows_a_certificate_button_only_for_a_live_certificate(): void
+    {
+        $org = Organization::factory()->create();
+        $live = Course::factory()->for($org)->create(['title' => 'A Live']);
+        $revoked = Course::factory()->for($org)->create(['title' => 'B Revogado']);
+        $none = Course::factory()->for($org)->create(['title' => 'C Nunca Emitido']);
+        $aluno = User::factory()->create(['org_id' => $org->id]);
+        $aluno->assignRole(RolesEnum::ALUNO->value);
+
+        foreach ([$live, $revoked, $none] as $course) {
+            $aluno->courses()->attach($course->id, ['status' => 'active', 'enrolled_at' => now()]);
+        }
+
+        $liveCertificate = Certificate::factory()->create(['user_id' => $aluno->id, 'course_id' => $live->id]);
+        Certificate::factory()->revoked()->create(['user_id' => $aluno->id, 'course_id' => $revoked->id]);
+
+        $response = $this->actingAs($aluno)->get(route('student.courses.index'));
+        $html = $response->getContent();
+
+        $response->assertOk();
+        $this->assertStringContainsString('dusk="sidebar-course-'.$live->id.'-certificate"', $html);
+        $this->assertStringContainsString('dusk="sidebar-course-'.$live->id.'-certificate-mobile"', $html);
+        $this->assertStringContainsString(route('certificates.download', ['certificate' => $liveCertificate->id]), $html);
+        $this->assertStringNotContainsString('dusk="sidebar-course-'.$revoked->id.'-certificate"', $html);
+        $this->assertStringNotContainsString('dusk="sidebar-course-'.$none->id.'-certificate"', $html);
+
+        //  the offered link is real: the owner follows it and gets
+        // the PDF stream. (Downloading a REVOKED certificate is the
+        // download endpoint's own contract — the menu's contract is
+        // simply to never offer that line.)
+        $this->actingAs($aluno)
+            ->get(route('certificates.download', ['certificate' => $liveCertificate->id]))
+            ->assertOk();
     }
 
     public function test_active_item_highlight_is_applied_on_a_sub_route(): void
@@ -264,10 +317,11 @@ class RoleMenuVisibilityTest extends TestCase
     }
 
     /**
-     *  "Meus Cursos" is gone from the Admin's menu, so the
-     * "Aprendizado" heading is never rendered for them either.
+     *  "Meus Cursos" is gone from the Admin's menu: the section
+     * heading (which replaced the old parent anchor) never renders for
+     * them either.
      */
-    public function test_admin_never_sees_the_aprendizado_section(): void
+    public function test_admin_never_sees_the_meus_cursos_section(): void
     {
         $org = Organization::factory()->create();
         $admin = User::factory()->create(['org_id' => null]);
@@ -279,10 +333,9 @@ class RoleMenuVisibilityTest extends TestCase
                 ->get(route('admin.dashboard'));
 
             $response->assertOk();
-            $response->assertDontSeeText('Aprendizado');
             $response->assertDontSeeText('Meus Cursos');
-            $this->assertStringNotContainsString('dusk="sidebar-student-courses-link"', $response->getContent());
-            $this->assertStringNotContainsString('dusk="sidebar-student-courses-link-mobile"', $response->getContent());
+            $response->assertDontSee('aulas concluídas', false);
+            $this->assertStringNotContainsString('dusk="sidebar-course-', $response->getContent());
         }
     }
 
@@ -309,10 +362,12 @@ class RoleMenuVisibilityTest extends TestCase
         $response->assertSee(route('forum-moderation.index'), false);
         // The Gestor-exclusive Aluno directory replaces it.
         $response->assertSee(route('gestor.students.index'), false);
-        //  "Meus Cursos" is gone from the Gestor's menu too,
-        // which leaves "Aprendizado" empty and dropped.
+        //  "Meus Cursos" is gone from the Gestor's menu too:
+        // the section (and its blocks) never render for staff.
         $response->assertDontSee(route('student.courses.index'), false);
-        $response->assertDontSeeText('Aprendizado');
+        $response->assertDontSeeText('Meus Cursos');
+        $response->assertDontSee('aulas concluídas', false);
+        $this->assertStringNotContainsString('dusk="sidebar-course-', $response->getContent());
     }
 
     public function test_admin_impersonating_an_org_sees_the_users_link_in_both_renders(): void

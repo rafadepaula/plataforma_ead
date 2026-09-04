@@ -4,6 +4,8 @@ namespace Tests\Browser;
 
 use App\Enums\Permissions\RolesEnum;
 use App\Models\Course;
+use App\Models\Lesson;
+use App\Models\Module;
 use App\Models\Organization;
 use App\Models\User;
 use Laravel\Dusk\Browser;
@@ -99,7 +101,9 @@ class NavigationMenuDuskTest extends DuskTestCase
                 ->assertMissing('@sidebar-audit-logs-link')
                 ->assertPresent('@sidebar-dashboard-link')
                 ->assertPresent('@sidebar-students-link')
-                ->assertPresent('@sidebar-settings-link')
+                //  `Configurações` é Admin-only (`role:admin` na
+                // rota, `roles: ['admin']` no item) — o Gestor nunca a vê.
+                ->assertMissing('@sidebar-settings-link')
                 // O link do diretório de Alunos é real: leva à listagem.
                 ->click('@sidebar-students-link')
                 ->waitForLocation('/gestor/students')
@@ -108,21 +112,26 @@ class NavigationMenuDuskTest extends DuskTestCase
     }
 
     /**
-     *  o Aluno não tem nenhum link administrativo, e o fórum NUNCA
-     * vira item de menu (é escopado a um curso): o caminho é o card na
-     * sala de aula. As três metades são o mesmo ator, então são etapas
-     * da mesma cadeia (a matrícula é criada entre elas e a tela é
-     * recarregada).
+     *  o Aluno não tem nenhum link administrativo, o fórum NUNCA vira
+     * item generalista de menu, e cada matrícula vira um bloco rico na
+     * seção "Meus Cursos": título → sala de aula (destacado lá dentro),
+     * link de fórum do bloco → fórum do curso. As etapas são o mesmo
+     * ator, então são etapas da mesma cadeia (a matrícula é criada
+     * entre elas e a tela é recarregada).
      */
-    public function test_aluno_navigation_scope_and_classroom_forum_card(): void
+    public function test_aluno_navigation_scope_and_meus_cursos_blocks(): void
     {
         $org = Organization::factory()->create();
         $course = Course::factory()->for($org)->create();
+        $module = Module::factory()->for($course)->create();
+        Lesson::factory()->for($module)->create(['is_published' => true]);
         $aluno = User::factory()->create(['org_id' => $org->id]);
         $aluno->assignRole(RolesEnum::ALUNO->value);
 
         $this->browse(function (Browser $browser) use ($aluno, $course): void {
-            // 1. Sem matrícula: nenhum link administrativo, nem o do fórum.
+            // 1. Sem matrícula: nenhum link administrativo, nem o do
+            //    fórum; o "Ver todos os cursos" persistente é a única
+            //    entry da seção.
             $browser->loginAs($aluno)
                 ->visit(route('student.courses.index'))
                 ->waitFor('@no-enrollments')
@@ -134,10 +143,12 @@ class NavigationMenuDuskTest extends DuskTestCase
                 ->assertMissing('@sidebar-forum-moderation-link')
                 ->assertMissing('@sidebar-audit-logs-link')
                 ->assertMissing('@sidebar-settings-link')
-                ->assertMissing('@sidebar-forum-link');
+                ->assertMissing('@sidebar-forum-link')
+                ->assertPresent('@sidebar-see-all-link');
 
-            // 2. Com matrícula ativa: o item do fórum CONTINA ausente —
-            //    a ausência é estrutural, não dependente de matrícula.
+            // 2. Com matrícula ativa: o item generalista do fórum CONTINUA
+            //    ausente — a ausência é estrutural, não dependente de
+            //    matrícula — e o bloco do curso aparece com contagem.
             $aluno->courses()->attach($course->id, ['status' => 'active', 'enrolled_at' => now()]);
             $this->assertDatabaseHas('course_user', [
                 'user_id' => $aluno->id,
@@ -148,18 +159,17 @@ class NavigationMenuDuskTest extends DuskTestCase
             $browser->visit(route('student.courses.index'))
                 ->waitFor('@course-card-'.$course->id)
                 ->assertMissing('@sidebar-forum-link')
+                ->assertSee('0/1 aulas concluídas')
+                // Sem certificado emitido, nenhuma linha de certificado.
+                ->assertMissing('@sidebar-course-'.$course->id.'-certificate')
                 // Continua sem qualquer superfície administrativa.
                 ->assertMissing('@sidebar-audit-logs-link')
                 ->assertMissing('@sidebar-settings-link');
 
-            // 3.  o atalho do curso matriculado aparece como filho
-            // sempre-visível de "Meus Cursos" e leva à sala de aula, onde
-            // ele mesmo fica destacado (binding `{course}` da rota).
-            // Sem truncamento (1 curso), não há filho "Ver todos".
-            // Lá dentro, o card de fórum é o ponto de entrada.
-            $browser->assertPresent('@sidebar-course-'.$course->id.'-link')
-                ->assertMissing('@sidebar-see-all-link')
-                ->click('@sidebar-course-'.$course->id.'-link')
+            // 3. O título do bloco leva à sala de aula, onde ele mesmo
+            //    fica destacado (binding `{course}` da rota); lá dentro,
+            //    o card de fórum segue como ponto de entrada paralelo.
+            $browser->click('@sidebar-course-'.$course->id.'-link')
                 ->waitForLocation('/courses/'.$course->id.'/classroom')
                 ->assertPresent('@classroom-forum-card');
 
@@ -170,7 +180,21 @@ class NavigationMenuDuskTest extends DuskTestCase
                 "Expected sidebar-course-{$course->id}-link to carry the 'active' class inside its own classroom."
             );
 
-            // 4. Mobile: o mesmo atalho dentro do Offcanvas leva à
+            // 4. O link de fórum DO BLOCO leva ao fórum daquele curso —
+            //    e o bloco continua destacado lá (mesma regra de
+            //    `student.enrolled`).
+            $browser->click('@sidebar-course-'.$course->id.'-forum')
+                ->waitForLocation('/courses/'.$course->id.'/forum')
+                ->assertPresent('@new-topic-button');
+
+            $forumBlockClass = $browser->attribute('.sidebar-course.active', 'class');
+            $this->assertStringContainsString(
+                'active',
+                (string) $forumBlockClass,
+                'The course block must stay highlighted on its own forum.'
+            );
+
+            // 5. Mobile: o mesmo bloco dentro do Offcanvas leva à
             //    sala de aula também.
             $browser->resize(375, 812)
                 ->visit(route('student.courses.index'))
@@ -178,6 +202,8 @@ class NavigationMenuDuskTest extends DuskTestCase
                 ->click('@mobile-menu-button')
                 ->waitFor('@mobile-sidebar-nav')
                 ->assertPresent('@sidebar-course-'.$course->id.'-link-mobile')
+                ->assertPresent('@sidebar-course-'.$course->id.'-forum-mobile')
+                ->assertPresent('@sidebar-see-all-link-mobile')
                 ->click('@sidebar-course-'.$course->id.'-link-mobile')
                 ->waitForLocation('/courses/'.$course->id.'/classroom');
         });

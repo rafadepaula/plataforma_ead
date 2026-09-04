@@ -86,12 +86,12 @@
     line-height: 1;
 }
 
-// Subitens do menu — atalhos sempre visíveis ( os cursos ativos
-// do Aluno sob "Meus Cursos"): indentados sob o item pai, tipografia
-// menor e barra de progresso do pivot `course_user.progress_percentage`
-// (renderizada pelo `x-ui.progress`). Compartilhados entre desktop e
-// Offcanvas mobile — o partial `x-layout.sidebar-item` emite os mesmos
-// elementos nos dois renders.
+// Subitens do menu — atalhos sempre visíveis e o bloco rico por curso
+// ( os cursos ativos/concluídos do Aluno sob "Meus Cursos"):
+// indentados sob a seção, tipografia menor e barra de progresso do pivot
+// `course_user.progress_percentage` (renderizada pelo `x-ui.progress`).
+// Compartilhados entre desktop e Offcanvas mobile — o partial
+// `x-layout.sidebar-item` emite os mesmos elementos nos dois renders.
 .sidebar-children {
     display: flex;
     flex-direction: column;
@@ -124,6 +124,87 @@
         border-left-color: var(--primary);
         color: var(--nav-fg-active);
         font-weight: var(--font-weight-semibold);
+    }
+}
+
+// Bloco rico de curso sob "Meus Cursos" : mesmo recuo e
+// borda esquerda do subitem simples, mas com o cabeçalho clicável
+// (título + barra + % + contagem de aulas) e, abaixo dele, o link
+// discreto do fórum e o botão do certificado. O estado `active` acende
+// no container (borda/fundo) e no título junto.
+.sidebar-course {
+    margin-inline: var(--space-8) var(--space-6);
+    margin-block-end: var(--space-1);
+    padding: var(--space-2) var(--space-3);
+    border-left: var(--border-width) solid var(--divider);
+    transition: var(--transition-base);
+
+    &.active {
+        background: var(--nav-active-bg);
+        border-left-color: var(--primary);
+    }
+}
+
+.sidebar-course-link {
+    display: block;
+    color: var(--nav-fg);
+    font-size: var(--font-size-body-sm);
+    text-decoration: none;
+    transition: var(--transition-base);
+
+    &:hover,
+    &:focus-visible {
+        background: var(--state-hover);
+        color: var(--nav-fg-active);
+        text-decoration: none;
+    }
+
+    &.active {
+        color: var(--nav-fg-active);
+        font-weight: var(--font-weight-semibold);
+    }
+}
+
+// Barra + porcentagem na MESMA linha : a barra
+// cresce e o `%` fica fixo à direita em numerais tabulares.
+.sidebar-course-progress {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-block-start: var(--space-1);
+
+    .progress {
+        flex: 1 1 auto;
+    }
+}
+
+.sidebar-course-progress-pct {
+    flex-shrink: 0;
+    font-size: var(--font-size-caption);
+    color: var(--text-secondary);
+}
+
+.sidebar-course-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-2);
+    margin-block-start: var(--space-2);
+}
+
+// Link discreto do fórum : caption, cor secundária,
+// sobe de tom no hover — nunca compete com o botão de certificado.
+.sidebar-course-forum-link {
+    align-self: flex-start;
+    color: var(--text-secondary);
+    font-size: var(--font-size-caption);
+    text-decoration: none;
+    transition: var(--transition-base);
+
+    &:hover,
+    &:focus-visible {
+        color: var(--nav-fg-active);
+        text-decoration: underline;
     }
 }
 
