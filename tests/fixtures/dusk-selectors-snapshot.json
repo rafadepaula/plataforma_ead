@@ -1,5 +1,5 @@
 {
-    "count": 480,
+    "count": 483,
     "entries": [
         {
             "file": "admin/users/edit.blade.php",
@@ -499,6 +499,10 @@
         },
         {
             "file": "components/course/card-row.blade.php",
+            "selector": "mobile-course-forum-{{ $course->id }}"
+        },
+        {
+            "file": "components/course/card-row.blade.php",
             "selector": "mobile-delete-course-{{ $course->id }}"
         },
         {
@@ -528,6 +532,10 @@
         {
             "file": "components/course/row-actions.blade.php",
             "selector": "$editCourseDusk"
+        },
+        {
+            "file": "components/course/row-actions.blade.php",
+            "selector": "$forumDusk"
         },
         {
             "file": "components/course/row-actions.blade.php",
@@ -920,6 +928,10 @@
         {
             "file": "courses/enrollments/index.blade.php",
             "selector": "revoke-enrollment-{{ $student->id }}"
+        },
+        {
+            "file": "courses/index.blade.php",
+            "selector": "course-forum-{{ $course->id }}"
         },
         {
             "file": "courses/index.blade.php",

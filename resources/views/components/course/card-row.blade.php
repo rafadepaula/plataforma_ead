@@ -30,6 +30,7 @@
              would otherwise see 2 elements for one dusk selector. --}}
         <x-course.row-actions :course="$course"
                               manage-modules-dusk="mobile-manage-modules-{{ $course->id }}"
+                              forum-dusk="mobile-course-forum-{{ $course->id }}"
                               manage-completion-rules-dusk="mobile-manage-completion-rules-{{ $course->id }}"
                               edit-course-dusk="mobile-edit-course-{{ $course->id }}"
                               delete-course-dusk="mobile-delete-course-{{ $course->id }}" />

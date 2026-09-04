@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\Permissions\RolesEnum;
 use App\Models\Course;
+use App\Models\ForumTopic;
 use App\Models\Lesson;
 use App\Models\Module;
 use App\Models\Organization;
@@ -34,6 +35,68 @@ class MultiTenantCourseManagementTest extends TestCase
             ->assertViewIs('courses.index')
             ->assertSee('Curso da Minha Org')
             ->assertDontSee('Curso de Outra Org');
+    }
+
+    /**
+     *  the forum is already authorized to staff at the backend
+     * (middleware + policies); what the catalog adds is the discoverable
+     * entry point: a "Fórum" action per course whose href is the real
+     * `forum.index` URL — following it must land on the topic list.
+     */
+    public function test_course_catalog_offers_a_forum_entry_point_to_the_gestor(): void
+    {
+        $org = Organization::factory()->create();
+        $course = Course::factory()->create(['org_id' => $org->id]);
+        $author = User::factory()->create(['org_id' => $org->id]);
+        $author->assignRole(RolesEnum::ALUNO->value);
+        $topic = ForumTopic::factory()->for($course)->for($author)->create(['org_id' => $org->id]);
+        $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
+
+        $html = $this->get(route('courses.index'))->assertOk()->getContent();
+
+        $this->assertStringContainsString('dusk="course-forum-'.$course->id.'"', $html);
+        $this->assertStringContainsString('href="'.route('forum.index', $course).'"', $html);
+
+        $this->get(route('forum.index', $course))
+            ->assertOk()
+            ->assertSee($topic->title);
+    }
+
+    public function test_course_catalog_offers_the_same_forum_entry_point_to_the_admin(): void
+    {
+        $org = Organization::factory()->create();
+        $course = Course::factory()->create(['org_id' => $org->id]);
+        $admin = User::factory()->create(['org_id' => null]);
+        $admin->assignRole(RolesEnum::ADMIN->value);
+
+        $html = $this->actingAs($admin)
+            ->withSession(['active_org_id' => $org->id])
+            ->get(route('courses.index'))
+            ->assertOk()
+            ->getContent();
+
+        $this->assertStringContainsString('dusk="course-forum-'.$course->id.'"', $html);
+        $this->assertStringContainsString('href="'.route('forum.index', $course).'"', $html);
+
+        $this->actingAs($admin)->get(route('forum.index', $course))->assertOk();
+    }
+
+    /**
+     *  the button inherits the catalog's `OrgScope` isolation: a
+     * Gestor of another Organization never even sees the course row —
+     * therefore no forum shortcut for it either.
+     */
+    public function test_course_catalog_forum_entry_stays_scoped_to_the_gestors_org(): void
+    {
+        $org = Organization::factory()->create();
+        $otherOrg = Organization::factory()->create();
+        $foreignCourse = Course::factory()->create(['org_id' => $otherOrg->id]);
+        $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
+
+        $html = $this->get(route('courses.index'))->assertOk()->getContent();
+
+        $this->assertStringNotContainsString('dusk="course-forum-'.$foreignCourse->id.'"', $html);
+        $this->assertStringNotContainsString('href="'.route('forum.index', $foreignCourse).'"', $html);
     }
 
     public function test_courses_catalog_renders_explicit_column_classes_and_alignment(): void

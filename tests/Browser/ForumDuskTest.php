@@ -316,6 +316,56 @@ class ForumDuskTest extends DuskTestCase
         ]);
     }
 
+    /**
+     *  o backend já autoriza o staff no fórum; o que esta cadeia
+     * prova é o caminho descobrível a partir do catálogo: o botão
+     * "Fórum" em `<x-course.row-actions>` leva à listagem de tópicos,
+     * e o fluxo existente de criar tópico e responder funciona para o
+     * Organizador (86e33p9va).
+     */
+    public function test_gestor_reaches_the_forum_from_the_course_catalog_lifecycle(): void
+    {
+        $org = Organization::factory()->create();
+        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor->assignRole(RolesEnum::GESTOR->value);
+
+        $this->browse(function (Browser $browser) use ($gestor, $course): void {
+            // 1. Do catálogo ao fórum pelo botão novo.
+            $browser->loginAs($gestor)
+                ->visit(route('courses.index'))
+                ->waitFor('@course-forum-'.$course->id)
+                ->click('@course-forum-'.$course->id)
+                ->waitFor('@new-topic-button');
+
+            // 2. Cria um tópico pelo fluxo existente (modal).
+            $browser->click('@new-topic-button')
+                ->waitFor('@new-topic-form')
+                ->type('title', 'Dúvida do Organizador')
+                ->type('content', 'Conteúdo do tópico do Organizador.')
+                ->click('@new-topic-submit')
+                ->waitForText('Dúvida do Organizador');
+
+            $topic = ForumTopic::query()->where('course_id', $course->id)->firstOrFail();
+            $this->assertDatabaseHas('forum_topics', [
+                'id' => $topic->id,
+                'title' => 'Dúvida do Organizador',
+            ]);
+
+            // 3. Abre o tópico e responde.
+            $browser->visit(route('forum.show', [$course, $topic]))
+                ->waitFor('@new-reply-form')
+                ->type('content', 'Resposta do Organizador.')
+                ->click('@new-reply-submit')
+                ->waitForText('Resposta do Organizador.');
+
+            $this->assertDatabaseHas('forum_replies', [
+                'topic_id' => $topic->id,
+                'content' => 'Resposta do Organizador.',
+            ]);
+        });
+    }
+
     public function test_a_student_who_is_not_enrolled_is_sent_back_to_the_catalog_instead_of_the_forum(): void
     {
         $org = Organization::factory()->create();

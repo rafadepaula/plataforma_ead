@@ -79,6 +79,7 @@
                     <td data-label="Ações" class="course-catalog-actions-column course-col-actions">
                         <x-course.row-actions :course="$course"
                                               manage-modules-dusk="manage-modules-{{ $course->id }}"
+                                              forum-dusk="course-forum-{{ $course->id }}"
                                               manage-completion-rules-dusk="manage-completion-rules-{{ $course->id }}"
                                               edit-course-dusk="edit-course-{{ $course->id }}"
                                               delete-course-dusk="delete-course-{{ $course->id }}" />
