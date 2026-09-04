@@ -11,9 +11,6 @@
         :title="$course->title"
         subtitle="Acompanhe os módulos e as lições deste curso e continue de onde parou."
     >
-        <x-slot:actions>
-            <x-ui.button variant="tonal" icon="message-square" href="{{ route('forum.index', $course) }}">Fórum do curso</x-ui.button>
-        </x-slot:actions>
     </x-layout.page-header>
 
     <div class="row g-4">
@@ -56,6 +53,8 @@
                 :total-count="$totalLessonsCount"
                 :certificate-available="$certificate !== null && ! $certificate->isRevoked()"
             />
+
+            <x-classroom.forum-card :course="$course" />
 
             <x-classroom.certificate-card
                 :certificate="$certificate"

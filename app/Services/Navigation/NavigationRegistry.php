@@ -217,23 +217,10 @@ final class NavigationRegistry
                 // exactly as before .
                 childrenResolver: fn ($user) => $this->resolveStudentCourseChildren($user),
             ),
-            new NavigationItem(
-                key: 'forum',
-                label: 'Fórum de Dúvidas',
-                // The forum lives under `courses/{course}/forum`, so
-                // there is no single canonical URL — the contextual
-                // `routeResolver` below is the sole source of the href
-                // (the `route` field is inert when a resolver is set).
-                // It returns the most recently accessed enrolled course's
-                // forum, or `null` to hide the item entirely when the
-                // Aluno has no active enrollment .
-                route: 'forum.index',
-                activePatterns: ['forum.*', 'forum-replies.*'],
-                icon: $this->messageIcon(),
-                roles: ['aluno'],
-                section: 'Aprendizado',
-                routeResolver: fn ($user) => $this->resolveForumRoute($user),
-            ),
+            //  the forum is scoped to ONE course, so no
+            // generalist sidebar entry exists: it is reached from within
+            // the classroom (`classroom.show`), where the `{course}`
+            // context is unambiguous.
         ];
     }
 
@@ -292,30 +279,9 @@ final class NavigationRegistry
     }
 
     /**
-     *  the forum requires a `{course}` context. The link resolves
-     * to the most recently accessed enrolled course's forum if one
-     * exists, otherwise to `student.courses.index` as a course selector.
-     * Returns `null` (hiding the item) only for an Aluno with zero
-     * active enrollments.
-     */
-    private function resolveForumRoute(User $user): ?string
-    {
-        $course = $user->courses()
-            ->wherePivot('status', 'active')
-            ->latest('course_user.updated_at')
-            ->first();
-
-        if ($course === null) {
-            return null;
-        }
-
-        return route('forum.index', $course);
-    }
-
-    /**
      *  "Meus Cursos" shortcut children: one per ACTIVE
      * enrollment of the acting Aluno — the same `status = active` pivot
-     * rule as {@see self::resolveForumRoute()} and the "Em andamento" tab
+     * rule as the "Em andamento" tab
      * of `StudentCourseController`; completed/cancelled enrollments stay
      * on `/meus-cursos` . Alphabetically by course title,
      * capped at 10; the fixed "Ver todos os cursos" child is appended
@@ -412,10 +378,5 @@ final class NavigationRegistry
     private function homeIcon(): string
     {
         return '<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>';
-    }
-
-    private function messageIcon(): string
-    {
-        return '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>';
     }
 }

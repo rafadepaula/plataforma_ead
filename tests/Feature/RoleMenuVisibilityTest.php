@@ -89,19 +89,14 @@ class RoleMenuVisibilityTest extends TestCase
         $response->assertDontSeeText('Administração');
     }
 
-    public function test_aluno_without_enrollments_does_not_see_a_forum_link(): void
-    {
-        $org = Organization::factory()->create();
-        $aluno = User::factory()->create(['org_id' => $org->id]);
-        $aluno->assignRole(RolesEnum::ALUNO->value);
-
-        $response = $this->actingAs($aluno)->get(route('student.courses.index'));
-
-        $response->assertOk();
-        $response->assertDontSeeText('Fórum de Dúvidas');
-    }
-
-    public function test_aluno_with_an_active_enrollment_sees_the_forum_linked_to_that_course(): void
+    /**
+     *  the forum is scoped to ONE course, so the sidebar never offers
+     * a generalist "Fórum de Dúvidas" entry — not even for an Aluno with
+     * active enrollments (the absence is structural, not
+     * enrollment-dependent). The entry point is the classroom card,
+     * asserted on `classroom.show` in the second half of this chain.
+     */
+    public function test_forum_is_absent_from_the_sidebar_and_reached_from_the_classroom(): void
     {
         $org = Organization::factory()->create();
         $course = Course::factory()->for($org)->create();
@@ -109,11 +104,21 @@ class RoleMenuVisibilityTest extends TestCase
         $aluno->assignRole(RolesEnum::ALUNO->value);
         $aluno->courses()->attach($course->id, ['status' => 'active', 'enrolled_at' => now()]);
 
+        // 1. No sidebar, em NENHUM render, mesmo com matrícula ativa.
         $response = $this->actingAs($aluno)->get(route('student.courses.index'));
+        $html = $response->getContent();
 
         $response->assertOk();
-        $response->assertSee(route('forum.index', $course), false);
-        $response->assertSeeText('Fórum de Dúvidas');
+        $response->assertDontSeeText('Fórum de Dúvidas');
+        $this->assertStringNotContainsString('dusk="sidebar-forum-link"', $html);
+        $this->assertStringNotContainsString('dusk="sidebar-forum-link-mobile"', $html);
+
+        // 2. O ponto de entrada é o card na sala de aula.
+        $classroom = $this->actingAs($aluno)->get(route('classroom.show', $course));
+
+        $classroom->assertOk();
+        $classroom->assertSee(route('forum.index', $course), false);
+        $classroom->assertSee('dusk="classroom-forum-card"', false);
     }
 
     /**

@@ -108,12 +108,13 @@ class NavigationMenuDuskTest extends DuskTestCase
     }
 
     /**
-     *  o Aluno não tem nenhum link administrativo, e o link do fórum
-     * aparece apenas quando existe matrícula: as duas metades são o mesmo
-     * ator, então são etapas da mesma cadeia (a matrícula é criada entre
-     * elas e a tela é recarregada).
+     *  o Aluno não tem nenhum link administrativo, e o fórum NUNCA
+     * vira item de menu (é escopado a um curso): o caminho é o card na
+     * sala de aula. As três metades são o mesmo ator, então são etapas
+     * da mesma cadeia (a matrícula é criada entre elas e a tela é
+     * recarregada).
      */
-    public function test_aluno_navigation_scope_and_enrolled_forum_link(): void
+    public function test_aluno_navigation_scope_and_classroom_forum_card(): void
     {
         $org = Organization::factory()->create();
         $course = Course::factory()->for($org)->create();
@@ -135,7 +136,8 @@ class NavigationMenuDuskTest extends DuskTestCase
                 ->assertMissing('@sidebar-settings-link')
                 ->assertMissing('@sidebar-forum-link');
 
-            // 2. Com matrícula ativa: o link contextual do fórum aparece.
+            // 2. Com matrícula ativa: o item do fórum CONTINA ausente —
+            //    a ausência é estrutural, não dependente de matrícula.
             $aluno->courses()->attach($course->id, ['status' => 'active', 'enrolled_at' => now()]);
             $this->assertDatabaseHas('course_user', [
                 'user_id' => $aluno->id,
@@ -145,7 +147,7 @@ class NavigationMenuDuskTest extends DuskTestCase
 
             $browser->visit(route('student.courses.index'))
                 ->waitFor('@course-card-'.$course->id)
-                ->assertPresent('@sidebar-forum-link')
+                ->assertMissing('@sidebar-forum-link')
                 // Continua sem qualquer superfície administrativa.
                 ->assertMissing('@sidebar-audit-logs-link')
                 ->assertMissing('@sidebar-settings-link');
@@ -154,10 +156,12 @@ class NavigationMenuDuskTest extends DuskTestCase
             // sempre-visível de "Meus Cursos" e leva à sala de aula, onde
             // ele mesmo fica destacado (binding `{course}` da rota).
             // Sem truncamento (1 curso), não há filho "Ver todos".
+            // Lá dentro, o card de fórum é o ponto de entrada.
             $browser->assertPresent('@sidebar-course-'.$course->id.'-link')
                 ->assertMissing('@sidebar-see-all-link')
                 ->click('@sidebar-course-'.$course->id.'-link')
-                ->waitForLocation('/courses/'.$course->id.'/classroom');
+                ->waitForLocation('/courses/'.$course->id.'/classroom')
+                ->assertPresent('@classroom-forum-card');
 
             $childClass = $browser->attribute('@sidebar-course-'.$course->id.'-link', 'class');
             $this->assertStringContainsString(

@@ -70,15 +70,19 @@ class ClassroomOverviewRenderingTest extends TestCase
         $response->assertSee($course->title);
     }
 
-    public function test_page_header_links_to_the_course_forum(): void
+    public function test_sidebar_card_links_to_the_course_forum(): void
     {
         [$aluno, $course] = $this->makeEnrolledClassroom();
 
         $response = $this->actingAs($aluno)->get(route('classroom.show', $course));
 
         $response->assertOk();
-        $response->assertSee('Fórum do curso');
+        $response->assertSee('Fórum de dúvidas');
+        $response->assertSee('dusk="classroom-forum-card"', false);
         $response->assertSee(route('forum.index', $course));
+        // O botão do page-header saiu: o card lateral é o único ponto
+        // de entrada do fórum dentro da sala de aula.
+        $response->assertDontSee('Fórum do curso');
     }
 
     public function test_pending_certificate_renders_the_neutral_unavailable_surface(): void

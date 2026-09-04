@@ -352,20 +352,13 @@ class NavigationServiceTest extends TestCase
         }
     }
 
-    public function test_aluno_with_no_enrollments_has_no_forum_link(): void
+    public function test_the_forum_item_never_exists_in_the_navigation_for_any_role(): void
     {
-        $org = Organization::factory()->create();
-        $aluno = User::factory()->create(['org_id' => $org->id]);
-        $aluno->assignRole(RolesEnum::ALUNO->value);
-
-        $keys = $this->keysFor($aluno);
-
-        $this->assertNotContains('forum', $keys);
-        $this->assertContains('student-courses', $keys);
-    }
-
-    public function test_aluno_with_an_active_enrollment_sees_the_forum_linked_to_that_course(): void
-    {
+        //  the forum is scoped to ONE course, so the
+        // generalist sidebar entry was removed: the Aluno reaches it from
+        // within the classroom, where the `{course}` context is
+        // unambiguous. Even an ACTIVE enrollment cannot bring the item
+        // back — the absence is structural, not enrollment-dependent.
         $org = Organization::factory()->create();
         $course = Course::factory()->for($org)->create();
         $aluno = User::factory()->create(['org_id' => $org->id]);
@@ -375,13 +368,10 @@ class NavigationServiceTest extends TestCase
             'enrolled_at' => now(),
         ]);
 
-        $sections = $this->service->build($aluno);
-        $forumItem = collect($sections)
-            ->flatMap(fn ($section) => $section->items)
-            ->firstWhere('key', 'forum');
+        $keys = $this->keysFor($aluno);
 
-        $this->assertNotNull($forumItem, 'Forum link must render when the Aluno has an active enrollment.');
-        $this->assertSame(route('forum.index', $course), $forumItem['url']);
+        $this->assertNotContains('forum', $keys);
+        $this->assertContains('student-courses', $keys);
     }
 
     // ──  "Meus Cursos" shortcut children ─────────────────────
