@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\EvaluateCourseCompletionAction;
 use App\Http\Requests\StoreCourseCompletionRuleRequest;
 use App\Models\Course;
 use App\Models\CourseCompletionRule;
@@ -21,6 +22,10 @@ use Illuminate\Support\Facades\Gate;
  */
 class CourseCompletionRuleController extends Controller
 {
+    public function __construct(
+        protected EvaluateCourseCompletionAction $evaluateCourseCompletionAction,
+    ) {}
+
     public function index(Course $course): View
     {
         Gate::authorize('update', $course);
@@ -53,6 +58,19 @@ class CourseCompletionRuleController extends Controller
             'target_id' => $request->validated('target_id'),
             'required_percentage' => $request->validated('required_percentage'),
         ]);
+
+        // Retroactive evaluation: students who already reached the
+        // threshold BEFORE any rule existed never fired the
+        // lesson-completion pipeline, so without this backfill their
+        // enrollment stays `active` at 100% and no certificate is ever
+        // issued (production bug 2026-09-05). The action only dispatches
+        // on the `active` → `completed` transition, so re-creating rules
+        // never duplicates certificates or re-notifies.
+        $students = $course->students()->get();
+
+        foreach ($students as $student) {
+            $this->evaluateCourseCompletionAction->execute($course, $student);
+        }
 
         return redirect()->route('courses.completion-rules.index', $course)
             ->with('success', 'Regra de conclusão criada com sucesso.');

@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Listeners;
 
+use App\Actions\EvaluateCourseCompletionAction;
 use App\Events\CourseCompletedByStudent;
 use App\Events\LessonMarkedAsCompleted;
 use App\Listeners\RecalculateCourseProgress;
@@ -38,7 +39,7 @@ class RecalculateCourseProgressTest extends TestCase
             'completed_at' => now(),
         ]);
 
-        (new RecalculateCourseProgress)->handle(new LessonMarkedAsCompleted($lessons->first(), $user));
+        (new RecalculateCourseProgress(new EvaluateCourseCompletionAction))->handle(new LessonMarkedAsCompleted($lessons->first(), $user));
 
         $this->assertDatabaseHas('course_user', [
             'user_id' => $user->id,
@@ -65,7 +66,7 @@ class RecalculateCourseProgressTest extends TestCase
             'completed_at' => now(),
         ]);
 
-        (new RecalculateCourseProgress)->handle(new LessonMarkedAsCompleted($publishedLessons->first(), $user));
+        (new RecalculateCourseProgress(new EvaluateCourseCompletionAction))->handle(new LessonMarkedAsCompleted($publishedLessons->first(), $user));
 
         $this->assertDatabaseHas('course_user', [
             'user_id' => $user->id,
@@ -90,7 +91,7 @@ class RecalculateCourseProgressTest extends TestCase
             'completed_at' => now(),
         ]);
 
-        (new RecalculateCourseProgress)->handle(new LessonMarkedAsCompleted($lesson, $user));
+        (new RecalculateCourseProgress(new EvaluateCourseCompletionAction))->handle(new LessonMarkedAsCompleted($lesson, $user));
 
         $this->assertDatabaseHas('course_user', [
             'user_id' => $user->id,
@@ -125,7 +126,7 @@ class RecalculateCourseProgressTest extends TestCase
             ]);
         }
 
-        (new RecalculateCourseProgress)->handle(new LessonMarkedAsCompleted($lessons->last(), $user));
+        (new RecalculateCourseProgress(new EvaluateCourseCompletionAction))->handle(new LessonMarkedAsCompleted($lessons->last(), $user));
 
         $this->assertDatabaseHas('course_user', [
             'user_id' => $user->id,
@@ -161,7 +162,7 @@ class RecalculateCourseProgressTest extends TestCase
             'completed_at' => now(),
         ]);
 
-        (new RecalculateCourseProgress)->handle(new LessonMarkedAsCompleted($lesson, $user));
+        (new RecalculateCourseProgress(new EvaluateCourseCompletionAction))->handle(new LessonMarkedAsCompleted($lesson, $user));
 
         $this->assertDatabaseHas('course_user', [
             'user_id' => $user->id,
@@ -189,7 +190,7 @@ class RecalculateCourseProgressTest extends TestCase
             'completed_at' => now(),
         ]);
 
-        (new RecalculateCourseProgress)->handle(new LessonMarkedAsCompleted($lesson, $user));
+        (new RecalculateCourseProgress(new EvaluateCourseCompletionAction))->handle(new LessonMarkedAsCompleted($lesson, $user));
 
         $this->assertDatabaseHas('course_user', [
             'user_id' => $user->id,

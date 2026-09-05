@@ -2,12 +2,18 @@
 
 namespace Tests\Feature;
 
+use App\Enums\Permissions\RolesEnum;
+use App\Models\Certificate;
 use App\Models\Course;
 use App\Models\CourseCompletionRule;
 use App\Models\Lesson;
+use App\Models\LessonProgress;
 use App\Models\Module;
 use App\Models\Organization;
 use App\Models\Quiz;
+use App\Models\User;
+use Illuminate\Database\Eloquent\Relations\Pivot;
+use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 /**
@@ -245,5 +251,134 @@ class CourseCompletionRuleTest extends TestCase
             'rule_type' => 'all_lessons',
             'required_percentage' => 100,
         ])->assertForbidden();
+    }
+
+    /**
+     * Retroactive completion backfill coverage (production bug found
+     * 2026-09-05): a student who ALREADY reached the `all_lessons`
+     * threshold before the rule existed must be completed and issued a
+     * certificate the moment a Gestor creates the rule — the completion
+     * pipeline used to be purely lesson-event-driven, so rules created
+     * after the fact were never evaluated (ClickUp 86e34v8z6 thread).
+     */
+
+    /**
+     * @param  iterable<int, Lesson>  $lessons
+     * @return array{User, Pivot}
+     */
+    private function studentAtProgress(Course $course, iterable $lessons, int $completedCount, int $pct): array
+    {
+        /** @var User $student */
+        $student = User::factory()->create(['org_id' => null]);
+        $student->assignRole(RolesEnum::ALUNO->value);
+        $course->students()->attach($student->id, [
+            'enrolled_at' => now(),
+            'status' => 'active',
+            'progress_percentage' => $pct,
+        ]);
+
+        foreach (collect($lessons)->slice(0, $completedCount) as $lesson) {
+            LessonProgress::create([
+                'user_id' => $student->id,
+                'lesson_id' => $lesson->id,
+                'is_completed' => true,
+                'completion_source' => 'manual_click',
+                'completed_at' => now(),
+            ]);
+        }
+
+        $pivot = $course->students()->where('user_id', $student->id)->first()->pivot;
+
+        return [$student, $pivot];
+    }
+
+    public function test_creating_a_rule_backfills_completion_for_students_already_at_the_threshold(): void
+    {
+        Notification::fake();
+        $org = Organization::factory()->create();
+        $course = Course::factory()->create(['org_id' => $org->id]);
+        $module = Module::factory()->for($course)->create();
+        $lessons = Lesson::factory()->count(2)->for($module)->create(['is_published' => true]);
+        [$student, $pivot] = $this->studentAtProgress($course, $lessons, 2, 100);
+
+        // State before the fix: 100% but never marked completed, no
+        // certificate — the rule simply did not exist yet.
+        $this->assertNull($pivot->completed_at);
+        $this->assertDatabaseMissing('certificates', [
+            'user_id' => $student->id,
+            'course_id' => $course->id,
+        ]);
+
+        $this->actingAsOrgUser($org);
+        $this->post(route('courses.completion-rules.store', $course), [
+            'rule_type' => 'all_lessons',
+            'required_percentage' => 100,
+        ])->assertRedirect(route('courses.completion-rules.index', $course));
+
+        $this->assertDatabaseHas('certificates', [
+            'user_id' => $student->id,
+            'course_id' => $course->id,
+        ]);
+        $updated = $course->students()->where('user_id', $student->id)->first()->pivot;
+        $this->assertSame('completed', $updated->status);
+        $this->assertNotNull($updated->completed_at);
+    }
+
+    public function test_creating_a_rule_does_not_complete_students_below_the_threshold(): void
+    {
+        Notification::fake();
+        $org = Organization::factory()->create();
+        $course = Course::factory()->create(['org_id' => $org->id]);
+        $module = Module::factory()->for($course)->create();
+        $lessons = Lesson::factory()->count(2)->for($module)->create(['is_published' => true]);
+        [$student] = $this->studentAtProgress($course, $lessons, 1, 50);
+
+        $this->actingAsOrgUser($org);
+        $this->post(route('courses.completion-rules.store', $course), [
+            'rule_type' => 'all_lessons',
+            'required_percentage' => 100,
+        ])->assertRedirect();
+
+        $this->assertDatabaseMissing('certificates', [
+            'user_id' => $student->id,
+            'course_id' => $course->id,
+        ]);
+        $pivot = $course->students()->where('user_id', $student->id)->first()->pivot;
+        $this->assertSame('active', $pivot->status);
+        $this->assertNull($pivot->completed_at);
+    }
+
+    public function test_backfill_is_idempotent_for_students_already_completed(): void
+    {
+        Notification::fake();
+        $org = Organization::factory()->create();
+        $course = Course::factory()->create(['org_id' => $org->id]);
+        $module = Module::factory()->for($course)->create();
+        $lessons = Lesson::factory()->count(2)->for($module)->create(['is_published' => true]);
+        [$student, $pivot] = $this->studentAtProgress($course, $lessons, 2, 100);
+
+        $certificate = Certificate::factory()->for($course)->for($student)->create();
+        $originalCompletedAt = '2026-09-01 10:00:00';
+        $course->students()->updateExistingPivot($student->id, [
+            'status' => 'completed',
+            'completed_at' => $originalCompletedAt,
+        ]);
+        unset($pivot);
+
+        $this->actingAsOrgUser($org);
+        $this->post(route('courses.completion-rules.store', $course), [
+            'rule_type' => 'all_lessons',
+            'required_percentage' => 100,
+        ])->assertRedirect();
+
+        $this->assertSame(
+            1,
+            Certificate::where('user_id', $student->id)->where('course_id', $course->id)->count(),
+            'Backfill must never duplicate an existing certificate.',
+        );
+        $this->assertSame($certificate->id, Certificate::where('user_id', $student->id)->first()->id);
+        $still = $course->students()->where('user_id', $student->id)->first()->pivot;
+        $this->assertSame('completed', $still->status);
+        $this->assertSame($originalCompletedAt, $still->completed_at->format('Y-m-d H:i:s'));
     }
 }
