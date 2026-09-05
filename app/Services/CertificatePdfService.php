@@ -24,6 +24,18 @@ use Barryvdh\DomPDF\PDF as DomPdf;
  */
 class CertificatePdfService
 {
+    public function __construct(
+        protected CertificatePresentationBuilder $presentationBuilder,
+    ) {}
+
+    /**
+     * Hands the template the measured presentation contract built by
+     * `CertificatePresentationBuilder` (`logo`, `presentation`) plus the
+     * hash-less `verificationLookupUrl` (the public lookup page printed
+     * alongside the per-certificate link). Paper/orientation are set
+     * explicitly per document — A4 landscape — because `@page` margins
+     * alone do not define orientation in Dompdf.
+     */
     public function generate(Certificate $certificate): DomPdf
     {
         $certificate->loadMissing('user');
@@ -34,11 +46,24 @@ class CertificatePdfService
         );
 
         $verificationUrl = route('certificates.verify', $certificate->validation_hash);
+        $presentation = $this->presentationBuilder->build($certificate);
 
         return Pdf::loadView('certificates.pdf', [
             'certificate' => $certificate,
             'verificationUrl' => $verificationUrl,
+            'verificationLookupUrl' => route('certificates.verify'),
             'qrCodeDataUri' => null,
-        ]);
+            'logo' => $presentation['logo'],
+            'presentation' => $presentation['presentation'],
+        ])->setPaper('a4', 'landscape');
+    }
+
+    /**
+     * Exposes the presentation builder for tests that assert the
+     * measured contract directly (`CertificatePdfTest`).
+     */
+    public function presentation(): CertificatePresentationBuilder
+    {
+        return $this->presentationBuilder;
     }
 }
