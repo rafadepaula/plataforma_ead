@@ -1,0 +1,91 @@
+// =============================================================================
+// Dark Mode — Integração com Bootstrap 5.3 e tokens Plataforma EAD
+// =============================================================================
+
+[data-bs-theme="dark"] {
+    // Variáveis Bootstrap essenciais mapeadas para nossos tokens semânticos
+    --bs-body-bg: var(--surface-body);
+    --bs-body-color: var(--text-primary);
+    --bs-body-color-rgb: 241, 245, 249;
+    --bs-body-bg-rgb: 11, 15, 25;
+
+    --bs-emphasis-color: var(--text-primary);
+    --bs-emphasis-color-rgb: 241, 245, 249;
+    --bs-secondary-color: var(--text-secondary);
+    --bs-secondary-color-rgb: 148, 163, 184;
+    --bs-secondary-bg: var(--surface-alt);
+    --bs-secondary-bg-rgb: 22, 31, 48;
+    --bs-tertiary-color: var(--text-disabled);
+    --bs-tertiary-bg: var(--surface-sunken);
+    --bs-tertiary-bg-rgb: 13, 19, 31;
+
+    --bs-border-color: var(--border-color);
+    --bs-border-color-translucent: rgba(255, 255, 255, 0.12);
+
+    --bs-card-bg: var(--surface);
+    --bs-card-color: var(--text-primary);
+    --bs-card-border-color: var(--border-color);
+
+    --bs-modal-bg: var(--surface);
+    --bs-modal-color: var(--text-primary);
+    --bs-modal-border-color: var(--border-color);
+    --bs-modal-header-border-color: var(--border-color);
+    --bs-modal-footer-border-color: var(--border-color);
+
+    --bs-dropdown-bg: var(--surface);
+    --bs-dropdown-color: var(--text-primary);
+    --bs-dropdown-border-color: var(--border-color);
+    --bs-dropdown-link-color: var(--text-primary);
+    --bs-dropdown-link-hover-bg: var(--surface-alt);
+    --bs-dropdown-link-hover-color: var(--text-primary);
+
+    // Controles de formulário no modo escuro
+    .form-control,
+    .form-select {
+        background-color: var(--surface);
+        border-color: var(--border-color);
+        color: var(--text-primary);
+
+        &:focus {
+            background-color: var(--surface);
+            border-color: var(--primary);
+            color: var(--text-primary);
+            box-shadow: 0 0 0 4px var(--focus-ring-alpha);
+        }
+
+        &::placeholder {
+            color: var(--text-disabled);
+        }
+
+        &:disabled,
+        &[readonly] {
+            background-color: var(--surface-sunken);
+            border-color: var(--border-subtle);
+            color: var(--text-disabled);
+        }
+    }
+
+    // Tabelas e listagens
+    .table,
+    .ds-table {
+        --bs-table-color: var(--text-primary);
+        --bs-table-bg: var(--surface);
+        --bs-table-border-color: var(--border-color);
+        --bs-table-striped-bg: var(--surface-alt);
+        --bs-table-hover-bg: var(--surface-alt);
+    }
+
+    // Topbar e sidebars
+    .appbar,
+    .sidebar,
+    .mobile-sidebar {
+        background-color: var(--nav-bg);
+        border-color: var(--border-color) !important;
+    }
+
+    // Offcanvas mobile
+    .offcanvas {
+        background-color: var(--nav-bg);
+        color: var(--text-primary);
+    }
+}
