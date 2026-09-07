@@ -156,6 +156,22 @@ cansaço visual durante longas sessões de estudo.
 - `color-error`: #EF4444 (Alertas / Erros de validação)
 - `color-warning`: #F59E0B (Avisos / Prazos)
 
+### Modo Escuro (Dark Mode)
+
+O sistema suporta alternância nativa entre Light Mode e Dark Mode (Slate / Deep Navy) via atributo `data-bs-theme="dark"` no elemento `<html>`.
+
+| Token | Light Mode | Dark Mode | Função |
+|---|---|---|---|
+| `--surface-body` | `#f6f8fc` | `#0b0f19` | Fundo principal da aplicação |
+| `--surface` | `#ffffff` | `#111827` | Cards, modais e containers elevados |
+| `--surface-alt` | `#eef1f7` | `#161f30` | Superfícies secundárias e áreas alternadas |
+| `--surface-sunken` | `#fbfcfe` | `#0d131f` | Headers de tabelas e inputs desabilitados |
+| `--text-primary` | `#1b2437` | `#f1f5f9` | Texto principal e headings (WCAG AAA > 12:1) |
+| `--text-secondary` | `#5b6880` | `#94a3b8` | Subtítulos e labels (WCAG AA > 5:1) |
+| `--border-color` | `#dce3ee` | `#1e293b` | Divisores e bordas |
+| `--primary` | `#4c6fe7` | `#3b82f6` | Ação primária calibrada para contraste |
+| `--nav-bg` | `#ffffff` | `#0f172a` | Fundo da topbar e sidebar |
+
 ---
 
 ## 2. Tipografia
