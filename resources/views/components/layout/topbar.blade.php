@@ -74,6 +74,8 @@
 
         <x-help-button :key="Route::currentRouteName() ?? 'unknown'" />
 
+        <x-ui.theme-toggle />
+
         <x-notifications-bell />
 
         @auth

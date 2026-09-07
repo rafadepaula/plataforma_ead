@@ -1,6 +1,16 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
+    <script>
+        (function() {
+            try {
+                const saved = localStorage.getItem('theme');
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                const theme = saved || (prefersDark ? 'dark' : 'light');
+                document.documentElement.setAttribute('data-bs-theme', theme);
+            } catch (e) {}
+        })();
+    </script>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -21,7 +31,8 @@
 
         {{-- Right Form Area --}}
         <div class="col-12 col-lg-7 min-vh-100 d-flex flex-column justify-content-center align-items-center position-relative p-4 p-md-5">
-            <div class="position-absolute top-0 end-0 p-4">
+            <div class="position-absolute top-0 end-0 p-4 d-flex align-items-center gap-2">
+                <x-ui.theme-toggle />
                 <x-help-button :key="Route::currentRouteName() ?? 'login'" />
             </div>
 

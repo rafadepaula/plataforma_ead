@@ -37,6 +37,8 @@
             <div class="d-flex align-items-center gap-3 gap-md-4">
                 <x-help-button key="landing" />
 
+                <x-ui.theme-toggle />
+
                 @auth
                     <x-ui.button variant="primary" size="sm" href="{{ $dashboardRoute }}" dusk="landing-login-link">
                         Acessar plataforma
