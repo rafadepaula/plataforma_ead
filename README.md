@@ -80,27 +80,68 @@ O objetivo do sistema é fornecer uma infraestrutura de EAD moderna, segura e de
 
 ## 🚀 Como Executar o Projeto Localmente
 
-O ambiente de desenvolvimento está configurado utilizando **Laravel Sail** (Docker).
+O ambiente de desenvolvimento está configurado utilizando **Laravel Sail** (Docker), sem necessidade de PHP, Composer ou Node instalados diretamente no host.
 
 ### 1. Pré-requisitos
-- Docker e Docker Compose instalados.
+- Docker e Docker Compose instalados e em execução.
 
-### 2. Subir os Containers
+### 2. Configurar o Ambiente (`.env`)
+Copie o arquivo de exemplo para `.env`:
+```bash
+cp .env.example .env
+```
+Certifique-se de que as configurações de conexão apontem para os serviços do Sail:
+```env
+DB_CONNECTION=mysql
+DB_HOST=mysql
+DB_PORT=3306
+DB_DATABASE=plataforma_ead
+DB_USERNAME=sail
+DB_PASSWORD=password
+
+MAIL_MAILER=smtp
+MAIL_HOST=mailpit
+MAIL_PORT=1025
+```
+
+### 3. Instalar Dependências Iniciais do Composer via Docker
+Em um clone limpo, o diretório `vendor/` e o binário `vendor/bin/sail` ainda não existem. Caso não possua PHP 8.5 e Composer instalados no host, instale as dependências executando um container efêmero:
+```bash
+docker run --rm \
+    -u "$(id -u):$(id -g)" \
+    -v "$(pwd):/app" \
+    -w /app \
+    composer:lts \
+    composer install --ignore-platform-reqs --no-scripts
+```
+
+### 4. Subir os Containers com Laravel Sail
+Com o `vendor` criado, os runtimes e scripts do Sail estarão prontos para construir a imagem e iniciar os containers:
 ```bash
 vendor/bin/sail up -d
 ```
 
-### 3. Executar Migrações e Seeds do Banco de Dados
+### 5. Gerar a Chave da Aplicação
+```bash
+vendor/bin/sail artisan key:generate
+```
+
+### 6. Executar Migrações e Seeds do Banco de Dados
 ```bash
 vendor/bin/sail artisan migrate --seed
 ```
 
-### 4. Compilar Assets do Frontend
+### 7. Instalar Dependências e Compilar Assets do Frontend
 ```bash
-vendor/bin/sail npm run dev
-# ou para build de produção:
+vendor/bin/sail npm install
 vendor/bin/sail npm run build
+# ou para modo de desenvolvimento com hot reload:
+vendor/bin/sail npm run dev
 ```
+
+### 8. Acessos Disponíveis
+- **Aplicação**: [http://localhost](http://localhost)
+- **Mailpit (Webmail para testes)**: [http://localhost:8025](http://localhost:8025)
 
 ---
 
