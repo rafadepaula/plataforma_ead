@@ -22,12 +22,14 @@ import QuizBuilder         from './QuizBuilder';
 import QuizTaking          from './QuizTaking';
 import QuizTimer           from './QuizTimer';
 import SmartInvitationForm from './SmartInvitationForm';
+import ThemeManager        from './ThemeManager';
 
 // ModalManager e ForumEditHistory foram REMOVIDOS: substituídos por
 // bootstrap.Modal + data-bs-toggle/data-bs-dismiss.
 
 const httpClient   = HttpClient;          // singleton
 const notifications = NotificationService; // singleton (agora sobre bootstrap.Toast)
+const themeManager = ThemeManager;        // singleton
 
 export default {
     HttpClient:          httpClient,
@@ -49,4 +51,5 @@ export default {
     QuizTaking:          new QuizTaking(),
     QuizTimer:           new QuizTimer(),
     SmartInvitationForm: new SmartInvitationForm(httpClient, notifications),
+    ThemeManager:        themeManager,
 };
