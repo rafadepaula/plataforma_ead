@@ -22,6 +22,11 @@
     --bs-border-color: var(--border-color);
     --bs-border-color-translucent: rgba(255, 255, 255, 0.12);
 
+    // Superfícies e neutros que usavam paleta primitiva (Landing page, hovers)
+    --blue-50: var(--surface-alt);
+    --grey-0: var(--surface);
+    --grey-900: var(--text-primary);
+
     --bs-card-bg: var(--surface);
     --bs-card-color: var(--text-primary);
     --bs-card-border-color: var(--border-color);

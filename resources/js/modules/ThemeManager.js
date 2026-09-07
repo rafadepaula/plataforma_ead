@@ -24,6 +24,12 @@ export class ThemeManager {
             }
         });
 
+        window.addEventListener('storage', (event) => {
+            if (event.key === this.STORAGE_KEY && (event.newValue === 'dark' || event.newValue === 'light')) {
+                this.applyTheme(event.newValue, false);
+            }
+        });
+
         this.initialized = true;
     }
 

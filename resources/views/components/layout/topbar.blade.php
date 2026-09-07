@@ -74,7 +74,7 @@
 
         <x-help-button :key="Route::currentRouteName() ?? 'unknown'" />
 
-        <x-ui.theme-toggle />
+        <x-ui.theme-toggle class="appbar-icon-btn" />
 
         <x-notifications-bell />
 
