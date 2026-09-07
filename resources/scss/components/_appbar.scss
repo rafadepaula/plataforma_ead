@@ -89,3 +89,24 @@ header.nav {
     min-height: var(--touch-min);
     padding: 0;
 }
+
+// Theme toggle button icons
+[data-bs-theme="dark"] [data-theme-toggle] {
+    .theme-icon-dark {
+        display: none !important;
+    }
+    .theme-icon-light {
+        display: inline-flex !important;
+    }
+}
+
+[data-bs-theme="light"] [data-theme-toggle],
+:root:not([data-bs-theme="dark"]) [data-theme-toggle] {
+    .theme-icon-dark {
+        display: inline-flex !important;
+    }
+    .theme-icon-light {
+        display: none !important;
+    }
+}
+
