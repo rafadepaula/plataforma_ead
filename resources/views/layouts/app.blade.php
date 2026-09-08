@@ -5,7 +5,7 @@
         (function() {
             try {
                 const saved = localStorage.getItem('theme');
-                const theme = saved === 'dark' ? 'dark' : 'light';
+                const theme = saved || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
                 document.documentElement.setAttribute('data-bs-theme', theme);
             } catch (e) {}
         })();

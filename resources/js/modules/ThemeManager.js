@@ -30,6 +30,17 @@ export class ThemeManager {
             }
         });
 
+        if (window.matchMedia) {
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (event) => {
+                try {
+                    const saved = localStorage.getItem(this.STORAGE_KEY);
+                    if (!saved) {
+                        this.applyTheme(event.matches ? 'dark' : 'light', false);
+                    }
+                } catch (_) {}
+            });
+        }
+
         this.initialized = true;
     }
 
@@ -46,6 +57,10 @@ export class ThemeManager {
         const currentAttr = document.documentElement.getAttribute('data-bs-theme');
         if (currentAttr === 'dark' || currentAttr === 'light') {
             return currentAttr;
+        }
+
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            return 'dark';
         }
 
         return 'light';
