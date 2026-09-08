@@ -22,9 +22,16 @@
     --bs-border-color: var(--border-color);
     --bs-border-color-translucent: rgba(255, 255, 255, 0.12);
 
-    // Superfícies e neutros que usavam paleta primitiva (Landing page, hovers)
+    // Superfícies e neutros que usavam paleta primitiva (Landing page, hovers, cards)
     --blue-50: var(--surface-alt);
+    --blue-100: var(--surface-alt);
+    --mint-100: var(--surface-sunken);
     --grey-0: var(--surface);
+
+    .guest-panel {
+        background-color: var(--surface-alt) !important;
+        color: var(--text-primary) !important;
+    }
 
     .landing-headline {
         color: var(--text-primary) !important;
@@ -113,13 +120,16 @@
         color: var(--text-primary);
     }
 
-    // Player de vídeo e fachada (capa antes do play)
+    // Player de vídeo, cards de curso e fachadas decorativas
     .ds-ratio-16x9 {
         background-color: #0b0f19 !important;
     }
 
     .ds-player-facade,
-    .ds-video-wash {
+    .ds-video-wash,
+    .ds-pastel-wash,
+    .ds-course-card-wash,
+    .org-logo {
         background: linear-gradient(135deg, #0d131f, #1e293b) !important;
     }
 
