@@ -11,6 +11,7 @@ use App\Models\LessonProgress;
 use App\Models\Module;
 use App\Models\Organization;
 use App\Models\Quiz;
+use App\Models\QuizAttempt;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 use Illuminate\Support\Facades\Notification;
@@ -380,5 +381,43 @@ class CourseCompletionRuleTest extends TestCase
         $still = $course->students()->where('user_id', $student->id)->first()->pivot;
         $this->assertSame('completed', $still->status);
         $this->assertSame($originalCompletedAt, $still->completed_at->format('Y-m-d H:i:s'));
+    }
+
+    public function test_creating_a_min_quiz_score_only_rule_backfills_completion_without_any_all_lessons_rule(): void
+    {
+        Notification::fake();
+        $org = Organization::factory()->create();
+        [$course, , $quiz] = $this->courseWithModuleAndQuiz($org);
+
+        /** @var User $student */
+        $student = User::factory()->create(['org_id' => null]);
+        $student->assignRole(RolesEnum::ALUNO->value);
+        $course->students()->attach($student->id, [
+            'enrolled_at' => now(),
+            'status' => 'active',
+            'progress_percentage' => 0,
+        ]);
+
+        QuizAttempt::factory()->for($quiz)->for($student)->graded()->create(['score_percentage' => 90]);
+
+        $this->assertDatabaseMissing('certificates', [
+            'user_id' => $student->id,
+            'course_id' => $course->id,
+        ]);
+
+        $this->actingAsOrgUser($org);
+        $this->post(route('courses.completion-rules.store', $course), [
+            'rule_type' => 'min_quiz_score',
+            'target_id' => $quiz->id,
+            'required_percentage' => 80,
+        ])->assertRedirect(route('courses.completion-rules.index', $course));
+
+        $this->assertDatabaseHas('certificates', [
+            'user_id' => $student->id,
+            'course_id' => $course->id,
+        ]);
+        $updated = $course->students()->where('user_id', $student->id)->first()->pivot;
+        $this->assertSame('completed', $updated->status);
+        $this->assertNotNull($updated->completed_at);
     }
 }

@@ -24,6 +24,7 @@ class SubmitQuizAttemptAction
     public function __construct(
         protected MarkLessonCompleteAction $markLessonCompleteAction,
         protected OpenQuizAttemptAction $openQuizAttemptAction,
+        protected EvaluateCourseCompletionAction $evaluateCourseCompletionAction = new EvaluateCourseCompletionAction,
     ) {}
 
     /**
@@ -120,6 +121,13 @@ class SubmitQuizAttemptAction
      * Shared by both the no-essay auto-grade path and finalizeGrading:
      * computes the percentage score, applies the time-limit rule,
      * persists status = graded, and marks the Lesson complete when passed.
+     *
+     * A failed attempt never fires `LessonMarkedAsCompleted`, so the
+     * lesson-driven pipeline would never re-evaluate the course — yet a
+     * low-but-passing `min_quiz_score` completion rule may already be
+     * satisfied by this very score. The failed path therefore evaluates
+     * course completion directly (the passed path is already covered via
+     * `MarkLessonCompleteAction` → `RecalculateCourseProgress`).
      */
     protected function finalize(
         QuizAttempt $attempt,
@@ -146,7 +154,13 @@ class SubmitQuizAttemptAction
 
         if ($isPassed) {
             $this->markLessonCompleteAction->execute($lesson, $user, 'quiz_passed');
+
+            return;
         }
+
+        $course = $lesson->module->course()->withoutGlobalScopes()->firstOrFail();
+
+        $this->evaluateCourseCompletionAction->execute($course, $user);
     }
 
     /**

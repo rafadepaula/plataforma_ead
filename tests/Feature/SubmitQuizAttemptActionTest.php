@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Actions\SubmitQuizAttemptAction;
 use App\Enums\Permissions\RolesEnum;
 use App\Models\Course;
+use App\Models\CourseCompletionRule;
 use App\Models\Lesson;
 use App\Models\Module;
 use App\Models\Organization;
@@ -13,6 +14,7 @@ use App\Models\QuizAttempt;
 use App\Models\QuizOption;
 use App\Models\QuizQuestion;
 use App\Models\User;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
@@ -287,5 +289,90 @@ class SubmitQuizAttemptActionTest extends TestCase
 
         $this->assertSame(0.0, (float) $attempt->score_percentage);
         $this->assertFalse($attempt->is_passed);
+    }
+
+    /**
+     * The failed-grade path of `finalize()` re-evaluates course completion
+     * directly: a failed attempt never fires `LessonMarkedAsCompleted`, yet
+     * a low `min_quiz_score` rule may already be satisfied by this very
+     * score. Here 50% fails the quiz's own 70% bar but meets the rule's
+     * 50% — the enrollment must complete and the certificate issue even
+     * though the lesson itself stays incomplete.
+     */
+    public function test_a_failing_grade_that_satisfies_a_min_quiz_score_only_rule_still_completes_the_course_and_issues_a_certificate(): void
+    {
+        Notification::fake();
+        [$aluno, $lesson, $quiz] = $this->enrolledAlunoAndQuiz(['min_score_percentage' => 70]);
+        [$firstQuestion, $firstCorrect] = $this->singleChoiceQuestion($quiz);
+        [$secondQuestion] = $this->singleChoiceQuestion($quiz);
+
+        $course = Course::query()->withoutGlobalScopes()->findOrFail($lesson->module->course_id);
+        CourseCompletionRule::factory()->for($course)->minQuizScore($quiz->id, 50)->create();
+
+        $attempt = app(SubmitQuizAttemptAction::class)->execute($lesson, $aluno, [
+            ['question_id' => $firstQuestion->id, 'selected_option_ids' => [$firstCorrect->id]],
+            ['question_id' => $secondQuestion->id, 'selected_option_ids' => []],
+        ]);
+
+        $this->assertSame('graded', $attempt->status);
+        $this->assertSame(50.0, (float) $attempt->score_percentage);
+        $this->assertFalse($attempt->is_passed);
+
+        // The quiz lesson itself was NOT completed...
+        $this->assertDatabaseMissing('lesson_progress', [
+            'user_id' => $aluno->id,
+            'lesson_id' => $lesson->id,
+        ]);
+
+        // ...but the registered rule was satisfied, so the course
+        // completed and the certificate was issued.
+        $this->assertDatabaseHas('course_user', [
+            'user_id' => $aluno->id,
+            'course_id' => $lesson->module->course_id,
+            'status' => 'completed',
+        ]);
+        $this->assertDatabaseHas('certificates', [
+            'user_id' => $aluno->id,
+            'course_id' => $lesson->module->course_id,
+        ]);
+    }
+
+    /**
+     * The passing-grade path keeps working with rules present: the lesson
+     * completes via `MarkLessonCompleteAction` and the course completes
+     * through the lesson-driven pipeline.
+     */
+    public function test_a_passing_grade_with_a_satisfied_min_quiz_score_only_rule_completes_the_course_and_issues_a_certificate(): void
+    {
+        Notification::fake();
+        [$aluno, $lesson, $quiz] = $this->enrolledAlunoAndQuiz(['min_score_percentage' => 70]);
+        [$firstQuestion, $firstCorrect] = $this->singleChoiceQuestion($quiz);
+        [$secondQuestion, $secondCorrect] = $this->singleChoiceQuestion($quiz);
+
+        $course = Course::query()->withoutGlobalScopes()->findOrFail($lesson->module->course_id);
+        CourseCompletionRule::factory()->for($course)->minQuizScore($quiz->id, 70)->create();
+
+        $attempt = app(SubmitQuizAttemptAction::class)->execute($lesson, $aluno, [
+            ['question_id' => $firstQuestion->id, 'selected_option_ids' => [$firstCorrect->id]],
+            ['question_id' => $secondQuestion->id, 'selected_option_ids' => [$secondCorrect->id]],
+        ]);
+
+        $this->assertSame('graded', $attempt->status);
+        $this->assertTrue($attempt->is_passed);
+        $this->assertDatabaseHas('lesson_progress', [
+            'user_id' => $aluno->id,
+            'lesson_id' => $lesson->id,
+            'is_completed' => true,
+            'completion_source' => 'quiz_passed',
+        ]);
+        $this->assertDatabaseHas('course_user', [
+            'user_id' => $aluno->id,
+            'course_id' => $lesson->module->course_id,
+            'status' => 'completed',
+        ]);
+        $this->assertDatabaseHas('certificates', [
+            'user_id' => $aluno->id,
+            'course_id' => $lesson->module->course_id,
+        ]);
     }
 }

@@ -5,13 +5,18 @@ namespace App\Actions;
 use App\Events\CourseCompletedByStudent;
 use App\Models\Course;
 use App\Models\User;
+use App\Services\CourseCompletionEvaluator;
 
 /**
  * Recomputes a single student's `course_user.progress_percentage` for the
- * given Course (published, non-deleted Lessons only) and — when the
- * `all_lessons` `course_completion_rules` threshold is met — marks the
+ * given Course (published, non-deleted Lessons only) and — when **every**
+ * registered `course_completion_rules` row is satisfied (AND) — marks the
  * enrollment `completed` and dispatches `CourseCompletedByStudent`, the
  * event `IssueCertificateOnCourseCompletion` listens to.
+ *
+ * `all_lessons` is just one parametrized rule among the three — never a
+ * mandatory gate. A course with zero rules only gets its percentage
+ * recomputed, never completed.
  *
  * Extracted from the `RecalculateCourseProgress` listener so the same
  * evaluation can be applied RETROACTIVELY: when a Gestor creates a
@@ -27,6 +32,10 @@ use App\Models\User;
  */
 class EvaluateCourseCompletionAction
 {
+    public function __construct(
+        protected CourseCompletionEvaluator $evaluator = new CourseCompletionEvaluator,
+    ) {}
+
     public function execute(Course $course, User $user): void
     {
         $pivot = $course->students()->where('user_id', $user->id)->first()?->pivot;
@@ -42,12 +51,10 @@ class EvaluateCourseCompletionAction
             ? (int) round($completedLessons / $totalPublishedLessons * 100)
             : 0;
 
-        $rule = $course->completionRules()
-            ->where('rule_type', 'all_lessons')
-            ->first();
-
-        $shouldCompleteCourse = $rule !== null
-            && $percentage >= $rule->required_percentage;
+        // The fresh percentage is passed through so the `all_lessons`
+        // check (when registered) reads this request's value instead of
+        // the still-stale pivot about to be overwritten below.
+        $shouldCompleteCourse = $this->evaluator->satisfied($course, $user, $percentage);
 
         $isCompletionTransition = $shouldCompleteCourse
             && $pivot->status !== 'completed';
