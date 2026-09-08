@@ -25,7 +25,14 @@
     // Superfícies e neutros que usavam paleta primitiva (Landing page, hovers)
     --blue-50: var(--surface-alt);
     --grey-0: var(--surface);
-    --grey-900: var(--text-primary);
+
+    .landing-headline {
+        color: var(--text-primary) !important;
+    }
+
+    .bg-white {
+        background-color: var(--surface) !important;
+    }
 
     --bs-card-bg: var(--surface);
     --bs-card-color: var(--text-primary);
@@ -80,17 +87,56 @@
         --bs-table-hover-bg: var(--surface-alt);
     }
 
-    // Topbar e sidebars
+    // Topbar, sidebars e footer do painel
     .appbar,
     .sidebar,
-    .mobile-sidebar {
-        background-color: var(--nav-bg);
+    .mobile-sidebar,
+    .app-footer,
+    .app-wrapper > footer {
+        background-color: var(--nav-bg) !important;
         border-color: var(--border-color) !important;
+        color: var(--text-secondary);
+    }
+
+    .app-footer a,
+    .app-wrapper > footer a {
+        color: var(--text-secondary) !important;
+
+        &:hover {
+            color: var(--text-primary) !important;
+        }
     }
 
     // Offcanvas mobile
     .offcanvas {
         background-color: var(--nav-bg);
         color: var(--text-primary);
+    }
+
+    // Player de vídeo e fachada (capa antes do play)
+    .ds-ratio-16x9 {
+        background-color: #0b0f19 !important;
+    }
+
+    .ds-player-facade,
+    .ds-video-wash {
+        background: linear-gradient(135deg, #0d131f, #1e293b) !important;
+    }
+
+    .ds-player-facade-icon,
+    .ds-video-play {
+        background: var(--surface) !important;
+        color: var(--primary) !important;
+        border: 1px solid var(--border-color);
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+    }
+
+    .ds-player > .ds-player-controls {
+        color: var(--text-primary);
+        background: linear-gradient(
+            to top,
+            rgba(11, 15, 25, 0.95),
+            rgba(11, 15, 25, 0)
+        );
     }
 }

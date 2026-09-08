@@ -1,4 +1,4 @@
-<footer class="bg-white border-top ds-caption py-4 px-5 mt-auto">
+<footer class="app-footer border-top ds-caption py-4 px-5 mt-auto">
     <div class="container d-flex flex-wrap align-items-center justify-content-between gap-3">
         <div>
             &copy; {{ date('Y') }} <strong>{{ session('tenant_name') ?? config('app.name', 'Plataforma EAD') }}</strong>. Todos os direitos reservados.
