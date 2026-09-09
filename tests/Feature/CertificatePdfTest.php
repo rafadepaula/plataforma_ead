@@ -8,6 +8,7 @@ use App\Models\Organization;
 use App\Models\User;
 use App\Services\CertificatePdfService;
 use Illuminate\Support\Facades\Storage;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 /**
@@ -236,6 +237,102 @@ class CertificatePdfTest extends TestCase
         $certificate->course->organization->update(['logo_path' => 'logos/logo.svg']);
 
         $this->assertNull($this->service->presentation()->build($certificate)['logo']);
+    }
+
+    public function test_spacer_absorbs_the_leftover_body_height_for_typical_content(): void
+    {
+        $result = $this->service->presentation()->build($this->certificateWith());
+        $presentation = $result['presentation'];
+
+        // Same arithmetic as the builder: leftover of the 184mm body after
+        // the measured variable bands and the 86mm fixed-sections bound,
+        // split 1/3 above and 2/3 below.
+        $mmPerPt = 25.4 / 72;
+        $variableMm = count($presentation['student']['lines']) * $presentation['student']['fontSize'] * 1.2 * $mmPerPt
+            + count($presentation['course']['lines']) * $presentation['course']['fontSize'] * 1.5 * $mmPerPt
+            + count($presentation['organization']['lines']) * $presentation['organization']['fontSize'] * 1.5 * $mmPerPt;
+        $expected = max(0.0, 184.0 - 86.0 - $variableMm);
+
+        $this->assertGreaterThan(0.0, $presentation['spacerTopMm']);
+        $this->assertGreaterThan(0.0, $presentation['spacerBottomMm']);
+        $this->assertEqualsWithDelta($expected, $presentation['spacerTopMm'] + $presentation['spacerBottomMm'], 0.15);
+        $this->assertEqualsWithDelta(
+            $presentation['spacerBottomMm'],
+            $presentation['spacerTopMm'] * 2,
+            0.15,
+            'The bottom gap must carry roughly twice the top gap.',
+        );
+    }
+
+    public function test_spacer_clamps_to_zero_when_content_exceeds_the_body(): void
+    {
+        $certificate = $this->certificateWith([
+            'name' => str_repeat('W', 255),
+            'course' => str_repeat('W', 200),
+            'org' => str_repeat('W', 150),
+        ]);
+        $certificate->update([
+            'revoked_at' => now(),
+            'revoked_by' => null,
+            'revoke_reason' => 'Motivo de teste para o banner de revogação com quebra de linha.',
+        ]);
+
+        $presentation = $this->service->presentation()->build($certificate)['presentation'];
+
+        // No negative gaps: pathological volumes degrade to zero spacing
+        // instead of pulling content off the page.
+        $this->assertSame(0.0, $presentation['spacerTopMm']);
+        $this->assertSame(0.0, $presentation['spacerBottomMm']);
+    }
+
+    /**
+     * @return array<string, array{name?: string, course?: string, org?: string, revoked: bool}>
+     */
+    public static function singleBandWorstCases(): array
+    {
+        $worstName = str_repeat('W', 255);
+        $worstCourse = str_repeat('W', 200);
+        $worstOrg = str_repeat('W', 150);
+
+        return [
+            'worst student name' => ['name' => $worstName, 'revoked' => false],
+            'worst student name revoked' => ['name' => $worstName, 'revoked' => true],
+            'worst course title' => ['course' => $worstCourse, 'revoked' => false],
+            'worst course title revoked' => ['course' => $worstCourse, 'revoked' => true],
+            'worst org name' => ['org' => $worstOrg, 'revoked' => false],
+            'worst org name revoked' => ['org' => $worstOrg, 'revoked' => true],
+        ];
+    }
+
+    #[DataProvider('singleBandWorstCases')]
+    public function test_a_single_worst_case_band_still_renders_a_single_full_page(
+        ?string $name = null,
+        ?string $course = null,
+        ?string $org = null,
+        bool $revoked = false,
+    ): void {
+        $certificate = $this->certificateWith(array_filter(
+            ['name' => $name, 'course' => $course, 'org' => $org],
+            fn ($value) => $value !== null,
+        ));
+
+        if ($revoked) {
+            $certificate->update([
+                'revoked_at' => now(),
+                'revoked_by' => null,
+                'revoke_reason' => 'Motivo de teste para o banner de revogação.',
+            ]);
+        }
+
+        $output = $this->service->generate($certificate)->output();
+
+        $this->assertStringStartsWith('%PDF', $output);
+        $this->assertMatchesRegularExpression('/841\.89\d*\s+595\.28\d*/', $output);
+        $this->assertSame(
+            1,
+            preg_match_all('#/Type\s*/Page[^s]#', $output),
+            'A single worst-case band must stay on exactly one page.',
+        );
     }
 
     public function test_logo_symlink_escaping_the_storage_root_falls_back_to_null(): void

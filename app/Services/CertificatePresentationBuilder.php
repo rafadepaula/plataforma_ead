@@ -20,6 +20,14 @@ use Illuminate\Support\Facades\Storage;
  *   to fit by `CertificatePdfTest`.
  * - Wrapping never loses characters: oversized single words are
  *   hard-broken mid-word, there is no ellipsis and no truncation.
+ * - The vertical spacer (`spacerTopMm`/`spacerBottomMm`) absorbs the exact
+ *   leftover body height — dompdf cannot distribute fixed-table heights
+ *   across auto rows and ignores `vertical-align: middle` for block
+ *   content, so the template pins the footer near the page foot with an
+ *   explicitly measured gap instead. The estimate is biased to
+ *   over-measure (fixed sections use upper bounds, the remainder clamps
+ *   at zero), so a pathological content volume degrades to a zero gap —
+ *   never to a second page.
  * - The Organization logo is resolved defensively (path traversal, remote
  *   URLs, symlink escapes, truncated/corrupted and non-raster content all
  *   degrade to `null` — the template's typographic fallback) and returned
@@ -40,6 +48,25 @@ class CertificatePresentationBuilder
     private const LOGO_BOX_WIDTH_MM = 45.0;
 
     private const LOGO_BOX_HEIGHT_MM = 18.0;
+
+    /**
+     * Vertical-fill geometry. Must stay in sync with
+     * `certificates/pdf.blade.php`'s fixed frame heights: the inner body
+     * area is 184mm tall, and the spacer is whatever is left after the
+     * measured variable bands plus the fixed sections below.
+     */
+    private const BODY_AVAILABLE_MM = 184.0;
+
+    /**
+     * Upper bound (never a calibration) of every fixed-height section:
+     * header, title, divider, course prose, meta grid, footer and the
+     * template's breathing margins. Over-measuring only shrinks the
+     * spacer — under-measuring would overflow to a second page.
+     */
+    private const BODY_FIXED_MM = 86.0;
+
+    /** Upper bound of the revocation banner block when present. */
+    private const BODY_REVOKED_MM = 12.0;
 
     /**
      * Per-element measurement configuration. Bands are sorted descending;
@@ -77,19 +104,58 @@ class CertificatePresentationBuilder
     private ?FontMetrics $fontMetrics = null;
 
     /**
-     * @return array{logo: ?array{src: string, widthMm: float, heightMm: float}, presentation: array<string, array{lines: list<string>, fontSize: float}>}
+     * @return array{logo: ?array{src: string, widthMm: float, heightMm: float}, presentation: array{student: array{lines: list<string>, fontSize: float}, course: array{lines: list<string>, fontSize: float}, organization: array{lines: list<string>, fontSize: float}, spacerTopMm: float, spacerBottomMm: float}}
      */
     public function build(Certificate $certificate): array
     {
         $organization = $certificate->course->organization;
 
+        $student = $this->fitText((string) $certificate->user->name, 'student');
+        $course = $this->fitText((string) $certificate->course->title, 'course');
+        $org = $this->fitText((string) $organization->name, 'organization');
+
         return [
             'logo' => $this->resolveLogo($organization->logo_path),
             'presentation' => [
-                'student' => $this->fitText((string) $certificate->user->name, 'student'),
-                'course' => $this->fitText((string) $certificate->course->title, 'course'),
-                'organization' => $this->fitText((string) $organization->name, 'organization'),
+                'student' => $student,
+                'course' => $course,
+                'organization' => $org,
+                ...$this->spacer($student, $course, $org, $certificate->isRevoked()),
             ],
+        ];
+    }
+
+    /**
+     * Splits the leftover body height into a smaller top gap (after the
+     * header) and a larger bottom gap (before the footer), so the footer
+     * lands near the page foot on typical volumes while pathological
+     * volumes clamp to zero and stay on one page.
+     *
+     * @param  array{lines: list<string>, fontSize: float}  $student
+     * @param  array{lines: list<string>, fontSize: float}  $course
+     * @param  array{lines: list<string>, fontSize: float}  $org
+     * @return array{spacerTopMm: float, spacerBottomMm: float}
+     */
+    private function spacer(array $student, array $course, array $org, bool $isRevoked): array
+    {
+        $variableMm = 0.0;
+
+        foreach (['student' => $student, 'course' => $course, 'organization' => $org] as $element => $fitted) {
+            $config = self::ELEMENTS[$element];
+            $variableMm += count($fitted['lines']) * $fitted['fontSize'] * $config['line_height_factor'] * self::MM_PER_PT;
+        }
+
+        $remaining = self::BODY_AVAILABLE_MM - self::BODY_FIXED_MM - $variableMm;
+
+        if ($isRevoked) {
+            $remaining -= self::BODY_REVOKED_MM;
+        }
+
+        $remaining = max(0.0, $remaining);
+
+        return [
+            'spacerTopMm' => round($remaining / 3, 1),
+            'spacerBottomMm' => round($remaining - round($remaining / 3, 1), 1),
         ];
     }
 

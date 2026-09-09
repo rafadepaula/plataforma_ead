@@ -27,9 +27,13 @@
             -webkit-print-color-adjust: exact;
         }
 
-        /* Moldura institucional dupla perimetral via tabela para contenção exata no Dompdf */
+        /* Moldura institucional dupla perimetral via tabela para contenção exata no Dompdf.
+           A moldura tem altura fixa preenchendo a caixa de conteúdo da página
+           (210mm - margens 5mm/5mm = 200mm, menos bordas/paddings): o
+           certificado ocupa a folha inteira em vez de flutuar no topo. */
         .frame-outer {
             width: 100%;
+            height: 196mm;
             border: 1.8pt solid #A88445;
             border-collapse: collapse;
             background-color: #FCFBF7;
@@ -41,14 +45,15 @@
         }
         .frame-inner {
             width: 100%;
+            height: 190mm;
             border: 0.75pt solid #C5B48D;
             border-collapse: collapse;
             background-color: #FCFBF7;
             page-break-inside: avoid;
         }
         .frame-inner-td {
-            padding: 2.2mm 5mm 1.8mm 5mm;
-            vertical-align: top;
+            padding: 2.2mm 5mm 2.2mm 5mm;
+            vertical-align: middle;
         }
 
         /* Cabeçalho: Tabela de Logo e Organização */
@@ -127,8 +132,8 @@
         /* Título e Kicker */
         .title-area {
             text-align: center;
-            margin-top: 0;
-            margin-bottom: 0.6mm;
+            margin-top: 1mm;
+            margin-bottom: 1.5mm;
         }
         .kicker {
             font-family: 'DejaVu Sans', sans-serif;
@@ -152,7 +157,7 @@
             font-family: 'DejaVu Sans', sans-serif;
             font-size: 8.5pt;
             color: #46515C;
-            margin-top: 0.3mm;
+            margin-top: 1mm;
             letter-spacing: 0.2px;
         }
 
@@ -161,7 +166,7 @@
             text-align: center;
             width: 249mm;
             max-width: 249mm;
-            margin: 0.3mm auto 0.3mm auto;
+            margin: 1.5mm auto 1mm auto;
         }
         .student-box {
             font-family: 'DejaVu Serif', serif;
@@ -181,7 +186,7 @@
             text-align: center;
             width: 249mm;
             max-width: 249mm;
-            margin: 0 auto 0.6mm auto;
+            margin: 0 auto 1.5mm auto;
             color: #333333;
         }
         .course-intro {
@@ -204,8 +209,8 @@
         .meta-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 0.6mm;
-            margin-bottom: 0.8mm;
+            margin-top: 1.5mm;
+            margin-bottom: 0;
         }
         .meta-td {
             background-color: #F5F2EA;
@@ -314,6 +319,9 @@
     $orgFontSize = $presentation['organization']['fontSize'] ?? 11.0;
 
     $isRevoked = $certificate->isRevoked();
+
+    $spacerTopMm = $presentation['spacerTopMm'] ?? 0.0;
+    $spacerBottomMm = $presentation['spacerBottomMm'] ?? 0.0;
 @endphp
 
 <table class="frame-outer">
@@ -364,6 +372,9 @@
                             </div>
                         @endif
 
+                        {{-- Respiro medido: ancora o bloco seguinte no centro da página --}}
+                        <div style="height: {{ $spacerTopMm }}mm; font-size: 1pt; line-height: 1;">&nbsp;</div>
+
                         {{-- Área do Título --}}
                         <div class="title-area">
                             <div class="kicker">Certificado de Conclusão</div>
@@ -412,6 +423,9 @@
                                 </td>
                             </tr>
                         </table>
+
+                        {{-- Respiro medido: ancora o rodapé de autenticação no pé da página --}}
+                        <div style="height: {{ $spacerBottomMm }}mm; font-size: 1pt; line-height: 1;">&nbsp;</div>
 
                         {{-- Rodapé: Autenticação e Consulta Pública --}}
                         <table class="footer-table">
