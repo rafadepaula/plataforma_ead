@@ -16,6 +16,7 @@ use App\Http\Controllers\ForumReportController;
 use App\Http\Controllers\ForumTopicController;
 use App\Http\Controllers\GestorProfessorController;
 use App\Http\Controllers\GestorStudentController;
+use App\Http\Controllers\HelpArticleController;
 use App\Http\Controllers\HelpCenterController;
 use App\Http\Controllers\ImpersonateOrgController;
 use App\Http\Controllers\InvitationController;
@@ -51,6 +52,12 @@ Route::get('/', [LandingPageController::class, 'show'])->name('landing.show');
 Route::prefix('ajuda')->name('help.')->group(function (): void {
     Route::get('/', [HelpCenterController::class, 'index'])->name('index');
     Route::get('/artigo/{slug}', [HelpCenterController::class, 'show'])->name('show');
+});
+
+// Gestão de Artigos de Ajuda (CRUD Admin/Gestor + preview)
+Route::middleware(['auth', 'role:admin|gestor'])->prefix('gestao/ajuda')->name('org.help.')->group(function (): void {
+    Route::post('preview', [HelpArticleController::class, 'preview'])->name('preview');
+    Route::resource('artigos', HelpArticleController::class)->except(['show']);
 });
 
 // Organization CRUD + Impersonate Org, both

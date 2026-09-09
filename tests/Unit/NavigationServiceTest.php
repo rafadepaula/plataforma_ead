@@ -140,7 +140,7 @@ class NavigationServiceTest extends TestCase
         // `users` is absent here by  (no resolvable tenant);
         // `admin-users`  is always visible to an Admin.
         $this->assertSame(
-            ['dashboard', 'organizations', 'admin-users', 'audit-logs', 'settings'],
+            ['dashboard', 'organizations', 'admin-users', 'audit-logs', 'settings', 'help-articles'],
             $this->keysInSection($admin, 'Administração'),
         );
     }
@@ -177,7 +177,7 @@ class NavigationServiceTest extends TestCase
         // the impersonated Organization resolves a tenant — ;
         // `admin-users` from  is always visible to an Admin).
         $this->assertSame(
-            ['dashboard', 'organizations', 'users', 'admin-users', 'audit-logs', 'settings'],
+            ['dashboard', 'organizations', 'users', 'admin-users', 'audit-logs', 'settings', 'help-articles'],
             $this->keysInSection($admin, 'Administração'),
         );
     }
@@ -234,7 +234,7 @@ class NavigationServiceTest extends TestCase
         $this->assertNotContains('Impersonate', $this->sectionTitlesFor($gestor));
         $this->assertNotContains('Ensino', $this->sectionTitlesFor($gestor));
         $this->assertSame(
-            ['dashboard', 'students', 'professors', 'courses', 'quiz-attempts', 'forum-moderation'],
+            ['dashboard', 'students', 'professors', 'courses', 'quiz-attempts', 'forum-moderation', 'help-articles'],
             $this->keysInSection($gestor, 'Administração'),
         );
     }

@@ -1,5 +1,5 @@
 {
-    "count": 546,
+    "count": 552,
     "entries": [
         {
             "file": "modules/lessons/edit.blade.php",
@@ -2184,6 +2184,30 @@
         {
             "file": "help/show.blade.php",
             "selector": "help-article-page"
+        },
+        {
+            "file": "help/manage/index.blade.php",
+            "selector": "new-help-article"
+        },
+        {
+            "file": "help/manage/index.blade.php",
+            "selector": "edit-help-article-{{ $article->id }}"
+        },
+        {
+            "file": "help/manage/index.blade.php",
+            "selector": "delete-help-article-{{ $article->id }}"
+        },
+        {
+            "file": "help/manage/_form.blade.php",
+            "selector": "org-help-article-form"
+        },
+        {
+            "file": "help/manage/_form.blade.php",
+            "selector": "save-help-article"
+        },
+        {
+            "file": "help/manage/_form.blade.php",
+            "selector": "org-help-article-preview"
         }
     ]
 }
