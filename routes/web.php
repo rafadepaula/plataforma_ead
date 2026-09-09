@@ -395,6 +395,8 @@ Route::middleware(['auth', 'student.enrolled'])->prefix('courses/{course}/forum'
 Route::middleware(['auth', 'role:admin|gestor|professor'])->group(function (): void {
     Route::post('courses/{course}/forum/topics/{topic}/pin', [ForumTopicController::class, 'pin'])
         ->name('forum.pin');
+    Route::post('courses/{course}/forum/replies/{reply}/pin', [ForumReplyController::class, 'pin'])
+        ->name('forum-replies.pin');
 
     Route::get('forum/moderation', [ForumModerationController::class, 'index'])->name('forum-moderation.index');
     Route::post('forum/moderation/{forumReport}/dismiss', [ForumModerationController::class, 'dismiss'])

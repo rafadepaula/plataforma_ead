@@ -29,3 +29,14 @@
         padding-bottom: calc(var(--space-10, 40px) + 56px + env(safe-area-inset-bottom, 0px));
     }
 }
+
+// Destaque visual de superfície para posts de staff (Admin, Gestor, Professor)
+.forum-post-staff {
+    background-color: var(--surface-alt);
+    border-color: var(--border-strong);
+}
+
+// Destaque visual de borda para posts fixados (tópicos e respostas)
+.forum-post-pinned {
+    border-color: var(--primary);
+}

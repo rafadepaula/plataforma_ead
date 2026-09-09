@@ -24,6 +24,7 @@ class ForumReply extends Model
         'topic_id',
         'user_id',
         'content',
+        'is_pinned',
         'edited_at',
     ];
 
@@ -33,6 +34,7 @@ class ForumReply extends Model
     protected function casts(): array
     {
         return [
+            'is_pinned' => 'boolean',
             'edited_at' => 'datetime',
             'deleted_at' => 'datetime',
         ];

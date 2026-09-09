@@ -1,5 +1,5 @@
 {
-    "count": 539,
+    "count": 541,
     "entries": [
         {
             "file": "modules/lessons/edit.blade.php",
@@ -1784,6 +1784,14 @@
         {
             "file": "forum/partials/_reply.blade.php",
             "selector": "reply-{{ $reply->id }}"
+        },
+        {
+            "file": "forum/partials/_reply.blade.php",
+            "selector": "pinned-reply-badge-{{ $reply->id }}"
+        },
+        {
+            "file": "forum/partials/_reply.blade.php",
+            "selector": "reply-pin-{{ $reply->id }}"
         },
         {
             "file": "forum/partials/_reply.blade.php",

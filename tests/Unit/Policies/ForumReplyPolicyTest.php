@@ -130,5 +130,65 @@ class ForumReplyPolicyTest extends TestCase
         $this->assertTrue($policy->view($admin, $reply));
         $this->assertTrue($policy->update($admin, $reply));
         $this->assertTrue($policy->delete($admin, $reply));
+        $this->assertTrue($policy->pin($admin, $reply));
+    }
+
+    public function test_assigned_professor_can_create_reply_and_pin_it(): void
+    {
+        $org = Organization::factory()->create();
+        $course = Course::factory()->create(['org_id' => $org->id]);
+        $topicAuthor = User::factory()->create(['org_id' => $org->id]);
+        $topic = ForumTopic::factory()->for($course)->for($topicAuthor)->create(['org_id' => $org->id]);
+        $reply = ForumReply::factory()->for($topic, 'topic')->for($topicAuthor)->create();
+
+        /** @var User $professor */
+        $professor = User::factory()->professor()->create(['org_id' => $org->id]);
+        $course->professors()->attach($professor->id);
+
+        /** @var User $outsider */
+        $outsider = User::factory()->professor()->create(['org_id' => $org->id]);
+
+        $policy = new ForumReplyPolicy;
+        $this->assertTrue($policy->create($professor, $topic));
+        $this->assertTrue($policy->pin($professor, $reply));
+
+        $this->assertFalse($policy->create($outsider, $topic));
+        $this->assertFalse($policy->pin($outsider, $reply));
+    }
+
+    public function test_aluno_cannot_pin_reply_even_their_own(): void
+    {
+        $org = Organization::factory()->create();
+        $course = Course::factory()->create(['org_id' => $org->id]);
+        $topicAuthor = User::factory()->create(['org_id' => $org->id]);
+        $topic = ForumTopic::factory()->for($course)->for($topicAuthor)->create(['org_id' => $org->id]);
+
+        /** @var User $aluno */
+        $aluno = User::factory()->create(['org_id' => $org->id]);
+        $aluno->assignRole(RolesEnum::ALUNO->value);
+        $aluno->courses()->attach($course->id, ['enrolled_at' => now(), 'status' => 'active']);
+
+        $reply = ForumReply::factory()->for($topic, 'topic')->for($aluno)->create();
+
+        $policy = new ForumReplyPolicy;
+        $this->assertFalse($policy->pin($aluno, $reply));
+    }
+
+    public function test_gestor_of_same_org_can_pin_reply_but_other_org_cannot(): void
+    {
+        $org = Organization::factory()->create();
+        $reply = $this->replyIn($org);
+
+        /** @var User $gestor */
+        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor->assignRole(RolesEnum::GESTOR->value);
+
+        /** @var User $otherGestor */
+        $otherGestor = User::factory()->create(['org_id' => Organization::factory()->create()->id]);
+        $otherGestor->assignRole(RolesEnum::GESTOR->value);
+
+        $policy = new ForumReplyPolicy;
+        $this->assertTrue($policy->pin($gestor, $reply));
+        $this->assertFalse($policy->pin($otherGestor, $reply));
     }
 }

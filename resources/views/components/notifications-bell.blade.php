@@ -1,6 +1,6 @@
 {{--
-    The topbar notification bell. Only visible to `role:gestor`/`role:aluno`
-    (Admin doesn't receive Org-specific business notifications).
+    The topbar notification bell. Visible to `role:gestor`, `role:aluno`,
+    and `role:professor` (Admin doesn't receive Org-specific business notifications).
     Renders the badge (server-side initial unread count, kept fresh
     client-side by `NotificationBell.js`'s 30s polling of
     `notifications.unread-count`) and a dropdown with the 10 most recent
@@ -11,7 +11,9 @@
 
     $notifUser = auth()->user();
     $canSeeNotifications = $notifUser
-        && ($notifUser->hasRole(RolesEnum::GESTOR->value) || $notifUser->hasRole(RolesEnum::ALUNO->value));
+        && ($notifUser->hasRole(RolesEnum::GESTOR->value)
+            || $notifUser->hasRole(RolesEnum::ALUNO->value)
+            || $notifUser->hasRole(RolesEnum::PROFESSOR->value));
 
     $recentNotifications = collect();
     $unreadCount = 0;

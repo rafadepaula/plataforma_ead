@@ -58,6 +58,23 @@ class ForumTopicPolicyTest extends TestCase
         $this->assertFalse($policy->create($aluno, $topic->course));
     }
 
+    public function test_assigned_professor_can_create_topic_for_course_and_unassigned_cannot(): void
+    {
+        $org = Organization::factory()->create();
+        $course = Course::factory()->create(['org_id' => $org->id]);
+
+        /** @var User $professor */
+        $professor = User::factory()->professor()->create(['org_id' => $org->id]);
+        $course->professors()->attach($professor->id);
+
+        /** @var User $outsider */
+        $outsider = User::factory()->professor()->create(['org_id' => $org->id]);
+
+        $policy = new ForumTopicPolicy;
+        $this->assertTrue($policy->create($professor, $course));
+        $this->assertFalse($policy->create($outsider, $course));
+    }
+
     public function test_gestor_of_another_org_cannot_view_the_topic(): void
     {
         $org = Organization::factory()->create();

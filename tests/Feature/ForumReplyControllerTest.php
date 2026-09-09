@@ -252,6 +252,8 @@ class ForumReplyControllerTest extends TestCase
         $response->assertJsonPath('data.0.created_at_relative', $reply->created_at->diffForHumans());
         $response->assertJsonPath('data.0.initials', 'MD');
         $response->assertJsonPath('data.0.role_label', 'Aluno');
+        $response->assertJsonPath('data.0.is_staff', false);
+        $response->assertJsonPath('data.0.is_pinned', false);
         $response->assertJsonPath('data.0.user.name', 'Maria da Silva Souza');
         $response->assertJsonPath('last_id', $reply->id);
     }
@@ -273,6 +275,7 @@ class ForumReplyControllerTest extends TestCase
         $response->assertOk();
         $response->assertJsonPath('data.0.initials', 'AT');
         $response->assertJsonPath('data.0.role_label', 'Gestor');
+        $response->assertJsonPath('data.0.is_staff', true);
     }
 
     public function test_fetch_new_treats_a_missing_or_garbage_since_id_as_zero(): void
@@ -410,5 +413,48 @@ class ForumReplyControllerTest extends TestCase
         $this->actingAs($student)
             ->getJson(route('forum-replies.fetch', [$course, $topic]).'?since_id=0')
             ->assertNotFound();
+    }
+
+    public function test_staff_can_pin_and_unpin_reply_and_aluno_gets_403(): void
+    {
+        $organization = Organization::factory()->create();
+        $course = $this->publishedCourse($organization);
+        $student = $this->enrolledStudent($course);
+        $topic = $this->topicFor($course, $student);
+        $reply = ForumReply::factory()->for($topic, 'topic')->for($student)->create(['is_pinned' => false]);
+
+        /** @var User $gestor */
+        $gestor = User::factory()->create(['org_id' => $organization->id]);
+        $gestor->assignRole(RolesEnum::GESTOR->value);
+
+        // Aluno cannot pin
+        $this->actingAs($student)
+            ->post(route('forum-replies.pin', [$course, $reply]))
+            ->assertForbidden();
+        $this->assertFalse($reply->fresh()->is_pinned);
+
+        // Gestor pins
+        $response = $this->actingAs($gestor)
+            ->post(route('forum-replies.pin', [$course, $reply]));
+        $response->assertRedirect(route('forum.show', [$course, $topic]));
+        $response->assertSessionHas('success', 'Mensagem fixada.');
+        $this->assertTrue($reply->fresh()->is_pinned);
+
+        // Gestor unpins
+        $response = $this->actingAs($gestor)
+            ->post(route('forum-replies.pin', [$course, $reply]));
+        $response->assertRedirect(route('forum.show', [$course, $topic]));
+        $response->assertSessionHas('success', 'Mensagem desafixada.');
+        $this->assertFalse($reply->fresh()->is_pinned);
+
+        // Assigned professor can pin
+        /** @var User $professor */
+        $professor = User::factory()->professor()->create(['org_id' => $organization->id]);
+        $course->professors()->attach($professor->id);
+
+        $this->actingAs($professor)
+            ->post(route('forum-replies.pin', [$course, $reply]))
+            ->assertRedirect();
+        $this->assertTrue($reply->fresh()->is_pinned);
     }
 }

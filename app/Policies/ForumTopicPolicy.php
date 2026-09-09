@@ -84,15 +84,18 @@ class ForumTopicPolicy
     }
 
     /**
-     * WRITE access (posting a new topic): deliberately NARROWER than
-     * {@see self::hasCourseAccess()} — a Professor visualiza e modera,
-     * mas não cria tópicos (evolução futura deliberada). Gestor/Admin e
-     * Aluno matriculado mantêm o comportamento de sempre.
+     * WRITE access (posting a new topic): Gestor/Admin, Professor assigned
+     * to the Course (`User::teaches()`), or Aluno with an active/completed
+     * enrollment.
      */
     protected function canCreateInCourse(User $user, Course $course): bool
     {
         if ($this->isGestorOrAdminForCourse($user, $course)) {
             return true;
+        }
+
+        if ($user->hasRole(RolesEnum::PROFESSOR->value)) {
+            return $user->teaches($course);
         }
 
         return $user->hasActiveOrCompletedEnrollment($course);

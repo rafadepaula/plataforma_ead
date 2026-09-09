@@ -13,10 +13,10 @@ use App\Services\OrgContext;
  * `ForumReply` is cascade-inherited two levels deeper
  * than `ForumTopic` (`reply -> topic -> course.org_id`), mirroring
  * `QuizPolicy::parentCourse()`'s cascade pattern one level further down.
- * `view`/`create` are gated to an enrolled Aluno  or a same-org
- * Gestor/Admin; `update`/`delete` are reserved to the reply's author (no
- * time limit, per §2.1) or a same-org Gestor/Admin. There is no `pin`
- * ability — replies have no `is_pinned` column.
+ * `view`/`create` are gated to an enrolled Aluno, an assigned Professor,
+ * or a same-org Gestor/Admin; `update`/`delete` are reserved to the reply's
+ * author (no time limit, per §2.1) or a same-org Gestor/Admin/assigned Professor.
+ * `pin` is reserved to staff (Admin, same-org Gestor, or assigned Professor).
  */
 class ForumReplyPolicy
 {
@@ -28,6 +28,11 @@ class ForumReplyPolicy
     public function create(User $user, ForumTopic $topic): bool
     {
         return $this->canCreateInCourse($user, $this->parentTopicCourse($topic));
+    }
+
+    public function pin(User $user, ForumReply $reply): bool
+    {
+        return $this->canModerateCourse($user, $this->parentCourse($reply));
     }
 
     public function update(User $user, ForumReply $reply): bool
@@ -83,14 +88,18 @@ class ForumReplyPolicy
     }
 
     /**
-     * WRITE access (posting a reply): deliberately NARROWER than
-     * {@see self::hasCourseAccess()} — a Professor visualiza e modera,
-     * mas não responde (evolução futura deliberada).
+     * WRITE access (posting a reply): Gestor/Admin, Professor assigned
+     * to the Course (`User::teaches()`), or Aluno with an active/completed
+     * enrollment.
      */
     protected function canCreateInCourse(User $user, Course $course): bool
     {
         if ($this->isGestorOrAdminForCourse($user, $course)) {
             return true;
+        }
+
+        if ($user->hasRole(RolesEnum::PROFESSOR->value)) {
+            return $user->teaches($course);
         }
 
         return $user->hasActiveOrCompletedEnrollment($course);

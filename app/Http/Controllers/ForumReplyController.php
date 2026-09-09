@@ -96,6 +96,23 @@ class ForumReplyController extends Controller
             ->with('success', 'Resposta removida com sucesso.');
     }
 
+    public function pin(int $course, int $reply): RedirectResponse
+    {
+        $courseModel = Course::query()->withoutGlobalScope('org')->findOrFail($course);
+        $replyModel = ForumReply::query()->findOrFail($reply);
+        $topicModel = ForumTopic::query()
+            ->withoutGlobalScope('org')
+            ->where('course_id', $courseModel->id)
+            ->findOrFail($replyModel->topic_id);
+
+        Gate::authorize('pin', $replyModel);
+
+        $replyModel->update(['is_pinned' => ! $replyModel->is_pinned]);
+
+        return redirect()->route('forum.show', [$course, $topicModel->id])
+            ->with('success', $replyModel->is_pinned ? 'Mensagem fixada.' : 'Mensagem desafixada.');
+    }
+
     /**
      * `fetchNewReplies` AJAX polling
      * (`ForumPolling.js`, every 10s), paginated by `since_id`: only rows
@@ -117,6 +134,7 @@ class ForumReplyController extends Controller
      *       "id": int, "content": string, "created_at": "d/m/Y H:i",
      *       "created_at_relative": "há 2 minutos",
      *       "initials": string, "role_label": string,
+     *       "is_staff": bool, "is_pinned": bool,
      *       "user": {"name": string}
      *     }],
      *     "last_id": int   // highest id in this batch, 0 when empty
@@ -149,6 +167,8 @@ class ForumReplyController extends Controller
                 'created_at_relative' => $reply->created_at->diffForHumans(),
                 'initials' => $reply->user->initials,
                 'role_label' => $reply->user->role_label,
+                'is_staff' => in_array($reply->user->role_label, ['Admin', 'Gestor', 'Professor'], true),
+                'is_pinned' => (bool) $reply->is_pinned,
                 'user' => ['name' => $reply->user->name],
             ])->values()->all(),
             'last_id' => (int) ($replies->max('id') ?? 0),

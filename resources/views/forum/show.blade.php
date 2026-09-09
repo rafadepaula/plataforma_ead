@@ -13,6 +13,12 @@
     /** @var int $lastReplyId */
 
     $topicAuthorRole = $topic->user->role_label;
+    $isStaffTopic = in_array($topicAuthorRole, ['Admin', 'Gestor', 'Professor'], true);
+    $topicRoleBadgeVariant = match ($topicAuthorRole) {
+        'Professor' => 'info',
+        'Gestor', 'Admin' => 'primary',
+        default => 'outline',
+    };
 
     // `$coursesCrumb` — the role-aware root crumb — is bound by
     // `ForumBreadcrumbComposer`, shared with the other forum screens.
@@ -39,7 +45,7 @@
         </x-layout.page-header>
 
         {{-- Original Topic Post Card --}}
-        <div class="card ds-card shadow-sm mb-4" dusk="topic-post" data-topic-id="{{ $topic->id }}">
+        <div class="card ds-card shadow-sm mb-4 {{ $isStaffTopic ? 'forum-post-staff' : '' }} {{ $topic->is_pinned ? 'forum-post-pinned' : '' }}" dusk="topic-post" data-topic-id="{{ $topic->id }}">
             <div class="card-body p-4">
                 <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap mb-3">
                     <div class="d-flex align-items-center gap-3">
@@ -50,7 +56,7 @@
                                 <x-ui.chip :static="true" variant="info" dusk="pinned-badge-{{ $topic->id }}">Fixado</x-ui.chip>
                             @endif
                             <strong class="text-body">{{ $topic->user->name }}</strong>
-                            <x-ui.badge variant="outline">{{ $topicAuthorRole }}</x-ui.badge>
+                            <x-ui.badge :variant="$topicRoleBadgeVariant">{{ $topicAuthorRole }}</x-ui.badge>
                             —
                             <span title="{{ $topic->created_at->format('d/m/Y H:i') }}">{{ $topic->created_at->diffForHumans() }}</span>
 

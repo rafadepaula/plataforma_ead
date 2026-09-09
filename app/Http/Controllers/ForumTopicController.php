@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Actions\DeleteForumPostAction;
 use App\Actions\EditForumPostAction;
 use App\Enums\Permissions\RolesEnum;
+use App\Events\ForumTopicPosted;
 use App\Http\Requests\StoreForumTopicRequest;
 use App\Http\Requests\UpdateForumTopicRequest;
 use App\Models\Course;
@@ -107,6 +108,8 @@ class ForumTopicController extends Controller
             'content' => $this->sanitizer->sanitize($request->validated('content')),
         ]));
 
+        ForumTopicPosted::dispatch($topic);
+
         return redirect()->route('forum.show', [$courseModel->id, $topic->id])
             ->with('success', 'Tópico criado com sucesso.');
     }
@@ -122,7 +125,7 @@ class ForumTopicController extends Controller
         $topicModel->setRelation('course', $courseModel);
         $topicModel->load('user.roles');
 
-        $replies = $topicModel->replies()->with('user.roles')->orderBy('id')->get();
+        $replies = $topicModel->replies()->with('user.roles')->orderByDesc('is_pinned')->orderBy('id')->get();
 
         $topicEditHistory = ForumPostEdit::query()
             ->with('editor')

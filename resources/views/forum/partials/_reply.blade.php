@@ -18,6 +18,12 @@
     $replyHistory = $replyEditHistories[$reply->id] ?? collect();
 
     $replyAuthorRole = $reply->user->role_label;
+    $isStaff = in_array($replyAuthorRole, ['Admin', 'Gestor', 'Professor'], true);
+    $roleBadgeVariant = match ($replyAuthorRole) {
+        'Professor' => 'info',
+        'Gestor', 'Admin' => 'primary',
+        default => 'outline',
+    };
 @endphp
 {{-- `forum-reply` também é gerada literalmente por
      `resources/js/modules/ForumPolling.js::appendReply()` ao injetar
@@ -26,15 +32,18 @@
      espelhando visualmente esta marcação. Qualquer mudança na estrutura
      abaixo (avatar, badge de papel, ordem dos blocos) precisa ser
      espelhada naquele módulo. --}}
-<div class="forum-reply card mb-2" dusk="reply-{{ $reply->id }}" data-reply-id="{{ $reply->id }}">
+<div class="forum-reply card mb-2 {{ $isStaff ? 'forum-post-staff' : '' }} {{ $reply->is_pinned ? 'forum-post-pinned' : '' }}" dusk="reply-{{ $reply->id }}" data-reply-id="{{ $reply->id }}">
     <div class="card-body py-3">
     <div class="d-flex align-items-start justify-content-between gap-3 mb-1">
         <div class="d-flex align-items-center gap-3">
             <x-ui.avatar size="lg" :initials="$reply->user->initials" />
 
             <div class="small text-body-secondary">
+                @if($reply->is_pinned)
+                    <x-ui.chip :static="true" variant="info" dusk="pinned-reply-badge-{{ $reply->id }}">Fixado</x-ui.chip>
+                @endif
                 <strong class="text-body">{{ $reply->user->name }}</strong>
-                <x-ui.badge variant="outline">{{ $replyAuthorRole }}</x-ui.badge>
+                <x-ui.badge :variant="$roleBadgeVariant">{{ $replyAuthorRole }}</x-ui.badge>
                 —
                 <span title="{{ $reply->created_at->format('d/m/Y H:i') }}">{{ $reply->created_at->diffForHumans() }}</span>
 
@@ -48,6 +57,19 @@
         </div>
 
         <div class="d-flex gap-2">
+            @can('pin', $reply)
+                <form method="POST" action="{{ route('forum-replies.pin', [$course, $reply]) }}" class="d-inline">
+                    @csrf
+                    <x-ui.button
+                        type="submit"
+                        variant="ghost"
+                        size="sm"
+                        dusk="reply-pin-{{ $reply->id }}"
+                        title="{{ $reply->is_pinned ? 'Desafixar resposta' : 'Fixar resposta no topo' }}"
+                    >{{ $reply->is_pinned ? 'Desafixar' : 'Fixar' }}</x-ui.button>
+                </form>
+            @endcan
+
             <x-ui.button
                 type="button"
                 variant="ghost"

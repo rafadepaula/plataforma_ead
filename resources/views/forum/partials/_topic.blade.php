@@ -7,10 +7,18 @@
     $repliesText = $repliesCount > 0
         ? $repliesCount . ' ' . ($repliesCount === 1 ? 'resposta' : 'respostas')
         : 'Nenhuma resposta ainda';
+
+    $topicAuthorRole = $topic->user->role_label;
+    $isStaffTopic = in_array($topicAuthorRole, ['Admin', 'Gestor', 'Professor'], true);
+    $topicRoleBadgeVariant = match ($topicAuthorRole) {
+        'Professor' => 'info',
+        'Gestor', 'Admin' => 'primary',
+        default => 'outline',
+    };
 @endphp
 
 <div
-    class="ds-card ds-card-interactive p-3 p-md-4 d-flex align-items-start gap-3 position-relative"
+    class="ds-card ds-card-interactive p-3 p-md-4 d-flex align-items-start gap-3 position-relative {{ $isStaffTopic ? 'forum-post-staff' : '' }} {{ $topic->is_pinned ? 'forum-post-pinned' : '' }}"
     dusk="topic-row-{{ $topic->id }}"
 >
     {{-- Left: User Avatar --}}
@@ -46,8 +54,10 @@
             {{ Str::limit($topic->content, 180) }}
         </p>
 
-        <div class="d-flex align-items-center gap-3 text-body-secondary small">
-            <span>{{ $topic->user->name }} — {{ $topic->created_at->format('d/m/Y H:i') }}</span>
+        <div class="d-flex align-items-center gap-2 gap-sm-3 text-body-secondary small flex-wrap">
+            <span>{{ $topic->user->name }}</span>
+            <x-ui.badge :variant="$topicRoleBadgeVariant">{{ $topicAuthorRole }}</x-ui.badge>
+            <span>— {{ $topic->created_at->format('d/m/Y H:i') }}</span>
             <span class="d-inline-flex align-items-center gap-1">
                 <x-ui.icon name="message-square" size="16" />
                 <span>{{ $repliesText }}</span>

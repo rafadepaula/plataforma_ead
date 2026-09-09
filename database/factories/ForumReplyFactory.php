@@ -21,7 +21,15 @@ class ForumReplyFactory extends Factory
     {
         return [
             'content' => fake()->paragraph(),
+            'is_pinned' => false,
             'edited_at' => null,
         ];
+    }
+
+    public function pinned(): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'is_pinned' => true,
+        ]);
     }
 }

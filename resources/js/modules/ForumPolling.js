@@ -211,7 +211,14 @@ export class ForumPolling {
         const el = document.createElement('div');
         el.setAttribute('data-reply-id', String(reply.id));
         el.setAttribute('dusk', `reply-${reply.id}`);
-        el.className = 'forum-reply card mb-2';
+        let cardClass = 'forum-reply card mb-2';
+        if (reply.is_staff) {
+            cardClass += ' forum-post-staff';
+        }
+        if (reply.is_pinned) {
+            cardClass += ' forum-post-pinned';
+        }
+        el.className = cardClass;
 
         const body = document.createElement('div');
         body.className = 'card-body py-3';
@@ -231,16 +238,32 @@ export class ForumPolling {
         const textMeta = document.createElement('div');
         textMeta.className = 'small text-body-secondary';
 
+        if (reply.is_pinned) {
+            const pinnedChip = document.createElement('span');
+            pinnedChip.className = 'ds-chip ds-chip-info ds-chip-static';
+            pinnedChip.setAttribute('dusk', `pinned-reply-badge-${reply.id}`);
+            const chipText = document.createElement('span');
+            chipText.textContent = 'Fixado';
+            pinnedChip.appendChild(chipText);
+            textMeta.appendChild(pinnedChip);
+            textMeta.appendChild(document.createTextNode(' '));
+        }
+
         const strong = document.createElement('strong');
         strong.className = 'text-body';
         strong.textContent = authorName;
         textMeta.appendChild(strong);
 
-        // `<x-ui.badge variant="outline">` renders
-        // `<span class="badge ds-badge border ds-muted">`.
+        // `<x-ui.badge variant="...">` renders matching variant classes
         if (reply.role_label) {
             const roleBadge = document.createElement('span');
-            roleBadge.className = 'badge ds-badge border ds-muted';
+            let badgeClass = 'badge ds-badge border ds-muted';
+            if (reply.role_label === 'Professor') {
+                badgeClass = 'badge ds-badge ds-tone-info';
+            } else if (reply.role_label === 'Gestor' || reply.role_label === 'Admin') {
+                badgeClass = 'badge ds-badge ds-tone-primary';
+            }
+            roleBadge.className = badgeClass;
             roleBadge.textContent = reply.role_label;
             textMeta.appendChild(document.createTextNode(' '));
             textMeta.appendChild(roleBadge);

@@ -11,8 +11,8 @@ use App\Models\User;
 use Tests\TestCase;
 
 /**
- * the `professor` role's forum perimeter: read access to the
- * assigned Courses' forum, deliberate NO-WRITE on new topics/replies,
+ * the `professor` role's forum perimeter: read access and write
+ * access (topics and replies) in assigned Courses,
  * and moderation parity with the Gestor (pin toggle, edit/delete of
  * foreign posts — attributed to the professor in `forum_post_edits` —
  * plus the `forum-moderation.*` report queue, which revalidates each
@@ -45,10 +45,10 @@ class ProfessorForumTest extends TestCase
         ]);
     }
 
-    private function professorFor(Organization $org): User
+    private function professorFor(Organization $org, string $name = 'Professora Helena Braga'): User
     {
         /** @var User $professor */
-        $professor = User::factory()->professor()->inOrg($org->id)->create(['name' => 'Professora Helena Braga']);
+        $professor = User::factory()->professor()->inOrg($org->id)->create(['name' => $name]);
 
         return $professor;
     }
@@ -85,11 +85,11 @@ class ProfessorForumTest extends TestCase
         $this->actingAs($outsider)->get(route('forum.show', [$course, $topic]))->assertForbidden();
     }
 
-    public function test_professor_cannot_create_a_topic_even_when_assigned(): void
+    public function test_assigned_professor_can_create_a_topic_but_unassigned_colleague_gets_403(): void
     {
         $org = Organization::factory()->create();
         $course = $this->publishedCourse($org);
-        $student = $this->enrolledStudent($course);
+        $this->enrolledStudent($course);
 
         $gestor = $this->actingAsOrgUser($org);
         $professor = $this->professorFor($org);
@@ -97,22 +97,29 @@ class ProfessorForumTest extends TestCase
 
         $this->actingAs($professor)
             ->get(route('forum.create', $course))
-            ->assertForbidden();
+            ->assertOk();
 
         $response = $this->actingAs($professor)->post(route('forum.store', $course), [
             'title' => 'Topico escrito pelo professor',
-            'content' => 'Conteudo que nunca deve ser persistido.',
+            'content' => 'Conteudo escrito com sucesso.',
         ]);
 
-        $response->assertForbidden();
-        $this->assertDatabaseMissing('forum_topics', [
+        $response->assertRedirect();
+        $this->assertDatabaseHas('forum_topics', [
             'course_id' => $course->id,
+            'user_id' => $professor->id,
             'title' => 'Topico escrito pelo professor',
         ]);
-        $this->assertSame(0, ForumTopic::query()->withoutGlobalScopes()->where('course_id', $course->id)->count());
+
+        $outsider = $this->professorFor($org, 'Professora Fora do Curso');
+        $this->actingAs($outsider)->get(route('forum.create', $course))->assertForbidden();
+        $this->actingAs($outsider)->post(route('forum.store', $course), [
+            'title' => 'Tentativa de fora',
+            'content' => 'Nao deve salvar.',
+        ])->assertForbidden();
     }
 
-    public function test_professor_cannot_post_a_reply_even_when_assigned(): void
+    public function test_assigned_professor_can_post_a_reply_but_unassigned_colleague_gets_403(): void
     {
         $org = Organization::factory()->create();
         $course = $this->publishedCourse($org);
@@ -123,15 +130,20 @@ class ProfessorForumTest extends TestCase
         $professor = $this->professorFor($org);
         $this->assignProfessor($professor, $course, $gestor);
 
-        $this->actingAs($professor)
-            ->post(route('forum-replies.store', [$course, $topic]), ['content' => 'Resposta do professor.'])
-            ->assertForbidden();
+        $response = $this->actingAs($professor)
+            ->post(route('forum-replies.store', [$course, $topic]), ['content' => 'Resposta do professor.']);
 
-        $this->assertDatabaseMissing('forum_replies', [
+        $response->assertRedirect();
+        $this->assertDatabaseHas('forum_replies', [
             'topic_id' => $topic->id,
+            'user_id' => $professor->id,
             'content' => 'Resposta do professor.',
         ]);
-        $this->assertSame(0, $topic->replies()->count());
+
+        $outsider = $this->professorFor($org, 'Professora Fora do Curso');
+        $this->actingAs($outsider)
+            ->post(route('forum-replies.store', [$course, $topic]), ['content' => 'Resposta nao autorizada.'])
+            ->assertForbidden();
     }
 
     public function test_assigned_professor_toggles_the_pin_of_a_topic(): void
