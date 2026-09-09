@@ -1,5 +1,5 @@
 {
-    "count": 543,
+    "count": 546,
     "entries": [
         {
             "file": "modules/lessons/edit.blade.php",
@@ -2172,6 +2172,18 @@
         {
             "file": "profile/edit.blade.php",
             "selector": "password-submit"
+        },
+        {
+            "file": "help/index.blade.php",
+            "selector": "help-center-index"
+        },
+        {
+            "file": "help/index.blade.php",
+            "selector": "help-center-search"
+        },
+        {
+            "file": "help/show.blade.php",
+            "selector": "help-article-page"
         }
     ]
 }
