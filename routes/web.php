@@ -348,6 +348,8 @@ Route::middleware(['auth', 'student.enrolled'])->group(function (): void {
     // above — Laravel's route collection keys routes by method+URI, so an
     // identical pair would silently overwrite one of the two named routes.
     Route::get('lessons/{lesson}/quiz', [StudentQuizController::class, 'show'])->name('student.quizzes.show');
+    Route::post('lessons/{lesson}/quiz/start', [StudentQuizController::class, 'start'])->name('student.quizzes.start');
+    Route::get('lessons/{lesson}/quiz/result', [StudentQuizController::class, 'result'])->name('student.quizzes.result');
     Route::post('lessons/{lesson}/quiz/submit', [StudentQuizController::class, 'submit'])->name('student.quizzes.submit');
 });
 

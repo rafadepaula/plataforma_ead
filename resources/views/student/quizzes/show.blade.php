@@ -14,6 +14,15 @@
 
     $course = $course ?? $lesson->module->course;
     $hasPendingGrading = isset($hasPendingGrading) ? $hasPendingGrading : ($pendingAttempt !== null);
+    /**
+     * Frente B (ClickUp 86e361vp7) — branch de confirmação de início.
+     * "Prova iniciada" = `$openAttempt` (`in_progress` do usuário neste
+     * quiz, entregue pelo controller sem nunca criar attempt no `show()`).
+     * Sem attempt aberta e podendo tentar (e sem correção pendente), a tela
+     * é a confirmação — sem formulário de questões e sem cronômetro.
+     */
+    $openAttempt = $openAttempt ?? null;
+    $showStartConfirmation = $canAttempt && ! $hasPendingGrading && $openAttempt === null;
     $oldAnswers = old('answers', []);
     $typeLabels = [
         'single_choice' => 'Escolha única',
@@ -82,6 +91,71 @@
                 <x-ui.button variant="secondary" href="{{ route('classroom.show', $course) }}" dusk="back-to-lesson">
                     Voltar para a sala de aula
                 </x-ui.button>
+            </div>
+        @elseif($hasPendingGrading)
+            {{-- 4b. Aguardando correção manual: alerta acima, sem formulário e sem confirmação de início. --}}
+            <div class="mb-4">
+                <x-ui.button variant="secondary" href="{{ route('classroom.show', $course) }}">
+                    Voltar para a sala de aula
+                </x-ui.button>
+            </div>
+        @elseif($showStartConfirmation)
+            {{-- 4c. Confirmação de início (Frente B): instruções + resumo, sem formulário de questões e sem cronômetro. --}}
+            <div dusk="quiz-start-screen">
+                @if(filled($quiz->instructions))
+                    <x-ui.card class="mb-4" surface="white">
+                        <div class="d-flex align-items-center gap-2 mb-2 text-primary fw-semibold">
+                            <x-ui.icon name="info" size="18" />
+                            <span>Instruções da prova</span>
+                        </div>
+                        <div class="text-body text-prewrap">{{ $quiz->instructions }}</div>
+                    </x-ui.card>
+                @endif
+
+                <x-ui.card class="mb-4" surface="white" title="Resumo da prova">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between align-items-center gap-3">
+                            <span class="text-body-secondary">Questões</span>
+                            <span class="fw-semibold">{{ $quiz->questions->count() === 1 ? 'Existe uma questão.' : 'São '.$quiz->questions->count().' questões.' }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center gap-3">
+                            <span class="text-body-secondary">Tempo limite</span>
+                            <span class="fw-semibold">{{ $quiz->time_limit_minutes ? $quiz->time_limit_minutes.' minutos' : 'Sem limite de tempo' }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center gap-3">
+                            <span class="text-body-secondary">Nota mínima</span>
+                            <span class="fw-semibold">{{ $quiz->min_score_percentage }}%</span>
+                        </li>
+                        @if($quiz->max_attempts !== null)
+                            <li class="list-group-item d-flex justify-content-between align-items-center gap-3">
+                                <span class="text-body-secondary">Tentativa</span>
+                                <span class="fw-semibold">Esta é a tentativa {{ $completedAttempts + 1 }} de {{ $quiz->max_attempts }}.</span>
+                            </li>
+                        @endif
+                    </ul>
+                </x-ui.card>
+
+                <x-ui.alert variant="warning" class="mb-4">
+                    @if($quiz->time_limit_minutes)
+                        Ao confirmar, o cronômetro começa a correr e esta tentativa passa a valer, mesmo que você feche a tela antes de enviar.
+                    @else
+                        Ao confirmar, esta tentativa passa a valer, mesmo que você feche a tela antes de enviar.
+                    @endif
+                </x-ui.alert>
+
+                {{-- Mini-form POST puro para `student.quizzes.start`: zero JS, sem `data-quiz-timer`. --}}
+                <form method="POST" action="{{ route('student.quizzes.start', $lesson) }}">
+                    @csrf
+
+                    <x-ui.form-actions align="end" class="mb-5">
+                        <x-ui.button variant="secondary" href="{{ route('classroom.show', $course) }}">
+                            Voltar para a sala de aula
+                        </x-ui.button>
+                        <x-ui.button type="submit" variant="primary" icon="check" dusk="quiz-start-confirm">
+                            Confirmar e iniciar
+                        </x-ui.button>
+                    </x-ui.form-actions>
+                </form>
             </div>
         @else
 

@@ -41,6 +41,10 @@ These tests guard this module's contract, must stay green (PHPUnit, no Pest):
   `data-time-limit-minutes`) seeded from the server-opened attempt,
   confirmation-modal markup, expired-attempt banner, and the
   accept-but-fail path exercised end-to-end through the POST route.
+- `tests/Feature/StudentQuizResultFlowTest.php` — Start confirmation (`POST student.quizzes.start`)
+  and post-submission result screen (`GET student.quizzes.result`): clock stamped only on confirm,
+  redirect after submit, score/pass display, answer key gated behind `show_correct_answers`, and
+  retry flow hiding answer key while retry is available.
 - `tests/Feature/EssayManualGradingTest.php` — `GradeEssayAnswerAction`
   grading one answer at a time, `finalizeGrading()` firing only once
   every essay answer on attempt graded, using exact same score formula as

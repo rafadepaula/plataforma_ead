@@ -8,6 +8,7 @@ use App\Models\Lesson;
 use App\Models\Module;
 use App\Models\Organization;
 use App\Models\Quiz;
+use App\Models\QuizAttempt;
 use App\Models\QuizOption;
 use App\Models\QuizQuestion;
 use App\Models\User;
@@ -171,6 +172,7 @@ class StudentMobileScreensTest extends DuskTestCase
         $student = User::factory()->inOrg($course->org_id)->create();
         $student->assignRole(RolesEnum::ALUNO->value);
         $course->students()->attach($student->id, ['enrolled_at' => now(), 'status' => 'active']);
+        QuizAttempt::factory()->for($quiz)->for($student)->inProgress()->create();
 
         return [$student, $course, $module, $lesson];
     }

@@ -543,7 +543,7 @@ class QuizManagementTest extends TestCase
                 $question->id => ['selected_option_ids' => [$correctOption->id]],
             ],
         ])->assertSessionHasNoErrors()
-            ->assertRedirect(route('classroom.lesson', $lesson))
+            ->assertRedirect(route('student.quizzes.result', $lesson))
             ->assertSessionHas('success', fn (string $message) => str_contains($message, 'concluída com sucesso'));
 
         $attempt = $quiz->fresh()->attempts()->where('user_id', $aluno->id)->firstOrFail();
@@ -572,7 +572,7 @@ class QuizManagementTest extends TestCase
                 $question->id => ['selected_option_ids' => [$wrongOption->id]],
             ],
         ])->assertSessionHasNoErrors()
-            ->assertRedirect(route('classroom.lesson', $lesson))
+            ->assertRedirect(route('student.quizzes.result', $lesson))
             ->assertSessionHas('success', fn (string $message) => str_contains($message, 'não atingiu a nota mínima'));
 
         $attempt = $quiz->fresh()->attempts()->where('user_id', $aluno->id)->firstOrFail();

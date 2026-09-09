@@ -103,15 +103,13 @@ project, so the contract is only enforced by
 
 `StudentQuizController::show()` always renders `200 OK` — never 403s
 student out of attempts, since they still need to see best score/history.
-Blade view hides form:
+`show()` branches across three states without creating an attempt:
+1. Blocked (`!$canAttempt` or pending manual grading): shows alert, best score, and back button. Answer key is shown here only if `show_correct_answers` is enabled and no more retries can be attempted.
+2. Confirmation (`$canAttempt && $openAttempt === null`): instructions, questions count, time limit, min score, and a mini-form POSTing to `student.quizzes.start` (`quiz-start-confirm`).
+3. Attempt Form (`$openAttempt !== null`): questions, options, and timer.
 
-```blade
-@if(!$canAttempt)
-    <x-ui.alert variant="accent-2">...reason...</x-ui.alert>
-@else
-    <form method="POST" action="{{ route('student.quizzes.submit', $lesson) }}">...</form>
-@endif
-```
+Clock is stamped on `POST student.quizzes.start` via `OpenQuizAttemptAction::openOrResume()` (PRG redirect back to `show`), never on `GET show`.
+On submission, `submit()` redirects to `student.quizzes.result`, rendering `quiz-result` with `quiz-result-score`, pass/fail feedback, answer key (when `show_correct_answers` is on), and a `back-to-course` link.
 
 Real enforcement is `SubmitQuizAttemptAction::guardAttemptLimits()` on
 `submit()` POST — view-level gate is UX only. Student who POSTs anyway

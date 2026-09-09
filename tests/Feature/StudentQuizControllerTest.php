@@ -59,13 +59,32 @@ class StudentQuizControllerTest extends TestCase
         $response->assertSessionHas('error', 'Acesso negado. Você não possui matrícula ativa neste curso.');
     }
 
-    public function test_enrolled_student_can_view_quiz_page(): void
+    public function test_enrolled_student_sees_a_confirmation_screen_before_starting_and_the_form_only_after_confirming(): void
     {
         [$aluno, $lesson, $quiz] = $this->createQuizSetup();
 
         $question = QuizQuestion::factory()->for($quiz)->singleChoice()->create(['question_text' => 'Qual é a capital do Brasil?']);
         QuizOption::factory()->for($question, 'question')->correct()->create(['option_text' => 'Brasília']);
         QuizOption::factory()->for($question, 'question')->incorrect()->create(['option_text' => 'Rio de Janeiro']);
+
+        // Sem tentativa aberta, `show()` é confirmação: sem form, sem cronômetro.
+        $this->actingAs($aluno)
+            ->get(route('student.quizzes.show', $lesson))
+            ->assertOk()
+            ->assertSee('quiz-start-screen', false)
+            ->assertSee('quiz-start-confirm', false)
+            ->assertDontSee('id="quiz-attempt-form"', false)
+            ->assertDontSee('data-quiz-timer', false);
+
+        $this->assertSame(0, QuizAttempt::query()
+            ->where('quiz_id', $quiz->id)
+            ->where('user_id', $aluno->id)
+            ->count(), 'Abrir a confirmação nunca pode carimbar o relógio.');
+
+        // Confirmar (PRG) abre o form com as questões.
+        $this->actingAs($aluno)
+            ->post(route('student.quizzes.start', $lesson))
+            ->assertRedirect(route('student.quizzes.show', $lesson));
 
         $this->actingAs($aluno)
             ->get(route('student.quizzes.show', $lesson))
@@ -86,13 +105,15 @@ class StudentQuizControllerTest extends TestCase
             'is_passed' => true,
         ]);
 
+        $this->actingAs($aluno)->post(route('student.quizzes.start', $lesson))->assertRedirect();
+
         $this->actingAs($aluno)
             ->get(route('student.quizzes.show', $lesson))
             ->assertOk()
             ->assertSee('Sua melhor nota nesta prova: 85.5%');
     }
 
-    public function test_quiz_page_shows_pending_grading_banner_when_essay_is_awaiting_grading(): void
+    public function test_start_is_rejected_while_an_attempt_is_awaiting_manual_grading(): void
     {
         [$aluno, $lesson, $quiz] = $this->createQuizSetup();
 
@@ -102,15 +123,70 @@ class StudentQuizControllerTest extends TestCase
             'is_passed' => null,
         ]);
 
+        // Com pendência aberta, confirmar não abre tentativa nova: rejeita com erro.
+        $this->actingAs($aluno)
+            ->from(route('student.quizzes.show', $lesson))
+            ->post(route('student.quizzes.start', $lesson))
+            ->assertRedirect(route('student.quizzes.show', $lesson))
+            ->assertSessionHasErrors('quiz');
+
+        $this->assertSame(1, QuizAttempt::query()
+            ->where('quiz_id', $quiz->id)
+            ->where('user_id', $aluno->id)
+            ->count());
+
         $this->actingAs($aluno)
             ->get(route('student.quizzes.show', $lesson))
             ->assertOk()
             ->assertSee('Você possui uma tentativa aguardando correção manual.');
     }
 
-    public function test_quiz_page_shows_answer_key_when_enabled_and_graded_attempt_exists(): void
+    /**
+     * Critério 1 da spec: com `show_correct_answers=true` e tentativa
+     * anterior corrigida, a página do formulário com retentativa disponível
+     * NUNCA recebe o gabarito — ele mora só na tela de resultado.
+     */
+    public function test_the_answer_key_is_not_leaked_on_the_form_while_a_retry_is_available(): void
     {
         [$aluno, $lesson, $quiz] = $this->createQuizSetup(['show_correct_answers' => true]);
+
+        $question = QuizQuestion::factory()->for($quiz)->singleChoice()->create();
+        $correctOption = QuizOption::factory()->for($question, 'question')->correct()->create();
+
+        $attempt = QuizAttempt::factory()->for($quiz)->for($aluno)->create([
+            'status' => 'graded',
+            'score_percentage' => 100,
+            'is_passed' => true,
+        ]);
+
+        $attempt->answers()->create([
+            'question_id' => $question->id,
+            'selected_option_ids' => [$correctOption->id],
+            'is_correct' => true,
+        ]);
+
+        $this->actingAs($aluno)->post(route('student.quizzes.start', $lesson))->assertRedirect();
+
+        $this->actingAs($aluno)
+            ->get(route('student.quizzes.show', $lesson))
+            ->assertOk()
+            ->assertSee('id="quiz-attempt-form"', false)
+            ->assertDontSee('quiz-answer-key', false)
+            ->assertDontSee('answer-key-', false)
+            ->assertDontSee('Gabarito');
+    }
+
+    /**
+     * O outro lado do gating: com tentativas esgotadas (`!$canAttempt`,
+     * estado bloqueado) o gabarito volta a aparecer quando configurado.
+     */
+    public function test_the_answer_key_is_shown_once_attempts_are_exhausted(): void
+    {
+        [$aluno, $lesson, $quiz] = $this->createQuizSetup([
+            'show_correct_answers' => true,
+            'allow_retries' => true,
+            'max_attempts' => 1,
+        ]);
 
         $question = QuizQuestion::factory()->for($quiz)->singleChoice()->create();
         $correctOption = QuizOption::factory()->for($question, 'question')->correct()->create();
@@ -130,6 +206,8 @@ class StudentQuizControllerTest extends TestCase
         $this->actingAs($aluno)
             ->get(route('student.quizzes.show', $lesson))
             ->assertOk()
+            ->assertSee('Você atingiu o número máximo de tentativas (1) para esta prova.')
+            ->assertSee('quiz-answer-key', false)
             ->assertSee('Gabarito');
     }
 
@@ -179,7 +257,7 @@ class StudentQuizControllerTest extends TestCase
                 ],
             ])
             ->assertSessionHasNoErrors()
-            ->assertRedirect(route('classroom.lesson', $lesson))
+            ->assertRedirect(route('student.quizzes.result', $lesson))
             ->assertSessionHas('success', fn (string $msg) => str_contains($msg, 'Prova concluída com sucesso!'));
 
         $this->assertDatabaseHas('quiz_attempts', [
@@ -196,6 +274,24 @@ class StudentQuizControllerTest extends TestCase
 
         QuizQuestion::factory()->for($quiz)->singleChoice()->create();
 
+        // A confirmação não carimba o relógio: sem timer e sem attempt.
+        $this->actingAs($aluno)
+            ->get(route('student.quizzes.show', $lesson))
+            ->assertOk()
+            ->assertDontSee('data-quiz-timer', false);
+
+        $this->assertSame(0, QuizAttempt::query()
+            ->where('quiz_id', $quiz->id)
+            ->where('user_id', $aluno->id)
+            ->count());
+
+        // O relógio só começa no confirmar (`POST start`).
+        // (Margem de segundos: o banco trunca microssegundos do timestamp.)
+        $confirmedAt = now()->subSeconds(5);
+        $this->actingAs($aluno)
+            ->post(route('student.quizzes.start', $lesson))
+            ->assertRedirect(route('student.quizzes.show', $lesson));
+
         $response = $this->actingAs($aluno)->get(route('student.quizzes.show', $lesson));
 
         $response->assertOk()
@@ -204,13 +300,14 @@ class StudentQuizControllerTest extends TestCase
             ->assertSee('data-started-at="', false)
             ->assertDontSee('name="started_at"', false);
 
-        // O início da tentativa é carimbado no servidor ao abrir a tela.
+        // O início da tentativa é carimbado no servidor ao confirmar, nunca antes.
         $openAttempt = QuizAttempt::query()
             ->where('quiz_id', $quiz->id)
             ->where('user_id', $aluno->id)
             ->where('status', 'in_progress')
             ->firstOrFail();
 
+        $this->assertTrue($openAttempt->started_at->greaterThanOrEqualTo($confirmedAt));
         $response->assertSee('data-started-at="'.$openAttempt->started_at->toIso8601String().'"', false);
     }
 
@@ -231,6 +328,7 @@ class StudentQuizControllerTest extends TestCase
         $this->actingAs($aluno)
             ->get(route('student.quizzes.show', $lesson))
             ->assertOk()
+            ->assertSee('id="quiz-attempt-form"', false)
             ->assertSee('data-started-at="'.$openAttempt->started_at->toIso8601String().'"', false);
 
         $this->assertSame(1, QuizAttempt::query()->where('quiz_id', $quiz->id)->count());
@@ -239,11 +337,12 @@ class StudentQuizControllerTest extends TestCase
     /**
      * Uma tentativa aberta e abandonada, cujo tempo já se esgotou, é
      * encerrada ao reabrir a tela: vira tentativa corrigida (zero,
-     * reprovada) e dá lugar a uma nova tentativa com cronômetro próprio.
-     * Assim a linha `in_progress` nunca fica pendurada, invisível para o
-     * Aluno e para o Gestor.
+     * reprovada) e a tela volta à confirmação — `show()` nunca cria
+     * attempt. Só o confirmar (`POST start`) abre a nova tentativa, com
+     * cronômetro próprio. Assim a linha `in_progress` nunca fica
+     * pendurada, invisível para o Aluno e para o Gestor.
      */
-    public function test_opening_the_quiz_page_expires_an_abandoned_attempt_and_starts_a_new_one(): void
+    public function test_opening_the_quiz_page_expires_an_abandoned_attempt_and_start_opens_a_new_one(): void
     {
         [$aluno, $lesson, $quiz] = $this->createQuizSetup([
             'time_limit_minutes' => 30,
@@ -260,6 +359,8 @@ class StudentQuizControllerTest extends TestCase
             ->get(route('student.quizzes.show', $lesson))
             ->assertOk()
             ->assertSee('O tempo da sua tentativa anterior se esgotou antes do envio.')
+            ->assertSee('quiz-start-screen', false)
+            ->assertDontSee('data-quiz-timer', false)
             ->assertDontSee('data-started-at="'.$abandonedAttempt->started_at->toIso8601String().'"', false);
 
         $this->assertDatabaseHas('quiz_attempts', [
@@ -275,6 +376,17 @@ class StudentQuizControllerTest extends TestCase
             'A tentativa expirada deve ser encerrada no instante do prazo, não no da reabertura.',
         );
 
+        // `show()` expirou sem abrir nada novo: só o confirmar abre.
+        $this->assertSame(0, QuizAttempt::query()
+            ->where('quiz_id', $quiz->id)
+            ->where('user_id', $aluno->id)
+            ->where('status', 'in_progress')
+            ->count());
+
+        $this->actingAs($aluno)
+            ->post(route('student.quizzes.start', $lesson))
+            ->assertRedirect(route('student.quizzes.show', $lesson));
+
         $newAttempt = QuizAttempt::query()
             ->where('quiz_id', $quiz->id)
             ->where('user_id', $aluno->id)
@@ -283,6 +395,11 @@ class StudentQuizControllerTest extends TestCase
 
         $this->assertNotSame($abandonedAttempt->id, $newAttempt->id);
         $this->assertTrue($newAttempt->started_at->greaterThan(now()->subMinute()));
+
+        $this->actingAs($aluno)
+            ->get(route('student.quizzes.show', $lesson))
+            ->assertOk()
+            ->assertSee('data-started-at="'.$newAttempt->started_at->toIso8601String().'"', false);
     }
 
     /**
@@ -333,10 +450,10 @@ class StudentQuizControllerTest extends TestCase
     }
 
     /**
-     * O caminho real do aluno que estoura o tempo: abre a tela, deixa o
-     * cronômetro zerar e só então envia. O `started_at` carimbado na
-     * abertura decide o estouro e a tentativa é corrigida sem aprovação,
-     * mesmo com 100% de acerto.
+     * O caminho real do aluno que estoura o tempo: confirma o início,
+     * deixa o cronômetro zerar e só então envia. O `started_at` carimbado
+     * no confirmar decide o estouro e a tentativa é corrigida sem
+     * aprovação, mesmo com 100% de acerto.
      */
     public function test_a_submission_after_the_countdown_ends_is_graded_without_approval(): void
     {
@@ -350,6 +467,7 @@ class StudentQuizControllerTest extends TestCase
         $correctOption = QuizOption::factory()->for($question, 'question')->correct()->create();
 
         $this->actingAs($aluno)->get(route('student.quizzes.show', $lesson))->assertOk();
+        $this->actingAs($aluno)->post(route('student.quizzes.start', $lesson))->assertRedirect();
 
         $openAttempt = QuizAttempt::query()
             ->where('quiz_id', $quiz->id)
@@ -366,7 +484,7 @@ class StudentQuizControllerTest extends TestCase
                 ],
             ])
             ->assertSessionHasNoErrors()
-            ->assertRedirect(route('classroom.lesson', $lesson));
+            ->assertRedirect(route('student.quizzes.result', $lesson));
 
         $this->assertDatabaseHas('quiz_attempts', [
             'id' => $openAttempt->id,
@@ -421,7 +539,8 @@ class StudentQuizControllerTest extends TestCase
 
     /**
      * Uma tentativa que se encerra libera o "lugar" de tentativa aberta:
-     * fechar a anterior e abrir a próxima não esbarra no índice único.
+     * fechar a anterior e confirmar a próxima não esbarra no índice único.
+     * (`show()` sozinho nunca abre — só o `POST start` cria.)
      */
     public function test_closing_an_attempt_frees_the_open_slot_for_the_next_one(): void
     {
@@ -438,6 +557,16 @@ class StudentQuizControllerTest extends TestCase
         ]);
 
         $this->actingAs($aluno)->get(route('student.quizzes.show', $lesson))->assertOk();
+
+        $this->assertSame(0, QuizAttempt::query()
+            ->where('quiz_id', $quiz->id)
+            ->where('user_id', $aluno->id)
+            ->where('status', 'in_progress')
+            ->count(), 'Só o confirmar abre tentativa nova.');
+
+        $this->actingAs($aluno)
+            ->post(route('student.quizzes.start', $lesson))
+            ->assertRedirect(route('student.quizzes.show', $lesson));
 
         $this->assertSame(1, QuizAttempt::query()
             ->where('quiz_id', $quiz->id)
@@ -467,7 +596,7 @@ class StudentQuizControllerTest extends TestCase
                 ],
             ])
             ->assertSessionHasNoErrors()
-            ->assertRedirect(route('classroom.lesson', $lesson));
+            ->assertRedirect(route('student.quizzes.result', $lesson));
 
         $this->assertDatabaseHas('quiz_attempts', [
             'quiz_id' => $quiz->id,
@@ -502,7 +631,7 @@ class StudentQuizControllerTest extends TestCase
                     $question->id => ['selected_option_ids' => [$correctOption->id]],
                 ],
             ])
-            ->assertRedirect(route('classroom.lesson', $lesson));
+            ->assertRedirect(route('student.quizzes.result', $lesson));
 
         $this->assertDatabaseHas('quiz_attempts', [
             'quiz_id' => $quiz->id,
@@ -587,6 +716,8 @@ class StudentQuizControllerTest extends TestCase
 
         QuizQuestion::factory()->for($quiz)->singleChoice()->create();
 
+        $this->actingAs($aluno)->post(route('student.quizzes.start', $lesson))->assertRedirect();
+
         $html = $this->actingAs($aluno)
             ->get(route('student.quizzes.show', $lesson))
             ->assertOk()
@@ -609,6 +740,8 @@ class StudentQuizControllerTest extends TestCase
         [$aluno, $lesson, $quiz] = $this->createQuizSetup(['allow_retries' => true, 'max_attempts' => null]);
 
         QuizQuestion::factory()->for($quiz)->singleChoice()->create();
+
+        $this->actingAs($aluno)->post(route('student.quizzes.start', $lesson))->assertRedirect();
 
         $this->actingAs($aluno)
             ->get(route('student.quizzes.show', $lesson))
@@ -646,6 +779,8 @@ class StudentQuizControllerTest extends TestCase
 
         $question = QuizQuestion::factory()->for($quiz)->essay()->create();
 
+        $this->actingAs($aluno)->post(route('student.quizzes.start', $lesson))->assertRedirect();
+
         $this->actingAs($aluno)
             ->from(route('student.quizzes.show', $lesson))
             ->post(route('student.quizzes.submit', $lesson), [
@@ -677,10 +812,50 @@ class StudentQuizControllerTest extends TestCase
             'is_passed' => null,
         ]);
 
+        // Com pendência aberta o confirmar é rejeitado: sem form e sem gabarito.
         $this->actingAs($aluno)
             ->get(route('student.quizzes.show', $lesson))
             ->assertOk()
             ->assertSee('Você possui uma tentativa aguardando correção manual.')
+            ->assertDontSee('id="quiz-attempt-form"', false)
+            ->assertDontSee('quiz-answer-key', false)
             ->assertDontSee('Gabarito');
+    }
+
+    /**
+     * `POST start` idempotente (double-click / duas abas): com tentativa
+     * aberta, confirmar de novo não cria attempt nova nem reseta o relógio.
+     */
+    public function test_confirming_twice_with_an_open_attempt_reuses_it_without_resetting_the_clock(): void
+    {
+        [$aluno, $lesson, $quiz] = $this->createQuizSetup(['time_limit_minutes' => 30]);
+
+        QuizQuestion::factory()->for($quiz)->singleChoice()->create();
+
+        $openAttempt = QuizAttempt::factory()->for($quiz)->for($aluno)->inProgress()->create([
+            'started_at' => now()->subMinutes(20),
+        ]);
+
+        $this->actingAs($aluno)
+            ->from(route('student.quizzes.show', $lesson))
+            ->post(route('student.quizzes.start', $lesson))
+            ->assertRedirect(route('student.quizzes.show', $lesson));
+
+        $this->assertSame(1, QuizAttempt::query()
+            ->where('quiz_id', $quiz->id)
+            ->where('user_id', $aluno->id)
+            ->count(), 'Confirmar com pendência aberta não pode abrir attempt nova.');
+
+        $this->assertSame(
+            $openAttempt->started_at->toDateTimeString(),
+            $openAttempt->fresh()->started_at->toDateTimeString(),
+            'Reconfirmar nunca reseta o cronômetro.',
+        );
+
+        $this->actingAs($aluno)
+            ->get(route('student.quizzes.show', $lesson))
+            ->assertOk()
+            ->assertSee('id="quiz-attempt-form"', false)
+            ->assertSee('data-started-at="'.$openAttempt->started_at->toIso8601String().'"', false);
     }
 }

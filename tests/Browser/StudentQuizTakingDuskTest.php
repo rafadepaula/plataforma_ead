@@ -47,19 +47,25 @@ class StudentQuizTakingDuskTest extends DuskTestCase
         $course->students()->attach($student->id, ['enrolled_at' => now(), 'status' => 'active']);
 
         $this->browse(function (Browser $browser) use ($student, $course, $lesson, $correctOption): void {
-            // 1. Abrir o quiz a partir da sala de aula e responder.
+            // 1. Abrir o quiz a partir da sala de aula, confirmar início, responder e ver resultado.
             $browser->loginAs($student)
                 ->visit(route('classroom.show', $course))
                 ->waitFor('@open-lesson-'.$lesson->id)
                 ->click('@open-lesson-'.$lesson->id)
                 ->waitFor('@start-quiz')
                 ->click('@start-quiz')
+                ->waitFor('@quiz-start-screen')
+                ->click('@quiz-start-confirm')
                 ->waitFor('@quiz-attempt-form')
                 ->click('@quiz-option-'.$correctOption->question_id.'-'.$correctOption->id)
                 ->click('@quiz-attempt-submit')
                 ->waitFor('@quiz-attempt-confirm')
                 ->click('@quiz-attempt-confirm')
-                ->waitForText('concluída com sucesso');
+                ->waitFor('@quiz-result')
+                ->assertSeeIn('@quiz-result-score', 'Você acertou 100%')
+                ->waitForText('concluída com sucesso')
+                ->click('@back-to-course')
+                ->waitForLocation(parse_url(route('classroom.show', $course), PHP_URL_PATH));
         });
 
         // 2. Consequências no banco: tentativa aprovada e lição concluída
@@ -120,6 +126,8 @@ class StudentQuizTakingDuskTest extends DuskTestCase
             //    fica na Action, `SubmitQuizAttemptActionTest`).
             $browser->loginAs($student)
                 ->visit(route('student.quizzes.show', $lesson))
+                ->waitFor('@quiz-start-confirm')
+                ->click('@quiz-start-confirm')
                 ->waitFor('@quiz-attempt-form')
                 ->assertSee('Selecione todas as respostas que se aplicam')
                 ->assertAttribute($firstOptionSelector, 'type', 'checkbox')
@@ -143,6 +151,7 @@ class StudentQuizTakingDuskTest extends DuskTestCase
             $browser->click('@quiz-attempt-submit')
                 ->waitFor('@quiz-attempt-confirm')
                 ->click('@quiz-attempt-confirm')
+                ->waitFor('@quiz-result')
                 ->waitForText('concluída com sucesso');
         });
 
@@ -178,11 +187,14 @@ class StudentQuizTakingDuskTest extends DuskTestCase
         $this->browse(function (Browser $browser) use ($student, $lesson, $essayQuestion): void {
             $browser->loginAs($student)
                 ->visit(route('student.quizzes.show', $lesson))
+                ->waitFor('@quiz-start-confirm')
+                ->click('@quiz-start-confirm')
                 ->waitFor('@quiz-attempt-form')
                 ->type('@quiz-essay-'.$essayQuestion->id, 'Minha resposta dissertativa completa.')
                 ->click('@quiz-attempt-submit')
                 ->waitFor('@quiz-attempt-confirm')
                 ->click('@quiz-attempt-confirm')
+                ->waitFor('@quiz-result')
                 ->waitForText('aguardam correção manual');
         });
 
@@ -230,6 +242,8 @@ class StudentQuizTakingDuskTest extends DuskTestCase
         $this->browse(function (Browser $browser) use ($student, $lesson, $answeredQuestion, $correctOption, $skippedQuestion, $skippedCorrectOption): void {
             $browser->loginAs($student)
                 ->visit(route('student.quizzes.show', $lesson))
+                ->waitFor('@quiz-start-confirm')
+                ->click('@quiz-start-confirm')
                 ->waitFor('@quiz-attempt-form')
                 // Nem toda questão respondida: o envio fica bloqueado.
                 ->assertPresent('[dusk="quiz-attempt-submit"][disabled]')
@@ -246,6 +260,7 @@ class StudentQuizTakingDuskTest extends DuskTestCase
                 ->assertSeeIn('@confirm-modal-submit-attempt-modal', 'Depois de finalizar')
                 ->assertDontSeeIn('@confirm-modal-submit-attempt-modal', 'sem resposta')
                 ->click('@quiz-attempt-confirm')
+                ->waitFor('@quiz-result')
                 ->waitForText('concluída com sucesso');
         });
 
@@ -340,7 +355,10 @@ class StudentQuizTakingDuskTest extends DuskTestCase
 
         // (d) Quiz com gabarito liberado após a tentativa corrigida.
         $answerKeyLesson = Lesson::factory()->for($module)->create(['type' => 'quiz', 'is_published' => true]);
-        $answerKeyQuiz = Quiz::factory()->for($answerKeyLesson)->create(['show_correct_answers' => true]);
+        $answerKeyQuiz = Quiz::factory()->for($answerKeyLesson)->create([
+            'show_correct_answers' => true,
+            'allow_retries' => false,
+        ]);
         $answerKeyQuestion = QuizQuestion::factory()->for($answerKeyQuiz)->singleChoice()->create([
             'question_text' => 'Qual é a capital do Brasil?',
         ]);
@@ -361,7 +379,10 @@ class StudentQuizTakingDuskTest extends DuskTestCase
         // (f) Gabarito bloqueado: `show_correct_answers` desligado, mesmo já
         //     havendo tentativa corrigida.
         $hiddenKeyLesson = Lesson::factory()->for($module)->create(['type' => 'quiz', 'is_published' => true]);
-        $hiddenKeyQuiz = Quiz::factory()->for($hiddenKeyLesson)->create(['show_correct_answers' => false]);
+        $hiddenKeyQuiz = Quiz::factory()->for($hiddenKeyLesson)->create([
+            'show_correct_answers' => false,
+            'allow_retries' => false,
+        ]);
         QuizQuestion::factory()->for($hiddenKeyQuiz)->singleChoice()->create();
         QuizAttempt::factory()->for($hiddenKeyQuiz)->for($student)->graded()->create();
 
@@ -401,12 +422,14 @@ class StudentQuizTakingDuskTest extends DuskTestCase
             //
             //    O contador `[data-quiz-timer]` semeia `data-started-at` do
             //    `started_at` persistido na tentativa `in_progress` aberta
-            //    por `StudentQuizController::show()`. Para exercitar o estado
+            //    por `StudentQuizController::start()`. Para exercitar o estado
             //    "já expirou" sem dormir um minuto real, empurramos o
             //    `data-started-at` para o passado e reinvocamos
             //    `window.QuizTimer.bind()` — mesmo caminho de código de uma
             //    expiração real.
             $browser->visit(route('student.quizzes.show', $timedLesson))
+                ->waitFor('@quiz-start-confirm')
+                ->click('@quiz-start-confirm')
                 ->waitFor('@quiz-timer')
                 ->assertPresent('@quiz-attempt-form');
 
@@ -449,6 +472,7 @@ class StudentQuizTakingDuskTest extends DuskTestCase
                 ->click('@quiz-attempt-submit')
                 ->waitFor('@quiz-attempt-confirm')
                 ->click('@quiz-attempt-confirm')
+                ->waitFor('@quiz-result')
                 ->waitForText('não atingiu a nota mínima');
 
             $this->assertDatabaseHas('quiz_attempts', [
@@ -473,17 +497,20 @@ class StudentQuizTakingDuskTest extends DuskTestCase
 
             // 5. Nota abaixo da mínima: a tela de resultado avisa a reprovação.
             $browser->visit(route('student.quizzes.show', $failingLesson))
+                ->waitFor('@quiz-start-confirm')
+                ->click('@quiz-start-confirm')
                 ->waitFor('@quiz-attempt-form')
                 ->click('@quiz-option-'.$failingWrongOption->question_id.'-'.$failingWrongOption->id)
                 ->click('@quiz-attempt-submit')
                 ->waitFor('@quiz-attempt-confirm')
                 ->click('@quiz-attempt-confirm')
+                ->waitFor('@quiz-result')
                 ->waitForText('não atingiu a nota mínima');
 
             // 6. Gabarito continua escondido quando `show_correct_answers`
             //    está desligado, mesmo com tentativa corrigida.
             $browser->visit(route('student.quizzes.show', $hiddenKeyLesson))
-                ->waitFor('@quiz-attempt-form')
+                ->waitFor('@quiz-cannot-attempt')
                 ->assertMissing('@quiz-answer-key');
         });
     }
@@ -529,8 +556,12 @@ class StudentQuizTakingDuskTest extends DuskTestCase
                 ->assertVisible('@quiz-expired-attempt')
                 ->assertSeeIn('@quiz-expired-attempt', 'O tempo da sua tentativa anterior se esgotou')
                 ->assertSeeIn('@quiz-expired-attempt', 'conta no seu total de tentativas')
-                // Ainda restam tentativas: a prova reabre com cronômetro novo.
-                ->assertPresent('@quiz-attempt-form')
+                // Ainda restam tentativas: tela de confirmação aparece informando a nova tentativa.
+                ->waitFor('@quiz-start-screen')
+                ->assertPresent('@quiz-start-confirm')
+                ->click('@quiz-start-confirm')
+                // Após confirmar, a prova reabre com cronômetro novo.
+                ->waitFor('@quiz-attempt-form')
                 ->assertVisible('@quiz-timer');
         });
 
