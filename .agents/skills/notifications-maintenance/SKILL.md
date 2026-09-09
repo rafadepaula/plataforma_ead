@@ -71,7 +71,8 @@ dispatch sits inside of.
 
 ## Enrollment Confirmed Fires on No-op Re-submit
 
-Check both call sites, `EnrollmentController::store()` and
+Check all 4+ dispatch sites, `EnrollmentController::storeStudent()`/
+`::store()`/`::restore()` and the 2 inside
 `ProcessSmartInvitationAction`. They dispatch `EnrollmentConfirmed` only on
 actual transition (brand-new `course_user` row, or `cancelled → active`),
 never when pivot row already `active` and unchanged. Regression here means
@@ -103,7 +104,9 @@ plain `string` resolved through
 ## Bell Badge/Dropdown Not Updating in Browser
 
 - Confirm `resources/js/modules/NotificationBell.js` registered in
-  `resources/js/app.js` `DOMContentLoaded` bootstrap and `public/build` not
+  `resources/js/modules/index.js` registry (`NotificationBell: new
+  NotificationBell(httpClient)`, `app.js` only imports the registry) and
+  `public/build` not
   stale relative to it. Run `vendor/bin/sail npm run build` (or ask user to
   never `npm run dev`/`composer run dev`, which leave `public/hot` behind
   and break every Dusk run — see `laravel-dusk`). Stale build is single most common

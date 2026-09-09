@@ -72,7 +72,7 @@ Tests guard this module's contract. Must stay green (PHPUnit, no Pest):
   com reprodução real). O seam público
   `window.LessonPlayer.reportProgress()` continua existindo no produto, mas
   nenhum teste Dusk o dirige diretamente.
-- `tests/Feature/StudentCourseControllerTest.php` — 19 tests:
+- `tests/Feature/StudentCourseControllerTest.php` — 21 tests:
   multi-org enrollment aggregation (including duplicate course titles
   across orgs resolving to the right org per card, N+1-free), all 3 tabs
   filtered by raw pivot `status` (never derived `displayStatus`), tab
@@ -102,7 +102,7 @@ Tests guard this module's contract. Must stay green (PHPUnit, no Pest):
   revoked-certificate copy, the staff-preview (null pivot) zero-progress
   path, a lesson unpublished after completion, the singular completion
   caption, and the real partial counts.
-- `tests/Browser/ClassroomOverviewDuskTest.php` (Dusk) — 9 tests:
+- `tests/Browser/ClassroomOverviewDuskTest.php` (Dusk) — 4 tests:
   the 0% → 33% → 100% lifecycle with certificate issuance, the staff
   preview (Admin and owning Gestor at 0%, foreign Gestor 403), the
   `no-modules` empty state, the issued-certificate `href` pointing at
@@ -112,7 +112,7 @@ Tests guard this module's contract. Must stay green (PHPUnit, no Pest):
   glyph/chip rendering, a 375px stacking check asserting the sidebar sits
   below the track with no horizontal overflow, and a long-title overflow
   check.
-- `tests/Feature/LessonDispatchOrderTest.php` — 9 tests freezing
+- `tests/Feature/LessonDispatchOrderTest.php` — 20 tests freezing
   the lesson-player view contract: the exclusive `@if/@elseif` dispatch on
   conflicting rows (a `type=quiz` Lesson carrying BOTH `video_url` and
   `pdf_path` renders `quiz-placeholder` and neither `video-player-{id}`

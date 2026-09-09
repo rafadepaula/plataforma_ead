@@ -6,7 +6,7 @@ description: >
   writing a controller, Policy, or Form Request managing `Organization` or
   `User`, handling upload to the `public` disk, wiring an admin-only /
   gestor-only route, or editing the guest-shell auth views
-  (`auth/login.blade.php`, `layouts/guest.blade.php`, `layout/guest-panel`),
+  (`auth/login.blade.php`, `layouts/guest.blade.php`, `components/layout/guest-panel.blade.php`),
   whose heading level, password toggle, `dusk=` hooks and no-self-signup rule
   are contract.
 license: MIT
@@ -187,8 +187,8 @@ keep:
    `.password-field` (styled in `_utilities.scss`) driven by `PasswordToggle`,
    which swaps `.d-none` on the `eye`/`eye-off` icons. No ad-hoc positioning
    utilities, no second toggle implementation.
-4. All six `dusk=` hooks (`login-form`, `login-email`, `login-password`,
-   `login-remember`, `login-submit`, `forgot-password-link`) and the
+4. All seven `dusk=` hooks (`login-form`, `login-email`, `login-password`,
+    `password-toggle`, `login-remember`, `login-submit`, `forgot-password-link`) and the
    `data-password-toggle-*` attributes stay on the **same** nodes — they are an
    E2E contract asserted by `tests/Browser/Auth/LoginTest.php`, and
    `DuskSelectorContractTest` fails on a moved or dropped selector.
@@ -258,7 +258,7 @@ New FK referencing `users.id` with `ON DELETE RESTRICT` = add its own pre-flight
 
 ## Full-Profile vs Partial Form Requests for the Same Model
 
-`UpdateUserAdminRequest` (global screen) is a distinct Form Request from `UpdateUserRequest` (operational screen), not a superset flag on one class — `role` allows all 3 `RolesEnum` values, `org_id` is editable and conditionally required/prohibited via `Rule::requiredIf()`/`Rule::prohibitedIf()` keyed off the submitted `role`, forced to `null` for `role === admin` in `prepareForValidation()` so a stale `org_id` in the payload can never leak through when the caller only changed the role select:
+`UpdateUserAdminRequest` (global screen) is a distinct Form Request from `UpdateUserRequest` (operational screen), not a superset flag on one class — `role` allows all 4 `RolesEnum` values, `org_id` is editable and conditionally required/prohibited via `Rule::requiredIf()`/`Rule::prohibitedIf()` keyed off the submitted `role`, forced to `null` for `role === admin` in `prepareForValidation()` so a stale `org_id` in the payload can never leak through when the caller only changed the role select:
 
 ```php
 protected function prepareForValidation(): void
@@ -297,6 +297,10 @@ class UserHomeResolver
     {
         if ($user->hasAnyRole([RolesEnum::ADMIN->value, RolesEnum::GESTOR->value])) {
             return Route::has('admin.dashboard') ? route('admin.dashboard') : '/';
+        }
+
+        if ($user->hasRole(RolesEnum::PROFESSOR->value)) {
+            return Route::has('professor.dashboard') ? route('professor.dashboard') : '/';
         }
 
         return Route::has('student.courses.index') ? route('student.courses.index') : '/';

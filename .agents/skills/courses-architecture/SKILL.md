@@ -22,6 +22,15 @@ to Organization it impersonate now (see `tenancy-architecture` Impersonate Org
 section). Admin with no active impersonation manage nothing here. No fallback to
 "manage everything globally" mode for this domain.
 
+Professor (`role:professor`, `RolesEnum::PROFESSOR`) authors content — modules
+and lessons — only on Courses assigned to them via the `course_professor`
+pivot (migration `2026_09_04_202646_create_course_professor_table`, read
+through `User::teaches()`). Enforcement lives in
+`ModulePolicy`/`LessonPolicy::authorizeForCourse()`, with the
+`role:admin|gestor|professor` route group in `routes/web.php` widening
+reachability while the policies keep non-assigned professors out. The Course's
+own metadata stays `CoursePolicy`-gated (`courses.edit` remains 403 to them).
+
 ## Schema
 
 | Table | Key columns | Tenancy |
@@ -84,9 +93,10 @@ first stripped out of the mass-assigned attributes by
   of `lesson_media` ids, validated only as `['integer']` (no `exists` rule —
   an id for another lesson/tenant is not rejected at validation time).
   `syncMedia()` scopes the delete query to the route-bound lesson's own
-  `media()` relation, so a foreign id is silently ignored rather than
-  triggering a 422, before deleting the row AND
-  `Storage::disk('public')->delete()`ing the file.
+   `media()` relation, so a foreign id is silently ignored rather than
+   triggering a 422, before deleting the row AND deleting the file from its
+   per-kind disk (`LessonController::syncMedia()`: PDFs live on the `local`
+   disk, images on `public`).
 - Deletion semantics: `lesson_media.lesson_id` is `cascadeOnDelete` at the DB
   level, but Lesson deletion is a SOFT delete, so media rows are only purged
   on a hard delete. The Gestor ConfirmModal cascade warning ("As {N} lições

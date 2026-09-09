@@ -62,12 +62,12 @@ vendor/bin/sail dusk --filter=CertificateRevocationTest
 Dusk classes declare no DB trait — `DatabaseTruncation` inherited from
 `Tests\DuskTestCase`; `RefreshDatabase` forbidden (Dusk run in separate
 HTTP process); `DatabaseMigrations` retired (per-method `migrate:fresh`)
-— see `laravel-dusk`/`testing-conventions`. They also seed `Certificate`
+ — see `laravel-dusk`/`testing-conventions`. They also seed `Certificate`
 rows directly with `Certificate::create([...])` rather than
-`CertificateFactory` state helper where exact `validation_hash` must
+`CertificateFactory` where exact `validation_hash` must
 match formula in `certificates-conventions` byte-for-byte (factory
-`afterMaking` hook computing hash from *different* field-write order
-would silently desync from production code — recompute inline in test
+`definition` uses a random `Str::uuid()` hash with no `afterMaking` hook,
+so it never reproduces the production formula — recompute inline in test
 instead).
 
 ## Common Failure Modes
@@ -113,9 +113,10 @@ instead).
 ## Open Question: QR-Code Composer Package
 
 No QR-code generation package installed — only
-`barryvdh/laravel-dompdf`. `certificates/pdf.blade.php` currently degrade
-to text-only verification URL + hash when `$qrCodeDataUri` is `null` (see
-`certificates-conventions`). This is **not** the intended end state on its own —
+`barryvdh/laravel-dompdf`. `certificates/pdf.blade.php` never references
+`$qrCodeDataUri`: it prints the verification URL + hash as plain text, and
+`CertificatePdfService` passes `'qrCodeDataUri' => null` as an unused
+placeholder (see `certificates-conventions`). This is **not** the intended end state on its own —
 the screen contract requires an actual scannable QR image. Adding package
 (`endroid/qr-code`, `simple-qrcode`, or `bacon/bacon-qr-code` are usual
 Laravel-ecosystem choices) require explicit user approval per this

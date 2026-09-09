@@ -3,8 +3,8 @@ name: frontend-architecture
 description: >
   Redireciona para `bootstrap-architecture` — descreve o sistema
   "Modernist Design System" pré-migração (zero-radius, `ModalManager.js`,
-  `NotificationService.js`, badge `.tag-*`), que **não existe mais no
-  código**. Use apenas para entender o histórico; para arquitetura de
+  badge `.tag-*`), que **não existe mais no código** (`NotificationService.js`
+  sobrevive como fachada sobre `bootstrap.Toast`, não conta como removido). Use apenas para entender o histórico; para arquitetura de
   frontend atual (camadas, tokens, componentes `<x-ui.*>`), use
   `bootstrap-architecture`.
 ---
@@ -13,9 +13,10 @@ description: >
 
 > **Este skill está obsoleto.** Descrevia o frontend anterior à migração
 > para Bootstrap 5.3 nativo e ao redesign Material. Nenhum dos
-> padrões abaixo existe mais no código: `ModalManager.js` e
-> `NotificationService.js` foram removidos na migração para Bootstrap 5.3
-> nativo; `.tag-*`, `.dialog`/`.dialog-backdrop`, `.field`/`.input`, `.elev-*`
+> padrões abaixo existe mais no código: `ModalManager.js` foi removido na
+> migração para Bootstrap 5.3 nativo (`NotificationService.js` **existe**
+> como fachada fina sobre `bootstrap.Toast` —
+> `resources/js/modules/NotificationService.js`); `.tag-*`, `.dialog`/`.dialog-backdrop`, `.field`/`.input`, `.elev-*`
 > e `.grayscale` eram classes fantasma ou foram descontinuadas (a última,
 > `.grayscale`, saiu de vez na Fase 2 do redesign). O sistema de zero-radius
 > foi substituído pelo Material Bootstrap de cantos suaves.

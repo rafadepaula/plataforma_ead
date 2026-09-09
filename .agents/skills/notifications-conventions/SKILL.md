@@ -148,12 +148,13 @@ immediate `bind()` otherwise), same silent-catch-and-retry-next-tick on
 failed poll. No jQuery, no WebSockets. jQuery is not installed dependency;
 see CLAUDE.md "don't add dependencies without approval" and
 `ForumPolling.js` own docblock for precedent. Registered once in
-`resources/js/app.js`:
+`resources/js/modules/index.js:47` (`NotificationBell: new
+NotificationBell(httpClient)`); `resources/js/app.js:13` only imports the
+registry, never instantiates the module directly:
 
 ```js
-window.NotificationBell = new NotificationBell(HttpClient);
-// ...
-window.NotificationBell.init();
+// resources/js/modules/index.js — each key becomes window.<key> + .init()
+NotificationBell: new NotificationBell(httpClient),
 ```
 
 Mark-single-read (`handleItemClick`) always fires `PATCH notifications.read`

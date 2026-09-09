@@ -27,7 +27,8 @@ Tests guard this module's contract. Must stay green (PHPUnit, no Pest):
 - `tests/Feature/HelpCenterTest.php` — `<x-help-button>` render resolved
   article on Admin, Gestor, Aluno authenticated screen (`assertSee` on
   both `dusk="help-button-{key}"` element and article title/content),
-  plus inert-disabled branch when no article exist for `target_page_key`.
+  plus active-placeholder branch (`dusk="help-placeholder-content-{key}"`)
+  when no article exist for `target_page_key`.
 - `tests/Feature/ContextualHelpFallbackTest.php` — `HelpArticleResolverService`
   fallback contract in isolation: org-specific win over global,
   global-only serve when no org-specific row, `null` when neither exist,
@@ -90,12 +91,14 @@ HTTP process); `DatabaseMigrations` retired (per-method `migrate:fresh`)
   `vendor/bin/sail npm run build` not run) rather than a timing problem.
   Wait on the modal itself (`waitFor('@help-modal-{key}')`), never on a
   removed `.dialog-backdrop`.
-- **Inert (disabled) button asserted as error in new test.** Coverage is
-  explicitly allowed to outpace content authoring — disabled
-  `<x-help-button>` with no `HelpArticle` yet is **correct** state, not
-  bug. Fail test only on missing button entirely (`dusk="help-button-{key}"`
-  element absent from response), never on disabled attribute present when
-  no article seeded.
+- **Active placeholder asserted as error in new test.** Coverage is
+  explicitly allowed to outpace content authoring — active
+  `<x-help-button>` opening the "Estamos preparando o conteúdo…" placeholder
+  modal (`dusk="help-placeholder-content-{key}"`) with no `HelpArticle` yet
+  is **correct** state, not bug (never a disabled inert button). Fail test
+  only on missing button entirely (`dusk="help-button-{key}"`
+  element absent from response), never on the placeholder branch rendering
+  when no article seeded.
 
 ## Coverage Gap Tracking
 

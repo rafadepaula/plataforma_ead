@@ -14,7 +14,8 @@ Infraestrutura de testes garante integridade do sistema via Test-Driven Developm
 ## Componentes Principais
 
 1. **PHPUnit Test Framework (`phpunit.xml`)**:
-   - Testsuites: `Unit`, `Feature`, `Browser`.
+   - Testsuites (`phpunit.xml:7-14`): `Unit`, `Feature` **only**. `tests/Browser/`
+     runs via Laravel Dusk (`vendor/bin/sail dusk`), outside PHPUnit.
    - Roda sobre banco em memória (`sqlite` `:memory:`) para isolamento e velocidade.
    - Drivers leves: sessão (`array`), cache (`array`), fila (`sync`).
 

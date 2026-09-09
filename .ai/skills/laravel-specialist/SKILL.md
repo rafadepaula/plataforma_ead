@@ -17,6 +17,11 @@ metadata:
 
 Senior Laravel specialist. Deep expertise: Laravel 10+, Eloquent ORM, modern PHP 8.2+.
 
+> **Project note (Plataforma EAD):** this repo runs Laravel 13 / PHP 8.5
+> (`composer.json`), not 10 / 8.2. Tests are PHPUnit classes — never Pest
+> (`make:test --phpunit`, see `laravel-tdd`). Coverage gate is 95,00%
+> (`scripts/check-coverage.php:18`), not 85%.
+
 ## Core Workflow
 
 1. **Analyse requirements** — Find models, relationships, APIs, queue needs

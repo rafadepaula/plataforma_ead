@@ -154,12 +154,9 @@ test('user can log in and view dashboard', function () {
 
 **Running Dusk Tests:**
 ```bash
-# Local command
-php artisan dusk
-
-# Sail command (Containerized)
-./vendor/bin/sail artisan dusk
-./vendor/bin/sail artisan dusk --filter=user_can_log_in_and_view_dashboard
+# Repo runner (Sail)
+vendor/bin/sail dusk
+vendor/bin/sail dusk --filter=user_can_log_in_and_view_dashboard
 ```
 
 

@@ -186,7 +186,7 @@ protected function parentCourse(Module $module): Course
 protected function authorizeForCourse(User $user, Course $course): bool
 {
     if (! $user->hasAnyRole([RolesEnum::ADMIN->value, RolesEnum::GESTOR->value])) {
-        return false;
+        return $user->hasRole(RolesEnum::PROFESSOR->value) && $user->teaches($course);
     }
 
     if ($user->hasRole(RolesEnum::GESTOR->value) && (int) $user->org_id !== (int) $course->org_id) {
@@ -197,6 +197,10 @@ protected function authorizeForCourse(User $user, Course $course): bool
 }
 ```
 
+The first branch is the Professor path (`ModulePolicy`/`LessonPolicy.php:62-63`):
+an assigned Professor (`User::teaches($course)`, backed by the
+`course_professor` pivot) gets full content authoring on that Course's
+modules/lessons, while anyone else without Admin/Gestor role is denied.
 `LessonPolicy` do same one level deeper (`$lesson->module` — `Module` itself
 never scoped, so that relation safe to read normally — then
 `parentCourse($module)` for unscoped Course lookup).
@@ -217,9 +221,11 @@ Lesson::factory()->for($module)->richText()->create();
 ```
 
 `LessonFactory` base `definition()` leave all four content columns
-(`content_text`/`image_path`/`pdf_path`/`youtube_url`) `null`. Each of the
-four content kinds opt-in via dedicated state
-(`richText()`/`withImage()`/`withPdf()`/`withYoutube()`) that populate only own
+(`content_text`/`image_path`/`pdf_path`/`video_url` — the column was renamed
+from `youtube_url` by migration `2026_09_02_000001`) `null`. Each content kind
+opts in via dedicated state (`richText()`/`withImage()`/`withPdf()`/
+`withYoutube()`/`withVimeo()`, plus `media()` for multi-file attachments —
+six states in `LessonFactory.php:90-145`) that populate only own
 column(s) and clear other three, so test creating "YouTube lesson" never
 accidentally also carry stray `content_text`.
 
@@ -303,9 +309,10 @@ Module/lesson lists and the lesson form compose four wrapper components
 - `<x-ui.file-drop>`: dashed dropzone for `name="images[]"`/`pdfs[]`; `dusk`
   prop carries `lesson-image-input`/`lesson-pdf-input`; renders the persisted
   attachment list with `dusk="remove-file-{{ $id }}"` remove buttons.
-- `<x-ui.youtube-field>`: `dusk="lesson-youtube-input"` input plus 16:9
+- `<x-ui.video-field>`: `dusk="lesson-youtube-input"` input plus 16:9
   preview — pastel-wash empty state, `dusk="youtube-preview"` iframe when a
-  valid URL is typed.
+  valid URL is typed (`resources/views/components/ui/video-field.blade.php`,
+  mounted in `modules/lessons/_form.blade.php:73`).
 
 Destructive deletes go through `<x-ui.confirm-modal>` with the `confirmDusk`
 prop so the modal's confirm submit carries the frozen selector

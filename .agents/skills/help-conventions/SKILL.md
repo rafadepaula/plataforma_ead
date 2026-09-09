@@ -92,16 +92,20 @@ impersonated). Same workaround documented for
         <div dusk="help-article-content-{{ $key }}">{{ $article->content }}</div>
     </x-ui.modal>
 @else
-    <button ... disabled dusk="help-button-{{ $key }}">...</button>
+    {{-- Ramo sem artigo = botão ATIVO abre modal placeholder (help-button.blade.php:47-68), NUNCA disabled inert --}}
+    <button ... data-bs-toggle="modal" data-bs-target="#{{ $modalId }}" dusk="help-button-{{ $key }}">...</button>
+    <x-ui.modal id="{{ $modalId }}" title="Ajuda" size="md">
+        <div dusk="help-placeholder-content-{{ $key }}">Estamos preparando o conteúdo…</div>
+    </x-ui.modal>
 @endif
 ```
 
-Both branches always render same `dusk="help-button-{key}"` attribute on
-trigger `<button>` — test asserting button exist do not need to know in
+Both branches always render an active trigger `<button>` with same `dusk="help-button-{key}"` — test asserting button exist do not need to know in
 advance whether article authored. `dusk="help-article-content-{key}"`
-exist only inside populated branch modal. Never add third branch (e.g.
+exist only inside populated branch modal; `dusk="help-placeholder-content-{key}"`
+only inside the placeholder branch modal. Never add third branch (e.g.
 loading state) without updating both `HelpCenterTest`
-(renders-populated / renders-inert cases) and `HelpCenterDuskTest`.
+(renders-populated / renders-placeholder cases) and `HelpCenterDuskTest`.
 
 `$modalId` is `'help-modal-'.str($key)->slug()` — route name like
 `student.courses.index` slugify predictably. Do not hand-roll different

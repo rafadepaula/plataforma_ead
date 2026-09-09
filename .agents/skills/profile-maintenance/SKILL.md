@@ -95,18 +95,25 @@ HTTP process); `DatabaseMigrations` retired (per-method `migrate:fresh`)
 
 ## `App\Rules\Cpf` Regression Surface
 
-`Cpf` shared across `ProfileUpdateRequest`, `StoreUserRequest`,
-`UpdateUserRequest`, `ProcessInvitationRequest` — change to its algorithm
-affect all four call sites simultaneously. Run `CpfTest` plus every
+`Cpf` shared across 9 entry points (`ProfileUpdateRequest`,
+`StoreUserRequest`, `UpdateUserRequest`, `UpdateUserAdminRequest`,
+`StoreGestorProfessorRequest`, `UpdateGestorStudentRequest`,
+`UpdateGestorProfessorRequest`, `StoreStudentEnrollmentRequest`,
+`ProcessInvitationRequest`) — change to its algorithm
+affect all nine call sites simultaneously. Run `CpfTest` plus every
 Feature test in `auth-orgs-maintenance` coverage list (`UserCrudTest`,
 invitation acceptance tests) after touch `app/Rules/Cpf.php`, not just
 this module own suite.
 
 ---
 
-## E2E Coverage Lives in Lifecycle Chains, Not in a Per-Module File
+## E2E Coverage: Per-Module File Exists
 
-Browser tests in `tests/Browser/` grouped by **user journey (lifecycle
+This module HAS its own Dusk file — `tests/Browser/ProfileTest.php`
+(5 scenarios listed above, including the checksum-invalid-CPF one).
+Prefer it over chain-grep when maintaining this module.
+
+Browser tests in `tests/Browser/` are otherwise grouped by **user journey (lifecycle
 chain)** — one method drive create → edit → state change → delete →
 consequence — **not** by module or feature. Consequences when
 maintain this module:

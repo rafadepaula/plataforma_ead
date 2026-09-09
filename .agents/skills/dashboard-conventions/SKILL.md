@@ -3,8 +3,8 @@ name: dashboard-conventions
 description: >
   Code patterns, snippets, guardrails for Admin Dashboard, Analytics & System
   Settings feature: `admin.dashboard`/`reports.export`/
-  `settings.edit`/`settings.update` route-name contract,
-  `<x-ui.stat-card>`/`<x-ui.table>`/`<x-ui.badge>`-only Blade composition (no new
+   `settings.edit`/`settings.update` route-name contract,
+   `<x-layout.page-header>`/`<x-ui.stat-card>`/`<x-ui.data-table>`/`<x-ui.avatar>`/`<x-ui.progress>`/`<x-ui.chip>`/`<x-ui.badge>`-only Blade composition (no new
   UI components), `dusk="stat-{metric}"`/`dusk="export-{type}-csv"`
   test-selector contract, Gestor-cannot-pass-`org_id` export guard, and
   the `organizations-summary-table`/`organization-summary-row-{id}`/
@@ -21,10 +21,10 @@ metadata:
 
 ## Route Names Load-Bearing
 
-`components/layout/sidebar.blade.php` resolve Dashboard link via
-`Route::has('admin.dashboard') ? route('admin.dashboard') : '#'`. It does **not**
-error if name missing or different, it silently degrade to dead `#` link.
-Register route with this **exact** name:
+`components/layout/sidebar.blade.php:4-19` render Dashboard link from
+`$navigationSections` (`NavigationRegistry`, no `Route::has` guard). A dead `#`
+link therefore means the registry entry drifted, not a missing route name.
+Keep this **exact** route name regardless:
 
 ```php
 Route::get('/admin/dashboard', [DashboardController::class, 'index'])
@@ -44,14 +44,18 @@ Route::put('/admin/settings', [SystemSettingController::class, 'update'])
     ->name('settings.update');
 ```
 
-All 3 route groups `role:admin|gestor`. No dedicated Policy class, mirroring
+Dashboard and CSV export routes are `role:admin|gestor`. `settings.edit`/
+`settings.update` are `role:admin` EXCLUSIVE (`routes/web.php:425-427`), not
+`admin|gestor`. No dedicated Policy class, mirroring
 `quiz-attempts.pending`/`forum-moderation.index` role-middleware-only precedent
 (see `quizzes-conventions`).
 
 ## Dashboard View: Only Pre-Existing UI Components
 
 `resources/views/dashboard/index.blade.php` compose exclusively from
-`<x-ui.stat-card>`, `<x-ui.table>`, and `<x-ui.badge>`. No new component needed,
+`<x-layout.page-header>`, `<x-ui.stat-card>`, `<x-ui.data-table>`,
+`<x-ui.avatar>`, `<x-ui.progress>`, `<x-ui.chip>`, and `<x-ui.badge>`
+(`dashboard/index.blade.php:57-137`). No new component needed,
 and none should be added for this screen. Follow this exact Blade shape:
 
 ```blade

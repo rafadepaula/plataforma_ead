@@ -23,9 +23,15 @@ metadata:
 ## Overview
 
 Gestor (`role:gestor`) get CRUD over single Quiz attached to one of
-their Lessons (`type = quiz`) plus its Questions/Options. Aluno
+their Lessons (`type = quiz`) plus its Questions/Options. Professor
+(`role:professor`) authors nothing here but grades: an assigned Professor
+(`User::teaches()`) grades essay attempts on their Courses through the same
+queue (`role:admin|gestor|professor` group in `routes/web.php`, per-attempt
+scope in `QuizAttemptPolicy::authorizeForCourse()`,
+`EssayGradingController::pending()` narrowing the queue to assigned
+Courses). Aluno
 (`role:aluno`) can submit attempt against that Quiz. For `essay` questions,
-Gestor must grade attempt by hand before it counts. This feature
+Gestor — or the assigned Professor — must grade attempt by hand before it counts. This feature
 never mutates `courses`/`modules`/`lessons` (the courses domain owns those)
 beyond
 reading `lessons.type` and writing `lesson_progress` on passed attempt
@@ -141,7 +147,8 @@ An `in_progress` attempt carries no answers and **never** counts toward
    — `lesson_progress` **not** written yet, even if every auto-graded
    question answered correctly.
 5. If no pending essay question (none exist, or `GradeEssayAnswerAction`
-   just finished grading last one via `finalizeGrading()`):
+   just finished grading last one and delegated to
+   `SubmitQuizAttemptAction::finalizeGrading()`):
    `status = graded`, recompute `score_percentage`, and if `is_passed`
    (score ≥ `min_score_percentage`), write `lesson_progress` with
    `completion_source = quiz_passed`, dispatching
@@ -152,10 +159,13 @@ An `in_progress` attempt carries no answers and **never** counts toward
 
 Gestor grading screen lists `quiz_attempts.status =
 awaiting_manual_grading` scoped to their own Org (via
-`QuizAttemptPolicy`, mirroring `LessonPolicy` cascade-authorize pattern).
+`QuizAttemptPolicy`, mirroring `LessonPolicy` cascade-authorize pattern;
+an assigned Professor sees only their Courses' attempts).
 Grading one `quiz_answers` row sets `is_correct`/`graded_by`/
 `graded_at`. Once **every** essay answer on attempt has non-null
-`is_correct`, `finalizeGrading()` recomputes whole attempt
+`is_correct`, `GradeEssayAnswerAction` delegates to
+`SubmitQuizAttemptAction::finalizeGrading()` (the sole owner of that
+recomputation), which recomputes whole attempt
 `score_percentage` **using exact same formula as auto-grading** (correct
 answers ÷ total questions × 100, any unanswered question still counted in
 denominator as wrong) and re-enters step 5 above.

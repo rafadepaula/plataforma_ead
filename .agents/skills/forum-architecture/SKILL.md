@@ -105,16 +105,21 @@ Gestor direct-delete button, plus flipping `forum_reports.status` to
 
 1. **Report queue**: any enrolled Aluno or same-org Gestor create
    `pending` `forum_reports` row via `ReportForumPostAction`. Gestor/
-   Admin review `GET /forum/moderation` (own-org rows only, filtered by
+   Admin/assigned-Professor (`role:admin|gestor|professor`,
+   `routes/web.php` moderation group) review `GET /forum/moderation`
+   (own-org rows only, filtered by
    resolving each report `postable()` and reusing
    `ForumTopicPolicy`/`ForumReplyPolicy::view()` instead of `org_id`
    column `forum_reports` do not have) and either dismiss
    (`reviewed_dismissed`, post stay visible) or remove
    (`reviewed_removed` + `DeleteForumPostAction`).
-2. **Direct moderation**: Gestor/Admin pin (`ForumTopic` only —
+2. **Direct moderation**: Gestor/Admin/assigned-Professor pin
+   (`ForumTopic` only —
    `ForumReply` have no `is_pinned` column, no `pin` ability on
    `ForumReplyPolicy`), edit, or delete any post via same
-   `update`/`delete` Policy abilities author use. Independent of whether
+   `update`/`delete`/`pin` Policy abilities author use
+   (`canModerateCourse()` professor-`teaches()` branch,
+   `ForumTopicPolicy:100-113`, `ForumReplyPolicy:100-108`). Independent of whether
    report exist at all.
 
 Notifications exclude "new report" from the trigger list on
@@ -181,8 +186,11 @@ middleware — access require *active or completed enrollment*, which
 `ForumTopicPolicy`/`ForumReplyPolicy::hasCourseAccess()` re-check via
 `$user->hasActiveOrCompletedEnrollment($course)` at Policy layer
 (defense in depth: middleware gate route, Policy gate individual model
-action). Gestor/Admin-only pin/moderation routes use `role:admin|gestor`
-instead, since Gestor/Admin never "enrolled".
+action). Pin/moderation routes use `role:admin|gestor|professor`
+(`routes/web.php:393`), since Gestor/Admin never "enrolled" — and the
+assigned Professor reads/moderates via the `teaches()` branch
+(`ForumTopicPolicy:106-113`) but does NOT create: `canCreateInCourse()`
+covers only Gestor/Admin/enrolled-Aluno (`Policy:91-98`).
 
 ## Related
 

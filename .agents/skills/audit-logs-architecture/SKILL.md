@@ -7,8 +7,8 @@ description: >
   real `null` `org_id`, no `UnresolvedOrgContextException`),
   `AuditableTrait`/`AuditObserver` mutation interception, event
   taxonomy. Use when designing or reviewing anything that writes
-  `audit_logs`, before adding auditable model or critical-action event, or
-  when scoping `/admin/audit-logs` / `/gestor/audit-logs`.
+   `audit_logs`, before adding auditable model or critical-action event, or
+   when scoping `/admin/audit-logs`.
 license: MIT
 metadata:
   feature: audit-logs
@@ -23,7 +23,9 @@ Audit logging = 3 layers:
 
 1. **Automatic mutation audit** — `AuditableTrait` + `AuditObserver` intercept `created`/`updated`/`deleted` on opted-in models (`Organization`, `User`, `Course`, `Module`, `Lesson`, `Quiz`, `Certificate`). Writes generic `{ModelFQCN}.created`/`.updated`/`.deleted` (e.g. `App\Models\User.updated` — no morph map registered, so `getMorphClass()` returns FQCN, not short alias) with `old_values`/`new_values` diffs.
 2. **Critical-action / security audit** — explicit `AuditService::log(...)` call sites for non-Eloquent events: `login.success`, `login.failed`, `logout`, `password.reset`, `impersonate.start`/`.stop`, `user.status_changed`, `csv.import`, `essay.graded`, `certificate.issued`/`.revoked`, `content.deleted`.
-3. **Read/query UI** — `AuditLogController` + Blade, gated `role:admin` and `role:gestor`. Two distinct route names/prefixes hitting same controller methods — not one shared `role:admin|gestor` route like `admin.dashboard`. Both URLs are named on purpose.
+3. **Read/query UI** — `AuditLogController` + Blade, gated `role:admin`
+   ONLY (`admin.audit-logs.*`, `routes/web.php:87-91`; Gestor routes were
+   removed — audit is a system-administration surface).
 
 ## Dual Storage: MySQL + Monolog
 
@@ -36,7 +38,7 @@ Reason = "duplo armazenamento" guarantee: **DB outage or failed `audit_logs` INS
 
 ## `AuditLog` and `OrgScope`: Creating-Hook Bypass
 
-`AuditLog` uses `OrgScope` for its **read side** like `Course`/`InvitationLink` (see `tenancy-architecture`) — Gestor `index()` restricted to own `org_id`, Admin sees everything (or one Org while impersonating).
+`AuditLog` uses `OrgScope` for its **read side** like `Course`/`InvitationLink` (see `tenancy-architecture`) — Admin sees everything (or one Org while impersonating).
 
 But `OrgScope::booted()` also registers a `creating` hook that auto-assigns `org_id` from `auth()->user()`/`session('active_org_id')` and **throws `UnresolvedOrgContextException`** when it cannot resolve. Right for `Course`, wrong for `AuditLog`:
 
@@ -49,7 +51,9 @@ But `OrgScope::booted()` also registers a `creating` hook that auto-assigns `org
 
 ## `AuditableTrait` / `AuditObserver`
 
-`AuditableTrait::bootAuditableTrait()` calls `static::observe(AuditObserver::class)`. Any model with `use AuditableTrait;` gets `created`/`updated`/`deleted` observed free — same lifecycle-hook style as `OrgScope`, no call-site plumbing. `AuditObserver`:
+`AuditableTrait::bootAuditableTrait()` defers via `static::whenBooted(fn () =>
+static::observe(AuditObserver::class))` (`AuditableTrait.php:28`) — never
+`observe()` directly, which would trip Eloquent's re-entrancy guard. Any model with `use AuditableTrait;` gets `created`/`updated`/`deleted` observed free — same lifecycle-hook style as `OrgScope`, no call-site plumbing. `AuditObserver`:
 
 1. Builds `new_values` from `$model->getChanges()` (on `updated`) or full attribute set (on `created`); `old_values` from `$model->getOriginal()` (on `updated`/`deleted`).
 2. **Redacts** `password`/`remember_token` from both arrays before persisting — required even for cast/hidden attributes, since `getChanges()`/`getOriginal()` expose them regardless of `$hidden`/casts. Exact call: `audit-logs-conventions`.

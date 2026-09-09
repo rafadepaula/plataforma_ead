@@ -97,8 +97,6 @@ Mapa tela, teste Dusk (usar sempre filtro mais estreito):
 
 | Área | Filtro Dusk |
 | :--- | :--- |
-| Layout, sidebar, topbar, radius | `LayoutRenderingTest` |
-| Componentes `<x-ui.*>` | `BladeComponentsTest` |
 | Navegação / menus por role | `NavigationMenuDuskTest` |
 | Login, convite, reset | `Auth\...` (ver `tests/Browser/Auth/`) |
 | Perfil | `ProfileTest` |
@@ -449,7 +447,7 @@ grep -rn '<table' resources/views --include='*.blade.php'
 # contrato canônico da tabela
 vendor/bin/sail artisan test --compact tests/Feature/UiTableComponentTest.php
 
-# contagem de dusk= (deve permanecer == 400, baseline versionado atual)
+# contagem de dusk= (deve permanecer == 529, baseline versionado atual)
 grep -ro 'dusk="' resources/views | wc -l
 
 # suíte completa
@@ -471,7 +469,7 @@ acima — rode-os antes do gate manual:
   qualquer `style="..."` fora de `certificates/pdf.blade.php`.
 - `DuskSelectorContractTest` — compara a contagem e o conjunto
   `arquivo::seletor` de `dusk="..."` atual contra
-  `tests/fixtures/dusk-selectors-snapshot.json` (baseline com 400
+  `tests/fixtures/dusk-selectors-snapshot.json` (baseline com 529
   entradas). Atualizar o snapshot **só** com justificativa explícita —
   nunca para "fazer o teste passar".
 

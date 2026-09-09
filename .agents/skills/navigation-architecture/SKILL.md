@@ -21,15 +21,15 @@ metadata:
 
 Dynamic navigation replaced the imperative role-guarded Blade sidebar/topbar. Old code hardcoded route names that did not exist (`admin.students.index`, `admin.courses.index`, `student.forum.index`) and degraded to dead `#` links. New pipeline is declarative and centralized:
 
-1. **`App\Services\Navigation\NavigationRegistry`** — single read-only declaration of every menu item. `NavigationItem` value object: `key`, `label`, `route`, `activePatterns`, `icon`, `roles`, `permissions`, `section`, optional `routeResolver`/`badgeCallback`.
-2. **`App\Services\Navigation\NavigationService`** — stateless filter. Reads registry, runs three-gate pipeline per item for acting user, resolves URLs and badges, drops empty sections, returns `NavigationSection` list.
+1. **`App\Services\Navigation\NavigationRegistry`** — single read-only declaration of every menu item. `NavigationItem` value object: `key`, `label`, `route`, `activePatterns`, `icon`, `roles`, `permissions`, `section`, optional `routeResolver`/`badgeCallback` plus `sectionResolver`/`childrenResolver`/`childrenOnly` (contextual section heading, per-user sub-items, pure-group item). Seções reais = `SECTION_ORDER` (`Registry.php:45`): `Administração`, `Impersonate`, `Ensino`, `Meus Cursos`.
+2. **`App\Services\Navigation\NavigationService`** — stateless filter. Entry público = `build(?User)` (`Service.php:45`); `resolve()` por item é privado (`:100`). Reads registry, runs three-gate pipeline per item for acting user, resolves URLs and badges, drops empty sections, returns `NavigationSection` list.
 3. **`App\Http\View\Composers\NavigationComposer`** — bound in `AppServiceProvider::boot()` to `components.layout.sidebar` and `components.layout.topbar`. Injects `$navigationSections` plus shell-only `$brandUrl`/`$loginUrl`/`$logoutUrl`.
 
 Blade only does `@foreach($navigationSections as $section)` then `@foreach($section->items as $item)`. **No role check, no `Route::has()` guard, no `route()` call in Blade.** Adding them back brings dead links and link leaks straight back.
 
 ## Three-Gate Access Pipeline
 
-`NavigationService::resolve()` hides item unless ALL gates pass:
+`NavigationService::build(?User)` hides item unless ALL gates pass (per-item `resolve()` privado):
 
 1. **`roles` allow-list** — `passesRoleGate()`: non-empty array intersected with `$user->hasRole(...)`. Empty array = any authenticated user. Mirrors route's own `role:admin|gestor` / `role:aluno` middleware.
 2. **`permissions`** — `passesPermissionGate()`: optional `$user->can(...)` checks, AND-ed. Empty = no extra gate.
@@ -52,11 +52,11 @@ Zero count renders no badge (`resolveBadge()` returns null).
 
 ## Contextual Aluno Forum URL
 
-Forum lives at `courses/{course}/forum` — no canonical URL. `NavigationRegistry::resolveForumRoute()` picks most recently updated active enrollment's course, links to its `forum.index`. No active enrollment = `null`, item hidden. `route` field on resolver-driven item is inert; resolver is sole href source.
+Não existe `resolveForumRoute` — o único `routeResolver` do registry é `resolveUsersRoute` (`Registry.php:105`). O fórum no menu é só o item staff `forum-moderation` (`route: forum-moderation.index`, `roles` de staff). O Aluno navega pelo bloco de matrícula `student-courses` ("Meus Cursos", `childrenOnly` + `childrenResolver` por curso, cada filho com seu `forum_url`). Item com resolver tem o campo `route` inerte; o resolver é a única fonte do href.
 
 ## Related Modules
 
 - **`tenancy-*`** — `OrgScope` on `Course` makes essay badge org-scoped. Forum badge cannot lean on it, uses Policy gate.
-- **`auth-orgs-*`** — `roles` arrays mirror Spatie role names (`admin`/`gestor`/`aluno`) from `role:` middleware.
+- **`auth-orgs-*`** — `roles` arrays mirror Spatie role names (`admin`/`gestor`/`aluno`, mais `professor` com `professor-dashboard`/`professor-courses`/`professor-grading`/`professor-moderation`) from `role:` middleware.
 - **`forum-*` / `quizzes-*`** — badge counts must match those modules' controller scoping.
 - **`dashboard-*`** — brand link (`NavigationComposer::brandUrl()`): Admin/Gestor to `admin.dashboard`, Aluno to `student.courses.index`.

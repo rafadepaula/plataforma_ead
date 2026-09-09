@@ -63,9 +63,10 @@ Both HTTP endpoints reject wrong shape with 422, never silently accept it:
 ## `MarkLessonCompleteAction`: the Single Write Path
 
 `app/Actions/MarkLessonCompleteAction.php` is only place any
-`lesson_progress` row gets written. Shared today by
-`LessonProgressController` two endpoints and, per its own docblock, meant
-for `SubmitQuizAttemptAction` too. Contract:
+`lesson_progress` row gets written. Shared by
+`LessonProgressController` two endpoints and by
+`SubmitQuizAttemptAction`, which calls `execute($lesson, $user,
+'quiz_passed')` when the attempt passes. Contract:
 
 - **Idempotent**: once `is_completed = true`, calling again never flips it
   back to `false`, never re-sets `completed_at`, never re-dispatches
@@ -103,12 +104,21 @@ progress_percentage = ROUND(completed_published_lessons / total_published_lesson
 - Numerator: `Course::completedLessonsCountFor(User $user)` — same
   published/non-deleted filter, joined through
   `lesson_progress.is_completed`.
-- When resulting percentage reaches `required_percentage` of Course
-  `course_completion_rules` row where `rule_type = 'all_lessons'`, listener
-  also flips `course_user.status` to `completed`,
+- When every `course_completion_rules` row for the Course is satisfied —
+  evaluated as an AND by `CourseCompletionEvaluator::satisfied()`, across
+  all three `rule_type`s (`all_lessons`|`min_quiz_score`|`specific_module`,
+  migration `2026_08_01_000015`) — the listener also flips
+  `course_user.status` to `completed`,
   stamps `completed_at`, dispatches `CourseCompletedByStudent` — event the
   certificates domain listens for. No rule row for course means no
   auto-completion, no matter how high percentage climbs.
+
+`RecalculateCourseProgress::handle()` itself only resolves the Course and
+delegates the percentage math plus the completion transition to
+`EvaluateCourseCompletionAction::execute()`; `CourseCompletionRuleController`
+reuses that same action per enrolled student when a rule is created, so
+retroactive completions (e.g. rules added after students already finished)
+resolve through one path.
 
 Course resolution inside listener
 (`$event->lesson->module->course()->withoutGlobalScopes()->firstOrFail()`)
@@ -139,6 +149,13 @@ classroom/lesson/progress route:
 - **Aluno**: allowed only with `course_user` row in `active` **or**
   `completed` status (`User::hasActiveOrCompletedEnrollment()`).
   `cancelled` enrollment, or no enrollment row at all, is denied.
+- **Professor**: assigned Professor (`User::teaches($course)`) passes
+  through to browse course content (forum included) with no
+  `course_user` row at all; denial is a direct 403. Taking a quiz as a
+  student stays forbidden regardless — `StudentQuizController::
+  abortIfProfessor()` 403s the quiz-taking endpoints for the role, so the
+  middleware letting them open the screen never lets them create a
+  `QuizAttempt` of their own.
 
 Denial shape depends on what the request can consume, and the two are NOT
 interchangeable: an Aluno page request is `redirect()->route(
@@ -422,6 +439,6 @@ toggle. See `learning-conventions` for the rule and
   `OrgScope`/cascade-inheritance model this feature reads from.
 - `tenancy-architecture` — `OrgScope` trait and `withoutGlobalScopes()`
   cascade pattern this module relies on throughout.
-- `quizzes-architecture` — future `quiz_passed` completion source and
+- `quizzes-architecture` — `quiz_passed` completion source and
   `SubmitQuizAttemptAction`, which reuses `MarkLessonCompleteAction`.
 - `certificates-architecture` — listens for `CourseCompletedByStudent`.

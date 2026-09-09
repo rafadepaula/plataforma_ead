@@ -47,7 +47,7 @@ $hash = hash('sha256', $userId.$courseId.$issuedAt->format('Y-m-d H:i:s').config
 ```php
 route('courses.certificates.index', $course);          // GET  courses/{course}/certificates    — role:admin|gestor
 route('certificates.revoke', $certificate);             // PUT  certificates/{certificate}/revoke — role:admin|gestor
-route('certificates.download', $certificate);           // GET  certificates/{certificate}/download — role:admin|gestor
+route('certificates.download', $certificate);           // GET  certificates/{certificate}/download — plain `auth` + staff-or-owner (`CertificateController::authorizeDownloadAccess`: owner-Aluno always, else role:admin|gestor with Gestor same-org check)
 route('certificates.verify', $certificate->validation_hash); // GET validar-certificado/{hash?} — NO middleware at all
 route('certificates.verify');                           // GET validar-certificado — same route, hash omitted: the public lookup form
 ```
@@ -110,7 +110,7 @@ Request alone.
 ## Views: Staff (`layouts.app`) vs. Fully Public (Standalone Document)
 
 - `certificates/index.blade.php` — `@extends('layouts.app')`, mirrors
-  `courses/index.blade.php`'s `<x-ui.table>` + per-row `dusk="..."`
+  `courses/index.blade.php`'s `<x-ui.data-table>` + per-row `dusk="..."`
   convention. One `<x-ui.modal id="revoke-modal-{{ $certificate->id }}">`
   per **active** (non-revoked) certificate row — never single shared modal
   re-populated by JS, matching `quizzes/edit.blade.php`'s
@@ -147,7 +147,7 @@ Request alone.
   which supports only a restricted CSS subset: no CSS custom properties
   (`var(--*)`), no modern flexbox/grid. Use plain hex colors and
   `<table>`-based layout, never `@vite`/app's compiled stylesheet. This is
-  the project's single documented exception to the zero-`style=` rule (7
+  the project's single documented exception to the zero-`style=` rule (9
   inline `style=` attributes) — the inline-style regression test excludes it
   on purpose, so never "fix" it.
 
@@ -181,12 +181,14 @@ not write second modal-open/close implementation.
 ## The QR Code Is a Pending Dependency Decision
 
 No QR-code composer package installed (`barryvdh/laravel-dompdf` only).
-`certificates/pdf.blade.php` accepts nullable `$qrCodeDataUri`
-(`data:image/png;base64,...`) and degrades to printing verification URL +
-hash as plain text when `null`. This is **temporary** placeholder, not
+`certificates/pdf.blade.php` never references `$qrCodeDataUri` — it prints
+the verification URL + hash as plain text, full stop.
+`CertificatePdfService::generate()` still passes `'qrCodeDataUri' => null`
+(an unused placeholder for the future wiring, not a consumed template
+branch). This is **temporary** placeholder, not
 the final design (the intent is a real scannable QR code), pending
 approval to add package (see `certificates-maintenance`
 open-questions note). Once package approved,
-`CertificatePdfService::generate()` should populate `$qrCodeDataUri` and
-this degraded branch becomes dead code you can delete. Do not build further
+`CertificatePdfService::generate()` should populate `$qrCodeDataUri` *and*
+the template must actually consume it; until then, do not build further
 features around text-only fallback.

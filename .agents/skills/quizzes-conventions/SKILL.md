@@ -176,12 +176,12 @@ is part of managing parent Quiz, not separate authorization concept.
 
 ## `StoreQuizQuestionRequest`/`UpdateQuizQuestionRequest`: Options Conditional on `type`
 
-`options` validation (`required_unless:type,essay` + `min:2` rule,
-`is_correct` boolean per row) skipped entirely for `type=essay`. Essay
-question sending `options` array anyway must have it silently ignored
-server-side (`QuizQuestionController` never reads `options` for essay
-question, see below), never validated against "at least 2 rows" rule that
-only makes sense for other three types.
+`options` validation (`required` + `min:2` for other types,
+`prohibited` for `type=essay`, `is_correct` boolean per row) rejects an
+essay question sending an `options` array outright
+(`StoreQuizQuestionRequest.php:38`) — never silently ignored, never
+validated against the "at least 2 rows" rule that only makes sense for
+the other three types.
 
 `QuizQuestionController::update()` double-guards this at persistence
 time. Even if stray `options` payload slipped past Form Request, existing
@@ -197,8 +197,8 @@ if ($quizQuestion->type !== 'essay') {
 
 ## `QuizBuilder.js`: Hide Options for Essay, Enforce Single-Correct for `single_choice`/`true_false`
 
-Every DOM query scoped by `formSuffix` (`'create'`, `'edit-{id}'`, or
-`'page'` on standalone form pages) — this partial included once per modal
+Every DOM query scoped by `formSuffix` (`'create'`, `'edit-{id}'` — modals
+only, no `'page'` suffix exists in `QuizBuilder.js`) — this partial included once per modal
 on `quizzes/edit.blade.php`, so bare `document.querySelector` would only
 hit first form on page:
 

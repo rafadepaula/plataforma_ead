@@ -17,7 +17,8 @@ metadata:
 
 These PHPUnit tests guard the seeder contract. Keep green:
 
-- `tests/Feature/Seeders/DatabaseSeederDevelopmentTest.php` — seeding in local/development/testing creates the minimal dev scenario ("Liga Certo" organization, gestor + aluno, one "Curso de Eletricista" with three modules and quizzes, enrollment, completion rules) with explicit `org_id`, no mail/events leak.
+- `tests/Feature/Seeders/DatabaseSeederProductionTest.php` — production run seeds baseline only (roles, admin, settings, help articles), no fake orgs/users/courses.
+- `tests/Feature/Seeders/DatabaseSeederDevelopmentTest.php` — seeding in local/development/testing creates the minimal dev scenario ("Liga Certo" organization, gestor + aluno + professor, one "Curso de Eletricista" with three modules and quizzes, enrollment, completion rules) with explicit `org_id`, no mail/events leak.
 - `tests/Feature/Seeders/SeederIdempotencyTest.php` — `php artisan db:seed` run many times: no duplicate key exception, table counts identical.
 
 Run:
@@ -32,7 +33,7 @@ vendor/bin/sail artisan test --filter=DatabaseSeederDevelopmentTest
   Seeder used bare `Model::create()` or raw insert. Switch to `firstOrCreate`/`updateOrCreate` keyed on unique natural key (`token`, `validation_hash`, `email`, `slug`, `id`).
 
 - **`UnresolvedOrgContextException` while seeding:**
-  `OrgScope` models (`Course`, `HelpArticle`, `SystemSetting`) have no HTTP session. Pass `org_id` explicitly, or wrap in `withoutEvents()`.
+  `OrgScope` models (`Course`, `HelpArticle`, `SystemSetting`) have no HTTP session. Pass `org_id` explicitly, or wrap reads in `withoutGlobalScopes()` (`OrgScope.php` `creating` hook at `app/Models/Traits/OrgScope.php:47-62`; `CourseSeeder.php:62`). `withoutEvents()` does NOT bypass the `creating` hook — it only suspends observers/listeners.
 
 - **Unwanted mail / event side effects:**
   Use the `WithoutModelEvents` trait on the seeder (or `Model::withoutEvents(...)`), `Mail::fake()`, `Notification::fake()` inside seeder or test setup.

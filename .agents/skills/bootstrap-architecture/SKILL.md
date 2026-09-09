@@ -32,12 +32,17 @@ metadata:
 > page-header,footer,alerts}.blade.php`, `components/layout/guest-panel.blade.php`
 > (novo), `components/notifications-bell.blade.php` e
 > `components/help-button.blade.php` já rodam sobre o Material Bootstrap.
-> **Fase 2 (biblioteca de componentes `<x-ui.*>`) também concluída**: os 21
-> componentes de `resources/views/components/ui/` foram reescritos e 5 novos
-> entraram (`chip`, `avatar`, `fab`, `switch`, `tabs`) — ver
-> `bootstrap-conventions` §4 para o mapeamento atualizado. Os 9 stubs de
+> **Fase 2 (biblioteca de componentes `<x-ui.*>`) também concluída**: os 33
+> arquivos de `resources/views/components/ui/` foram reescritos — base de 21
+> mais `chip`, `avatar`, `fab`, `switch`, `tabs` da Fase 2 e depois
+> `file-drop`, `sortable-list`, `sortable-row`, `theme-toggle`,
+> `video-field` mais as 2 views de paginação (`pagination-links`,
+> `simple-pagination-links`) — ver
+> `bootstrap-conventions` §4 para o mapeamento atualizado. Os ~35 partials de
 > `resources/scss/components/` (`_stat-card`, `_empty-state`, `_fab`, `_chip`,
-> `_tabs`, `_floating-label`, `_state-layer`, `_pastel-wash`, `_reorder-list`)
+> `_tabs`, `_floating-label`, `_state-layer`, `_pastel-wash`, `_reorder-list`
+> mais `_course-card`, `_courses`, `_classroom`, `_dark`, `_dashboard`,
+> `_forum`, `_notifications`, `_quiz-*`, `_video-*` etc.)
 > estão preenchidos. A classe fantasma `grayscale` (última sobrevivente em
 > `components/ui/card.blade.php`) foi removida do projeto inteiro, substituída
 > por `.ds-pastel-wash`. **Fase 3 (telas de listagem: `dashboard/index`,
@@ -119,7 +124,7 @@ Princípio-mestre: **uma decisão visual mora em exatamente um lugar.** Botão d
 
 ```scss
 // 1) Tokens do design system (custom properties, disponíveis em runtime)
-@import "../../_ds/plataforma-ead-design-system/styles.css";
+@import "../css/tokens/styles.css";
 
 // 2) Ponte: valores literais alimentam as variáveis Sass do Bootstrap
 @import "bridge";
@@ -306,7 +311,7 @@ Fluxo único:
 
 ## Contrato com o Resto do Sistema
 
-- **Dusk é intocável.** Os **400** `dusk="..."` em `resources/views/` (baseline atual em `tests/fixtures/dusk-selectors-snapshot.json`) são contrato de teste. Migrar markup **nunca** renomeia, move para outro elemento semântico, nem remove um `dusk=`. Se o elemento sumir, o atributo migra para o equivalente mais próximo — e isso precisa de justificativa no receipt da migração.
+- **Dusk é intocável.** Os **529** `dusk="..."` em `resources/views/` (baseline atual em `tests/fixtures/dusk-selectors-snapshot.json`) são contrato de teste. Migrar markup **nunca** renomeia, move para outro elemento semântico, nem remove um `dusk=`. Se o elemento sumir, o atributo migra para o equivalente mais próximo — e isso precisa de justificativa no receipt da migração.
 - **PDF é território separado.** `resources/views/certificates/pdf.blade.php` roda em `barryvdh/laravel-dompdf`, que **não** entende CSS do Bootstrap 5 (custom properties, `color-mix()`, flexbox moderno, grid). A view de PDF mantém CSS próprio em `<style>` — **única** exceção à regra de zero CSS ad-hoc. Ver `bootstrap-maintenance`.
 - **Multi-tenant/roles não mudam.** Sidebar continua montando itens por `role:admin|gestor|aluno` (Spatie). Migração é só camada de apresentação.
 - **`<x-help-button>`** segue em 100% das telas. Passa a abrir `.modal` do Bootstrap, mantendo `dusk="help-button-{key}"` e `dusk="help-article-content-{key}"`.

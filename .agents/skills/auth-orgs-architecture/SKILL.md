@@ -57,7 +57,7 @@ Auth::attempt($this->only('email', 'password') + ['status' => 'active'], ...)
 
 ## Post-Login Redirect
 
-`App\Services\UserHomeResolver::resolve()` = **single source of truth** for where any authenticated user lands. `admin`/`gestor` to `admin.dashboard`, everyone else (`aluno`) to `student.courses.index` — **if the named route exists** (`Route::has()` guard, `/` fallback). Both `AuthenticatedSessionController::store()` and `RedirectIfAuthenticated` delegate here, so logic never drifts between callers.
+`App\Services\UserHomeResolver::resolve()` = **single source of truth** for where any authenticated user lands. `admin`/`gestor` to `admin.dashboard`, `professor` to `professor.dashboard`, everyone else (`aluno`) to `student.courses.index` — **if the named route exists** (`Route::has()` guard, `/` fallback). Both `AuthenticatedSessionController::store()` and `RedirectIfAuthenticated` delegate here, so logic never drifts between callers.
 
 Never hardcode a URL. New role destination goes behind a `Route::has()` check so the resolver survives before its route exists. New role = update `UserHomeResolver::resolve()` (see `auth-orgs-maintenance`).
 
@@ -77,7 +77,7 @@ Uses Laravel's password broker (`Illuminate\Auth\Passwords`), not a custom token
 
 ## Global Admin User-Management Screen (`admin.users.*`)
 
-The operational `users.index` (above/`UserController`) is single-Organization by design: `ResolvesOrgContext` throws `UnresolvedOrgContextException` for an Admin with no `session('active_org_id')`, and the query is hard-scoped to `aluno`/`gestor`. A **second, deliberately separate** screen — `admin/users` (`admin.users.index|show|edit|update|status|destroy`) — serves cross-org administration of all three roles (admin/gestor/aluno), registered inside the `role:admin`-only route group (not `role:admin|gestor`), so Gestor/Aluno are blocked by middleware first, Policy second.
+The operational `users.index` (above/`UserController`) is single-Organization by design: `ResolvesOrgContext` throws `UnresolvedOrgContextException` for an Admin with no `session('active_org_id')`, and the query is hard-scoped to `aluno`/`gestor`. A **second, deliberately separate** screen — `admin/users` (`admin.users.index|show|edit|update|status|destroy`) — serves cross-org administration of all four roles (admin/gestor/aluno/professor), registered inside the `role:admin`-only route group (not `role:admin|gestor`), so Gestor/Aluno are blocked by middleware first, Policy second.
 
 `App\Http\Controllers\Admin\UserAdminController` does **not** extend `UserController` and does **not** use `ResolvesOrgContext` — the listing is global by definition (no `org_id` is ever resolved from the acting Admin's session; `org_id` only appears as an optional *filter* from the request). It reuses `User`/`RolesEnum`/the `user.status_changed` audit event, but is otherwise a fully independent controller/request/view stack.
 
@@ -85,7 +85,7 @@ Authorization is a second, parallel set of `UserPolicy` abilities — `viewAnyGl
 
 `destroy()` performs two pre-flight existence checks before the hard delete, since `users` has no `deleted_at` and both FKs are `ON DELETE RESTRICT`: `certificates.user_id` (`UserHasIssuedCertificatesException`) and `invitation_links.created_by` (`UserHasCreatedInvitationLinksException`, checked with `withoutGlobalScope('org')` since `InvitationLink` **is** `OrgScope`d and an Admin with no active impersonation would otherwise miss links from other Organizations). Both exist to turn a raw 500 `QueryException` into a friendly, catchable error.
 
-`UpdateUserAdminRequest` (distinct from `UpdateUserRequest`) is the "full profile" editor: `role` accepts all 3 `RolesEnum` values (not just aluno/gestor), and `org_id` is editable — required unless `role === 'admin'`, forced to `null` in `prepareForValidation()` whenever `role === 'admin'` regardless of what stale value the form posted.
+`UpdateUserAdminRequest` (distinct from `UpdateUserRequest`) is the "full profile" editor: `role` accepts all 4 `RolesEnum` values (not just aluno/gestor), and `org_id` is editable — required unless `role === 'admin'`, forced to `null` in `prepareForValidation()` whenever `role === 'admin'` regardless of what stale value the form posted.
 
 ## Related
 

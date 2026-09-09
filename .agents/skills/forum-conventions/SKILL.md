@@ -126,8 +126,10 @@ read-side layer. Never render `content`/`title`/`reason`/
 `parentTopicCourse()` on that topic). Both bypass every `OrgScope`
 along chain, exactly like `QuizPolicy::parentCourse()` two levels into
 `Lesson->Module->Course`. `update`/`delete` always: post author by
-`user_id` match, **or** same-org Gestor/Admin via
-`isGestorOrAdminForCourse()`. `pin` exist only on `ForumTopicPolicy` —
+`user_id` match, **or** same-org Gestor/Admin **or assigned Professor**
+via `canModerateCourse()` (`ForumTopicPolicy:100-113`,
+`ForumReplyPolicy:100-108`). `pin` exist only on `ForumTopicPolicy`
+(`Policy:49-52`, same `canModerateCourse()` branch) —
 `ForumReply` have no `is_pinned` column, no `pin` ability.
 
 When authorizing `ForumReply` create against parent `ForumTopic`, always

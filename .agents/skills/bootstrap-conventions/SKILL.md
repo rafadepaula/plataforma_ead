@@ -166,12 +166,14 @@ Uso na tela — gatilho declarativo, zero JS:
 | `<x-ui.*>` | `resources/views/components/ui/` | Widget reutilizável. Não conhece rota, role nem sessão. Recebe tudo por prop. | Renderiza em teste isolado só com props = `ui`. |
 | `<x-layout.*>` | `resources/views/components/layout/` | Peça do chrome da aplicação, singular por página, ciente de `auth()`, `route()`, roles Spatie, `session('active_org_id')`. | Chama `auth()->user()`, `request()->routeIs()` ou `@role` = `layout`. |
 
-- `ui` (26 componentes em `resources/views/components/ui/`, biblioteca fechada
+- `ui` (33 arquivos em `resources/views/components/ui/`, biblioteca aberta
   desde a Fase 2 do redesign): `alert`, `avatar`, `badge`, `button`,
   `card`, `checkbox`, `chip`, `confirm-modal`, `data-table`, `delete-button`,
   `empty-state`, `fab`, `field-stack`, `filter-bar`, `form-actions`, `icon`,
   `input`, `modal`, `pagination`, `progress`, `select`, `stat-card`, `switch`,
-  `table`, `tabs`, `textarea`. `avatar`, `chip`, `fab`, `switch` e `tabs` são
+  `table`, `tabs`, `textarea` mais os 7 extras `file-drop`,
+  `sortable-list`, `sortable-row`, `theme-toggle`, `video-field`,
+  `pagination-links`, `simple-pagination-links`. `avatar`, `chip`, `fab`, `switch` e `tabs` são
   as 5 adições da Fase 2 — `avatar` **envolve** `.ds-avatar`/`.ds-avatar-lg`/
   `.ds-avatar-xl` (já existentes em `_avatar.scss` desde antes, usadas pela
   topbar e pelo drawer mobile), nunca duplica essas classes. Não existe

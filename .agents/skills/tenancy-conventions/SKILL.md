@@ -46,7 +46,7 @@ Every org-scoped table `org_id` column same shape: explicit `onDelete`, always
 indexed.
 
 ```php
-$table->unsignedBigInteger('org_id')->nullable(); // nullable only for users, help_articles, system_settings
+$table->unsignedBigInteger('org_id')->nullable(); // nullable only for users, help_articles, audit_logs — never system_settings (non-nullable, default(0) GLOBAL_ORG_ID sentinel, composite PK (setting_key, org_id))
 $table->foreign('org_id')->references('id')->on('organizations')->restrictOnDelete(); // or ->cascadeOnDelete() for tables whose rows the org owns outright
 $table->index('org_id');
 ```
@@ -92,8 +92,8 @@ individual controllers:
 ```
 
 Content-negotiate on `$request->expectsJson()` (covers `Accept: application/json`
-and AJAX/`X-Requested-With`) so web caller (session-flash + redirect back) and
-API/AJAX caller (JSON body) both get 422 in shape they expect. Never let this
+and AJAX/`X-Requested-With`): JSON/AJAX callers get a 422 JSON body, web
+callers get a redirect-back (302) with a flashed error message. Never let this
 exception fall through to default error page.
 
 ## Roles: Gate/Middleware Convention

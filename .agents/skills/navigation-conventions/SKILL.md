@@ -20,7 +20,7 @@ metadata:
 2. **`route` MUST be a registered route name** from `routes/web.php`. Legacy names (`admin.students.index`, `admin.courses.index`, `student.forum.index`) forbidden — they degrade to dead `#`. Check with `vendor/bin/sail artisan route:list --name=`.
 3. **`roles` MUST match route's `role:` middleware**. Route `role:admin|gestor` = item `['admin','gestor']`. Admin-only items use `['admin']` (e.g. `organizations`).
 4. **`activePatterns`** — `routeIs()` wildcards broad enough to cover every sub-route keeping parent highlighted (`['users.*']`, `['courses.*','modules.*','lessons.*','quizzes.*']`). Never narrow to one exact route name.
-5. **`section`** — `Administração` or `Aprendizado` (declared in `NavigationRegistry::sectionOrder()`). Empty sections drop automatically — no per-section `@hasanyrole`.
+5. **`section`** — um de `SECTION_ORDER` (`NavigationRegistry.php:45`): `Administração`, `Impersonate`, `Ensino`, `Meus Cursos`. Empty sections drop automatically — no per-section `@hasanyrole`.
 
 ## Add Badge
 

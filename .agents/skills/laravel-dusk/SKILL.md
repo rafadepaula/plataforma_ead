@@ -436,27 +436,6 @@ Define **reusable browser methods** for common patterns:
 - Chain like built-in methods
 - Example: scrolling, modal interactions, custom assertions
 
-## Reference Files
-
-This skill includes comprehensive documentation in `references/`:
-
-- **other.md** - Complete Laravel Dusk documentation covering:
-    - Installation and configuration
-    - ChromeDriver management
-    - Test generation and execution
-    - Browser interaction methods
-    - Form handling and file uploads
-    - Waiting strategies and assertions
-    - Page Objects and Components patterns
-    - CI/CD integration examples
-
-Use the reference file when you need:
-
-- Detailed API documentation for specific methods
-- Complete list of available assertions (70+)
-- Configuration options for different environments
-- Advanced topics like iframes, JavaScript dialogs, or keyboard macros
-
 ## Working with This Skill
 
 ### For Beginners
@@ -485,10 +464,6 @@ Use the reference file when you need:
 ### Navigation Tips
 
 - **Quick examples**: Check the Quick Reference section above for common patterns
-- **Method documentation**: See `other.md` for complete API reference
-- **Assertions list**: Reference file contains all 70+ available assertions
-- **Configuration**: Check reference file for environment setup and driver options
-- **Best practices**: Look for "Best Practices" section in reference documentation
 
 ## Installation & Setup
 
@@ -542,19 +517,6 @@ php artisan dusk:chrome-driver --detect
 ### Official Documentation
 
 - Laravel Dusk Documentation: https://laravel.com/docs/12.x/dusk
-- API Reference: See `references/other.md` for complete method listings
-
-### Common Patterns in Reference Files
-
-The reference documentation includes:
-
-- 70+ assertion methods with descriptions
-- Complete form interaction API
-- Waiting strategies and timing best practices
-- Page Object pattern examples
-- Browser macro definitions
-- CI/CD configuration examples
-- Environment-specific test setup
 
 ## Best Practices
 

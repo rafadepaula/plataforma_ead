@@ -2,11 +2,11 @@
 name: audit-logs-conventions
 description: >
   Code patterns and guardrails for System Audit Logging & Monitoring:
-  `AuditService::log()` call-site pattern, redaction list,
-  `admin.audit-logs.index`/`gestor.audit-logs.index`/`*.export` route
-  contract, Blade/JS diff-modal wiring, CSV export streaming. Use when
-  writing controller, service, observer, listener, Blade view, or JS that
-  touches `AuditLog` rows or the `/admin|gestor/audit-logs` screens.
+   `AuditService::log()` call-site pattern, redaction list,
+   `admin.audit-logs.index`/`admin.audit-logs.export` route
+   contract, Blade/JS diff-modal wiring, CSV export streaming. Use when
+   writing controller, service, observer, listener, Blade view, or JS that
+   touches `AuditLog` rows or the `/admin/audit-logs` screen.
 license: MIT
 metadata:
   feature: audit-logs
@@ -44,29 +44,28 @@ Inside `AuditService::log()`, only the **DB** write is try/catch-wrapped. Monolo
 
 ## Redaction
 
-`password` and `remember_token` stripped from **both** `old_values`/`new_values` unconditionally, ignoring `$hidden`/casts. `unset()` both keys explicitly after building arrays from `getChanges()`/`getOriginal()`. Do not use `Arr::except()` against model `$hidden` — `$hidden` governs JSON serialization, not `getChanges()`. Model may extend with `protected array $auditRedact = [...]`, merged by `AuditObserver` into base `['password', 'remember_token']`.
+`password` and `remember_token` redacted in **both** `old_values`/`new_values` unconditionally, ignoring `$hidden`/casts. `AuditObserver::redact()` (`AuditObserver.php:80-84`) assigns literal `'[REDACTED]'` per key — never `unset()` (keys stay present with the marker). Do not use `Arr::except()` against model `$hidden` — `$hidden` governs JSON serialization, not `getChanges()`. Model may extend with `protected array $auditRedact = [...]`, merged by `AuditObserver` into base `['password', 'remember_token']`.
 
 Auth payloads (`login.success`, `login.failed`, `password.reset`) always carry literal `'password' => '[REDACTED]'` — fixed string, not a redacted real value. Never interpolate `$request->input('password')` near an audit call, not even transiently.
 
 ## Route Contract
 
-Two prefixes, same controller methods:
+Admin only (`role:admin`, `routes/web.php:87-91` — Gestor routes were
+removed):
 
 ```php
 Route::middleware(['auth', 'role:admin'])->group(function (): void {
     Route::get('admin/audit-logs', [AuditLogController::class, 'index'])->name('admin.audit-logs.index');
     Route::get('admin/audit-logs/export', [AuditLogController::class, 'export'])->name('admin.audit-logs.export');
 });
-
-Route::middleware(['auth', 'role:gestor'])->group(function (): void {
-    Route::get('gestor/audit-logs', [AuditLogController::class, 'index'])->name('gestor.audit-logs.index');
-    Route::get('gestor/audit-logs/export', [AuditLogController::class, 'export'])->name('gestor.audit-logs.export');
-});
 ```
 
-`components/layout/sidebar.blade.php` picks the name for current user (`gestor`-only account gets `gestor.audit-logs.index`; anyone else, Admin included, gets `admin.audit-logs.index`) via `Route::has()` guards, like every other sidebar entry. Renaming either route means updating sidebar + `AuditLogUiTest` + `AuditLogTest` together.
+Sidebar carries no `Route::has` guard for audit (`grep audit` in
+`sidebar.blade.php` = 0) — renaming the route means updating the
+`audit-logs` navigation-registry entry + `AuditLogUiTest` + `AuditLogTest`
+together.
 
-`audit-logs/index.blade.php` derives the export route from the **current** route at render time (`str_replace('.index', '.export', request()->route()->getName())`), never hardcodes `admin.audit-logs.export`. One Blade serves both prefixes, no role conditional in view.
+`audit-logs/index.blade.php` derives the export route from the **current** route at render time (`str_replace('.index', '.export', request()->route()->getName())`), never hardcodes `admin.audit-logs.export`.
 
 ## View-Data Contract (`AuditLogController::index()`)
 

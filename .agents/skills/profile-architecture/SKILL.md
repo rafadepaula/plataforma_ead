@@ -71,8 +71,11 @@ session password.
 
 CPF checksum validation must be uniform everywhere CPF accepted, not
 just here. `App\Rules\Cpf` is pure, DB-free `ValidationRule` (mod-11
-checksum + identical-digit-sequence rejection) reused by
-`ProfileUpdateRequest`, `StoreUserRequest`, `UpdateUserRequest`,
+checksum + identical-digit-sequence rejection) reused by 9 CPF-accepting
+entry points: `ProfileUpdateRequest`, `StoreUserRequest`,
+`UpdateUserRequest`, `UpdateUserAdminRequest`,
+`StoreGestorProfessorRequest`, `UpdateGestorStudentRequest`,
+`UpdateGestorProfessorRequest`, `StoreStudentEnrollmentRequest`,
 `ProcessInvitationRequest`. `ImportUsersChunkRequest` is one deliberate
 exception: CSV row with invalid CPF must be skipped by `UserImportService`
 with recorded reason, never abort whole 50-record chunk with 422. See

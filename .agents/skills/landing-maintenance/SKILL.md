@@ -63,7 +63,7 @@ Pest):
   method.
 - `tests/Feature/Theme/DuskSelectorContractTest.php` — cross-cutting but
   landing-sensitive: pins
-  `tests/fixtures/dusk-selectors-snapshot.json` (430 entries) against
+  `tests/fixtures/dusk-selectors-snapshot.json` (529 entries) against
   every `dusk=` in the views. `landing/show.blade.php` contributes 6
   entries: `contact-button`, `landing-cta-login` ×2, `landing-headline`,
   `landing-login-link` ×2. The footer's public-validation destination,
@@ -99,7 +99,7 @@ HTTP process). See `laravel-dusk`/`testing-conventions`.
   never "regenerate the snapshot" — it is "delete the new selector" (see
   `landing-conventions`). The exception is a selector that a browser test
   genuinely drives: the three `certificate-lookup-*` entries are
-  legitimate and already in the 430-entry baseline — never delete those
+  legitimate and already in the 529-entry baseline — never delete those
   to make a count mismatch go away; check the count in the fixture
   itself, not against a number quoted in a skill, before concluding a
   selector is stray. Remember `<x-ui.button>` forwards `dusk` to the

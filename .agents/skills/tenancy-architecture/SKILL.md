@@ -4,7 +4,7 @@ description: >
   Single-Database multitenancy architecture of Plataforma EAD
   (Organizations / `org_id`, OrgScope global scope, Impersonate Org,
   RolesEnum). Use when you need how tenant isolation works, which tables
-  org-scoped, how Admin/Gestor/Aluno roles interact with `org_id`, or
+   org-scoped, how Admin/Gestor/Aluno/Professor roles interact with `org_id`, or
   before designing new table/feature that must respect tenant boundaries.
 license: MIT
 metadata:
@@ -27,10 +27,10 @@ resolution here is **not** by domain/subdomain/header, but by
 **authenticated user session** (`$user->org_id` or
 `session('active_org_id')` for Admin Impersonate Org).
 
-## The Three Roles (`RolesEnum`)
+## The Four Roles (`RolesEnum`)
 
 Defined in `App\Enums\Permissions\RolesEnum` (backed string enum:
-`admin`, `gestor`, `aluno`), enforced via `spatie/laravel-permission`
+`admin`, `gestor`, `aluno`, `professor`), enforced via `spatie/laravel-permission`
 roles (not Spatie own "teams"/org feature — `config('permission.teams')`
 stays `false`; org partitioning done exclusively through `org_id` +
 `OrgScope`, never through Spatie team IDs).
@@ -40,6 +40,7 @@ stays `false`; org partitioning done exclusively through `org_id` +
 | `admin` | always `null` | Global by default. Can narrow to one Organization via **Impersonate Org** (`session('active_org_id')`). |
 | `gestor` | fixed to one Organization | Everything under `OrgScope` is automatically restricted to their `org_id`. |
 | `aluno` | usually `null` | Not restricted by `OrgScope` on their own account; enrolls in courses across multiple Organizations via `course_user`. Course/classroom context resolves the Org from `courses.org_id`, not from the student's own row. |
+| `professor` | fixed to one Organization | Teaches courses assigned via the `course_professor` pivot (`User::teaches()`); manages content/grading only on assigned courses. Managed by Gestor via `GestorProfessorController` (`role:gestor`); lands on `professor.dashboard` after login (`UserHomeResolver::resolve()`). Gated by `role:professor` middleware. |
 
 **Do not** apply `OrgScope` to `User` model itself. Admin and Aluno rows
 legitimately have `org_id = null` and must stay queryable across
@@ -51,8 +52,14 @@ forum_topics, ...), not for `users` table.
 
 **Directly org-scoped** (own `org_id` column, `OrgScope` trait applied):
 `courses`, `invitation_links`, `forum_topics`, `help_articles` (nullable
-— global or org-specific), `system_settings` (nullable — global or
-org-specific).
+— global or org-specific), `audit_logs` (nullable — guest/Admin-global
+events legitimately have `null` `org_id`, see `audit-logs-architecture`).
+`system_settings` is directly org-scoped by column but does **not** use
+the `OrgScope` trait: its `org_id` is non-nullable with `default(0)`
+sentinel `SystemSetting::GLOBAL_ORG_ID = 0` and a composite PK
+`(setting_key, org_id)` (see migration `2026_08_01_000021`), and the
+trait's `whereRaw('1 = 0')` fallback would hide legitimate global
+(`org_id = 0`) rows — lookups go through `forOrg()` instead.
 
 **Cascade-inherited** (no own `org_id`; org implied by parent FK,
 `OrgScope` not applied directly — scope through parent relation instead):
@@ -102,8 +109,10 @@ Applied to org-scoped Eloquent models. Two responsibilities:
    session('active_org_id')`. If neither resolves (e.g. Admin with no
    Impersonate Org active creating org-scoped record), it throws
    `UnresolvedOrgContextException` rather than silently persisting
-   `org_id = null`. This exception is mapped globally (see
-   `tenancy-conventions` skill) to HTTP 422 response.
+    `org_id = null`. This exception is mapped globally (see
+    `tenancy-conventions` skill): JSON/AJAX callers get HTTP 422, web
+    callers get a redirect-back (302) with a flashed error message
+    (`bootstrap/app.php`).
 
 ## Impersonate Org
 

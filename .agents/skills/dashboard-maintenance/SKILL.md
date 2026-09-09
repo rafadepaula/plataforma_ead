@@ -67,10 +67,12 @@ HTTP process); `DatabaseMigrations` retired (per-method `migrate:fresh`)
 ## Common Failure Modes
 
 - **Dashboard sidebar link stay `#` / 404.** Route name must be
-  **exactly** `admin.dashboard` —
-  `components/layout/sidebar.blade.php` check `Route::has('admin.dashboard')`
-  and degrade silently to `#` rather than raise error, so typo'd or
-  renamed route produce dead link with no exception to catch it.
+  **exactly** `admin.dashboard` — sidebar (`components/layout/sidebar.blade.php:4-19`)
+  renders `$navigationSections` from `NavigationRegistry` with no
+  `Route::has` guard, so a typo'd or renamed route (or drifted registry
+  entry) produce dead link with no exception to catch it. The only
+  `Route::has('admin.dashboard')` fallback lives in
+  `landing/show.blade.php:11`.
 - **KPI/recent-enrollment row leak another Organization data for Gestor,
   or Admin impersonating Org.** `Certificate`, `course_user`, `User` do
   **not** carry `OrgScope` — check `DashboardMetricsService` explicitly
@@ -127,15 +129,10 @@ into current code:
    this bucket dashboard entry points; confirm whether `users` report or
    others also expected under "Central de Exportação" before assume
    `type` route parameter valid set is closed.
-3. **SMTP settings: admin-only or gestor-editable per-org?** Still
-   undecided — a compromised Gestor account setting arbitrary
-   SMTP credentials is security concern. Current
-   `settings.edit`/`settings.update` routes gated `role:admin|gestor`
-   uniformly; if SMTP fields must be Admin-only, that require follow-up
-   field-level authorization check in
-   `UpdateSystemSettingRequest`/`SystemSettingController`, not route
-   middleware change (logo/signature almost certainly remain
-   Gestor-editable per-org either way).
+3. **SMTP settings: admin-only or gestor-editable per-org?** Resolved at
+   route level — `settings.edit`/`settings.update` are `role:admin`
+   EXCLUSIVE (`routes/web.php:425-427`); Gestor never reaches the screen.
+   Logo/signature per-org overrides remain Admin-driven either way.
 4. **Admin per-Org dashboard access: Impersonate Org only, or also
    `?org_id=` query param?** The documented intent — "recurso de Impersonate
    Org para visualizar dashboards de Orgs específicas" — suggests Impersonate
@@ -146,9 +143,15 @@ into current code:
 
 ---
 
-## E2E Coverage Lives in Lifecycle Chains, Not in a Per-Module File
+## E2E Coverage: Per-Module File Exists
 
-Browser tests in `tests/Browser/` grouped by **user journey (lifecycle
+This module HAS its own Dusk file — `tests/Browser/DashboardDuskTest.php`
+(Admin render + KPIs + recent-enrollments table, Gestor scoped view, CSV
+export link `href`, settings edit persisting org override,
+`@organizations-summary-table` present/missing per actor). Prefer it over
+chain-grep when maintaining this module.
+
+Browser tests in `tests/Browser/` are otherwise grouped by **user journey (lifecycle
 chain)** — one method drive create → edit → state change → delete →
 consequence — **not** by module or feature. Consequences when
 maintain this module:

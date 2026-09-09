@@ -54,8 +54,8 @@ controller/action creating underlying row:
 ```
 InvitationLinkController::store()  → InvitationLinkCreated  → SendInvitationSentNotification
 ForumReplyController::store()      → ForumReplyPosted        → SendNewForumReplyNotifications
-EnrollmentController::store() /
-ProcessSmartInvitationAction        → EnrollmentConfirmed     → SendEnrollmentConfirmedNotification
+EnrollmentController::storeStudent() / ::store() / ::restore() /
+ProcessSmartInvitationAction (2 dispatches) → EnrollmentConfirmed     → SendEnrollmentConfirmedNotification
 ```
 
 4th trigger (certificate issued) is exception. Reuses **existing**
@@ -121,9 +121,10 @@ recipient event to record, and `database` row here would have no meaningful
   again) or `QueryException`-race-recovery path. Regression here means
   student gets duplicate certificate e-mail on every course page load.
 - **Enrollment confirmed**: fires on brand-new `course_user` row **or**
-  `cancelled → active` transition, from both `EnrollmentController::store()`
-  (Gestor-driven) and `ProcessSmartInvitationAction` (self-service
-  invite). Never on already-`active`, unchanged enrollment. No
+  `cancelled → active` transition, from 4+ dispatch sites:
+  `EnrollmentController::storeStudent()`/`::store()`/`::restore()`
+  (Gestor-driven) and 2 dispatches inside `ProcessSmartInvitationAction`
+  (self-service invite). Never on already-`active`, unchanged enrollment. No
   double-notify on no-op re-submit.
 
 ## Related

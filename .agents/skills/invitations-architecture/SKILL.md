@@ -68,7 +68,11 @@ All three run with no `Gate::authorize()` call, by design: unauthenticated
 visitor is only actor these routes expect. Do not add `auth` middleware or
 Policy to this controller. `guest` middleware itself keeps already-logged-in
 user out of this flow — they get redirected away, same as hitting `/login`
-while logged in.
+while logged in. Both public POSTs are throttled per IP (`throttle:20,1` on
+`invitation.check-email`, `throttle:10,1` on `invitation.store`,
+`routes/web.php:300-305`): they answer questions about personal data to
+unauthenticated callers, so the rate limit keeps them from being usable as
+enumeration oracles.
 
 ## `InvitationLink::unusableReason()` / `isUsable()` — One Source of Truth, Checked Twice
 

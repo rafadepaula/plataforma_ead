@@ -13,6 +13,8 @@ description: >
 
 Cavecrew = three subagent presets that emit caveman output. Same job as Anthropic defaults (`Explore`, edit-style agents, reviewer); difference is the tool-result they return is compressed, so main context shrinks per delegation.
 
+> **Project note (Plataforma EAD):** `cavecrew-investigator` / `cavecrew-builder` / `cavecrew-reviewer` presets do not exist in `.agents/agents/` (only `code-reviewer.md` and `bootstrap-*`). Treat the three names below as delegation roles to emulate with the main thread or available agents, not as invokable subagent types.
+
 ## When to use cavecrew vs alternatives
 
 | Task | Use |

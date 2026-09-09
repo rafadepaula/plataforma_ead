@@ -51,7 +51,8 @@ These tests guard this module's contract, must stay green (PHPUnit, no Pest):
   both `quiz-attempts.show` and `quiz-attempts.grade` (answer stays
   ungraded); owning-org Gestor's full submission recomputes
   `score_percentage`/`is_passed` and transitions to `graded`; Admin can
-  grade any org's attempt; an incomplete `grades[]` payload (bypassing
+  grade any org's attempt; an assigned Professor grades only their own
+  Courses' attempts (see also `ProfessorEssayGradingTest`); an incomplete `grades[]` payload (bypassing
   client-side `required`) never finalizes the attempt
   (`score_percentage`/`is_passed`/the ungraded answer's `is_correct`
   all stay `null`); empty `grades` array fails validation with no state

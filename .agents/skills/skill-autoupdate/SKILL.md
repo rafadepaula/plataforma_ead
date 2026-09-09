@@ -1,6 +1,6 @@
 ---
 name: skill-autoupdate
-description: Protocolo de Auto-Update e Auditoria de Skills Agenticas para Manutenção Contínua. Inclui regra de escrita: toda skill em .agents/skills/ é escrita em caveman FULL. Use ao criar, editar ou auditar qualquer SKILL.md.
+description: Protocolo de Auto-Update e Auditoria de Skills Agenticas para Manutenção Contínua. Inclui regra de escrita: toda skill em .agents/skills/ é escrita em prosa técnica concisa. Use ao criar, editar ou auditar qualquer SKILL.md.
 ---
 
 # Meta-Skill: Auto-Update & Auditoria de Skills (`skill-autoupdate`)
@@ -15,7 +15,7 @@ Regra estrita deste protocolo: **nenhuma alteração de código, esquema de banc
 
 ## 1. Tríade Obrigatória por Feature/Módulo
 
-Toda funcionalidade ou especificação (ex: `frontend`, `tenancy`, `testing`, `auth`, `courses`, `quizzes`, `certificates`, `forum`, `invitations`, `progress`, etc.) **DEVE** ter tríade dedicada em `.agents/skills/`:
+Toda funcionalidade ou especificação (ex: `frontend`, `tenancy`, `testing`, `auth`, `courses`, `quizzes`, `certificates`, `forum`, `invitations`, `progress`, etc.) **DEVE** ter tríade dedicada em `.agents/skills/`. Exceção: skills meta/genéricas sem feature própria não formam tríade (`validate-test-quality`, `create-pull-request`, `laravel-*`, `caveman-*`, `cavecrew`, esta própria skill) — coexistem como arquivos únicos por design.
 
 ```
 .agents/skills/
@@ -63,7 +63,7 @@ Verifique existência dos três diretórios sob `.agents/skills/`:
 - `.agents/skills/[feature]-conventions/SKILL.md`
 - `.agents/skills/[feature]-maintenance/SKILL.md`
 
-> **Regra de Criação Inicial**: Se feature for totalmente nova e diretórios não existirem, agente **DEVE** criar os 3 diretórios e popular os `SKILL.md` com base na implementação recém-construída. Conteúdo novo já nasce em caveman FULL (§5, guardrail 0).
+> **Regra de Criação Inicial**: Se feature for totalmente nova e diretórios não existirem, agente **DEVE** criar os 3 diretórios e popular os `SKILL.md` com base na implementação recém-construída. Conteúdo novo já nasce em prosa técnica concisa (§5, guardrail 0).
 
 ### Passo 3: Auditar e Atualizar o Conteúdo
 Para cada skill da tríade, compare conteúdo documentado com alterações mescladas no código-fonte:
@@ -106,7 +106,7 @@ php scripts/check-skills.php --dir=.agents/skills
 
 ## 5. Guardrails de Qualidade das Skills
 
-0. **Modo Caveman FULL Obrigatório**: toda skill em `.agents/skills/` é escrita e mantida em caveman FULL. Vale para skill nova e para edição de skill existente.
+0. **Prosa Técnica Concisa**: toda skill em `.agents/skills/` é escrita e mantida em prosa técnica concisa (aspiração, não-enforçada: skills legadas em outros estilos coexistem e continuam válidas).
    - Corta artigo (o/a/um), filler (apenas/realmente/basicamente/simplesmente), gentileza, hedging. Fragmento serve. Sinônimo curto.
    - **Comprime redação, nunca conteúdo.** Nenhuma seção, item de lista, linha de tabela, path, nome de classe/rota/seletor ou failure mode desaparece.
    - Code block, comando CLI, string de erro, identificador: verbatim.

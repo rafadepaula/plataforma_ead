@@ -184,19 +184,27 @@ parent `Course` through normal scoped relation while acting user is
 *different*-org Gestor returns `null` (scope filters row out), turning
 intended 403 into null-argument crash.
 
-## Route Shape: `courses.enrollments` Is Three Explicit Routes, Not A Resource
+## Route Shape: `courses.enrollments` Is Seven Explicit Routes, Not A Resource
 
-`routes/web.php` registers all three `courses.enrollments.*` routes by
+`routes/web.php:257-270` registers all seven `courses.enrollments.*` routes by
 hand. No `Route::resource('courses.enrollments', ...)` at all, not even
 partial:
 
 ```php
 Route::get('courses/{course}/enrollments', [EnrollmentController::class, 'index'])
     ->name('courses.enrollments.index');
+Route::get('courses/{course}/enrollments/search', [EnrollmentController::class, 'search'])
+    ->name('courses.enrollments.search');
+Route::get('courses/{course}/enrollments/create', [EnrollmentController::class, 'create'])
+    ->name('courses.enrollments.create');
+Route::post('courses/{course}/enrollments/store-student', [EnrollmentController::class, 'storeStudent'])
+    ->name('courses.enrollments.store-student');
 Route::post('courses/{course}/enrollments', [EnrollmentController::class, 'store'])
     ->name('courses.enrollments.store');
 Route::delete('courses/{course}/enrollments/{user}', [EnrollmentController::class, 'destroy'])
     ->name('courses.enrollments.destroy');
+Route::post('courses/{course}/enrollments/{user}/restore', [EnrollmentController::class, 'restore'])
+    ->name('courses.enrollments.restore');
 ```
 
 Deliberate: no `Enrollment` Eloquent model to route-bind (`course_user` is

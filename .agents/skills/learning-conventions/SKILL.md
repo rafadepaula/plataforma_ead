@@ -27,9 +27,10 @@ so idempotency, the union-of-played-ranges merge, transition-gated
 $progress = $this->markLessonCompleteAction->execute(
     $lesson,
     $request->user(),
-    'video_threshold', // or 'manual_click' / (future) 'quiz_passed'
+    'video_threshold', // or 'manual_click' / 'quiz_passed'
     $watchedSegments,  // null for non-video completions; raw [{start, end}] batches otherwise
     $durationSeconds,
+    $lastPositionSeconds, // nullable resume bookmark, tracked on every poll
 );
 ```
 
@@ -143,6 +144,11 @@ if (! $course instanceof Course) {
 This matters most on `updateProgress()`, which the player polls every 5s;
 the fallback branch must stay, and must keep `withoutGlobalScopes()`.
 
+Professor branch in the same middleware: an assigned Professor
+(`User::teaches($course)`) passes with no `course_user` row, while a
+non-assigned one gets a direct 403 — never the Aluno catalog redirect,
+since professors hold no enrollments to redirect to.
+
 When controller needs Course cached onto relation the view reads directly
 (e.g. `$lesson->module->course`), set it explicitly so later access does
 not re-trigger scoped, empty-for-Aluno query:
@@ -163,11 +169,12 @@ feedback through same `reflectCompletion()`/`notify()` helpers, so manual
 click and video auto-completion look identical to student.
 
 `reportProgress(lessonId, segments, durationSeconds, positionSeconds)` is
-**intentionally public**: it is real 5s-poll callback, and also exact seam
-`tests/Browser/VideoThresholdCompletionTest.php` calls directly
-(`window.LessonPlayer.reportProgress(...)`) to simulate crossing 90%
-threshold without depending on YouTube's real IFrame API inside headless
-Dusk. Do not rename it, do not make it private. `segments` is a list of
+**intentionally public**: it is real 5s-poll callback, and also the E2E seam
+a browser driver would call (`window.LessonPlayer.reportProgress(...)`) to
+simulate crossing 90% threshold without depending on YouTube's real IFrame
+API inside headless Dusk. No `tests/Browser/VideoThresholdCompletionTest.php`
+exists — only the Feature `VideoThresholdCompletionTest` — and no current
+test drives the seam directly, but keep it public and stable regardless. Do not rename it, do not make it private. `segments` is a list of
 `[start, end)` second ranges actually replayed (from `WatchTracker`), never
 a playhead position; `positionSeconds` is the current playhead (the
 resume bookmark, tracked in ANY state, nullable). The payload carries

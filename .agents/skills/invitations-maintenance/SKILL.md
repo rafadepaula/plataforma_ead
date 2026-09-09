@@ -119,12 +119,13 @@ does not target specific `name=` attributes. `password` field itself sits
 intentionally **outside** any `new-account` wrapper: always visible, both
 branches (new and existing account) need it.
 
-Registered in `resources/js/app.js` same way `ModuleReorder`/`CsvImporter`
-are:
+Registered in the central module registry `resources/js/modules/index.js:53`
+(no per-module `window.*` assignment, no per-module `DOMContentLoaded`
+listener — `app.js` exposes each registry key as `window.<key>` and calls
+`.init()` itself):
 
 ```js
-window.SmartInvitationForm = new SmartInvitationForm(HttpClient, NotificationService);
-document.addEventListener('DOMContentLoaded', () => window.SmartInvitationForm.init());
+SmartInvitationForm: new SmartInvitationForm(httpClient, notifications),
 ```
 
 ## Diagnosing "Form Never Collapses to Password-Only"
@@ -135,7 +136,8 @@ document.addEventListener('DOMContentLoaded', () => window.SmartInvitationForm.i
   this.toggleFields(form, false); return; }`).
 - Confirm e-mail `<input>` carries bare `data-invitation-email` attribute.
   `bindForm()` looks it up with `form.querySelector(
-  '[data-invitation-email]')` and does nothing at all if absent.
+  '[data-invitation-email], input[name="email"]')` (`SmartInvitationForm.js:49`)
+  and does nothing at all if absent.
 - `toggleFields()` toggles **only the `.d-none` class** (through
   `applyVisibility()`); it never writes `style.display` and never sets the
   `hidden` attribute — showing an element even clears a stray one left by other

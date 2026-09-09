@@ -21,7 +21,8 @@ These tests guard tenancy contract. Must stay green (PHPUnit, per project
 convention — no Pest):
 
 - `tests/Feature/OrgScope/OrgScopeUnresolvedContextTest.php` — assert
-  `UnresolvedOrgContextException` thrown (and mapped to HTTP 422) when Admin
+  `UnresolvedOrgContextException` thrown (JSON/AJAX mapped to HTTP 422,
+  web mapped to redirect-back 302 + flash) when Admin
   with no Impersonate Org active create org-scoped record.
 - `tests/Feature/OrgScope/OrgScopeTenantIsolationTest.php` — assert Gestor of
   Org A cannot see/query records of Org B through org-scoped model.
@@ -29,7 +30,7 @@ convention — no Pest):
   `session('active_org_id')` set see only that org records, and Admin without it
   set see across all orgs.
 - `tests/Feature/Auth/RolesMiddlewareTest.php` — `role:admin` / `role:gestor` /
-  `role:aluno` gate checks.
+  `role:aluno` / `role:professor` gate checks.
 - `tests/Unit/Enums/RolesEnumTest.php` — `RolesEnum` values/labels.
 
 Run narrowest first after touching `OrgScope`, `RolesEnum`, or any org-scoped
@@ -62,8 +63,9 @@ vendor/bin/sail artisan test --compact tests/Feature/Auth/RolesMiddlewareTest.ph
   `creating` hook not bypassed (via `forceCreate()`, `insert()`, or mass-insert
   query builder call skipping Eloquent events entirely — those bypass guard and
   must set `org_id` explicit).
-- Admin got 500 instead of 422 while creating org-scoped record with no
-  Impersonate Org active: `UnresolvedOrgContextException` not registered in
+- Admin got 500 instead of the negotiated response while creating org-scoped record with no
+  Impersonate Org active (422 JSON for JSON/AJAX callers, redirect-back 302 + flash for web):
+  `UnresolvedOrgContextException` not registered in
   `bootstrap/app.php` exception handling, or local `try/catch` elsewhere in call
   stack swallow/rethrow it as different type before global handler.
 
@@ -78,11 +80,12 @@ vendor/bin/sail artisan test --compact tests/Feature/Auth/RolesMiddlewareTest.ph
   foreign key**. Integrity app-layer only. Migration change here cannot add real
   FK constraint; never attempt it, validate at application layer instead.
 - `system_settings` has composite primary key `(setting_key, org_id)` where
-  `org_id` nullable for "global" settings. `PRIMARY KEY` column implicitly
-  `NOT NULL` in MySQL/MariaDB, so literal nullable composite PK not achievable
-  as specified. Confirm the settled resolution (sentinel `org_id = 0` for
-  global vs plain unique index) before writing any code assuming one behavior or
-  other for global settings lookups.
+  `org_id` is non-nullable with `default(0)` sentinel `SystemSetting::GLOBAL_ORG_ID = 0`
+  for "global" settings (migration `2026_08_01_000021`) — settled, not an open
+  question: a literal nullable composite PK is not achievable in MySQL/MariaDB
+  (`PRIMARY KEY` columns are implicitly `NOT NULL`), so global lookups resolve
+  via `forOrg()` mapping `null` to the `0` sentinel, and no FK is declared on
+  `org_id` since `0` is not a real `organizations.id`.
 - `OrgScope` must never be applied to `User`. Doing so hide Admin/Aluno rows
   (`org_id = null`) from login and user-management queries. If future change
   make `User` need org filtering for some specific query, scope that query

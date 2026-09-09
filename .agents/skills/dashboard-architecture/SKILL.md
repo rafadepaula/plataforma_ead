@@ -25,8 +25,10 @@ metadata:
 The dashboard domain have 3 pieces sharing one screen and one settings screen:
 
 1. **Admin/Gestor Dashboard** (`GET /admin/dashboard`, route name **must** be
-   exactly `admin.dashboard` — `components/layout/sidebar.blade.php` already
-   reference it defensively via `Route::has('admin.dashboard')` and silently
+   exactly `admin.dashboard` — sidebar (`components/layout/sidebar.blade.php:4-19`)
+   renders `$navigationSections` from `NavigationRegistry` with no
+   `Route::has` guard; the only `Route::has('admin.dashboard')` fallback left
+   lives in `landing/show.blade.php:11` and silently
    degrade to `#` if name ever drift). Render 4 stat cards (`active_students`,
    `certificates_issued`, `completion_rate`, `courses_count`) and "Matrículas
    recentes" table, per the mockup's exact
@@ -80,7 +82,7 @@ directly), and `User.org_id` plain nullable column with no scope at all.
 
 ## CSV Streaming Contract
 
-CSV builder (`CsvStreamExportService`/`StreamOrgReportCsvAction`) wrap
+CSV builder (`CsvStreamExportService`, `CsvStreamExportService.php:25`) wrap
 `response()->streamDownload()` and write with `fputcsv()` inside
 `Model::query()->chunk(500, ...)` or `->lazy()` loop. Only approach keeping peak
 memory O(1) regardless of dataset size. Parameterized by same
@@ -145,7 +147,8 @@ Gestor lifecycle.
   `system_settings` schema rather than nullable-`org_id` table.
 - Reuse `FileUploadService` (see `courses-conventions`) for settings screen logo
   upload, same convention as `Organization` `logo_path` field.
-- Dashboard `recentEnrollments` shape (`student_name`, `course_name`,
-  `status_label`, `status_badge_variant`) presentation data computed by service,
+- Dashboard `recentEnrollments` shape (`student_name`, `student_initials`,
+  `student_email`, `course_name`, `progress_percentage`,
+  `status_label`, `status_badge_variant`, `DashboardMetricsService.php:136-160`) presentation data computed by service,
   not raw `course_user` row. Do not leak pivot column names (`status`,
   `progress_percentage`) into view; translate them in `DashboardMetricsService`.

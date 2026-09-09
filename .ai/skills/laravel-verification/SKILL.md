@@ -53,15 +53,12 @@ composer dump-autoload -o
 ## Phase 2: Linting and Static Analysis
 
 ```bash
-vendor/bin/pint --test
-vendor/bin/phpstan analyse
+vendor/bin/sail bin pint --dirty --format agent
 ```
 
-Project uses Psalm instead of PHPStan:
-
-```bash
-vendor/bin/psalm
-```
+> **Project note (Plataforma EAD):** `composer.json` has neither
+> Psalm nor PHPStan — no static-analysis step exists here. Pint is the only
+> lint gate, run via Sail as above.
 
 ## Phase 3: Tests and Coverage
 
@@ -78,8 +75,7 @@ XDEBUG_MODE=coverage php artisan test --coverage
 CI example (format -> static analysis -> tests):
 
 ```bash
-vendor/bin/pint --test
-vendor/bin/phpstan analyse
+vendor/bin/sail bin pint --dirty --format agent
 XDEBUG_MODE=coverage php artisan test --coverage
 ```
 
@@ -88,20 +84,14 @@ XDEBUG_MODE=coverage php artisan test --coverage
 UI, frontend components, or browser interactions modified: run E2E browser tests.
 
 ```bash
-php artisan dusk
-```
-
-Laravel Sail locally:
-
-```bash
-./vendor/bin/sail artisan dusk
+vendor/bin/sail dusk
 ```
 
 Filter specific Dusk tests:
 
 ```bash
-./vendor/bin/sail artisan dusk --filter=testName
-./vendor/bin/sail artisan dusk tests/Browser/LoginTest.php
+vendor/bin/sail dusk --filter=testName
+vendor/bin/sail dusk tests/Browser/LoginTest.php
 ```
 
 - Dusk test fails, check failure artifacts in `tests/Browser/screenshots/` and `tests/Browser/console/`.
@@ -158,7 +148,7 @@ php artisan horizon:status
 php artisan queue:monitor default --max=100
 ```
 
-Active verification (staging only): dispatch no-op job to dedicated queue, run single worker to process it (needs non-`sync` queue connection configured).
+Active verification (staging only): dispatch a no-op job to a dedicated queue, run a single worker to process it (needs non-`sync` queue connection configured, and an `App\Jobs\*` class — note this repo ships no `app/Jobs/` directory, so create the healthcheck job first or skip this step).
 
 ```bash
 php artisan tinker --execute="dispatch((new App\\Jobs\\QueueHealthcheck())->onQueue('healthcheck'))"
@@ -178,8 +168,7 @@ php -v
 composer --version
 php artisan --version
 composer validate
-vendor/bin/pint --test
-vendor/bin/phpstan analyse
+vendor/bin/sail bin pint --dirty --format agent
 php artisan test
 composer audit
 php artisan migrate --pretend
@@ -192,8 +181,7 @@ CI-style pipeline:
 ```bash
 composer validate
 composer dump-autoload -o
-vendor/bin/pint --test
-vendor/bin/phpstan analyse
+vendor/bin/sail bin pint --dirty --format agent
 XDEBUG_MODE=coverage php artisan test --coverage
 composer audit
 php artisan migrate --pretend

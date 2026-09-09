@@ -52,6 +52,12 @@ These tests guard this module's contract, must stay green (PHPUnit, no Pest):
   `tests/Unit/Services/VideoUrlSanitizerManagerTest.php`,
   `tests/Unit/Services/FileUploadServiceTest.php` — service-level unit coverage,
   independent of HTTP layer.
+- `tests/Feature/ProfessorContentAuthoringTest.php` — assigned Professor
+  creates/edits/deletes/reorders modules and lessons on their Courses
+  through the same Gestor screens; non-assigned Professor gets 403.
+- `tests/Feature/ProfessorCourseAccessTest.php` — Professor reachability
+  across the `role:admin|gestor|professor` content routes vs the still
+  `CoursePolicy`-gated Course metadata routes (`courses.edit` 403).
 - `tests/Browser/CourseManagementTest.php` — E2E: Gestor creates/edits/deletes
   Course, Module, and Lesson through UI.
 - `tests/Browser/ModuleReorderTest.php` — E2E: reorder persist across full page
@@ -134,12 +140,11 @@ or `[data-reorder-url]`/`[data-id]` DOM contract Blade partials already rely on,
 since `courses/modules/_list.blade.php` and `modules/lessons/index.blade.php`
 both written against that exact shape.
 
-Registered in `resources/js/app.js` same way `CsvImporter` is:
-
-```js
-window.ModuleReorder = new ModuleReorder(HttpClient, NotificationService);
-document.addEventListener('DOMContentLoaded', () => window.ModuleReorder.init());
-```
+Registered in `resources/js/modules/index.js:46` as part of the module
+registry (`ModuleReorder: new ModuleReorder(httpClient, notifications)`),
+which `resources/js/app.js` imports wholesale — `app.js` itself only exposes
+`window.bootstrap` (app.js:17) for the Dusk suite's programmatic modal/toast
+driving.
 
 ## Diagnosing "Reorder Doesn't Persist" / "Toast Never Shows"
 

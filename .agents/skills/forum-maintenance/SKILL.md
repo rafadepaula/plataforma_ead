@@ -41,6 +41,9 @@ These tests guard this module's contract, must stay green (PHPUnit, no Pest):
 - `tests/Feature/ForumModerationQueueTest.php` — `GET /forum/moderation`
   own-org filtering, dismiss/remove transitions, direct pin/edit/delete by
   Gestor/Admin independent of any report.
+- `tests/Feature/ProfessorForumTest.php` — assigned-Professor
+  read/moderate (via `teaches()`/`canModerateCourse()`) but cannot create
+  topic/reply (`canCreateInCourse()` narrower than `hasCourseAccess()`).
 - `tests/Feature/ForumEditHistoryTest.php` — `forum_post_edits` rows
   written on every edit/delete, public (non-author-only) visibility of
   "ver histórico" modal.

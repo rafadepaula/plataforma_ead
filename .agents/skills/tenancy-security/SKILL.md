@@ -4,7 +4,7 @@ description: >
     Use when review or write Laravel code, Eloquent queries, controllers,
     policies, Form Requests, or database operations to audit single-database
     multitenant isolation, prevent cross-tenant data leaks, and enforce
-    role-based access control between Admin, Gestor, and Aluno roles.
+    role-based access control between Admin, Gestor, Aluno, and Professor roles.
 license: MIT
 metadata:
     feature: tenancy
@@ -27,18 +27,20 @@ across organizations.**
 
 ## The Core Tenancy Security Model
 
-### The 3 Roles & Data Scoping Rules
+### The 4 Roles & Data Scoping Rules
 
 | Role (`RolesEnum`) | User `org_id`  | Scope of Access & Security Boundary                                                                                                                                                      |
 | ------------------ | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `admin`            | `null`         | Global access by default. Can switch context to single organization via Impersonate Org (`session('active_org_id')`).                                                                    |
 | `gestor`           | Fixed `org_id` | Restricted **strictly** to data matching their `user->org_id`. Cannot read or write data from any other `org_id`.                                                                        |
 | `aluno`            | Usually `null` | Enrolled across courses in multiple orgs via `course_user` pivot. Must **never** access org-scoped data directly; access is granted **only** through active course enrollment relations. |
+| `professor`        | Fixed `org_id` | Bound to one Organization like `gestor`; course access granted **only** through the `course_professor` pivot (`User::teaches()`). Gated by `role:professor`, lands on `professor.dashboard`, managed by Gestor via `GestorProfessorController`. |
 
 ### Model Classifications & Scoping Guardrails
 
 1. **Directly Org-Scoped Models** (has `org_id` column + `OrgScope` trait):
-    - Examples: `Course`, `InvitationLink`, `ForumTopic`, `HelpArticle` (nullable), `SystemSetting` (nullable).
+    - Examples: `Course`, `InvitationLink`, `ForumTopic`, `HelpArticle` (nullable), `AuditLog` (nullable).
+    - `SystemSetting` is org-scoped by column but does **NOT** use the `OrgScope` trait: non-nullable `org_id` with `default(0)` sentinel (`SystemSetting::GLOBAL_ORG_ID`), composite PK `(setting_key, org_id)` — lookups go through `forOrg()`.
     - _Security Guardrail_: Queries auto-append `where org_id = ?`. Bypassing `OrgScope` is a critical security vulnerability.
 
 2. **Cascade-Inherited Models** (no `org_id` column; inherited through parent):
@@ -143,10 +145,10 @@ public function show(Lesson $lesson)
 
 ```php
 // ❌ DANGEROUS: Removes tenant isolation completely!
-$course = Course::withoutGlobalScope(OrgScope::class)->find($id);
+$course = Course::withoutGlobalScope('org')->find($id);
 ```
 
-**Rule**: `withoutGlobalScope(OrgScope::class)` is **strictly prohibited** in
+**Rule**: `withoutGlobalScope('org')` is **strictly prohibited** in
 standard application flows. It is permitted **only** in system-wide Admin
 reporting utilities, and it must be guarded with explicit Admin authorization:
 
@@ -279,7 +281,7 @@ Reviewing code for tenant security: verify every item.
 - [ ] **Cascade-Inherited Models**: Are `Module`, `Lesson`, `Quiz`, etc., scoped via parent relations (`whereHas('module.course')`) or Policy checks?
 - [ ] **Query Builder Audit**: Are any `DB::table()` queries touching org-scoped tables missing explicit `org_id` filtering?
 - [ ] **User Queries**: Are all `User` model queries in Gestor controllers filtered by `where('org_id', $gestorOrgId)`?
-- [ ] **Global Scope Audit**: Is `withoutGlobalScope(OrgScope::class)` absent from non-Admin application flows?
+- [ ] **Global Scope Audit**: Is `withoutGlobalScope('org')` absent from non-Admin application flows?
 - [ ] **Mass Assignment**: Is `org_id` omitted from request validation input or stripped before mass assignment?
 - [ ] **Authorization Policies**: Do all Policy methods verify `$record->org_id === $user->org_id` for Gestors?
 - [ ] **Aluno Access**: Are Aluno queries routed exclusively through active enrollment relationships (`$user->courses()`)?
