@@ -72,10 +72,10 @@
   --attention-container: #1e293b;
   --on-attention-container: #e2e8f0;
 
-  --critical: #f87171;
-  --critical-hover: #ef4444;
-  --critical-container: #451a1a;
-  --on-critical-container: #fecaca;
+  --critical: #8da4d0;
+  --critical-hover: #a3b8e0;
+  --critical-container: #1e2640;
+  --on-critical-container: #d8e2f8;
 
   /* Superfícies e texto escuros */
   --surface-body: #0b0f19;
