@@ -101,4 +101,61 @@ class HelpCenterTest extends TestCase
         $response->assertSee('help-placeholder-content-organizations.index', false);
         $response->assertSee('Estamos preparando');
     }
+
+    public function test_help_modal_renders_with_modal_xl_size_and_markdown_content(): void
+    {
+        HelpArticle::withoutEvents(fn () => HelpArticle::factory()->global()->create([
+            'target_page_key' => 'organizations.index',
+            'title' => 'Guia com Markdown',
+            'content' => "## Seção Principal\n\nTexto com **negrito** e [Link](https://example.com).\n\n- Item 1\n- Item 2",
+        ]));
+
+        $this->actingAsAdmin();
+
+        $response = $this->get(route('organizations.index'));
+
+        $response->assertOk();
+        $response->assertSee('modal-xl', false);
+        $response->assertSee('class="ds-prose"', false);
+        $response->assertSee('<h2>Seção Principal</h2>', false);
+        $response->assertSee('<strong>negrito</strong>', false);
+        $response->assertSee('<li>Item 1</li>', false);
+        $response->assertSee('<li>Item 2</li>', false);
+        $response->assertSee('dusk="help-center-link"', false);
+        $response->assertSee(route('help.index'));
+        $response->assertSee('Acessar Centro de Ajuda');
+    }
+
+    public function test_help_modal_strips_raw_html_and_unsafe_scripts_from_content(): void
+    {
+        HelpArticle::withoutEvents(fn () => HelpArticle::factory()->global()->create([
+            'target_page_key' => 'organizations.index',
+            'title' => 'Segurança Sanitizada',
+            'content' => 'Texto normal <img src=x onerror=evil()> e <iframe src="https://evil.com"></iframe> com [link perigoso](javascript:alert(1)).',
+        ]));
+
+        $this->actingAsAdmin();
+
+        $response = $this->get(route('organizations.index'));
+
+        $response->assertOk();
+        $response->assertDontSee('onerror', false);
+        $response->assertDontSee('evil()', false);
+        $response->assertDontSee('<iframe', false);
+        $response->assertDontSee('javascript:alert(1)', false);
+        $response->assertSee('Texto normal');
+    }
+
+    public function test_placeholder_modal_also_renders_modal_xl_and_help_center_link(): void
+    {
+        $this->actingAsAdmin();
+
+        $response = $this->get(route('organizations.index'));
+
+        $response->assertOk();
+        $response->assertSee('modal-xl', false);
+        $response->assertSee('dusk="help-center-link"', false);
+        $response->assertSee(route('help.index'));
+        $response->assertSee('Acessar Centro de Ajuda');
+    }
 }

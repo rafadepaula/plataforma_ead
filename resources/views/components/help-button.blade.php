@@ -32,12 +32,13 @@
         </svg>
     </button>
 
-    <x-ui.modal id="{{ $modalId }}" title="{{ $article->title }}" size="md" dusk="help-modal-{{ $key }}">
-        <div dusk="help-article-content-{{ $key }}" class="fs-6 lh-lg text-prewrap">
-            {{ $article->content }}
+    <x-ui.modal id="{{ $modalId }}" title="{{ $article->title }}" size="xl" dusk="help-modal-{{ $key }}">
+        <div dusk="help-article-content-{{ $key }}" class="ds-prose">
+            {!! Str::markdown($article->content, ['html_input' => 'strip', 'allow_unsafe_links' => false]) !!}
         </div>
 
         <x-slot:actions>
+            <a href="{{ route('help.index') }}" class="btn btn-link text-body text-decoration-none me-auto" dusk="help-center-link">Acessar Centro de Ajuda</a>
             <button type="button" class="btn btn-link text-body text-decoration-none" data-bs-dismiss="modal">Fechar</button>
         </x-slot:actions>
     </x-ui.modal>
@@ -57,12 +58,13 @@
         </svg>
     </button>
 
-    <x-ui.modal id="{{ $modalId }}" title="Ajuda" size="md" dusk="help-modal-{{ $key }}">
+    <x-ui.modal id="{{ $modalId }}" title="Ajuda" size="xl" dusk="help-modal-{{ $key }}">
         <div dusk="help-placeholder-content-{{ $key }}" class="fs-6 lh-lg text-prewrap">
             Estamos preparando o conteúdo de ajuda desta tela.
         </div>
 
         <x-slot:actions>
+            <a href="{{ route('help.index') }}" class="btn btn-link text-body text-decoration-none me-auto" dusk="help-center-link">Acessar Centro de Ajuda</a>
             <button type="button" class="btn btn-link text-body text-decoration-none" data-bs-dismiss="modal">Fechar</button>
         </x-slot:actions>
     </x-ui.modal>

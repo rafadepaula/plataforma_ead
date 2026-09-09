@@ -1,5 +1,5 @@
 {
-    "count": 541,
+    "count": 543,
     "entries": [
         {
             "file": "modules/lessons/edit.blade.php",
@@ -1543,6 +1543,10 @@
         },
         {
             "file": "components/help-button.blade.php",
+            "selector": "help-center-link"
+        },
+        {
+            "file": "components/help-button.blade.php",
             "selector": "help-button-{{ $key }}"
         },
         {
@@ -1552,6 +1556,10 @@
         {
             "file": "components/help-button.blade.php",
             "selector": "help-placeholder-content-{{ $key }}"
+        },
+        {
+            "file": "components/help-button.blade.php",
+            "selector": "help-center-link"
         },
         {
             "file": "components/layout/sidebar-item.blade.php",

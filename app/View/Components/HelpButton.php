@@ -2,12 +2,10 @@
 
 namespace App\View\Components;
 
-use App\Enums\Permissions\RolesEnum;
 use App\Models\HelpArticle;
 use App\Services\HelpArticleResolverService;
 use App\Services\OrgContext;
 use Illuminate\Contracts\View\View;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\View\Component;
 
 /**
@@ -28,26 +26,12 @@ class HelpButton extends Component
 
     public function __construct(public string $key)
     {
-        $this->article = app(HelpArticleResolverService::class)->resolve($this->key, $this->resolveOrgId());
+        $resolver = app(HelpArticleResolverService::class);
+        $this->article = $resolver->resolve($this->key, $resolver->resolveActiveOrgId());
     }
 
     public function render(): View
     {
         return view('components.help-button');
-    }
-
-    private function resolveOrgId(): ?int
-    {
-        $user = Auth::user();
-
-        if (! $user) {
-            return null;
-        }
-
-        if ($user->hasRole(RolesEnum::ADMIN->value)) {
-            return session('active_org_id');
-        }
-
-        return OrgContext::current()->orgId();
     }
 }

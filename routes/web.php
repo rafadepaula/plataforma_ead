@@ -16,6 +16,7 @@ use App\Http\Controllers\ForumReportController;
 use App\Http\Controllers\ForumTopicController;
 use App\Http\Controllers\GestorProfessorController;
 use App\Http\Controllers\GestorStudentController;
+use App\Http\Controllers\HelpCenterController;
 use App\Http\Controllers\ImpersonateOrgController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\InvitationLinkController;
@@ -45,6 +46,12 @@ use Illuminate\Support\Facades\Route;
 // Laravel default `welcome` stub; kept outside any `auth` middleware and
 // registered before `auth.php`'s routes.
 Route::get('/', [LandingPageController::class, 'show'])->name('landing.show');
+
+// Central de Ajuda pública (wiki) — acessível sem autenticação e com visibilidade contextual.
+Route::prefix('ajuda')->name('help.')->group(function (): void {
+    Route::get('/', [HelpCenterController::class, 'index'])->name('index');
+    Route::get('/artigo/{slug}', [HelpCenterController::class, 'show'])->name('show');
+});
 
 // Organization CRUD + Impersonate Org, both
 // reserved to `role:admin` (see `auth-orgs-conventions` skill).

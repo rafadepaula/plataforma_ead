@@ -2,7 +2,10 @@
 
 namespace App\Services;
 
+use App\Enums\Permissions\RolesEnum;
 use App\Models\HelpArticle;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 
 /**
  * resolves the `HelpArticle` shown by
@@ -33,5 +36,38 @@ class HelpArticleResolverService
         }
 
         return (clone $query)->whereNull('org_id')->first();
+    }
+
+    public function resolveActiveOrgId(): ?int
+    {
+        $user = Auth::user();
+
+        if (! $user) {
+            return null;
+        }
+
+        if ($user->hasRole(RolesEnum::ADMIN->value)) {
+            return session('active_org_id');
+        }
+
+        return $user->org_id;
+    }
+
+    public function queryAccessibleArticles(?int $orgId = null): Builder
+    {
+        $activeOrgId = $orgId ?? $this->resolveActiveOrgId();
+
+        return HelpArticle::withoutGlobalScopes()->where(function (Builder $query) use ($activeOrgId): void {
+            $query->whereNull('org_id');
+
+            if ($activeOrgId !== null) {
+                $query->orWhere('org_id', $activeOrgId);
+            }
+        });
+    }
+
+    public function findAccessibleBySlug(string $slug, ?int $orgId = null): ?HelpArticle
+    {
+        return $this->queryAccessibleArticles($orgId)->where('slug', $slug)->first();
     }
 }
