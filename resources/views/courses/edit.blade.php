@@ -9,7 +9,7 @@
     />
 
     <x-ui.card>
-        <form method="POST" action="{{ route('courses.update', $course) }}" dusk="course-form">
+        <form method="POST" action="{{ route('courses.update', $course) }}" enctype="multipart/form-data" dusk="course-form">
             @csrf
             @method('PUT')
 

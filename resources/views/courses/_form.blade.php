@@ -30,4 +30,8 @@
         label="Publicado"
         :checked="$course->is_published"
     />
+
+    @if ($course->exists)
+        <x-course.cover-field :course="$course" />
+    @endif
 </x-ui.field-stack>

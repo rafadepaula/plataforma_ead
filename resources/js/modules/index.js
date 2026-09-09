@@ -4,6 +4,7 @@
 // módulo entra ou sai — mantenha-o em ordem alfabética para minimizar conflito.
 // -----------------------------------------------------------------------------
 import AuditLogDiffModal   from './AuditLogDiffModal';
+import CourseForm          from './CourseForm';
 import CsvImporter         from './CsvImporter';
 import DashboardFilter     from './DashboardFilter';
 import EnrollmentSearch    from './EnrollmentSearch';
@@ -35,6 +36,7 @@ export default {
     HttpClient:          httpClient,
     NotificationService: notifications,
     AuditLogDiffModal:   new AuditLogDiffModal(),
+    CourseForm:          new CourseForm(),
     CsvImporter:         new CsvImporter(httpClient),
     DashboardFilter:     new DashboardFilter(httpClient),
     EnrollmentSearch:    new EnrollmentSearch(httpClient),

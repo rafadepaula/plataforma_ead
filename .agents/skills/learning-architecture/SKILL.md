@@ -232,16 +232,17 @@ courses-domain table):
 
 `StudentCourseController::index()` groups the Aluno's `active`/`completed`
 enrollments (never `cancelled`, see the multi-org section above) into 3
-tabs by the **raw pivot `status`**, not the derived display status —
-`em_andamento` tab is every `active` row regardless of whether its chip
-reads `nao_iniciado`/`em_andamento`/`expirado`; `concluidos` is every
-`completed` row; `todos` is both. Each row becomes one plain `object` view
-model (`course`, `organization`, `pivotStatus`, `displayStatus`,
-`progressPercentage`, `ctaLabel`, `ctaHref`, `secondaryCtaLabel`,
-`secondaryCtaHref`, `lessonsCount`, `workloadHours`, `deadlineLabel`)
-consumed by `<x-course.card>` and its 3
-sub-components (`card-header`/`card-body`/`card-footer`). Three rules any
-change to this pipeline must preserve:
+ tabs by the **raw pivot `status`**, not the derived display status —
+ `em_andamento` tab is every `active` row regardless of whether its chip
+ reads `nao_iniciado`/`em_andamento`/`expirado`; `concluidos` is every
+ `completed` row; `todos` is both. Each row becomes one plain `object` view
+ model (`course`, `organization`, `pivotStatus`, `displayStatus`,
+ `progressPercentage`, `ctaLabel`, `ctaHref`, `secondaryCtaLabel`,
+ `secondaryCtaHref`, `lessonsCount`, `workloadHours`, `deadlineLabel`,
+ `coverUrl`)
+ consumed by `<x-course.card>` and its 3
+ sub-components (`card-header`/`card-body`/`card-footer`). Three rules any
+ change to this pipeline must preserve:
 
 - **A `concluido` row ALWAYS resolves the classroom CTA**: its primary CTA
   is `["Ver sala de aula", route('classroom.show', $course)]` — never the
@@ -260,6 +261,12 @@ change to this pipeline must preserve:
   at least a 2% bar even at 0 real progress (e.g. an `expirado` row the
   student never started), so the bar never reads as a rendering bug. A
   genuinely `nao_iniciado` row still shows a true 0%.
+- **Cover read is defensive with wash fallback**: `coverUrl` comes from
+  `Course::cover_url` (the accessor is the single URL builder — never call
+  `Storage::url()` for covers at a read site). `x-course.card-header`
+  renders `<img class="ds-course-card-cover">` + veil when it resolves,
+  otherwise the pastel wash; a course without cover changes nothing
+  visually.
 
 ## Classroom Overview View Contract (`ClassroomController::show()`)
 

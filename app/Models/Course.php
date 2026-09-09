@@ -6,6 +6,7 @@ use App\Models\Traits\AuditableTrait;
 use App\Models\Traits\OrgScope;
 use Carbon\Carbon;
 use Database\Factories\CourseFactory;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -14,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Storage;
 
 class Course extends Model
 {
@@ -27,6 +29,7 @@ class Course extends Model
         'org_id',
         'title',
         'description',
+        'cover_path',
         'workload_hours',
         'is_published',
     ];
@@ -40,6 +43,14 @@ class Course extends Model
             'is_published' => 'boolean',
             'workload_hours' => 'integer',
         ];
+    }
+
+    /**
+     * Public-disk URL of the course cover, or null when no cover was uploaded.
+     */
+    protected function coverUrl(): Attribute
+    {
+        return Attribute::make(get: fn (): ?string => $this->cover_path ? Storage::disk('public')->url($this->cover_path) : null);
     }
 
     /**

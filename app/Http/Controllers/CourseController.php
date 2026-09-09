@@ -7,12 +7,15 @@ use App\Http\Requests\StoreCourseRequest;
 use App\Http\Requests\UpdateCourseRequest;
 use App\Models\Course;
 use App\Services\AuditService;
+use App\Services\FileUploadService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Storage;
 use Throwable;
 
 /**
@@ -23,6 +26,10 @@ use Throwable;
  */
 class CourseController extends Controller
 {
+    public function __construct(
+        protected FileUploadService $fileUploadService,
+    ) {}
+
     public function index(Request $request): View
     {
         Gate::authorize('viewAny', Course::class);
@@ -91,10 +98,70 @@ class CourseController extends Controller
 
     public function update(UpdateCourseRequest $request, Course $course): RedirectResponse
     {
-        $course->update($request->validated());
+        $course->update($this->validatedAttributes($request));
+        $this->syncCover($request, $course);
 
         return redirect()->route('courses.index')
             ->with('success', 'Curso atualizado com sucesso.');
+    }
+
+    /**
+     * Strips the media-only inputs (`cover`/`remove_cover` — handled
+     * after the Course exists by `syncCover()`) out of the validated
+     * payload so they never reach mass assignment, mirroring
+     * `LessonController::validatedAttributes()`.
+     *
+     * @return array<string, mixed>
+     */
+    private function validatedAttributes(UpdateCourseRequest $request): array
+    {
+        $data = $request->validated();
+        unset($data['cover'], $data['remove_cover']);
+
+        return $data;
+    }
+
+    /**
+     * Applies the media-only request inputs against an already-persisted
+     * Course. A newly uploaded `cover` wins over `remove_cover`: the new
+     * file is stored first (via `FileUploadService`, isolated under the
+     * Course's `org_id`), then the previous file is deleted from the
+     * `public` disk, then the new `cover_path` is persisted. When the
+     * persistence throws, the newly stored file is deleted again so no
+     * orphan remains, and the exception is rethrown. Without a new file,
+     * a truthy `remove_cover` deletes the current file and nulls
+     * `cover_path`. With neither input, nothing is touched.
+     */
+    private function syncCover(Request $request, Course $course): void
+    {
+        $uploadedCover = $request->file('cover');
+
+        if ($uploadedCover instanceof UploadedFile) {
+            $previousPath = $course->cover_path;
+            $storedPath = $this->fileUploadService->storeCover($uploadedCover, $course);
+
+            try {
+                $course->forceFill(['cover_path' => $storedPath])->save();
+            } catch (Throwable $exception) {
+                Storage::disk('public')->delete($storedPath);
+
+                throw $exception;
+            }
+
+            if (is_string($previousPath) && $previousPath !== '') {
+                Storage::disk('public')->delete($previousPath);
+            }
+
+            return;
+        }
+
+        if ($request->boolean('remove_cover')) {
+            if (is_string($course->cover_path) && $course->cover_path !== '') {
+                Storage::disk('public')->delete($course->cover_path);
+            }
+
+            $course->forceFill(['cover_path' => null])->save();
+        }
     }
 
     /**

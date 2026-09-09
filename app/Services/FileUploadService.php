@@ -36,6 +36,15 @@ class FileUploadService
     }
 
     /**
+     * Stores the course cover image. The tenant is resolved from
+     * `$course->org_id` and files land in `orgs/{org_id}/courses/{course_id}/cover/`.
+     */
+    public function storeCover(UploadedFile $file, Course $course): string
+    {
+        return $this->store($file, $course, 'cover');
+    }
+
+    /**
      *  stores a batch of image uploads, returning the stored paths
      * in the same order as the given files (index-aligned, so callers can
      * zip them back with the `UploadedFile` instances for per-file metadata).

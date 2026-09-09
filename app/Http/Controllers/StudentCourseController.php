@@ -121,6 +121,7 @@ class StudentCourseController extends Controller
             'organization' => $course->organization,
             'pivotStatus' => $pivot->status,
             'displayStatus' => $displayStatus,
+            'coverUrl' => $course->cover_url,
             'progressPercentage' => $this->visualProgressPercentage((int) ($pivot->progress_percentage ?? 0), $displayStatus),
             'ctaLabel' => $ctaLabel,
             'ctaHref' => $ctaHref,

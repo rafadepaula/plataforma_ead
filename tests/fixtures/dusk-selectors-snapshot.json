@@ -1,5 +1,5 @@
 {
-    "count": 529,
+    "count": 534,
     "entries": [
         {
             "file": "admin/users/edit.blade.php",
@@ -522,6 +522,22 @@
             "selector": "course-card-{id}"
         },
         {
+            "file": "components/course/cover-field.blade.php",
+            "selector": "course-cover-input"
+        },
+        {
+            "file": "components/course/cover-field.blade.php",
+            "selector": "course-cover-preview"
+        },
+        {
+            "file": "components/course/cover-field.blade.php",
+            "selector": "course-cover-remove"
+        },
+        {
+            "file": "components/course/cover-field.blade.php",
+            "selector": "error-cover"
+        },
+        {
             "file": "components/course/row-actions.blade.php",
             "selector": "$deleteCourseDusk"
         },
@@ -784,6 +800,10 @@
         {
             "file": "components/ui/textarea.blade.php",
             "selector": "error-{{ $name }}"
+        },
+        {
+            "file": "components/ui/theme-toggle.blade.php",
+            "selector": "theme-toggle"
         },
         {
             "file": "components/ui/video-field.blade.php",

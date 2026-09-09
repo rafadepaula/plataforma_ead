@@ -27,6 +27,8 @@ class UpdateCourseRequest extends FormRequest
             'description' => ['nullable', 'string'],
             'workload_hours' => ['required', 'integer', 'min:0', 'max:65535'],
             'is_published' => ['boolean'],
+            'cover' => ['nullable', 'image', 'max:2048'],
+            'remove_cover' => ['nullable', 'boolean'],
         ];
     }
 }

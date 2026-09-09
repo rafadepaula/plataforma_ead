@@ -41,6 +41,27 @@ public function storeImages(array $files, Course $course): array
 }
 ```
 
+### Single-file course cover contract (`storeCover`)
+
+Course covers are the one single-file upload in this domain (a Course has at
+most one cover, so no array contract and no media table). `storeCover()`
+delegates to the same private `store()` with kind `cover`, producing
+`orgs/{org_id}/courses/{course_id}/cover/` on the `public` disk, with the
+tenant resolved from `$course->org_id` by the same rule above. The write side
+lives in `CourseController::syncCover()`: store-new-first, then delete the
+old file, then persist `cover_path` (replacement wins over `remove_cover`;
+a save failure deletes the just-stored file so no orphan remains); removal
+deletes the file and nulls the column; no input leaves the cover untouched.
+Request rules are `'cover' => ['nullable', 'image', 'max:2048']` (2MB, same
+as lesson images) and `'remove_cover' => ['nullable', 'boolean']`, both
+stripped from mass assignment. Tests fake the disk and assert on `dirname()`:
+
+```php
+Storage::fake('public');
+$path = (new FileUploadService)->storeCover($file, $course);
+$this->assertSame("orgs/{$course->org_id}/courses/{$course->id}/cover", dirname($path));
+```
+
 ### Multi-file lesson form contract
 
 Request keys are plural arrays; limits are PER FILE, validated per element:

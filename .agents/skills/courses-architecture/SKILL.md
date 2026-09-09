@@ -35,7 +35,7 @@ own metadata stays `CoursePolicy`-gated (`courses.edit` remains 403 to them).
 
 | Table | Key columns | Tenancy |
 | --- | --- | --- |
-| `courses` | `org_id`, `title`, `description`, `workload_hours`, `is_published` | **Directly org-scoped** — `OrgScope` trait |
+| `courses` | `org_id`, `title`, `description`, `cover_path` (nullable, single cover image), `workload_hours`, `is_published` | **Directly org-scoped** — `OrgScope` trait |
 | `course_user` (pivot) | `user_id`, `course_id`, `status` (`active`\|`cancelled`\|`completed`), `progress_percentage`, `enrolled_at`, `completed_at`, `expires_at` nullable | Not org-scoped — enrollment cross orgs (see `tenancy-architecture`). `expires_at` backs `Course::enrollmentDisplayStatusFor()`'s derived `expirado` chip on an `active` row past deadline — not a 4th pivot `status` value |
 | `modules` | `course_id`, `title`, `description`, `order_index` | **Cascade-inherited** via `courses.org_id` — no own `org_id`, no `OrgScope` |
 | `lessons` | `module_id`, `title`, `type` (`content`\|`quiz`), `content_text`, `video_provider` (`youtube`\|`vimeo`, nullable, default `youtube`), `video_url`, `pdf_path`, `image_path`, `order_index`, `is_published` | **Cascade-inherited** via `modules`, `courses.org_id` |
@@ -102,6 +102,21 @@ first stripped out of the mass-assigned attributes by
   on a hard delete. The Gestor ConfirmModal cascade warning ("As {N} lições
   deste módulo também serão removidas...") mirrors the DB cascade, while the
   actual soft delete leaves lesson rows and `lesson_progress` intact.
+
+## Course Cover: Single `cover_path` Column, Accessor-Only URL
+
+A Course carries at most ONE cover image, so unlike multi-attachment Lessons
+it needs no `lesson_media`-style table: `courses.cover_path` (string,
+nullable) stores the `public`-disk path, written only by
+`CourseController::syncCover()` (never mass-assigned from the request —
+`cover`/`remove_cover` are stripped in `validatedAttributes()` first).
+`Course::coverUrl()` is an Eloquent `Attribute` accessor exposing
+`cover_url` (`Storage::disk('public')->url()` or `null`); it is the single
+place that builds the URL — no call site may call `Storage::url()` for a
+cover directly. Cover upload lives inside `courses.edit`/`courses.update`
+under the existing `CoursePolicy::update`, so no new policy exists; it is
+edit-only by design (creation has no `course.id` for the tenant path
+`orgs/{org_id}/courses/{course_id}/cover/` yet).
 
 ## Course Delete Guard
 
