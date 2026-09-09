@@ -245,6 +245,30 @@ Sim. Clicando no histórico de edições é possível consultar as versões ante
 MARKDOWN
     ],
     [
+        'target_page_key' => 'forum-replies.edit',
+        'title' => 'Editar Resposta no Fórum',
+        'slug' => 'editar-resposta-no-forum',
+        'category' => 'Fórum',
+        'content' => <<<'MARKDOWN'
+## Para que serve
+Ajustar ou complementar uma resposta específica enviada por você em uma discussão no fórum do curso.
+
+## Passo a passo
+1. Modifique o texto da sua resposta no editor.
+2. Certifique-se de manter a clareza e o contexto em relação à pergunta original.
+3. Clique em "Salvar Alterações".
+4. O comentário exibirá a indicação de edição e a data da última atualização.
+
+## Regras e limites
+- Apenas o autor original da resposta tem permissão para editá-la.
+- As versões anteriores são salvas no histórico público de edições da mensagem.
+
+## Dúvidas comuns
+**Posso apagar minha resposta em vez de editar?**
+Sim. Na tela do tópico, você pode utilizar o botão de exclusão caso deseje remover a resposta por completo.
+MARKDOWN
+    ],
+    [
         'target_page_key' => 'profile.edit',
         'title' => 'Meu Perfil e Segurança da Conta',
         'slug' => 'meu-perfil-e-seguranca-da-conta',

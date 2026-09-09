@@ -311,7 +311,7 @@ Redigir e publicar um novo artigo de ajuda com suporte a formatação rica em Ma
 7. Clique em "Salvar Artigo".
 
 ## Regras e limites
-- O conteúdo é redigido em Markdown puro. Tags HTML cruas como `<script>` e `<iframe>` são automaticamente sanitizadas e removidas por segurança.
+- O conteúdo é redigido em Markdown puro. Tags HTML perigosas como script ou iframe são automaticamente sanitizadas e removidas por segurança.
 - O slug do artigo deve ser exclusivo em todo o banco de dados.
 
 ## Dúvidas comuns

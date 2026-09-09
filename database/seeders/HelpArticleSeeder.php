@@ -6,14 +6,11 @@ use App\Models\HelpArticle;
 use Illuminate\Database\Seeder;
 
 /**
- *   &   — seeds the global (org_id = null)
- * `HelpArticle` rows resolved by `HelpArticleResolverService` for screens
- * that don't yet have org-specific overrides authored.
+ * Seeds global (org_id = null) HelpArticle records for 100% of the platform's screens.
  *
- * Uses `withoutEvents()` (see `help-conventions`) so `OrgScope`'s
- * `creating` hook doesn't stamp an active-org `org_id` onto what must
- * stay a global article, and `firstOrCreate` keyed on `target_page_key`
- * so re-running the seeder is idempotent.
+ * Uses `withoutEvents()` so `OrgScope`'s creating hook does not stamp an active
+ * tenant onto global articles or throw `UnresolvedOrgContextException`.
+ * Uses `updateOrCreate` keyed on `slug` for idempotent execution across environments.
  */
 class HelpArticleSeeder extends Seeder
 {
@@ -22,28 +19,24 @@ class HelpArticleSeeder extends Seeder
      */
     public function run(): void
     {
-        $articles = [
-            [
-                'target_page_key' => 'profile.edit',
-                'title' => 'Como editar meu perfil',
-                'category' => 'geral',
-                'content' => "Nesta tela você pode atualizar seus dados cadastrais (nome, e-mail e CPF) e trocar sua senha.\n\n".
-                    "Para atualizar seus dados, preencha o formulário \"Informações do Perfil\" e clique em \"Salvar Alterações\".\n\n".
-                    'Para trocar sua senha, informe sua senha atual e a nova senha no formulário "Atualizar Senha". Ao confirmar, todas as suas outras sessões ativas serão encerradas por segurança.',
-            ],
-        ];
+        $academic = require __DIR__.'/data/help_articles_academic.php';
+        $evaluations = require __DIR__.'/data/help_articles_evaluations.php';
+        $student = require __DIR__.'/data/help_articles_student.php';
+        $adminPublic = require __DIR__.'/data/help_articles_admin_public.php';
 
-        foreach ($articles as $article) {
+        $allArticles = array_merge($academic, $evaluations, $student, $adminPublic);
+
+        foreach ($allArticles as $article) {
             HelpArticle::withoutEvents(function () use ($article): void {
-                HelpArticle::query()->firstOrCreate(
+                HelpArticle::query()->updateOrCreate(
                     [
-                        'org_id' => null,
-                        'target_page_key' => $article['target_page_key'],
+                        'slug' => $article['slug'],
                     ],
                     [
+                        'org_id' => null,
                         'title' => $article['title'],
-                        'slug' => str($article['target_page_key'].'-'.$article['title'])->slug(),
                         'category' => $article['category'],
+                        'target_page_key' => $article['target_page_key'],
                         'content' => $article['content'],
                     ]
                 );
