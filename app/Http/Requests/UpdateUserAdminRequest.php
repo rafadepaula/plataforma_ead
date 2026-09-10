@@ -11,11 +11,11 @@ use Illuminate\Validation\Rule;
 /**
  * validates the full-profile edit on the global Admin
  * user-management screen (`admin.users.update`). Unlike
- * {@see UpdateUserRequest} (the operational `users.update` counterpart):
- *  - `role` allows all 4 {@see RolesEnum} values, not just aluno/gestor;
- *  - `org_id` is editable (this is the cross-org "full profile" editor),
- *    required whenever `role` is not `admin` (an admin has no
- *    Organization), forbidden/nullable when it is.
+ * {@see UpdateUserRequest} (the operational `users.update` counterpart),
+ * `role` allows all 4 {@see RolesEnum} values. Org membership and
+ * account status are NOT editable here anymore: under host-based tenancy
+ * each Organization account (`credentials` row) carries its own status,
+ * and memberships are managed on each portal.
  */
 class UpdateUserAdminRequest extends FormRequest
 {
@@ -27,19 +27,10 @@ class UpdateUserAdminRequest extends FormRequest
     }
 
     /**
-     * Forces `org_id` to `null` whenever the submitted `role` is `admin`,
-     * regardless of what the (possibly stale, pre-filled) `org_id` field
-     * carried in the payload. This keeps the platform-wide invariant that
-     * Admins are org-less even when the caller only changes the role
-     * select without clearing the Organização field. Also normalises the CPF
-     * to digits only ({@see Cpf::digits()}).
+     * @see Cpf::digits()
      */
     protected function prepareForValidation(): void
     {
-        if ($this->input('role') === RolesEnum::ADMIN->value) {
-            $this->merge(['org_id' => null]);
-        }
-
         if ($this->has('cpf')) {
             $this->merge(['cpf' => Cpf::digits($this->input('cpf'))]);
         }
@@ -63,18 +54,9 @@ class UpdateUserAdminRequest extends FormRequest
                 RolesEnum::ALUNO->value,
                 RolesEnum::PROFESSOR->value,
             ])],
-            'org_id' => [
-                Rule::requiredIf(fn () => $this->input('role') !== RolesEnum::ADMIN->value),
-                Rule::prohibitedIf(fn () => $this->input('role') === RolesEnum::ADMIN->value),
-                'nullable',
-                'exists:organizations,id',
-            ],
+            // When set, applies to ALL of the person's per-org accounts —
+            // this is the global admin surface.
             'password' => ['nullable', 'string', 'min:8', 'confirmed'],
-            // optional status toggle; when present and
-            // different from the current value, `UserAdminController`
-            // records a `user.status_changed` audit event .
-            'status' => ['sometimes', Rule::in(['active', 'inactive'])],
-            'reason' => ['nullable', 'string', 'max:500'],
         ];
     }
 }

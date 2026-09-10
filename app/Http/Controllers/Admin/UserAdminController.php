@@ -6,6 +6,7 @@ use App\Exceptions\UserHasCreatedInvitationLinksException;
 use App\Exceptions\UserHasIssuedCertificatesException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UpdateUserAdminRequest;
+use App\Models\Credential;
 use App\Models\Organization;
 use App\Models\User;
 use App\Services\AuditService;
@@ -41,11 +42,17 @@ class UserAdminController extends Controller
         Gate::authorize('viewAnyGlobal', User::class);
 
         $users = User::query()
-            ->with(['organization', 'roles'])
+            ->with(['roles', 'credentials.organization'])
             ->when($request->filled('name'), fn (Builder $query) => $query->where('name', 'like', '%'.$request->string('name')->toString().'%'))
             ->when($request->filled('email'), fn (Builder $query) => $query->where('email', 'like', '%'.$request->string('email')->toString().'%'))
-            ->when($request->filled('org_id'), fn (Builder $query) => $query->where('org_id', (int) $request->query('org_id')))
-            ->when($request->filled('status'), fn (Builder $query) => $query->where('status', $request->string('status')->toString()))
+            ->when($request->filled('org_id'), fn (Builder $query) => $query->whereHas(
+                'credentials',
+                fn (Builder $credentials) => $credentials->where('org_id', (int) $request->query('org_id')),
+            ))
+            ->when($request->filled('status'), fn (Builder $query) => $query->whereHas(
+                'credentials',
+                fn (Builder $credentials) => $credentials->where('status', $request->string('status')->toString()),
+            ))
             ->when($request->filled('role'), fn (Builder $query) => $query->whereHas(
                 'roles',
                 fn (Builder $roles) => $roles->where('name', $request->string('role')->toString())
@@ -66,7 +73,7 @@ class UserAdminController extends Controller
     {
         Gate::authorize('viewGlobal', $user);
 
-        $user->load(['organization', 'roles', 'courses', 'certificates.course']);
+        $user->load(['roles', 'courses', 'certificates.course', 'credentials.organization']);
 
         return view('admin.users.show', compact('user'));
     }
@@ -77,10 +84,7 @@ class UserAdminController extends Controller
 
         $user->load('roles');
 
-        return view('admin.users.edit', [
-            'user' => $user,
-            'organizations' => Organization::query()->orderBy('name')->pluck('name', 'id'),
-        ]);
+        return view('admin.users.edit', ['user' => $user]);
     }
 
     public function update(UpdateUserAdminRequest $request, User $user): RedirectResponse
@@ -89,35 +93,29 @@ class UserAdminController extends Controller
         $role = $data['role'];
         unset($data['role']);
 
-        if (empty($data['password'])) {
-            unset($data['password']);
-        } else {
-            $data['password'] = Hash::make($data['password']);
-        }
-
-        if (($data['status'] ?? null) === 'inactive' && $user->id === Auth::id()) {
-            abort(403, 'Você não pode desativar sua própria conta.');
+        if (! empty($data['password'])) {
+            // A senha definida aqui é aplicada a TODAS as contas (uma por
+            // organização) da pessoa — superfície global do admin.
+            $user->credentials()->get()
+                ->each(fn (Credential $credential) => $credential
+                    ->forceFill(['password' => Hash::make($data['password'])])->save());
         }
 
         if ($role !== 'admin' && $user->id === Auth::id()) {
             abort(403, 'Você não pode remover seu próprio papel de administrador.');
         }
 
-        $oldStatus = $user->getOriginal('status');
-
-        $user->update($data);
+        $user->update(collect($data)->only(['name', 'email', 'cpf'])->all());
         $user->syncRoles([$role]);
-
-        $this->auditStatusChangeIfNeeded($request, $user, $oldStatus, $data['status'] ?? $oldStatus);
 
         return redirect()->route('admin.users.index')->with('success', 'Usuário atualizado com sucesso.');
     }
 
     /**
      * Status-only PATCH used by the listing's ativar/desativar row
-     * actions (`admin.users.status`). Kept separate from `update()` so a
-     * single-field toggle from the table doesn't require posting the
-     * entire profile form.
+     * actions (`admin.users.status`). Global surface: flips EVERY
+     * per-organization account of the person — the listing's confirm
+     * message already says the action reaches all Organizations.
      */
     public function updateStatus(Request $request, User $user): RedirectResponse
     {
@@ -132,9 +130,10 @@ class UserAdminController extends Controller
             abort(403, 'Você não pode desativar sua própria conta.');
         }
 
-        $oldStatus = $user->getOriginal('status');
+        $oldStatus = $user->hasActiveAccount() ? 'active' : 'inactive';
 
-        $user->update(['status' => $data['status']]);
+        $user->credentials()->get()
+            ->each(fn (Credential $credential) => $credential->forceFill(['status' => $data['status']])->save());
 
         $this->auditStatusChangeIfNeeded($request, $user, $oldStatus, $data['status']);
 
@@ -166,7 +165,7 @@ class UserAdminController extends Controller
             );
         }
 
-        $oldStatus = $user->status;
+        $oldStatus = $user->hasActiveAccount() ? 'active' : 'inactive';
         $orgId = OrgContext::current()->orgId();
         $userId = $user->id;
 

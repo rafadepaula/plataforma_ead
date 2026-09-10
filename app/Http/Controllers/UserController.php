@@ -3,12 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Enums\Permissions\RolesEnum;
+use App\Exceptions\UserHasCreatedInvitationLinksException;
+use App\Exceptions\UserHasIssuedCertificatesException;
 use App\Http\Controllers\Concerns\ResolvesOrgContext;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
+use App\Models\Credential;
 use App\Models\User;
 use App\Services\AuditService;
-use App\Services\OrgContext;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -36,7 +38,7 @@ class UserController extends Controller
         $orgId = $this->resolveOrgId($request);
 
         $users = User::query()
-            ->where('org_id', $orgId)
+            ->whereHas('credentials', fn ($query) => $query->where('org_id', $orgId))
             ->whereHas('roles', fn ($query) => $query->whereIn('name', [
                 RolesEnum::ALUNO->value,
                 RolesEnum::GESTOR->value,
@@ -61,12 +63,15 @@ class UserController extends Controller
         $role = $data['role'];
         unset($data['role']);
 
-        $data['org_id'] = $orgId;
-        $data['password'] = Hash::make($data['password']);
-        $data['status'] = 'active';
-
-        $user = User::create($data);
+        $user = User::create(collect($data)->only(['name', 'email', 'cpf'])->all());
         $user->assignRole($role);
+
+        Credential::create([
+            'user_id' => $user->id,
+            'org_id' => $orgId,
+            'password' => Hash::make($data['password']),
+            'status' => 'active',
+        ]);
 
         return redirect()->route('users.index')->with('success', 'Usuário criado com sucesso.');
     }
@@ -80,30 +85,36 @@ class UserController extends Controller
 
     public function update(UpdateUserRequest $request, User $user): RedirectResponse
     {
+        $orgId = $this->resolveOrgId($request);
         $data = $request->validated();
         $role = $data['role'];
-        unset($data['role'], $data['org_id']);
+        unset($data['role']);
 
-        if (empty($data['password'])) {
-            unset($data['password']);
-        } else {
-            $data['password'] = Hash::make($data['password']);
+        $credential = $user->credentials()->forOrg($orgId)->first();
+
+        if (! $credential) {
+            abort(404);
         }
 
-        $oldStatus = $user->getOriginal('status');
+        $oldStatus = $credential->getOriginal('status');
 
-        $user->update($data);
+        $user->update(collect($data)->only(['name', 'email', 'cpf'])->all());
         $user->syncRoles([$role]);
 
-        // `user.status_changed` is a critical-action event
-        // distinct from `AuditableTrait`'s generic `user.updated` mutation
-        // row (which already fires on every `update()` call); it is only
-        // recorded when `status` actually changed, not on every edit.
+        if (! empty($data['password'])) {
+            $credential->forceFill(['password' => Hash::make($data['password'])])->save();
+        }
+
+        // `user.status_changed` is a critical-action event distinct from
+        // `AuditableTrait`'s generic mutation row; only recorded when the
+        // account status actually changed.
         if (array_key_exists('status', $data) && $data['status'] !== $oldStatus) {
+            $credential->forceFill(['status' => $data['status']])->save();
+
             try {
                 AuditService::log(
                     event: 'user.status_changed',
-                    orgId: OrgContext::current()->orgId(),
+                    orgId: $orgId,
                     userId: Auth::id(),
                     payload: [
                         'user_id' => $user->id,
@@ -123,6 +134,36 @@ class UserController extends Controller
     public function destroy(Request $request, User $user): RedirectResponse
     {
         Gate::authorize('delete', $user);
+
+        $orgId = $this->resolveOrgId($request);
+        $credential = $user->credentials()->forOrg($orgId)->first();
+
+        if (! $credential) {
+            abort(404);
+        }
+
+        // Removing from THIS portal only: a person holding accounts in
+        // other Organizations keeps living there — person identity is
+        // global, accounts are per-org. The person row is hard-deleted
+        // only when this was their last account (with the same
+        // ON DELETE RESTRICT pre-flights as the global screen).
+        if ($user->credentials()->count() > 1) {
+            $credential->delete();
+
+            return redirect()->route('users.index')->with('success', 'Conta da organização removida com sucesso.');
+        }
+
+        if ($user->certificates()->exists()) {
+            throw new UserHasIssuedCertificatesException(
+                "Usuário #{$user->id} possui certificados emitidos e não pode ser excluído."
+            );
+        }
+
+        if ($user->createdInvitationLinks()->withoutGlobalScope('org')->exists()) {
+            throw new UserHasCreatedInvitationLinksException(
+                "Usuário #{$user->id} criou links de convite e não pode ser excluído."
+            );
+        }
 
         $user->delete();
 

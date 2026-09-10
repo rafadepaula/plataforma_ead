@@ -151,10 +151,10 @@
                         </x-ui.badge>
                     </td>
                     <td data-label="Status">
-                        <x-ui.badge :variant="$user->status === 'active' ? 'success' : 'neutral'"
-                                    data-status="{{ $user->status }}"
+                        <x-ui.badge :variant="$user->hasActiveAccount() ? 'success' : 'neutral'"
+                                    data-status="{{ $user->hasActiveAccount() ? 'active' : 'inactive' }}"
                                     dusk="admin-user-status-{{ $user->id }}">
-                            {{ $user->status === 'active' ? 'Ativo' : 'Inativo' }}
+                            {{ $user->hasActiveAccount() ? 'Ativo' : 'Inativo' }}
                         </x-ui.badge>
                     </td>
                     <td data-label="Criado em" class="ds-tabular-nums">{{ $user->created_at?->format('d/m/Y') }}</td>
@@ -195,7 +195,7 @@
                                             data-bs-target="#confirm-status-{{ $user->id }}"
                                             dusk="toggle-status-admin-user-{{ $user->id }}">
                                         <x-ui.icon name="user" size="16" aria-hidden="true" />
-                                        <span>{{ $user->status === 'active' ? 'Desativar' : 'Ativar' }}</span>
+                                        <span>{{ $user->hasActiveAccount() ? 'Desativar' : 'Ativar' }}</span>
                                     </button>
                                 </div>
                             </div>
@@ -217,7 +217,7 @@
         {{-- Modais de confirmação ficam fora da tabela para evitar recorte pelo wrapper responsivo. --}}
         @foreach($users as $user)
             @php
-                $toggledStatus = $user->status === 'active' ? 'inactive' : 'active';
+                $toggledStatus = $user->hasActiveAccount() ? 'inactive' : 'active';
             @endphp
 
             {{-- Usa o endpoint dedicado `admin.users.status`
@@ -225,15 +225,15 @@
                  (não-PII) viaja na query string da `action`; nome, e-mail
                  e CPF do usuário nunca são expostos em URL/logs. --}}
             <x-ui.confirm-modal id="confirm-status-{{ $user->id }}"
-                                title="{{ $user->status === 'active' ? 'Desativar Usuário' : 'Ativar Usuário' }}"
+                                title="{{ $user->hasActiveAccount() ? 'Desativar Usuário' : 'Ativar Usuário' }}"
                                 :action="route('admin.users.status', [
                                     'user' => $user->id,
                                     'status' => $toggledStatus,
                                 ])"
                                 method="PATCH"
-                                :variant="$user->status === 'active' ? 'danger' : 'primary'"
-                                :confirm-label="$user->status === 'active' ? 'Desativar' : 'Ativar'"
-                                :message="($user->status === 'active' ? 'Desativar' : 'Ativar').' “'.$user->name.'” afeta o acesso dele em TODAS as Organizações às quais está vinculado. Esta ação fica registrada na auditoria.'"
+                                :variant="$user->hasActiveAccount() ? 'danger' : 'primary'"
+                                :confirm-label="$user->hasActiveAccount() ? 'Desativar' : 'Ativar'"
+                                :message="($user->hasActiveAccount() ? 'Desativar' : 'Ativar').' “'.$user->name.'” afeta o acesso dele em TODAS as Organizações às quais está vinculado. Esta ação fica registrada na auditoria.'"
                                 dusk="confirm-status-form-{{ $user->id }}" />
 
             <x-ui.confirm-modal id="confirm-delete-{{ $user->id }}"

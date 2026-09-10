@@ -62,10 +62,10 @@
 
                         <dt class="col-sm-4">Status</dt>
                         <dd class="col-sm-8">
-                            <x-ui.badge :variant="$user->status === 'active' ? 'accent' : 'neutral'"
-                                        data-status="{{ $user->status }}"
+                            <x-ui.badge :variant="$user->hasActiveAccount() ? 'accent' : 'neutral'"
+                                        data-status="{{ $user->hasActiveAccount() ? 'active' : 'inactive' }}"
                                         dusk="admin-user-show-status">
-                                {{ $user->status === 'active' ? 'Ativo' : 'Inativo' }}
+                                {{ $user->hasActiveAccount() ? 'Ativo' : 'Inativo' }}
                             </x-ui.badge>
                         </dd>
 

@@ -6,6 +6,7 @@ namespace App\Models;
 use App\Enums\Permissions\RolesEnum;
 use App\Models\Traits\AuditableTrait;
 use App\Notifications\ResetPasswordNotification;
+use App\Services\OrgContext;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -126,6 +127,31 @@ class User extends Authenticatable
         $credential = $this->credentials()->forOrg($organization?->id)->first();
 
         return $credential;
+    }
+
+    /**
+     * The active/inactive status of this person's account in the request
+     * host's Organization — the org-scoped screens' `$user->status` died
+     * with the `users.status` column. `null` when the person holds no
+     * account here.
+     */
+    protected function accountStatus(): Attribute
+    {
+        return Attribute::get(function (): ?string {
+            return $this->credentialFor(OrgContext::current()->organization)?->status;
+        });
+    }
+
+    /**
+     * Person-level "has any usable account" — the global Admin screen's
+     * coarse on/off signal across ALL portals (an account per org may
+     * differ; see {@see self::accountStatus()} for the per-portal status).
+     */
+    public function hasActiveAccount(): bool
+    {
+        return $this->credentials()
+            ->where('status', 'active')
+            ->exists();
     }
 
     /**

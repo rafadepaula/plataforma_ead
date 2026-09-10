@@ -10,7 +10,6 @@ use App\Http\Requests\UpdateGestorStudentRequest;
 use App\Models\User;
 use App\Rules\Cpf;
 use App\Services\AuditService;
-use App\Services\OrgContext;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -52,7 +51,7 @@ class GestorStudentController extends Controller
         $cpfDigits = Cpf::digits($search);
 
         $students = User::query()
-            ->where('org_id', $orgId)
+            ->whereHas('credentials', fn ($query) => $query->where('org_id', $orgId))
             ->whereHas('roles', fn (Builder $query) => $query->where('name', RolesEnum::ALUNO->value))
             //  "alunos matriculados nos cursos da própria
             // Organização": a live `course_user` row for an own-org Course.
@@ -91,31 +90,38 @@ class GestorStudentController extends Controller
 
     public function update(UpdateGestorStudentRequest $request, User $user): RedirectResponse
     {
+        $orgId = $this->resolveOrgId($request);
         $data = $request->validated();
 
-        if (empty($data['password'])) {
-            unset($data['password']);
-        } else {
-            $data['password'] = Hash::make($data['password']);
+        $credential = $user->credentials()->forOrg($orgId)->first();
+
+        if (! $credential) {
+            abort(404);
         }
 
         // `role` is not part of this screen's validation surface
         // (`UpdateGestorStudentRequest` never accepts it): an Organizador
         // manages Alunos, so the target always keeps its Aluno role.
 
-        $oldStatus = $user->getOriginal('status');
+        $oldStatus = $credential->getOriginal('status');
 
-        $user->update($data);
+        $user->update(collect($data)->only(['name', 'email', 'cpf'])->all());
+
+        if (! empty($data['password'])) {
+            $credential->forceFill(['password' => Hash::make($data['password'])])->save();
+        }
 
         // `user.status_changed` is a critical-action event
         // distinct from `AuditableTrait`'s generic `user.updated` mutation
         // row; it is only recorded when `status` actually changed. Mirrors
         // `UserController::update()`'s audit block.
         if (array_key_exists('status', $data) && $data['status'] !== $oldStatus) {
+            $credential->forceFill(['status' => $data['status']])->save();
+
             try {
                 AuditService::log(
                     event: 'user.status_changed',
-                    orgId: OrgContext::current()->orgId(),
+                    orgId: $orgId,
                     userId: Auth::id(),
                     payload: [
                         'user_id' => $user->id,
@@ -136,11 +142,23 @@ class GestorStudentController extends Controller
     {
         Gate::authorize('deleteStudent', $user);
 
-        //  the same `ON DELETE RESTRICT` pre-flight
-        // guards as the global Admin screen: `users` has no `deleted_at`,
-        // so a hard delete of an Aluno with issued certificates or created
-        // invitation links would otherwise crash with a raw 500
-        // QueryException.
+        $orgId = $this->resolveOrgId($request);
+        $credential = $user->credentials()->forOrg($orgId)->first();
+
+        if (! $credential) {
+            abort(404);
+        }
+
+        // Removing from THIS portal only — the person row is hard-deleted
+        // only when this was their last account, with the same
+        // `ON DELETE RESTRICT` pre-flight guards as the global Admin
+        // screen (raw 500 otherwise: `users` has no `deleted_at`).
+        if ($user->credentials()->count() > 1) {
+            $credential->delete();
+
+            return redirect()->route('gestor.students.index')->with('success', 'Conta da organização removida com sucesso.');
+        }
+
         if ($user->certificates()->exists()) {
             throw new UserHasIssuedCertificatesException(
                 "Aluno #{$user->id} possui certificados emitidos e não pode ser excluído."

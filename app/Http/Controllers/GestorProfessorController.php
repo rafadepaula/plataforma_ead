@@ -8,10 +8,10 @@ use App\Exceptions\UserHasIssuedCertificatesException;
 use App\Http\Controllers\Concerns\ResolvesOrgContext;
 use App\Http\Requests\StoreGestorProfessorRequest;
 use App\Http\Requests\UpdateGestorProfessorRequest;
+use App\Models\Credential;
 use App\Models\User;
 use App\Rules\Cpf;
 use App\Services\AuditService;
-use App\Services\OrgContext;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -53,7 +53,7 @@ class GestorProfessorController extends Controller
         $cpfDigits = Cpf::digits($search);
 
         $professors = User::query()
-            ->where('org_id', $orgId)
+            ->whereHas('credentials', fn ($query) => $query->where('org_id', $orgId))
             ->whereHas('roles', fn (Builder $query) => $query->where('name', RolesEnum::PROFESSOR->value))
             ->withCount('taughtCourses')
             ->when($search !== '', fn (Builder $query): Builder => $query
@@ -82,12 +82,17 @@ class GestorProfessorController extends Controller
         Gate::authorize('create', User::class);
 
         $data = $request->validated();
-        $data['org_id'] = $this->resolveOrgId($request);
-        $data['password'] = Hash::make($data['password']);
-        $data['status'] = 'active';
+        $orgId = $this->resolveOrgId($request);
 
-        $professor = User::create($data);
+        $professor = User::create(collect($data)->only(['name', 'email', 'cpf'])->all());
         $professor->assignRole(RolesEnum::PROFESSOR->value);
+
+        Credential::create([
+            'user_id' => $professor->id,
+            'org_id' => $orgId,
+            'password' => Hash::make($data['password']),
+            'status' => 'active',
+        ]);
 
         return redirect()->route('gestor.professors.index')
             ->with('success', 'Professor cadastrado com sucesso.');
@@ -109,11 +114,12 @@ class GestorProfessorController extends Controller
         $this->abortUnlessProfessor($user);
 
         $data = $request->validated();
+        $orgId = $this->resolveOrgId($request);
 
-        if (empty($data['password'])) {
-            unset($data['password']);
-        } else {
-            $data['password'] = Hash::make($data['password']);
+        $credential = $user->credentials()->forOrg($orgId)->first();
+
+        if (! $credential) {
+            abort(404);
         }
 
         // `role` and `org_id` are not part of this screen's validation
@@ -121,17 +127,23 @@ class GestorProfessorController extends Controller
         // Gestor manages the Docentes of their own Organization and can
         // never change what they are or where they belong.
 
-        $oldStatus = $user->getOriginal('status');
+        $oldStatus = $credential->getOriginal('status');
 
-        $user->update($data);
+        $user->update(collect($data)->only(['name', 'email', 'cpf'])->all());
+
+        if (! empty($data['password'])) {
+            $credential->forceFill(['password' => Hash::make($data['password'])])->save();
+        }
 
         // `user.status_changed` mirrors `GestorStudentController::update()`'s
         // critical-action audit row.
         if (array_key_exists('status', $data) && $data['status'] !== $oldStatus) {
+            $credential->forceFill(['status' => $data['status']])->save();
+
             try {
                 AuditService::log(
                     event: 'user.status_changed',
-                    orgId: OrgContext::current()->orgId(),
+                    orgId: $orgId,
                     userId: Auth::id(),
                     payload: [
                         'user_id' => $user->id,
@@ -154,10 +166,24 @@ class GestorProfessorController extends Controller
         Gate::authorize('delete', $user);
         $this->abortUnlessProfessor($user);
 
-        // Same `ON DELETE RESTRICT` pre-flight guards as the
-        // global Admin screen — defensive today (a Professor never owns
-        // certificates nor creates invitation links), but cheap: without
-        // them a hard delete would crash with a raw 500 QueryException.
+        $orgId = $this->resolveOrgId($request);
+        $credential = $user->credentials()->forOrg($orgId)->first();
+
+        if (! $credential) {
+            abort(404);
+        }
+
+        // Removing from THIS portal only — person row hard-deleted only
+        // when this was the last account (same ON DELETE RESTRICT
+        // pre-flights as the global Admin screen; a Professor never owns
+        // certificates nor creates invitation links today, but cheap).
+        if ($user->credentials()->count() > 1) {
+            $credential->delete();
+
+            return redirect()->route('gestor.professors.index')
+                ->with('success', 'Conta da organização removida com sucesso.');
+        }
+
         if ($user->certificates()->exists()) {
             throw new UserHasIssuedCertificatesException(
                 "Professor #{$user->id} possui certificados emitidos e não pode ser excluído."

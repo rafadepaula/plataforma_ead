@@ -35,7 +35,7 @@
                             label="Status"
                             required
                             :options="['active' => 'Ativo', 'inactive' => 'Inativo']"
-                            :selected="old('status', $user->status)"
+                            :selected="old('status', $user->account_status)"
                             dusk="user-status-select"
                         />
 

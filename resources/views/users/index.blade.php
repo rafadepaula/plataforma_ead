@@ -41,7 +41,7 @@
                     <x-ui.badge variant="accent">{{ \App\Enums\Permissions\RolesEnum::label($user->getRoleNames()->first() ?? '') }}</x-ui.badge>
                 </td>
                 <td data-label="Status">
-                    @if($user->status === 'active')
+                    @if($user->account_status === 'active')
                         <x-ui.badge variant="success" dusk="user-status-{{ $user->id }}">Ativo</x-ui.badge>
                     @else
                         <x-ui.badge variant="neutral" dusk="user-status-{{ $user->id }}">Inativo</x-ui.badge>

@@ -3,26 +3,33 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\PasswordUpdateRequest;
+use App\Services\OrgContext;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 /**
- * self-service password change. `Auth::logoutOtherDevices()`
- * is called before the password is rotated : it re-hashes and saves the
- * CURRENT (pre-rotation) password while invalidating every other session's
- * remember-token/session-password pairing, so a hijacked session does not
- * survive the change. `SESSION_DRIVER=database` is required for this to work.
+ * self-service password change, per-portal: the new password applies to
+ * the `credentials` account of the request host's Organization only — the
+ * person's accounts in other portals keep their own passwords. Rotating
+ * the account's `remember_token` invalidates every remember-me cookie
+ * issued by this portal (the `logoutOtherDevices` equivalent for
+ * org-scoped credentials, where `users.password` no longer exists).
  */
 class PasswordController extends Controller
 {
     public function update(PasswordUpdateRequest $request): RedirectResponse
     {
-        Auth::logoutOtherDevices($request->string('current_password')->toString());
+        $credential = $request->user()->credentialFor(OrgContext::current()->organization);
 
-        $request->user()->update([
+        if (! $credential) {
+            abort(403, 'Conta não encontrada neste portal.');
+        }
+
+        $credential->forceFill([
             'password' => Hash::make($request->string('password')->toString()),
-        ]);
+            'remember_token' => Str::random(60),
+        ])->save();
 
         return redirect()->route('profile.edit')->with('success', 'Senha alterada com sucesso.');
     }
