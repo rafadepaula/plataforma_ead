@@ -553,9 +553,9 @@ Estratégia de fallout: rodar `vendor/bin/sail artisan test --compact`, mapear f
 
 Suítes novas: `HostResolutionTest`, `HostScopedLoginTest`, `PasswordResetHostTest`, `LandingTest`, `StateZeroTest`, `InactiveOrgTest`, `CertificateHostScopeTest`, `CsvCredentialsTest` (Task 3/5/7/8/11 já criam; aqui consolidar gaps).
 
-- [ ] Helpers + fallout completo + suítes novas.
-- [ ] `vendor/bin/sail artisan test --compact` verde; `vendor/bin/sail bin pint --dirty --format=agent`.
-- [ ] Commit(s) `test: adapta suíte ao paradigma host-based`
+- [x] Helpers + fallout completo + suítes novas.
+- [x] `vendor/bin/sail artisan test --compact` verde; `vendor/bin/sail bin pint --dirty --format=agent`.
+- [x] Commit(s) `test: adapta suíte ao paradigma host-based`
 
 ## Self-Review
 
