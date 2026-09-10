@@ -23,9 +23,9 @@ class ModuleReorderTest extends DuskTestCase
     public function test_reordering_modules_persists_after_reload(): void
     {
         $org = Organization::factory()->create();
-        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor = User::factory()->inOrg($org->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $first = Module::factory()->for($course)->create(['title' => 'Módulo Um', 'order_index' => 0]);
         $second = Module::factory()->for($course)->create(['title' => 'Módulo Dois', 'order_index' => 1]);
 
@@ -70,9 +70,9 @@ class ModuleReorderTest extends DuskTestCase
     public function test_move_down_button_persists_after_reload(): void
     {
         $org = Organization::factory()->create();
-        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor = User::factory()->inOrg($org->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $first = Module::factory()->for($course)->create(['title' => 'Módulo Um', 'order_index' => 0]);
         $second = Module::factory()->for($course)->create(['title' => 'Módulo Dois', 'order_index' => 1]);
         $third = Module::factory()->for($course)->create(['title' => 'Módulo Três', 'order_index' => 2]);

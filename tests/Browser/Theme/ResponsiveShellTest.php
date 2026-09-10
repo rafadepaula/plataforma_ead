@@ -30,7 +30,7 @@ class ResponsiveShellTest extends DuskTestCase
     public function test_desktop_shell_lifecycle(): void
     {
         $org = Organization::factory()->create(['name' => 'Conselho Alpha']);
-        $gestor = User::factory()->create(['org_id' => $org->id, 'name' => 'Gestor Alpha']);
+        $gestor = User::factory()->inOrg($org->id)->create(['name' => 'Gestor Alpha']);
         $gestor->assignRole(RolesEnum::GESTOR->value);
 
         $notification = $this->createNotification($gestor, 'Bem-vindo ao sistema');
@@ -49,7 +49,7 @@ class ResponsiveShellTest extends DuskTestCase
     public function test_mobile_shell_and_drawer_lifecycle(): void
     {
         $org = Organization::factory()->create(['name' => 'Conselho Mobile']);
-        $gestor = User::factory()->create(['org_id' => $org->id, 'name' => 'Gestor Mobile']);
+        $gestor = User::factory()->inOrg($org->id)->create(['name' => 'Gestor Mobile']);
         $gestor->assignRole(RolesEnum::GESTOR->value);
 
         $this->browse(function (Browser $browser) use ($gestor): void {

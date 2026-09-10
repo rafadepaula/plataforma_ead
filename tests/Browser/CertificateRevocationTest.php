@@ -44,11 +44,11 @@ class CertificateRevocationTest extends DuskTestCase
     public function test_gestor_certificate_revocation_lifecycle(): void
     {
         $org = Organization::factory()->create();
-        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor = User::factory()->inOrg($org->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
 
-        $course = Course::factory()->create(['org_id' => $org->id]);
-        $student = User::factory()->create(['org_id' => null]);
+        $course = Course::factory()->inOrg($org->id)->create();
+        $student = User::factory()->inOrg($course->org_id)->create();
         $certificate = $this->makeCertificate($course, $student);
 
         $this->browse(function (Browser $browser) use ($gestor, $course, $certificate): void {

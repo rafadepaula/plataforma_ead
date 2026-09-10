@@ -29,9 +29,9 @@ class MultiTenantCsvExportTest extends TestCase
         $courseA = Course::factory()->for($orgA)->create();
         $courseB = Course::factory()->for($orgB)->create();
 
-        $studentA = User::factory()->create(['org_id' => $orgA->id]);
+        $studentA = User::factory()->inOrg($orgA->id)->create();
         $studentA->assignRole('aluno');
-        $studentB = User::factory()->create(['org_id' => $orgB->id]);
+        $studentB = User::factory()->inOrg($orgB->id)->create();
         $studentB->assignRole('aluno');
 
         $courseA->students()->attach($studentA->id, [
@@ -67,9 +67,9 @@ class MultiTenantCsvExportTest extends TestCase
         $courseA = Course::factory()->for($orgA)->create();
         $courseB = Course::factory()->for($orgB)->create();
 
-        $studentA = User::factory()->create(['org_id' => $orgA->id]);
+        $studentA = User::factory()->inOrg($orgA->id)->create();
         $studentA->assignRole('aluno');
-        $studentB = User::factory()->create(['org_id' => $orgB->id]);
+        $studentB = User::factory()->inOrg($orgB->id)->create();
         $studentB->assignRole('aluno');
 
         $courseA->students()->attach($studentA->id, [
@@ -103,9 +103,9 @@ class MultiTenantCsvExportTest extends TestCase
         $courseA = Course::factory()->for($orgA)->create();
         $courseB = Course::factory()->for($orgB)->create();
 
-        $studentA = User::factory()->create(['org_id' => $orgA->id]);
+        $studentA = User::factory()->inOrg($orgA->id)->create();
         $studentA->assignRole('aluno');
-        $studentB = User::factory()->create(['org_id' => $orgB->id]);
+        $studentB = User::factory()->inOrg($orgB->id)->create();
         $studentB->assignRole('aluno');
 
         $courseA->students()->attach($studentA->id, [

@@ -21,7 +21,7 @@ class QuizQuestionTest extends TestCase
 {
     public function test_it_has_an_answers_relationship(): void
     {
-        $course = Course::factory()->create(['org_id' => Organization::factory()->create()->id]);
+        $course = Course::factory()->inOrg(Organization::factory()->create()->id)->create();
         $lesson = Lesson::factory()->for(Module::factory()->for($course))->create(['type' => 'quiz']);
         $quiz = Quiz::factory()->for($lesson)->create();
         $question = QuizQuestion::factory()->for($quiz)->create();

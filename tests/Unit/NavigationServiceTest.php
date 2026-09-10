@@ -84,7 +84,7 @@ class NavigationServiceTest extends TestCase
 
     public function test_admin_impersonating_an_org_sees_every_administration_item_including_organizations(): void
     {
-        $admin = User::factory()->create(['org_id' => null]);
+        $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole(RolesEnum::ADMIN->value);
         //  `users` is the one item that additionally requires a
         // resolvable tenant context, so impersonate an Organization here
@@ -113,7 +113,7 @@ class NavigationServiceTest extends TestCase
      */
     public function test_admin_without_an_active_org_context_does_not_see_the_users_item(): void
     {
-        $admin = User::factory()->create(['org_id' => null]);
+        $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole(RolesEnum::ADMIN->value);
 
         $keys = $this->keysFor($admin);
@@ -133,7 +133,7 @@ class NavigationServiceTest extends TestCase
      */
     public function test_admin_without_impersonation_sees_only_the_system_administration_items(): void
     {
-        $admin = User::factory()->create(['org_id' => null]);
+        $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole(RolesEnum::ADMIN->value);
 
         $this->assertSame(['Administração'], $this->sectionTitlesFor($admin));
@@ -147,7 +147,7 @@ class NavigationServiceTest extends TestCase
 
     public function test_admin_without_impersonation_has_no_impersonate_section(): void
     {
-        $admin = User::factory()->create(['org_id' => null]);
+        $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole(RolesEnum::ADMIN->value);
 
         $this->assertNotContains('Impersonate', $this->sectionTitlesFor($admin));
@@ -165,7 +165,7 @@ class NavigationServiceTest extends TestCase
      */
     public function test_admin_impersonating_an_org_gets_the_operational_items_in_an_impersonate_section(): void
     {
-        $admin = User::factory()->create(['org_id' => null]);
+        $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole(RolesEnum::ADMIN->value);
         session(['active_org_id' => Organization::factory()->create()->id]);
 
@@ -184,7 +184,7 @@ class NavigationServiceTest extends TestCase
 
     public function test_impersonate_section_is_ordered_right_after_administracao(): void
     {
-        $admin = User::factory()->create(['org_id' => null]);
+        $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole(RolesEnum::ADMIN->value);
         session(['active_org_id' => Organization::factory()->create()->id]);
 
@@ -200,10 +200,11 @@ class NavigationServiceTest extends TestCase
     {
         $org = Organization::factory()->create();
         $course = Course::factory()->for($org)->create();
-        $admin = User::factory()->create(['org_id' => null]);
+        $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole(RolesEnum::ADMIN->value);
         $this->actingAs($admin);
         session(['active_org_id' => $org->id]);
+        $this->withOrgContext($org);
 
         $quiz = $this->createQuizForCourse($course);
         QuizAttempt::factory()->for($quiz)->create([
@@ -227,7 +228,7 @@ class NavigationServiceTest extends TestCase
     public function test_gestor_keeps_the_operational_items_in_administracao_and_never_sees_impersonate(): void
     {
         $org = Organization::factory()->create();
-        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor = User::factory()->inOrg($org->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
 
         $this->assertNotContains('Impersonate', $this->sectionTitlesFor($gestor));
@@ -246,7 +247,7 @@ class NavigationServiceTest extends TestCase
     public function test_a_stale_active_org_id_never_creates_an_impersonate_section_for_a_gestor(): void
     {
         $org = Organization::factory()->create();
-        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor = User::factory()->inOrg($org->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
         session(['active_org_id' => $org->id]);
 
@@ -259,14 +260,16 @@ class NavigationServiceTest extends TestCase
      * is not impersonating anything: it operates in its own tenant, so
      * the operational items stay in "Administração".
      */
-    public function test_admin_with_an_own_org_id_keeps_the_operational_items_in_administracao(): void
+    public function test_admin_with_an_own_org_credential_but_no_impersonation_is_global(): void
     {
+        // com credencial por org, o Admin só opera na própria tenant via
+        // impersonação; sem ela o menu é o global de sistema
         $org = Organization::factory()->create();
-        $admin = User::factory()->create(['org_id' => $org->id]);
+        $admin = User::factory()->inOrg($org->id)->create();
         $admin->assignRole(RolesEnum::ADMIN->value);
 
         $this->assertNotContains('Impersonate', $this->sectionTitlesFor($admin));
-        $this->assertContains('courses', $this->keysInSection($admin, 'Administração'));
+        $this->assertNotContains('courses', $this->keysInSection($admin, 'Administração'));
     }
 
     /**
@@ -276,7 +279,7 @@ class NavigationServiceTest extends TestCase
      */
     public function test_admin_never_sees_the_meus_cursos_section(): void
     {
-        $admin = User::factory()->create(['org_id' => null]);
+        $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole(RolesEnum::ADMIN->value);
 
         $this->assertNotContains('Meus Cursos', $this->sectionTitlesFor($admin));
@@ -298,12 +301,12 @@ class NavigationServiceTest extends TestCase
     {
         $org = Organization::factory()->create();
 
-        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor = User::factory()->inOrg($org->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
         $this->assertNotContains('Meus Cursos', $this->sectionTitlesFor($gestor));
         $this->assertNotContains('student-courses', $this->keysFor($gestor));
 
-        $aluno = User::factory()->create(['org_id' => $org->id]);
+        $aluno = User::factory()->inOrg($org->id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
         $this->assertContains('Meus Cursos', $this->sectionTitlesFor($aluno));
         $this->assertContains('student-courses', $this->keysInSection($aluno, 'Meus Cursos'));
@@ -312,7 +315,7 @@ class NavigationServiceTest extends TestCase
     public function test_admin_impersonating_an_org_sees_the_users_item_again(): void
     {
         $org = Organization::factory()->create();
-        $admin = User::factory()->create(['org_id' => null]);
+        $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole(RolesEnum::ADMIN->value);
 
         session(['active_org_id' => $org->id]);
@@ -323,7 +326,7 @@ class NavigationServiceTest extends TestCase
     public function test_gestor_never_sees_the_admin_exclusive_items_but_sees_the_students_item(): void
     {
         $org = Organization::factory()->create();
-        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor = User::factory()->inOrg($org->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
 
         $keys = $this->keysFor($gestor);
@@ -344,7 +347,7 @@ class NavigationServiceTest extends TestCase
     public function test_aluno_sees_no_administration_block_at_all(): void
     {
         $org = Organization::factory()->create();
-        $aluno = User::factory()->create(['org_id' => $org->id]);
+        $aluno = User::factory()->inOrg($org->id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
 
         $sections = $this->service->build($aluno);
@@ -364,7 +367,7 @@ class NavigationServiceTest extends TestCase
         // back — the absence is structural, not enrollment-dependent.
         $org = Organization::factory()->create();
         $course = Course::factory()->for($org)->create();
-        $aluno = User::factory()->create(['org_id' => $org->id]);
+        $aluno = User::factory()->inOrg($org->id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
         $aluno->courses()->attach($course->id, [
             'status' => 'active',
@@ -391,7 +394,7 @@ class NavigationServiceTest extends TestCase
     public function test_aluno_with_active_enrollments_gets_alphabetical_course_blocks(): void
     {
         $org = Organization::factory()->create();
-        $aluno = User::factory()->create(['org_id' => $org->id]);
+        $aluno = User::factory()->inOrg($org->id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
 
         $zulu = Course::factory()->for($org)->create(['title' => 'Zulu']);
@@ -427,7 +430,7 @@ class NavigationServiceTest extends TestCase
     public function test_course_blocks_carry_counts_forum_and_certificate_payload(): void
     {
         $org = Organization::factory()->create();
-        $aluno = User::factory()->create(['org_id' => $org->id]);
+        $aluno = User::factory()->inOrg($org->id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
 
         $certified = Course::factory()->for($org)->create(['title' => 'A Certificado']);
@@ -483,7 +486,7 @@ class NavigationServiceTest extends TestCase
     public function test_aluno_without_enrollments_gets_only_the_ver_todos_child(): void
     {
         $org = Organization::factory()->create();
-        $aluno = User::factory()->create(['org_id' => $org->id]);
+        $aluno = User::factory()->inOrg($org->id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
 
         $children = $this->findItem($aluno, 'student-courses')['children'];
@@ -504,7 +507,7 @@ class NavigationServiceTest extends TestCase
     public function test_completed_enrollments_render_blocks_and_cancelled_ones_never_do(): void
     {
         $org = Organization::factory()->create();
-        $aluno = User::factory()->create(['org_id' => $org->id]);
+        $aluno = User::factory()->inOrg($org->id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
 
         $completed = Course::factory()->for($org)->create(['title' => 'A Concluído']);
@@ -531,7 +534,7 @@ class NavigationServiceTest extends TestCase
     public function test_course_children_are_capped_at_ten_plus_ver_todos(): void
     {
         $org = Organization::factory()->create();
-        $aluno = User::factory()->create(['org_id' => $org->id]);
+        $aluno = User::factory()->inOrg($org->id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
 
         for ($i = 12; $i >= 1; $i--) {
@@ -562,7 +565,7 @@ class NavigationServiceTest extends TestCase
         $ownCourse = Course::factory()->for($orgA)->create(['title' => 'Meu Curso']);
         Course::factory()->for($orgB)->create(['title' => 'Curso Alheio']);
 
-        $aluno = User::factory()->create(['org_id' => $orgA->id]);
+        $aluno = User::factory()->inOrg($orgA->id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
         $aluno->courses()->attach($ownCourse->id, ['status' => 'active', 'enrolled_at' => now()]);
 
@@ -582,7 +585,7 @@ class NavigationServiceTest extends TestCase
     public function test_child_is_active_when_the_request_resolves_the_same_course(): void
     {
         $org = Organization::factory()->create();
-        $aluno = User::factory()->create(['org_id' => $org->id]);
+        $aluno = User::factory()->inOrg($org->id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
 
         $alfa = Course::factory()->for($org)->create(['title' => 'Alfa']);
@@ -618,7 +621,7 @@ class NavigationServiceTest extends TestCase
     public function test_child_is_active_falls_back_to_the_bound_course_parameter(): void
     {
         $org = Organization::factory()->create();
-        $aluno = User::factory()->create(['org_id' => $org->id]);
+        $aluno = User::factory()->inOrg($org->id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
 
         $alfa = Course::factory()->for($org)->create(['title' => 'Alfa']);
@@ -648,7 +651,7 @@ class NavigationServiceTest extends TestCase
     public function test_child_is_active_on_the_course_forum_route_too(): void
     {
         $org = Organization::factory()->create();
-        $aluno = User::factory()->create(['org_id' => $org->id]);
+        $aluno = User::factory()->inOrg($org->id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
 
         $alfa = Course::factory()->for($org)->create(['title' => 'Alfa']);
@@ -681,7 +684,7 @@ class NavigationServiceTest extends TestCase
     public function test_exactly_ten_courses_render_ten_blocks_plus_ver_todos(): void
     {
         $org = Organization::factory()->create();
-        $aluno = User::factory()->create(['org_id' => $org->id]);
+        $aluno = User::factory()->inOrg($org->id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
 
         for ($i = 10; $i >= 1; $i--) {
@@ -699,7 +702,7 @@ class NavigationServiceTest extends TestCase
 
     public function test_admin_audit_logs_route_resolves_to_admin_prefixed_route(): void
     {
-        $admin = User::factory()->create(['org_id' => null]);
+        $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole(RolesEnum::ADMIN->value);
 
         $auditItem = $this->findItem($admin, 'audit-logs');
@@ -714,7 +717,7 @@ class NavigationServiceTest extends TestCase
         // `role:admin` middleware (the legacy Gestor-prefixed routes were
         // removed), so the item is filtered out for a Gestor entirely.
         $org = Organization::factory()->create();
-        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor = User::factory()->inOrg($org->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
 
         $keys = $this->keysFor($gestor);
@@ -726,9 +729,10 @@ class NavigationServiceTest extends TestCase
     {
         $org = Organization::factory()->create();
         $course = Course::factory()->for($org)->create();
-        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor = User::factory()->inOrg($org->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
         $this->actingAs($gestor);
+        $this->withOrgContext($org);
 
         $quiz = $this->createQuizForCourse($course);
         QuizAttempt::factory()->for($quiz)->create([
@@ -748,7 +752,7 @@ class NavigationServiceTest extends TestCase
     public function test_zero_pending_count_renders_no_badge(): void
     {
         $org = Organization::factory()->create();
-        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor = User::factory()->inOrg($org->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
 
         $badgeItem = $this->findItem($gestor, 'quiz-attempts');
@@ -760,13 +764,14 @@ class NavigationServiceTest extends TestCase
     {
         $org = Organization::factory()->create();
         $course = Course::factory()->for($org)->create();
-        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor = User::factory()->inOrg($org->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
         $this->actingAs($gestor);
+        $this->withOrgContext($org);
 
-        $topicA = ForumTopic::factory()->for($course)->for($gestor, 'user')->create(['org_id' => $org->id]);
-        $topicB = ForumTopic::factory()->for($course)->for($gestor, 'user')->create(['org_id' => $org->id]);
-        $topicC = ForumTopic::factory()->for($course)->for($gestor, 'user')->create(['org_id' => $org->id]);
+        $topicA = ForumTopic::factory()->for($course)->for($gestor, 'user')->inOrg($org->id)->create();
+        $topicB = ForumTopic::factory()->for($course)->for($gestor, 'user')->inOrg($org->id)->create();
+        $topicC = ForumTopic::factory()->for($course)->for($gestor, 'user')->inOrg($org->id)->create();
 
         ForumReport::factory()->create([
             'postable_type' => ForumTopic::class,
@@ -802,12 +807,13 @@ class NavigationServiceTest extends TestCase
         $courseA = Course::factory()->for($orgA)->create();
         $courseB = Course::factory()->for($orgB)->create();
 
-        $gestorA = User::factory()->create(['org_id' => $orgA->id]);
+        $gestorA = User::factory()->inOrg($orgA->id)->create();
         $gestorA->assignRole(RolesEnum::GESTOR->value);
         $this->actingAs($gestorA);
+        $this->withOrgContext($orgA);
 
-        $ownTopic = ForumTopic::factory()->for($courseA)->for($gestorA, 'user')->create(['org_id' => $orgA->id]);
-        $foreignTopic = ForumTopic::factory()->for($courseB)->for($gestorA, 'user')->create(['org_id' => $orgB->id]);
+        $ownTopic = ForumTopic::factory()->for($courseA)->for($gestorA, 'user')->inOrg($orgA->id)->create();
+        $foreignTopic = ForumTopic::factory()->for($courseB)->for($gestorA, 'user')->inOrg($orgB->id)->create();
 
         ForumReport::factory()->create([
             'postable_type' => ForumTopic::class,
@@ -832,7 +838,7 @@ class NavigationServiceTest extends TestCase
         $org = Organization::factory()->create();
         // The `students` item is the Gestor-exclusive people-management
         // entry ( `users` is Admin-only now).
-        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor = User::factory()->inOrg($org->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
 
         // `routeIs()` reads `request()->route()->named(...)`. In a unit
@@ -867,7 +873,7 @@ class NavigationServiceTest extends TestCase
     {
         $org = Organization::factory()->create();
         $course = Course::factory()->for($org)->create();
-        $admin = User::factory()->create(['org_id' => null]);
+        $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole(RolesEnum::ADMIN->value);
         $admin->courses()->attach($course->id, ['status' => 'active', 'enrolled_at' => now()]);
 

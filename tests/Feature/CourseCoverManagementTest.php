@@ -38,7 +38,7 @@ class CourseCoverManagementTest extends TestCase
     private function makeAluno(): User
     {
         /** @var User $aluno */
-        $aluno = User::factory()->create(['org_id' => null]);
+        $aluno = User::factory()->inOrg(Organization::factory()->create())->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
 
         return $aluno;
@@ -49,7 +49,7 @@ class CourseCoverManagementTest extends TestCase
         Storage::fake('public');
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
 
         $response = $this->put(route('courses.update', $course), $this->validAttributes([
             'cover' => UploadedFile::fake()->image('capa.png'),
@@ -70,7 +70,7 @@ class CourseCoverManagementTest extends TestCase
         Storage::fake('public');
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
 
         $this->put(route('courses.update', $course), $this->validAttributes([
             'cover' => UploadedFile::fake()->image('capa-antiga.png'),
@@ -97,7 +97,7 @@ class CourseCoverManagementTest extends TestCase
         Storage::fake('public');
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
 
         $this->put(route('courses.update', $course), $this->validAttributes([
             'cover' => UploadedFile::fake()->image('capa.png'),
@@ -121,7 +121,7 @@ class CourseCoverManagementTest extends TestCase
         Storage::fake('public');
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
 
         $this->put(route('courses.update', $course), $this->validAttributes([
             'cover' => UploadedFile::fake()->image('capa.png'),
@@ -142,7 +142,7 @@ class CourseCoverManagementTest extends TestCase
         Storage::fake('public');
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
 
         $this->from(route('courses.edit', $course))
             ->put(route('courses.update', $course), $this->validAttributes([
@@ -160,7 +160,7 @@ class CourseCoverManagementTest extends TestCase
         Storage::fake('public');
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
 
         $this->from(route('courses.edit', $course))
             ->put(route('courses.update', $course), $this->validAttributes([
@@ -177,7 +177,7 @@ class CourseCoverManagementTest extends TestCase
     {
         Storage::fake('public');
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $this->actingAsOrgUser($org, RolesEnum::ALUNO->value);
 
         $this->put(route('courses.update', $course), $this->validAttributes([
@@ -192,7 +192,7 @@ class CourseCoverManagementTest extends TestCase
     {
         Storage::fake('public');
         $otherOrg = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $otherOrg->id]);
+        $course = Course::factory()->inOrg($otherOrg->id)->create();
         $this->actingAsOrgUser(role: RolesEnum::GESTOR->value);
 
         // OrgScope hides the row entirely for a Gestor of a different org,
@@ -209,7 +209,7 @@ class CourseCoverManagementTest extends TestCase
     {
         Storage::fake('public');
         $orgB = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $orgB->id]);
+        $course = Course::factory()->inOrg($orgB->id)->create();
         $this->actingAsAdmin($orgB);
 
         $this->put(route('courses.update', $course), $this->validAttributes([
@@ -226,7 +226,7 @@ class CourseCoverManagementTest extends TestCase
     public function test_student_card_row_exposes_the_cover_url(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $course->forceFill([
             'cover_path' => "orgs/{$org->id}/courses/{$course->id}/cover/capa.png",
         ])->save();
@@ -249,7 +249,7 @@ class CourseCoverManagementTest extends TestCase
     public function test_student_card_row_cover_url_stays_null_without_a_cover(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
 
         $aluno = $this->makeAluno();
         $aluno->courses()->attach($course->id, ['status' => 'active', 'enrolled_at' => now()]);

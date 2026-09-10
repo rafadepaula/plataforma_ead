@@ -35,14 +35,15 @@ class ProcessSmartInvitationActionTest extends TestCase
         return InvitationLink::factory()->create(array_merge([
             'org_id' => $org->id,
             'course_id' => $course->id,
-            'created_by' => User::factory()->create(['org_id' => $org->id])->id,
+            'created_by' => User::factory()->inOrg($org->id)->create()->id,
         ], $attributes));
     }
 
     public function test_it_creates_a_new_user_and_enrolls_them_when_the_email_is_new(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $this->withOrgContext($org);
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $invitationLink = $this->makeInvitationLink($org, $course);
 
         $user = $this->action->execute($invitationLink->token, [
@@ -59,7 +60,7 @@ class ProcessSmartInvitationActionTest extends TestCase
             'course_id' => $course->id,
             'status' => 'active',
         ]);
-        $this->assertSame($org->id, $user->fresh()->org_id);
+        $this->assertNotNull($user->fresh()->credentialFor($org));
         $this->assertTrue(Auth::check());
         $this->assertSame($user->id, Auth::id());
         $this->assertSame(1, $invitationLink->fresh()->current_uses);
@@ -68,11 +69,11 @@ class ProcessSmartInvitationActionTest extends TestCase
     public function test_it_authenticates_an_existing_user_with_the_correct_password_and_enrolls_them(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $this->withOrgContext($org);
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $invitationLink = $this->makeInvitationLink($org, $course);
-        $existing = User::factory()->aluno()->create([
+        $existing = User::factory()->aluno()->inOrg($org)->withPassword('senha-correta')->create([
             'email' => 'existente@example.com',
-            'password' => 'senha-correta',
         ]);
 
         $user = $this->action->execute($invitationLink->token, [
@@ -93,11 +94,11 @@ class ProcessSmartInvitationActionTest extends TestCase
     public function test_it_rejects_an_existing_user_with_the_wrong_password_without_creating_an_account(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $this->withOrgContext($org);
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $invitationLink = $this->makeInvitationLink($org, $course);
-        User::factory()->aluno()->create([
+        User::factory()->aluno()->inOrg($org)->withPassword('senha-correta')->create([
             'email' => 'existente@example.com',
-            'password' => 'senha-correta',
         ]);
 
         $this->expectException(ValidationException::class);
@@ -117,7 +118,8 @@ class ProcessSmartInvitationActionTest extends TestCase
     public function test_it_rejects_an_expired_invitation_link(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $this->withOrgContext($org);
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $invitationLink = $this->makeInvitationLink($org, $course);
         $invitationLink->forceFill(['expires_at' => now()->subDay()])->save();
 
@@ -137,7 +139,8 @@ class ProcessSmartInvitationActionTest extends TestCase
     public function test_it_rejects_an_exhausted_invitation_link(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $this->withOrgContext($org);
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $invitationLink = $this->makeInvitationLink($org, $course, [
             'max_uses' => 1,
             'current_uses' => 1,
@@ -159,7 +162,8 @@ class ProcessSmartInvitationActionTest extends TestCase
     public function test_it_rejects_a_revoked_invitation_link(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $this->withOrgContext($org);
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $invitationLink = $this->makeInvitationLink($org, $course, [
             'revoked_at' => now(),
         ]);
@@ -194,18 +198,17 @@ class ProcessSmartInvitationActionTest extends TestCase
 
     /**
      *  a student already registered/enrolled under Org A must not
-     * get a second `users` row nor have their original `org_id`
-     * overwritten when they use an Org B course's invitation link; they
-     * simply gain a second `course_user` row for Org B's course.
+     * get a second `users` row nor have their original Org A account
+     * touched when they use an Org B course's invitation link; they
+     * gain a new Org B account plus a `course_user` row for Org B's course.
      */
-    public function test_it_does_not_duplicate_the_account_or_overwrite_org_id_across_organizations(): void
+    public function test_it_does_not_duplicate_the_account_or_touch_the_original_orgs_account_across_organizations(): void
     {
         $orgA = Organization::factory()->create();
-        $courseA = Course::factory()->create(['org_id' => $orgA->id, 'is_published' => true]);
-        $student = User::factory()->aluno()->create([
-            'org_id' => $orgA->id,
+        $this->withOrgContext($orgA);
+        $courseA = Course::factory()->inOrg($orgA->id)->create(['is_published' => true]);
+        $student = User::factory()->aluno()->inOrg($orgA)->withPassword('senha-correta')->create([
             'email' => 'multi-org@example.com',
-            'password' => 'senha-correta',
         ]);
         DB::table('course_user')->insert([
             'user_id' => $student->id,
@@ -218,7 +221,8 @@ class ProcessSmartInvitationActionTest extends TestCase
         ]);
 
         $orgB = Organization::factory()->create();
-        $courseB = Course::factory()->create(['org_id' => $orgB->id, 'is_published' => true]);
+        $this->withOrgContext($orgB);
+        $courseB = Course::factory()->inOrg($orgB->id)->create(['is_published' => true]);
         $invitationLink = $this->makeInvitationLink($orgB, $courseB);
 
         $user = $this->action->execute($invitationLink->token, [
@@ -228,7 +232,8 @@ class ProcessSmartInvitationActionTest extends TestCase
 
         $this->assertSame($student->id, $user->id);
         $this->assertSame(1, User::where('email', 'multi-org@example.com')->count());
-        $this->assertSame($orgA->id, $user->fresh()->org_id, 'org_id must stay tied to the original Org.');
+        $this->assertNotNull($user->fresh()->credentialFor($orgA), 'the original portal account must stay put.');
+        $this->assertNotNull($user->fresh()->credentialFor($orgB), 'a second portal account is created for the new org.');
         $this->assertDatabaseHas('course_user', [
             'user_id' => $student->id,
             'course_id' => $courseA->id,
@@ -249,11 +254,10 @@ class ProcessSmartInvitationActionTest extends TestCase
     public function test_it_reactivates_a_previously_cancelled_enrollment(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
-        $student = User::factory()->aluno()->create([
-            'org_id' => $org->id,
+        $this->withOrgContext($org);
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
+        $student = User::factory()->aluno()->inOrg($org)->withPassword('senha-correta')->create([
             'email' => 'cancelado@example.com',
-            'password' => 'senha-correta',
         ]);
         DB::table('course_user')->insert([
             'user_id' => $student->id,
@@ -288,7 +292,8 @@ class ProcessSmartInvitationActionTest extends TestCase
     public function test_it_prevents_over_consumption_when_only_one_use_remains(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $this->withOrgContext($org);
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $invitationLink = $this->makeInvitationLink($org, $course, [
             'max_uses' => 1,
             'current_uses' => 0,
@@ -324,7 +329,8 @@ class ProcessSmartInvitationActionTest extends TestCase
     public function test_it_rejects_a_link_whose_course_is_unpublished(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => false]);
+        $this->withOrgContext($org);
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => false]);
         $invitationLink = $this->makeInvitationLink($org, $course);
 
         try {
@@ -343,7 +349,8 @@ class ProcessSmartInvitationActionTest extends TestCase
     public function test_it_rejects_a_link_whose_course_is_soft_deleted(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $this->withOrgContext($org);
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $invitationLink = $this->makeInvitationLink($org, $course);
         $course->delete();
 
@@ -366,12 +373,11 @@ class ProcessSmartInvitationActionTest extends TestCase
     public function test_it_rejects_an_existing_staff_account_from_the_self_service_flow(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $this->withOrgContext($org);
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $invitationLink = $this->makeInvitationLink($org, $course);
-        $gestor = User::factory()->create([
-            'org_id' => $org->id,
+        $gestor = User::factory()->inOrg($org)->withPassword('senha-correta')->create([
             'email' => 'gestor@example.com',
-            'password' => 'senha-correta',
         ]);
         $gestor->assignRole(RolesEnum::GESTOR->value);
 

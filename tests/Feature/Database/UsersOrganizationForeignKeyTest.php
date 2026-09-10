@@ -18,7 +18,7 @@ class UsersOrganizationForeignKeyTest extends TestCase
     public function test_hard_deleting_an_organization_with_users_is_blocked_by_the_database(): void
     {
         $organization = Organization::factory()->create();
-        User::factory()->create(['org_id' => $organization->id]);
+        User::factory()->inOrg($organization->id)->create();
 
         $this->expectException(QueryException::class);
 
@@ -37,7 +37,7 @@ class UsersOrganizationForeignKeyTest extends TestCase
     public function test_an_organization_with_existing_users_can_still_be_soft_deleted(): void
     {
         $organization = Organization::factory()->create();
-        User::factory()->create(['org_id' => $organization->id]);
+        User::factory()->inOrg($organization->id)->create();
 
         $organization->delete();
 

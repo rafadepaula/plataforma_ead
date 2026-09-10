@@ -35,7 +35,7 @@ class NotificationTriggersTest extends TestCase
 
         $org = Organization::factory()->create();
         $gestor = $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
 
         $this->post(route('courses.invitation-links.store', $course), [])
             ->assertRedirect(route('courses.invitation-links.index', $course));
@@ -55,7 +55,7 @@ class NotificationTriggersTest extends TestCase
         Notification::fake();
 
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $student = $this->enrolledStudent($course, 100);
         CourseCompletionRule::factory()->for($course)->allLessons(100)->create();
 
@@ -87,12 +87,12 @@ class NotificationTriggersTest extends TestCase
         Notification::fake();
 
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
-        $author = User::factory()->create(['org_id' => $org->id]);
-        $priorReplier = User::factory()->create(['org_id' => $org->id]);
-        $currentReplier = User::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
+        $author = User::factory()->inOrg($org->id)->create();
+        $priorReplier = User::factory()->inOrg($org->id)->create();
+        $currentReplier = User::factory()->inOrg($org->id)->create();
 
-        $topic = ForumTopic::factory()->for($course)->for($author)->create(['org_id' => $org->id]);
+        $topic = ForumTopic::factory()->for($course)->for($author)->inOrg($org->id)->create();
         ForumReply::factory()->for($topic, 'topic')->for($priorReplier)->create();
 
         // The topic author also replied earlier — they must still receive
@@ -131,11 +131,11 @@ class NotificationTriggersTest extends TestCase
         Notification::fake();
 
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
-        $author = User::factory()->create(['org_id' => $org->id]);
-        $repeatReplier = User::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
+        $author = User::factory()->inOrg($org->id)->create();
+        $repeatReplier = User::factory()->inOrg($org->id)->create();
 
-        $topic = ForumTopic::factory()->for($course)->for($author)->create(['org_id' => $org->id]);
+        $topic = ForumTopic::factory()->for($course)->for($author)->inOrg($org->id)->create();
         ForumReply::factory()->for($topic, 'topic')->for($repeatReplier)->create();
 
         $secondReply = ForumReply::factory()->for($topic, 'topic')->for($repeatReplier)->create();
@@ -153,8 +153,8 @@ class NotificationTriggersTest extends TestCase
 
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
-        $course = Course::factory()->create(['org_id' => $org->id]);
-        $student = User::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
+        $student = User::factory()->inOrg($org->id)->create();
         $student->assignRole(RolesEnum::ALUNO->value);
 
         $this->post(route('courses.enrollments.store', $course), ['user_id' => $student->id])
@@ -179,8 +179,8 @@ class NotificationTriggersTest extends TestCase
 
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
-        $course = Course::factory()->create(['org_id' => $org->id]);
-        $student = User::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
+        $student = User::factory()->inOrg($org->id)->create();
         $student->assignRole(RolesEnum::ALUNO->value);
         $course->students()->attach($student->id, ['enrolled_at' => now()->subMonth(), 'status' => 'cancelled']);
 
@@ -195,12 +195,13 @@ class NotificationTriggersTest extends TestCase
         Notification::fake();
 
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
-        $creator = User::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
+        $creator = User::factory()->inOrg($org->id)->create();
         $invitationLink = InvitationLink::factory()->for($course)->create([
             'org_id' => $org->id,
             'created_by' => $creator->id,
         ]);
+        $this->withOrgContext($org);
 
         $user = app(ProcessSmartInvitationAction::class)->execute($invitationLink->token, [
             'name' => 'Novo Aluno',
@@ -235,8 +236,8 @@ class NotificationTriggersTest extends TestCase
 
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
-        $course = Course::factory()->create(['org_id' => $org->id]);
-        $student = User::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
+        $student = User::factory()->inOrg($org->id)->create();
         $student->assignRole(RolesEnum::ALUNO->value);
 
         // The listener must swallow the notify() exception rather than let
@@ -260,7 +261,7 @@ class NotificationTriggersTest extends TestCase
         Log::shouldReceive('info')->withAnyArgs();
 
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $student = $this->enrolledStudent($course, 100);
         CourseCompletionRule::factory()->for($course)->allLessons(100)->create();
 
@@ -285,14 +286,14 @@ class NotificationTriggersTest extends TestCase
         Notification::fake();
 
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
-        $author = User::factory()->create(['org_id' => $org->id]);
-        $currentReplier = User::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
+        $author = User::factory()->inOrg($org->id)->create();
+        $currentReplier = User::factory()->inOrg($org->id)->create();
 
         $otherOrg = Organization::factory()->create();
-        $outsider = User::factory()->create(['org_id' => $otherOrg->id]);
+        $outsider = User::factory()->inOrg($otherOrg->id)->create();
 
-        $topic = ForumTopic::factory()->for($course)->for($author)->create(['org_id' => $org->id]);
+        $topic = ForumTopic::factory()->for($course)->for($author)->inOrg($org->id)->create();
         $newReply = ForumReply::factory()->for($topic, 'topic')->for($currentReplier)->create();
 
         event(new ForumReplyPosted($newReply));
@@ -304,7 +305,7 @@ class NotificationTriggersTest extends TestCase
     private function enrolledStudent(Course $course, int $progressPercentage = 100): User
     {
         /** @var User $student */
-        $student = User::factory()->create(['org_id' => null]);
+        $student = User::factory()->inOrg($course->org_id)->create();
         $student->assignRole(RolesEnum::ALUNO->value);
         $course->students()->attach($student->id, [
             'enrolled_at' => now(),

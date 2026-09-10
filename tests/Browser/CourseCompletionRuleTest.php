@@ -20,7 +20,7 @@ class CourseCompletionRuleTest extends DuskTestCase
     public function test_gestor_completion_rule_crud_lifecycle(): void
     {
         $gestor = User::factory()->gestor()->create();
-        $course = Course::factory()->create(['org_id' => $gestor->org_id, 'title' => 'Curso Regras Dusk']);
+        $course = Course::factory()->inOrg($gestor->org_id)->create(['title' => 'Curso Regras Dusk']);
 
         $this->browse(function (Browser $browser) use ($gestor, $course): void {
             // 1. Criação da regra `all_lessons` com 80%.

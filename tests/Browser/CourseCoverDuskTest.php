@@ -53,7 +53,7 @@ class CourseCoverDuskTest extends DuskTestCase
     public function test_gestor_course_cover_upload_lifecycle(): void
     {
         $org = Organization::factory()->create();
-        $gestor = User::factory()->gestor()->create(['org_id' => $org->id]);
+        $gestor = User::factory()->gestor()->inOrg($org->id)->create();
         $aluno = User::factory()->aluno()->create();
         $course = Course::factory()->published()->create([
             'org_id' => $org->id,
@@ -104,7 +104,7 @@ class CourseCoverDuskTest extends DuskTestCase
     public function test_gestor_course_cover_removal_lifecycle(): void
     {
         $org = Organization::factory()->create();
-        $gestor = User::factory()->gestor()->create(['org_id' => $org->id]);
+        $gestor = User::factory()->gestor()->inOrg($org->id)->create();
         $aluno = User::factory()->aluno()->create();
         $course = Course::factory()->published()->create([
             'org_id' => $org->id,

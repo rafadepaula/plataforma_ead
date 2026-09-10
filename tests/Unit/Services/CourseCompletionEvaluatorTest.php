@@ -26,7 +26,7 @@ class CourseCompletionEvaluatorTest extends TestCase
     private function enrolledStudent(Course $course, int $progressPercentage = 0): User
     {
         /** @var User $student */
-        $student = User::factory()->create(['org_id' => null]);
+        $student = User::factory()->inOrg($course->org_id)->create();
         $course->students()->attach($student->id, [
             'enrolled_at' => now(),
             'status' => 'active',
@@ -39,7 +39,7 @@ class CourseCompletionEvaluatorTest extends TestCase
     private function courseWithPublishedLesson(): array
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
         $lesson = Lesson::factory()->for($module)->create(['is_published' => true]);
 
@@ -119,7 +119,7 @@ class CourseCompletionEvaluatorTest extends TestCase
     public function test_specific_module_rule_requires_every_lesson_of_the_module_completed(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $targetModule = Module::factory()->for($course)->create();
         $lessons = Lesson::factory()->count(2)->for($targetModule)->create(['is_published' => true]);
         // A lesson outside the target module must not count either way.
@@ -151,7 +151,7 @@ class CourseCompletionEvaluatorTest extends TestCase
     public function test_specific_module_rule_with_no_lessons_or_a_dangling_target_is_not_satisfied(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $emptyModule = Module::factory()->for($course)->create();
         $student = $this->enrolledStudent($course);
 

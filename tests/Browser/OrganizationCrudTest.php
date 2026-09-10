@@ -29,7 +29,7 @@ class OrganizationCrudTest extends DuskTestCase
 
     public function test_admin_organization_crud_lifecycle(): void
     {
-        $admin = User::factory()->create(['org_id' => null]);
+        $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole(RolesEnum::ADMIN->value);
 
         $this->browse(function (Browser $browser) use ($admin): void {
@@ -103,7 +103,7 @@ class OrganizationCrudTest extends DuskTestCase
      */
     public function test_organization_logo_preview_presence_and_absence(): void
     {
-        $admin = User::factory()->create(['org_id' => null]);
+        $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole(RolesEnum::ADMIN->value);
 
         // Nome único por execução: `DatabaseTruncation` não limpa o disco

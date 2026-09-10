@@ -61,14 +61,14 @@ class CsvStreamExportServiceTest extends TestCase
         $course = Course::factory()->for($org)->create();
         $otherCourse = Course::factory()->for($otherOrg)->create();
 
-        $student = User::factory()->create(['org_id' => $org->id, 'name' => 'Ana Costa']);
+        $student = User::factory()->inOrg($org->id)->create(['name' => 'Ana Costa']);
         $student->courses()->attach($course->id, [
             'status' => 'active',
             'enrolled_at' => now(),
             'progress_percentage' => 55,
         ]);
 
-        $outsider = User::factory()->create(['org_id' => $otherOrg->id, 'name' => 'Fora da Org']);
+        $outsider = User::factory()->inOrg($otherOrg->id)->create(['name' => 'Fora da Org']);
         $outsider->courses()->attach($otherCourse->id, [
             'status' => 'active',
             'enrolled_at' => now(),
@@ -88,10 +88,10 @@ class CsvStreamExportServiceTest extends TestCase
         $course = Course::factory()->for($org)->create();
         $otherCourse = Course::factory()->for($otherOrg)->create();
 
-        $studentA = User::factory()->create(['org_id' => $org->id, 'name' => 'Ana Costa']);
+        $studentA = User::factory()->inOrg($org->id)->create(['name' => 'Ana Costa']);
         $studentA->courses()->attach($course->id, ['status' => 'active', 'enrolled_at' => now(), 'progress_percentage' => 55]);
 
-        $studentB = User::factory()->create(['org_id' => $otherOrg->id, 'name' => 'Marcos Silva']);
+        $studentB = User::factory()->inOrg($otherOrg->id)->create(['name' => 'Marcos Silva']);
         $studentB->courses()->attach($otherCourse->id, ['status' => 'active', 'enrolled_at' => now(), 'progress_percentage' => 10]);
 
         $content = $this->renderedCsv($this->service->stream('enrollments', null));

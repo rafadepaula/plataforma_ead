@@ -28,7 +28,7 @@ class CourseProgressCalculationTest extends TestCase
         Event::fake([CourseCompletedByStudent::class]);
 
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->create(['course_id' => $course->id]);
         $lessons = Lesson::factory()->count(2)->create(['module_id' => $module->id, 'is_published' => true]);
 
@@ -67,7 +67,7 @@ class CourseProgressCalculationTest extends TestCase
     public function test_progress_is_scoped_per_student_and_does_not_leak_across_users(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->create(['course_id' => $course->id]);
         $lessons = Lesson::factory()->count(4)->create(['module_id' => $module->id, 'is_published' => true]);
 
@@ -97,7 +97,7 @@ class CourseProgressCalculationTest extends TestCase
         Event::fake([CourseCompletedByStudent::class]);
 
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->create(['course_id' => $course->id]);
         $lessons = Lesson::factory()->count(2)->create(['module_id' => $module->id, 'is_published' => true]);
 

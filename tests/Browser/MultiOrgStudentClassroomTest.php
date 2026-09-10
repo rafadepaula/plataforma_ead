@@ -30,8 +30,8 @@ class MultiOrgStudentClassroomTest extends DuskTestCase
         $orgA = Organization::factory()->create(['name' => 'Organização A']);
         $orgB = Organization::factory()->create(['name' => 'Organização B']);
 
-        $courseA = Course::factory()->create(['org_id' => $orgA->id, 'is_published' => true]);
-        $courseB = Course::factory()->create(['org_id' => $orgB->id, 'is_published' => true]);
+        $courseA = Course::factory()->inOrg($orgA->id)->create(['is_published' => true]);
+        $courseB = Course::factory()->inOrg($orgB->id)->create(['is_published' => true]);
 
         $module = Module::factory()->create(['course_id' => $courseA->id]);
         $lesson = Lesson::factory()->richText()->create([
@@ -133,12 +133,12 @@ class MultiOrgStudentClassroomTest extends DuskTestCase
     {
         $orgA = Organization::factory()->create(['name' => 'Organização A']);
 
-        $courseA = Course::factory()->create(['org_id' => $orgA->id, 'is_published' => true]);
+        $courseA = Course::factory()->inOrg($orgA->id)->create(['is_published' => true]);
 
-        $notEnrolledStudent = User::factory()->create(['org_id' => $orgA->id]);
+        $notEnrolledStudent = User::factory()->inOrg($orgA->id)->create();
         $notEnrolledStudent->assignRole(RolesEnum::ALUNO->value);
 
-        $cancelledStudent = User::factory()->create(['org_id' => $orgA->id]);
+        $cancelledStudent = User::factory()->inOrg($orgA->id)->create();
         $cancelledStudent->assignRole(RolesEnum::ALUNO->value);
         $courseA->students()->attach($cancelledStudent->id, ['enrolled_at' => now(), 'status' => 'cancelled']);
 

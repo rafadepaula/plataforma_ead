@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Testing\TestResponse;
@@ -15,7 +16,8 @@ class PasswordUpdateTest extends TestCase
 {
     public function test_user_can_update_their_password_with_correct_current_password(): void
     {
-        $user = User::factory()->create(['password' => Hash::make('old-password')]);
+        $org = Organization::factory()->create();
+        $user = User::factory()->inOrg($org)->withPassword('old-password')->create();
         $this->actingAs($user);
 
         $response = $this->put('/profile/password', [
@@ -27,12 +29,13 @@ class PasswordUpdateTest extends TestCase
         $response->assertRedirect(route('profile.edit'));
         $response->assertSessionHas('success', 'Senha alterada com sucesso.');
 
-        $this->assertTrue(Hash::check('new-password-123', $user->fresh()->password));
+        $this->assertTrue(Hash::check('new-password-123', $user->fresh()->credentials()->first()->password));
     }
 
     public function test_wrong_current_password_fails_validation_and_password_is_unchanged(): void
     {
-        $user = User::factory()->create(['password' => Hash::make('old-password')]);
+        $org = Organization::factory()->create();
+        $user = User::factory()->inOrg($org)->withPassword('old-password')->create();
         $this->actingAs($user);
 
         $response = $this->put('/profile/password', [
@@ -42,7 +45,7 @@ class PasswordUpdateTest extends TestCase
         ]);
 
         $response->assertSessionHasErrors('current_password');
-        $this->assertTrue(Hash::check('old-password', $user->fresh()->password));
+        $this->assertTrue(Hash::check('old-password', $user->fresh()->credentials()->first()->password));
     }
 
     /**
@@ -54,10 +57,11 @@ class PasswordUpdateTest extends TestCase
      */
     public function test_changing_password_logs_out_other_active_sessions(): void
     {
-        $user = User::factory()->create([
-            'password' => Hash::make('old-password'),
-            'status' => 'active',
-        ]);
+        $org = Organization::factory()->create();
+        $user = User::factory()->inOrg($org)->withPassword('old-password')->create();
+
+        // the org credential only authenticates on the org's own portal
+        $this->onHost($org->host);
 
         $sessionCookie = config('session.cookie');
 
@@ -101,7 +105,8 @@ class PasswordUpdateTest extends TestCase
      */
     public function test_password_update_is_rate_limited_after_six_attempts(): void
     {
-        $user = User::factory()->create(['password' => Hash::make('old-password')]);
+        $org = Organization::factory()->create();
+        $user = User::factory()->inOrg($org)->withPassword('old-password')->create();
         $this->actingAs($user);
 
         for ($i = 0; $i < 6; $i++) {

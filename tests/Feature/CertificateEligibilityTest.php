@@ -27,7 +27,7 @@ class CertificateEligibilityTest extends TestCase
     private function studentEnrolledIn(Course $course, int $progressPercentage = 100): User
     {
         /** @var User $student */
-        $student = User::factory()->create(['org_id' => null]);
+        $student = User::factory()->inOrg($course->org_id)->create();
         $student->assignRole(RolesEnum::ALUNO->value);
         $course->students()->attach($student->id, [
             'enrolled_at' => now(),
@@ -41,7 +41,7 @@ class CertificateEligibilityTest extends TestCase
     public function test_all_lessons_rule_issues_a_certificate_when_progress_meets_the_threshold(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $student = $this->studentEnrolledIn($course, 100);
 
         CourseCompletionRule::factory()->for($course)->allLessons(100)->create();
@@ -58,7 +58,7 @@ class CertificateEligibilityTest extends TestCase
     public function test_all_lessons_rule_does_not_issue_when_progress_is_below_the_threshold(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $student = $this->studentEnrolledIn($course, 80);
 
         CourseCompletionRule::factory()->for($course)->allLessons(100)->create();
@@ -75,7 +75,7 @@ class CertificateEligibilityTest extends TestCase
     public function test_min_quiz_score_rule_issues_when_the_students_best_graded_attempt_meets_the_threshold(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
         $lesson = Lesson::factory()->for($module)->create(['type' => 'quiz', 'is_published' => true]);
         $quiz = Quiz::factory()->for($lesson)->create();
@@ -93,7 +93,7 @@ class CertificateEligibilityTest extends TestCase
     public function test_min_quiz_score_rule_does_not_issue_when_the_best_score_is_below_the_threshold(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
         $lesson = Lesson::factory()->for($module)->create(['type' => 'quiz', 'is_published' => true]);
         $quiz = Quiz::factory()->for($lesson)->create();
@@ -111,7 +111,7 @@ class CertificateEligibilityTest extends TestCase
     public function test_min_quiz_score_rule_does_not_issue_when_the_student_has_no_graded_attempt(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
         $lesson = Lesson::factory()->for($module)->create(['type' => 'quiz', 'is_published' => true]);
         $quiz = Quiz::factory()->for($lesson)->create();
@@ -127,7 +127,7 @@ class CertificateEligibilityTest extends TestCase
     public function test_specific_module_rule_issues_when_every_lesson_of_the_target_module_is_completed(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $targetModule = Module::factory()->for($course)->create();
         $lessons = Lesson::factory()->count(2)->for($targetModule)->create(['is_published' => true]);
         $student = $this->studentEnrolledIn($course);
@@ -151,7 +151,7 @@ class CertificateEligibilityTest extends TestCase
     public function test_specific_module_rule_does_not_issue_when_a_lesson_of_the_target_module_is_incomplete(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $targetModule = Module::factory()->for($course)->create();
         $lessons = Lesson::factory()->count(2)->for($targetModule)->create(['is_published' => true]);
         $student = $this->studentEnrolledIn($course);
@@ -173,7 +173,7 @@ class CertificateEligibilityTest extends TestCase
     public function test_multiple_rules_require_all_to_pass_and_logic(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
         $lesson = Lesson::factory()->for($module)->create(['type' => 'quiz', 'is_published' => true]);
         $quiz = Quiz::factory()->for($lesson)->create();
@@ -196,7 +196,7 @@ class CertificateEligibilityTest extends TestCase
     public function test_course_with_no_completion_rules_never_issues_a_certificate(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $student = $this->studentEnrolledIn($course, 100);
 
         $certificate = app(IssueCertificateAction::class)->execute($course, $student);
@@ -208,7 +208,7 @@ class CertificateEligibilityTest extends TestCase
     public function test_issuing_is_idempotent_and_does_not_duplicate_an_existing_certificate(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $student = $this->studentEnrolledIn($course, 100);
 
         CourseCompletionRule::factory()->for($course)->allLessons(100)->create();
@@ -223,7 +223,7 @@ class CertificateEligibilityTest extends TestCase
     public function test_a_revoked_certificate_is_never_reissued_for_the_same_pair(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $student = $this->studentEnrolledIn($course, 100);
 
         $revoked = Certificate::factory()->for($course)->for($student)->revoked()->create();
@@ -239,7 +239,7 @@ class CertificateEligibilityTest extends TestCase
     public function test_min_quiz_score_rule_treats_a_target_id_that_no_longer_resolves_as_not_satisfied(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $student = $this->studentEnrolledIn($course, 100);
 
         // `target_id` deliberately points at a `quizzes.id` that does not
@@ -255,7 +255,7 @@ class CertificateEligibilityTest extends TestCase
     public function test_specific_module_rule_treats_a_target_id_that_no_longer_resolves_as_not_satisfied(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $student = $this->studentEnrolledIn($course, 100);
 
         // `target_id` deliberately points at a `modules.id` that does not
@@ -270,7 +270,7 @@ class CertificateEligibilityTest extends TestCase
     public function test_specific_module_rule_does_not_issue_when_the_target_module_has_no_lessons(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $emptyModule = Module::factory()->for($course)->create();
         $student = $this->studentEnrolledIn($course, 100);
 
@@ -284,7 +284,7 @@ class CertificateEligibilityTest extends TestCase
     public function test_the_auto_discovered_listener_issues_a_certificate_when_course_completed_by_student_fires(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $student = $this->studentEnrolledIn($course, 100);
 
         CourseCompletionRule::factory()->for($course)->allLessons(100)->create();

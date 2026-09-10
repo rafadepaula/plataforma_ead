@@ -41,7 +41,7 @@ class DashboardMetricsServiceTest extends TestCase
 
     private function enrollActiveStudent(Course $course): User
     {
-        $student = User::factory()->create(['org_id' => $course->org_id]);
+        $student = User::factory()->inOrg($course->org_id)->create();
         $student->assignRole(RolesEnum::ALUNO->value);
         $student->courses()->attach($course->id, [
             'status' => 'active',
@@ -63,7 +63,7 @@ class DashboardMetricsServiceTest extends TestCase
         $this->enrollActiveStudent($course);
         $this->enrollActiveStudent($otherCourse);
 
-        $cancelledStudent = User::factory()->create(['org_id' => $org->id]);
+        $cancelledStudent = User::factory()->inOrg($org->id)->create();
         $cancelledStudent->assignRole(RolesEnum::ALUNO->value);
         $cancelledStudent->courses()->attach($course->id, [
             'status' => 'cancelled',
@@ -81,7 +81,7 @@ class DashboardMetricsServiceTest extends TestCase
         $courseA = Course::factory()->for($org)->create();
         $courseB = Course::factory()->for($org)->create();
 
-        $student = User::factory()->create(['org_id' => $org->id]);
+        $student = User::factory()->inOrg($org->id)->create();
         $student->assignRole(RolesEnum::ALUNO->value);
         $student->courses()->attach($courseA->id, ['status' => 'active', 'enrolled_at' => now()]);
         $student->courses()->attach($courseB->id, ['status' => 'active', 'enrolled_at' => now()]);
@@ -114,13 +114,13 @@ class DashboardMetricsServiceTest extends TestCase
         $course = Course::factory()->for($org)->create();
         $otherCourse = Course::factory()->for($otherOrg)->create();
 
-        $studentA = User::factory()->create(['org_id' => $org->id]);
+        $studentA = User::factory()->inOrg($org->id)->create();
         $studentA->courses()->attach($course->id, ['status' => 'completed', 'enrolled_at' => now(), 'progress_percentage' => 100]);
 
-        $studentB = User::factory()->create(['org_id' => $org->id]);
+        $studentB = User::factory()->inOrg($org->id)->create();
         $studentB->courses()->attach($course->id, ['status' => 'active', 'enrolled_at' => now(), 'progress_percentage' => 40]);
 
-        $outsider = User::factory()->create(['org_id' => $otherOrg->id]);
+        $outsider = User::factory()->inOrg($otherOrg->id)->create();
         $outsider->courses()->attach($otherCourse->id, ['status' => 'active', 'enrolled_at' => now(), 'progress_percentage' => 0]);
 
         $stats = $this->service->getStats($org->id);
@@ -146,10 +146,11 @@ class DashboardMetricsServiceTest extends TestCase
         Course::factory()->for($otherOrg)->published()->count(5)->create();
         Course::factory()->for($otherOrg)->count(4)->create();
 
-        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor = User::factory()->inOrg($org->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
 
         $this->actingAs($gestor);
+        $this->withOrgContext($org);
 
         $stats = $this->service->getStats($org->id);
 
@@ -171,7 +172,7 @@ class DashboardMetricsServiceTest extends TestCase
         Certificate::factory()->for($courseA)->for(User::factory())->create();
         Certificate::factory()->for($courseB)->for(User::factory())->create();
 
-        $admin = User::factory()->create(['org_id' => null]);
+        $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole(RolesEnum::ADMIN->value);
         $this->actingAs($admin);
 
@@ -190,7 +191,7 @@ class DashboardMetricsServiceTest extends TestCase
         $course = Course::factory()->for($org)->create(['title' => 'NR12 — Segurança em Máquinas']);
         $otherCourse = Course::factory()->for($otherOrg)->create(['title' => 'Outro Curso']);
 
-        $student = User::factory()->create(['org_id' => $org->id, 'name' => 'João da Silva Pereira']);
+        $student = User::factory()->inOrg($org->id)->create(['name' => 'João da Silva Pereira']);
         $student->courses()->attach($course->id, [
             'status' => 'completed',
             'enrolled_at' => now()->subDays(2),
@@ -198,7 +199,7 @@ class DashboardMetricsServiceTest extends TestCase
             'updated_at' => now()->subDays(2),
         ]);
 
-        $outsider = User::factory()->create(['org_id' => $otherOrg->id, 'name' => 'Fora da Org']);
+        $outsider = User::factory()->inOrg($otherOrg->id)->create(['name' => 'Fora da Org']);
         $outsider->courses()->attach($otherCourse->id, [
             'status' => 'active',
             'enrolled_at' => now(),
@@ -223,7 +224,7 @@ class DashboardMetricsServiceTest extends TestCase
         $course = Course::factory()->for($org)->create();
 
         foreach (range(1, 3) as $i) {
-            $student = User::factory()->create(['org_id' => $org->id, 'name' => "Student {$i}"]);
+            $student = User::factory()->inOrg($org->id)->create(['name' => "Student {$i}"]);
             $student->courses()->attach($course->id, [
                 'status' => 'active',
                 'enrolled_at' => now(),
@@ -243,7 +244,7 @@ class DashboardMetricsServiceTest extends TestCase
         $org = Organization::factory()->create();
         $course = Course::factory()->for($org)->create();
 
-        $student = User::factory()->create(['org_id' => $org->id, 'email' => 'joao@example.com']);
+        $student = User::factory()->inOrg($org->id)->create(['email' => 'joao@example.com']);
         $student->courses()->attach($course->id, [
             'status' => 'active',
             'enrolled_at' => now(),
@@ -265,7 +266,7 @@ class DashboardMetricsServiceTest extends TestCase
         $org = Organization::factory()->create();
         $course = Course::factory()->for($org)->create();
 
-        $student = User::factory()->create(['org_id' => $org->id, 'name' => 'Enrollment Cancelada']);
+        $student = User::factory()->inOrg($org->id)->create(['name' => 'Enrollment Cancelada']);
         $student->courses()->attach($course->id, [
             'status' => 'cancelled',
             'enrolled_at' => now(),
@@ -287,13 +288,13 @@ class DashboardMetricsServiceTest extends TestCase
         $courseA = Course::factory()->for($orgA)->create();
         Course::factory()->for($orgB)->count(2)->create();
 
-        $activeAluno = User::factory()->create(['org_id' => $orgA->id, 'status' => 'active']);
+        $activeAluno = User::factory()->inOrg($orgA->id)->create();
         $activeAluno->assignRole(RolesEnum::ALUNO->value);
 
-        $inactiveAluno = User::factory()->create(['org_id' => $orgA->id, 'status' => 'inactive']);
+        $inactiveAluno = User::factory()->inOrg($orgA->id)->inactive()->create();
         $inactiveAluno->assignRole(RolesEnum::ALUNO->value);
 
-        $gestor = User::factory()->create(['org_id' => $orgA->id, 'status' => 'active']);
+        $gestor = User::factory()->inOrg($orgA->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
 
         Certificate::factory()->for($courseA)->for(User::factory())->create();
@@ -322,7 +323,7 @@ class DashboardMetricsServiceTest extends TestCase
         Course::factory()->for($orgA)->count(2)->create();
         Course::factory()->for($orgB)->count(3)->create();
 
-        $gestor = User::factory()->create(['org_id' => $orgA->id]);
+        $gestor = User::factory()->inOrg($orgA->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
         $this->actingAs($gestor);
 
@@ -410,7 +411,7 @@ class DashboardMetricsServiceTest extends TestCase
         QuizAttempt::factory()->for($quiz)->for(User::factory())->awaitingManualGrading()->create();
         QuizAttempt::factory()->for($quiz)->for(User::factory())->graded()->create();
 
-        $topic = ForumTopic::factory()->for($course)->for(User::factory())->create(['org_id' => $org->id]);
+        $topic = ForumTopic::factory()->for($course)->for(User::factory())->inOrg($org->id)->create();
         ForumReport::factory()->for(User::factory(), 'reporter')->create([
             'postable_type' => ForumTopic::class,
             'postable_id' => $topic->id,
@@ -440,7 +441,7 @@ class DashboardMetricsServiceTest extends TestCase
     {
         $org = Organization::factory()->create();
         $course = Course::factory()->for($org)->create();
-        $topic = ForumTopic::factory()->for($course)->for(User::factory())->create(['org_id' => $org->id]);
+        $topic = ForumTopic::factory()->for($course)->for(User::factory())->inOrg($org->id)->create();
         $reply = ForumReply::factory()->for($topic, 'topic')->for(User::factory())->create();
 
         ForumReport::factory()->for(User::factory(), 'reporter')->create([
@@ -480,14 +481,14 @@ class DashboardMetricsServiceTest extends TestCase
         $courseC = Course::factory()->for($otherOrg)->create(['title' => 'Curso C']);
 
         foreach (range(1, 3) as $i) {
-            $student = User::factory()->create(['org_id' => $org->id]);
+            $student = User::factory()->inOrg($org->id)->create();
             $student->courses()->attach($courseA->id, ['status' => 'completed', 'enrolled_at' => now()]);
         }
 
-        $studentB = User::factory()->create(['org_id' => $org->id]);
+        $studentB = User::factory()->inOrg($org->id)->create();
         $studentB->courses()->attach($courseB->id, ['status' => 'completed', 'enrolled_at' => now()]);
 
-        $otherStudent = User::factory()->create(['org_id' => $otherOrg->id]);
+        $otherStudent = User::factory()->inOrg($otherOrg->id)->create();
         $otherStudent->courses()->attach($courseC->id, ['status' => 'completed', 'enrolled_at' => now()]);
 
         $ranking = $this->service->mostCompletedCourses($org->id);
@@ -506,7 +507,7 @@ class DashboardMetricsServiceTest extends TestCase
 
         foreach (range(1, 3) as $i) {
             $course = Course::factory()->for($org)->create();
-            $student = User::factory()->create(['org_id' => $org->id]);
+            $student = User::factory()->inOrg($org->id)->create();
             $student->courses()->attach($course->id, ['status' => 'completed', 'enrolled_at' => now()]);
         }
 
@@ -523,7 +524,7 @@ class DashboardMetricsServiceTest extends TestCase
             $course = Course::factory()->for($org)->create(['title' => "Curso {$i}"]);
 
             foreach (range(1, $i) as $studentNumber) {
-                $student = User::factory()->create(['org_id' => $org->id]);
+                $student = User::factory()->inOrg($org->id)->create();
                 $student->courses()->attach($course->id, ['status' => 'completed', 'enrolled_at' => now()]);
             }
         }

@@ -41,15 +41,18 @@ class DatabaseSeederDevelopmentTest extends TestCase
         Mail::assertNothingSent();
         Notification::assertNothingSent();
 
-        // 1. One organization, its organizer, its single student and its
-        //    professor (plus the global Super Admin from the baseline
-        //    seeders).
-        $this->assertSame(1, Organization::query()->count());
-        $this->assertSame('Liga Certo', Organization::query()->first()->name);
-        $this->assertSame(4, User::query()->count());
+        // 1. Two demo organizations (Liga Certo + Informática Mais); Liga
+        //    Certo with its organizer, single student and professor, and a
+        //    Gestor/Aluno pair for Informática (plus the global Super Admin
+        //    from the baseline seeders).
+        $this->assertSame(2, Organization::query()->count());
+        $this->assertSame('Liga Certo', Organization::query()->orderBy('id')->first()->name);
+        $this->assertSame(6, User::query()->count());
         $this->assertSame(1, User::query()->where('email', 'gestor.ligacerto@plataforma.com')->count());
         $this->assertSame(1, User::query()->where('email', 'aluno.ligacerto@plataforma.com')->count());
         $this->assertSame(1, User::query()->where('email', 'professor.ligacerto@plataforma.com')->count());
+        $this->assertSame(1, User::query()->where('email', 'gestor.informatica@plataforma.com')->count());
+        $this->assertSame(1, User::query()->where('email', 'aluno.informatica@plataforma.com')->count());
 
         // 2. One course with exactly three modules.
         $course = Course::query()->withoutGlobalScopes()->sole();

@@ -21,23 +21,23 @@ class ForumTopicPolicyTest extends TestCase
 {
     private function topicIn(Organization $org, ?User $author = null): ForumTopic
     {
-        $course = Course::factory()->create(['org_id' => $org->id]);
-        $author ??= User::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
+        $author ??= User::factory()->inOrg($org->id)->create();
 
-        return ForumTopic::factory()->for($course)->for($author)->create(['org_id' => $org->id]);
+        return ForumTopic::factory()->for($course)->for($author)->inOrg($org->id)->create();
     }
 
     public function test_enrolled_aluno_can_view_and_create_topics_for_the_course(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
 
         /** @var User $aluno */
-        $aluno = User::factory()->create(['org_id' => $org->id]);
+        $aluno = User::factory()->inOrg($org->id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
         $aluno->courses()->attach($course->id, ['enrolled_at' => now(), 'status' => 'active']);
 
-        $topic = ForumTopic::factory()->for($course)->for($aluno)->create(['org_id' => $org->id]);
+        $topic = ForumTopic::factory()->for($course)->for($aluno)->inOrg($org->id)->create();
 
         $policy = new ForumTopicPolicy;
         $this->assertTrue($policy->view($aluno, $topic));
@@ -50,7 +50,7 @@ class ForumTopicPolicyTest extends TestCase
         $topic = $this->topicIn($org);
 
         /** @var User $aluno */
-        $aluno = User::factory()->create(['org_id' => $org->id]);
+        $aluno = User::factory()->inOrg($org->id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
 
         $policy = new ForumTopicPolicy;
@@ -64,7 +64,7 @@ class ForumTopicPolicyTest extends TestCase
         $topic = $this->topicIn($org);
 
         /** @var User $otherGestor */
-        $otherGestor = User::factory()->create(['org_id' => Organization::factory()->create()->id]);
+        $otherGestor = User::factory()->inOrg(Organization::factory()->create()->id)->create();
         $otherGestor->assignRole(RolesEnum::GESTOR->value);
 
         $this->assertFalse((new ForumTopicPolicy)->view($otherGestor, $topic));
@@ -74,7 +74,7 @@ class ForumTopicPolicyTest extends TestCase
     {
         $org = Organization::factory()->create();
         /** @var User $author */
-        $author = User::factory()->create(['org_id' => $org->id]);
+        $author = User::factory()->inOrg($org->id)->create();
         $author->assignRole(RolesEnum::ALUNO->value);
         $topic = $this->topicIn($org, $author);
 
@@ -89,7 +89,7 @@ class ForumTopicPolicyTest extends TestCase
         $topic = $this->topicIn($org);
 
         /** @var User $otherAluno */
-        $otherAluno = User::factory()->create(['org_id' => $org->id]);
+        $otherAluno = User::factory()->inOrg($org->id)->create();
         $otherAluno->assignRole(RolesEnum::ALUNO->value);
 
         $policy = new ForumTopicPolicy;
@@ -103,8 +103,9 @@ class ForumTopicPolicyTest extends TestCase
         $topic = $this->topicIn($org);
 
         /** @var User $gestor */
-        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor = User::factory()->inOrg($org->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
+        $this->withOrgContext($org);
 
         $policy = new ForumTopicPolicy;
         $this->assertTrue($policy->update($gestor, $topic));
@@ -117,8 +118,9 @@ class ForumTopicPolicyTest extends TestCase
         $topic = $this->topicIn($org);
 
         /** @var User $gestor */
-        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor = User::factory()->inOrg($org->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
+        $this->withOrgContext($org);
 
         /** @var User $author */
         $author = $topic->user;
@@ -133,7 +135,7 @@ class ForumTopicPolicyTest extends TestCase
         $topic = $this->topicIn(Organization::factory()->create());
 
         /** @var User $admin */
-        $admin = User::factory()->create(['org_id' => null]);
+        $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole(RolesEnum::ADMIN->value);
 
         $policy = new ForumTopicPolicy;

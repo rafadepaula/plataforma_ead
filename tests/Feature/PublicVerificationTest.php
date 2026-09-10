@@ -21,7 +21,7 @@ class PublicVerificationTest extends TestCase
     private function studentFor(Course $course): User
     {
         /** @var User $student */
-        $student = User::factory()->create(['org_id' => null]);
+        $student = User::factory()->inOrg($course->org_id)->create();
         $student->assignRole(RolesEnum::ALUNO->value);
 
         return $student;
@@ -30,7 +30,8 @@ class PublicVerificationTest extends TestCase
     public function test_a_valid_certificate_shows_student_course_org_workload_and_issued_at(): void
     {
         $org = Organization::factory()->withCnpj()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'workload_hours' => 40]);
+        $this->onHost($org->host);
+        $course = Course::factory()->inOrg($org->id)->create(['workload_hours' => 40]);
         $student = $this->studentFor($course);
 
         $certificate = Certificate::factory()->for($course)->for($student)->create([
@@ -51,7 +52,8 @@ class PublicVerificationTest extends TestCase
     public function test_a_revoked_certificate_returns_200_with_a_revoked_banner_and_reason_never_404(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $this->onHost($org->host);
+        $course = Course::factory()->inOrg($org->id)->create();
         $student = $this->studentFor($course);
 
         $certificate = Certificate::factory()->for($course)->for($student)->revoked()->create([
@@ -71,6 +73,8 @@ class PublicVerificationTest extends TestCase
 
     public function test_an_unknown_hash_returns_404(): void
     {
+        $this->onHost(Organization::factory()->create()->host);
+
         $response = $this->get(route('certificates.verify', hash('sha256', 'this-hash-was-never-issued')));
 
         $response->assertNotFound();
@@ -78,6 +82,8 @@ class PublicVerificationTest extends TestCase
 
     public function test_the_hash_less_entry_point_renders_the_lookup_form_instead_of_404(): void
     {
+        $this->onHost(Organization::factory()->create()->host);
+
         $response = $this->get(route('certificates.verify'));
 
         $response->assertOk();
@@ -90,7 +96,8 @@ class PublicVerificationTest extends TestCase
     public function test_a_hash_submitted_by_the_lookup_form_as_a_query_string_renders_the_certificate(): void
     {
         $org = Organization::factory()->withCnpj()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'workload_hours' => 40]);
+        $this->onHost($org->host);
+        $course = Course::factory()->inOrg($org->id)->create(['workload_hours' => 40]);
         $student = $this->studentFor($course);
 
         $certificate = Certificate::factory()->for($course)->for($student)->create([
@@ -111,7 +118,8 @@ class PublicVerificationTest extends TestCase
     public function test_a_revoked_hash_submitted_as_a_query_string_still_renders_never_404s(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $this->onHost($org->host);
+        $course = Course::factory()->inOrg($org->id)->create();
         $student = $this->studentFor($course);
 
         $certificate = Certificate::factory()->for($course)->for($student)->revoked()->create([
@@ -128,6 +136,8 @@ class PublicVerificationTest extends TestCase
 
     public function test_an_unknown_hash_submitted_as_a_query_string_returns_404(): void
     {
+        $this->onHost(Organization::factory()->create()->host);
+
         $response = $this->get(
             route('certificates.verify').'?hash='.hash('sha256', 'typed-wrong-in-the-form'),
         );
@@ -137,6 +147,8 @@ class PublicVerificationTest extends TestCase
 
     public function test_a_blank_query_string_hash_falls_back_to_the_lookup_form(): void
     {
+        $this->onHost(Organization::factory()->create()->host);
+
         // Submitting the form empty (or with whitespace) must not 404 —
         // the visitor gets the form back to try again.
         $this->get(route('certificates.verify').'?hash=')->assertOk()
@@ -151,8 +163,8 @@ class PublicVerificationTest extends TestCase
         $orgA = Organization::factory()->create();
         $orgB = Organization::factory()->create();
 
-        $courseA = Course::factory()->create(['org_id' => $orgA->id]);
-        $courseB = Course::factory()->create(['org_id' => $orgB->id]);
+        $courseA = Course::factory()->inOrg($orgA->id)->create();
+        $courseB = Course::factory()->inOrg($orgB->id)->create();
 
         $studentA = $this->studentFor($courseA);
         $studentB = $this->studentFor($courseB);
@@ -164,10 +176,13 @@ class PublicVerificationTest extends TestCase
             'validation_hash' => hash('sha256', 'org-b-hash'),
         ]);
 
-        // No `actingAs()`/tenant context at all — a fully guest visitor.
+        // No `actingAs()`/tenant context at all — a fully guest visitor,
+        // validating each certificate on its own issuing org's portal.
+        $this->onHost($orgA->host);
         $this->get(route('certificates.verify', $certificateA->validation_hash))
             ->assertOk()->assertSee($orgA->name);
 
+        $this->onHost($orgB->host);
         $this->get(route('certificates.verify', $certificateB->validation_hash))
             ->assertOk()->assertSee($orgB->name);
     }

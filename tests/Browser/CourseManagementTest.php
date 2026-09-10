@@ -15,7 +15,7 @@ class CourseManagementTest extends DuskTestCase
     public function test_gestor_course_module_and_lesson_full_lifecycle(): void
     {
         $org = Organization::factory()->create();
-        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor = User::factory()->inOrg($org->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
 
         $publishedCourse = Course::factory()->published()->create([
@@ -207,11 +207,11 @@ class CourseManagementTest extends DuskTestCase
     public function test_course_with_active_enrollment_delete_is_blocked(): void
     {
         $org = Organization::factory()->create();
-        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor = User::factory()->inOrg($org->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
 
-        $aluno = User::factory()->create(['org_id' => $org->id]);
+        $aluno = User::factory()->inOrg($org->id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
         $course->students()->attach($aluno->id, ['enrolled_at' => now(), 'status' => 'active']);
 

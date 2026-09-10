@@ -40,7 +40,7 @@ class LessonMediaTest extends TestCase
     {
         $org = Organization::factory()->create();
 
-        return Module::factory()->for(Course::factory()->create(['org_id' => $org->id]))->create();
+        return Module::factory()->for(Course::factory()->inOrg($org->id)->create())->create();
     }
 
     public function test_backfill_migration_copies_legacy_columns_into_lesson_media_rows(): void
@@ -110,7 +110,7 @@ class LessonMediaTest extends TestCase
     {
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $withTwo = Module::factory()->for($course)->create();
         Lesson::factory()->for($withTwo)->count(2)->create();
         $empty = Module::factory()->for($course)->create();
@@ -133,7 +133,7 @@ class LessonMediaTest extends TestCase
     private function actingAsEnrolledStudent(Lesson $lesson): User
     {
         $course = $lesson->module->course;
-        $aluno = User::factory()->create(['org_id' => null]);
+        $aluno = User::factory()->inOrg($course->org_id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
         $aluno->courses()->attach($course->id, [
             'status' => 'active',

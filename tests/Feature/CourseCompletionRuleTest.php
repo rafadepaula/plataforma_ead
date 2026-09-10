@@ -28,7 +28,7 @@ class CourseCompletionRuleTest extends TestCase
 {
     private function courseWithModuleAndQuiz(Organization $org): array
     {
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
         $lesson = Lesson::factory()->for($module)->create(['type' => 'quiz']);
         $quiz = Quiz::factory()->for($lesson)->create();
@@ -39,7 +39,7 @@ class CourseCompletionRuleTest extends TestCase
     public function test_gestor_creates_an_all_lessons_rule(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $this->actingAsOrgUser($org);
 
         $response = $this->post(route('courses.completion-rules.store', $course), [
@@ -101,7 +101,7 @@ class CourseCompletionRuleTest extends TestCase
     public function test_target_id_is_required_for_min_quiz_score(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $this->actingAsOrgUser($org);
 
         $response = $this->post(route('courses.completion-rules.store', $course), [
@@ -116,7 +116,7 @@ class CourseCompletionRuleTest extends TestCase
     public function test_target_id_is_required_for_specific_module(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $this->actingAsOrgUser($org);
 
         $response = $this->post(route('courses.completion-rules.store', $course), [
@@ -131,7 +131,7 @@ class CourseCompletionRuleTest extends TestCase
     public function test_target_id_is_prohibited_for_all_lessons(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $this->actingAsOrgUser($org);
 
         $response = $this->post(route('courses.completion-rules.store', $course), [
@@ -147,7 +147,7 @@ class CourseCompletionRuleTest extends TestCase
     public function test_target_id_from_a_different_course_is_rejected(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         [, , $otherCourseQuiz] = $this->courseWithModuleAndQuiz($org);
         $this->actingAsOrgUser($org);
 
@@ -164,7 +164,7 @@ class CourseCompletionRuleTest extends TestCase
     public function test_target_id_module_from_a_different_course_is_rejected(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         [, $otherCourseModule] = $this->courseWithModuleAndQuiz($org);
         $this->actingAsOrgUser($org);
 
@@ -181,7 +181,7 @@ class CourseCompletionRuleTest extends TestCase
     public function test_gestor_removes_a_rule(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $rule = CourseCompletionRule::factory()->allLessons()->for($course)->create();
         $this->actingAsOrgUser($org);
 
@@ -204,7 +204,7 @@ class CourseCompletionRuleTest extends TestCase
     {
         $ownOrg = Organization::factory()->create();
         $otherOrg = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $otherOrg->id]);
+        $course = Course::factory()->inOrg($otherOrg->id)->create();
         $this->actingAsOrgUser($ownOrg);
 
         $response = $this->get(route('courses.completion-rules.index', $course));
@@ -216,7 +216,7 @@ class CourseCompletionRuleTest extends TestCase
     {
         $ownOrg = Organization::factory()->create();
         $otherOrg = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $otherOrg->id]);
+        $course = Course::factory()->inOrg($otherOrg->id)->create();
         $this->actingAsOrgUser($ownOrg);
 
         $response = $this->post(route('courses.completion-rules.store', $course), [
@@ -231,7 +231,7 @@ class CourseCompletionRuleTest extends TestCase
     {
         $ownOrg = Organization::factory()->create();
         $otherOrg = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $otherOrg->id]);
+        $course = Course::factory()->inOrg($otherOrg->id)->create();
         $rule = CourseCompletionRule::factory()->allLessons()->for($course)->create();
         $this->actingAsOrgUser($ownOrg);
 
@@ -244,7 +244,7 @@ class CourseCompletionRuleTest extends TestCase
     public function test_aluno_is_forbidden_from_the_completion_rules_panel(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $this->actingAsOrgUser($org, 'aluno');
 
         $this->get(route('courses.completion-rules.index', $course))->assertForbidden();
@@ -270,7 +270,7 @@ class CourseCompletionRuleTest extends TestCase
     private function studentAtProgress(Course $course, iterable $lessons, int $completedCount, int $pct): array
     {
         /** @var User $student */
-        $student = User::factory()->create(['org_id' => null]);
+        $student = User::factory()->inOrg($course->org_id)->create();
         $student->assignRole(RolesEnum::ALUNO->value);
         $course->students()->attach($student->id, [
             'enrolled_at' => now(),
@@ -297,7 +297,7 @@ class CourseCompletionRuleTest extends TestCase
     {
         Notification::fake();
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
         $lessons = Lesson::factory()->count(2)->for($module)->create(['is_published' => true]);
         [$student, $pivot] = $this->studentAtProgress($course, $lessons, 2, 100);
@@ -329,7 +329,7 @@ class CourseCompletionRuleTest extends TestCase
     {
         Notification::fake();
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
         $lessons = Lesson::factory()->count(2)->for($module)->create(['is_published' => true]);
         [$student] = $this->studentAtProgress($course, $lessons, 1, 50);
@@ -353,7 +353,7 @@ class CourseCompletionRuleTest extends TestCase
     {
         Notification::fake();
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
         $lessons = Lesson::factory()->count(2)->for($module)->create(['is_published' => true]);
         [$student, $pivot] = $this->studentAtProgress($course, $lessons, 2, 100);
@@ -390,7 +390,7 @@ class CourseCompletionRuleTest extends TestCase
         [$course, , $quiz] = $this->courseWithModuleAndQuiz($org);
 
         /** @var User $student */
-        $student = User::factory()->create(['org_id' => null]);
+        $student = User::factory()->inOrg($org->id)->create();
         $student->assignRole(RolesEnum::ALUNO->value);
         $course->students()->attach($student->id, [
             'enrolled_at' => now(),

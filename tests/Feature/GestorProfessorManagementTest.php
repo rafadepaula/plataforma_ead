@@ -23,10 +23,13 @@ class GestorProfessorManagementTest extends TestCase
 {
     private function ownProfessor(Organization $org, ?string $name = null, string $status = 'active'): User
     {
-        $professor = User::factory()->create(
-            ['org_id' => $org->id, 'status' => $status]
-            + ($name !== null ? ['name' => $name] : []),
-        );
+        $factory = User::factory()->inOrg($org);
+
+        if ($status !== 'active') {
+            $factory = $factory->inactive();
+        }
+
+        $professor = $factory->create($name !== null ? ['name' => $name] : []);
         $professor->assignRole(RolesEnum::PROFESSOR->value);
 
         return $professor;
@@ -43,9 +46,9 @@ class GestorProfessorManagementTest extends TestCase
         $own = $this->ownProfessor($org, 'Professor Próprio');
         $foreign = $this->ownProfessor($otherOrg, 'Professor Alheio');
         // Same-org accounts that are NOT professors are never listed here.
-        $fellowGestor = User::factory()->create(['org_id' => $org->id, 'name' => 'Gestor Colega']);
+        $fellowGestor = User::factory()->inOrg($org->id)->create(['name' => 'Gestor Colega']);
         $fellowGestor->assignRole(RolesEnum::GESTOR->value);
-        $aluno = User::factory()->create(['org_id' => $org->id, 'name' => 'Aluno Intragrupo']);
+        $aluno = User::factory()->inOrg($org->id)->create(['name' => 'Aluno Intragrupo']);
         $aluno->assignRole(RolesEnum::ALUNO->value);
 
         $response = $this->get(route('gestor.professors.index'));
@@ -136,12 +139,13 @@ class GestorProfessorManagementTest extends TestCase
         $response->assertRedirect(route('gestor.professors.index'));
 
         $professor = User::where('email', 'novo.professor@example.com')->firstOrFail();
-        $this->assertSame($org->id, $professor->org_id);
-        $this->assertNotSame($otherOrg->id, $professor->org_id);
+        $credential = $professor->credentialFor($org);
+        $this->assertNotNull($credential);
+        $this->assertNull($professor->credentialFor($otherOrg));
         $this->assertTrue($professor->hasRole(RolesEnum::PROFESSOR->value));
         $this->assertFalse($professor->hasRole(RolesEnum::ADMIN->value));
-        $this->assertSame('active', $professor->status);
-        $this->assertTrue(Hash::check('password123', $professor->password));
+        $this->assertSame('active', $credential->status);
+        $this->assertTrue(Hash::check('password123', $credential->password));
     }
 
     // ── Validation ───────────────────────────────────────────────────
@@ -218,7 +222,7 @@ class GestorProfessorManagementTest extends TestCase
         $response->assertRedirect(route('gestor.professors.index'));
         $professor->refresh();
         $this->assertSame('Nome Docente Atualizado', $professor->name);
-        $this->assertSame($org->id, $professor->org_id);
+        $this->assertNotNull($professor->credentialFor($org));
     }
 
     public function test_deactivating_a_professor_records_the_user_status_changed_audit_event(): void
@@ -237,7 +241,7 @@ class GestorProfessorManagementTest extends TestCase
             'reason' => 'Licença sem vencimento',
         ])->assertRedirect(route('gestor.professors.index'));
 
-        $this->assertSame('inactive', $professor->fresh()->status);
+        $this->assertSame('inactive', $professor->fresh()->credentials()->first()->status);
 
         $log = AuditLog::withoutGlobalScopes()
             ->where('event', 'user.status_changed')
@@ -293,7 +297,7 @@ class GestorProfessorManagementTest extends TestCase
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
 
-        $fellowGestor = User::factory()->create(['org_id' => $org->id]);
+        $fellowGestor = User::factory()->inOrg($org->id)->create();
         $fellowGestor->assignRole(RolesEnum::GESTOR->value);
 
         $this->get(route('gestor.professors.edit', $fellowGestor))->assertNotFound();
@@ -309,7 +313,7 @@ class GestorProfessorManagementTest extends TestCase
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
 
-        $aluno = User::factory()->create(['org_id' => $org->id]);
+        $aluno = User::factory()->inOrg($org->id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
 
         $this->get(route('gestor.professors.edit', $aluno))->assertNotFound();
@@ -346,7 +350,7 @@ class GestorProfessorManagementTest extends TestCase
     public function test_an_aluno_is_forbidden_from_the_gestor_professors_routes(): void
     {
         $org = Organization::factory()->create();
-        $aluno = User::factory()->create(['org_id' => $org->id]);
+        $aluno = User::factory()->inOrg($org->id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
         $this->actingAs($aluno);
 

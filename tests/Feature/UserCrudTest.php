@@ -58,8 +58,8 @@ class UserCrudTest extends TestCase
         ]);
 
         $user = User::where('email', 'tentativa@example.com')->firstOrFail();
-        $this->assertSame($org->id, $user->org_id);
-        $this->assertNotSame($otherOrg->id, $user->org_id);
+        $this->assertNotNull($user->credentialFor($org));
+        $this->assertNull($user->credentialFor($otherOrg));
     }
 
     public function test_gestor_can_view_their_own_orgs_enrolled_students_directory(): void
@@ -67,7 +67,7 @@ class UserCrudTest extends TestCase
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
 
-        $aluno = User::factory()->create(['org_id' => $org->id]);
+        $aluno = User::factory()->inOrg($org->id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
         $course = Course::factory()->for($org)->create();
         $aluno->courses()->attach($course->id, ['status' => 'active', 'enrolled_at' => now()]);
@@ -83,7 +83,7 @@ class UserCrudTest extends TestCase
         $org = Organization::factory()->create();
         $this->actingAsAdmin($org);
 
-        $aluno = User::factory()->create(['org_id' => $org->id]);
+        $aluno = User::factory()->inOrg($org->id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
 
         $this->get('/users')
@@ -96,7 +96,7 @@ class UserCrudTest extends TestCase
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
 
-        $aluno = User::factory()->create(['org_id' => $org->id]);
+        $aluno = User::factory()->inOrg($org->id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
 
         //  the whole operational stack (list, create form,
@@ -139,11 +139,11 @@ class UserCrudTest extends TestCase
     public function test_aluno_is_forbidden_from_all_user_management_routes(): void
     {
         $org = Organization::factory()->create();
-        $aluno = User::factory()->create(['org_id' => $org->id]);
+        $aluno = User::factory()->inOrg($org->id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
         $this->actingAs($aluno);
 
-        $colleague = User::factory()->create(['org_id' => $org->id]);
+        $colleague = User::factory()->inOrg($org->id)->create();
         $colleague->assignRole(RolesEnum::ALUNO->value);
 
         $this->get('/users')->assertForbidden();
@@ -159,7 +159,7 @@ class UserCrudTest extends TestCase
     public function test_admin_without_active_org_context_is_forbidden_from_updating_a_user(): void
     {
         $org = Organization::factory()->create();
-        $aluno = User::factory()->create(['org_id' => $org->id]);
+        $aluno = User::factory()->inOrg($org->id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
 
         // No impersonation: `actingAsAdmin()` with no org sets no
@@ -195,7 +195,7 @@ class UserCrudTest extends TestCase
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
 
-        $aluno = User::factory()->create(['org_id' => $org->id, 'email' => 'antigo@example.com']);
+        $aluno = User::factory()->inOrg($org->id)->create(['email' => 'antigo@example.com']);
         $aluno->assignRole(RolesEnum::ALUNO->value);
         $course = Course::factory()->for($org)->create();
         $aluno->courses()->attach($course->id, ['status' => 'active', 'enrolled_at' => now()]);
@@ -216,11 +216,11 @@ class UserCrudTest extends TestCase
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
 
-        $aluno = User::factory()->create(['org_id' => $org->id, 'password' => bcrypt('old-password')]);
+        $aluno = User::factory()->inOrg($org->id)->withPassword('old-password')->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
         $course = Course::factory()->for($org)->create();
         $aluno->courses()->attach($course->id, ['status' => 'active', 'enrolled_at' => now()]);
-        $originalHash = $aluno->password;
+        $originalHash = $aluno->credentialFor($org)->password;
 
         $response = $this->put("/gestor/students/{$aluno->id}", [
             'name' => $aluno->name,
@@ -231,8 +231,9 @@ class UserCrudTest extends TestCase
 
         $response->assertRedirect(route('gestor.students.index'));
         $aluno->refresh();
-        $this->assertNotSame($originalHash, $aluno->password);
-        $this->assertTrue(Hash::check('brand-new-password', $aluno->password));
+        $freshCredential = $aluno->credentialFor($org);
+        $this->assertNotSame($originalHash, $freshCredential->password);
+        $this->assertTrue(Hash::check('brand-new-password', $freshCredential->password));
     }
 
     public function test_updating_a_student_with_a_checksum_invalid_cpf_is_rejected(): void
@@ -240,7 +241,7 @@ class UserCrudTest extends TestCase
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
 
-        $aluno = User::factory()->create(['org_id' => $org->id, 'cpf' => null]);
+        $aluno = User::factory()->inOrg($org->id)->create(['cpf' => null]);
         $aluno->assignRole(RolesEnum::ALUNO->value);
         $course = Course::factory()->for($org)->create();
         $aluno->courses()->attach($course->id, ['status' => 'active', 'enrolled_at' => now()]);
@@ -260,7 +261,7 @@ class UserCrudTest extends TestCase
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
 
-        $aluno = User::factory()->create(['org_id' => $org->id]);
+        $aluno = User::factory()->inOrg($org->id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
         $course = Course::factory()->for($org)->create();
         $aluno->courses()->attach($course->id, ['status' => 'active', 'enrolled_at' => now()]);

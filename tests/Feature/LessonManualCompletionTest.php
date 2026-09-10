@@ -22,7 +22,7 @@ class LessonManualCompletionTest extends TestCase
     private function enrolledAluno(Course $course): User
     {
         /** @var User $aluno */
-        $aluno = User::factory()->create(['org_id' => null]);
+        $aluno = User::factory()->inOrg($course->org_id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
         $aluno->courses()->attach($course->id, ['status' => 'active', 'enrolled_at' => now()]);
 
@@ -32,7 +32,7 @@ class LessonManualCompletionTest extends TestCase
     public function test_student_can_manually_complete_a_text_lesson(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
         $lesson = Lesson::factory()->for($module)->richText()->create(['is_published' => true]);
 
@@ -53,7 +53,7 @@ class LessonManualCompletionTest extends TestCase
     public function test_manual_completion_is_rejected_for_a_quiz_lesson(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
         $lesson = Lesson::factory()->for($module)->create(['type' => 'quiz', 'is_published' => true]);
 
@@ -72,7 +72,7 @@ class LessonManualCompletionTest extends TestCase
     public function test_manual_completion_is_rejected_for_a_video_lesson(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
         $lesson = Lesson::factory()->for($module)->withYoutube()->create(['is_published' => true]);
 
@@ -91,7 +91,7 @@ class LessonManualCompletionTest extends TestCase
     public function test_manual_completion_is_rejected_for_a_malformed_lesson_with_both_quiz_type_and_video_url(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
         $lesson = Lesson::factory()->for($module)->withYoutube()->create([
             'type' => 'quiz',
@@ -113,7 +113,7 @@ class LessonManualCompletionTest extends TestCase
     public function test_re_completing_an_already_completed_lesson_is_idempotent(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
         $lesson = Lesson::factory()->for($module)->richText()->create(['is_published' => true]);
 
@@ -138,7 +138,7 @@ class LessonManualCompletionTest extends TestCase
     public function test_a_student_cannot_manually_complete_an_unpublished_lesson(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
         $lesson = Lesson::factory()->for($module)->richText()->create(['is_published' => false]);
 
@@ -157,12 +157,12 @@ class LessonManualCompletionTest extends TestCase
     public function test_a_non_enrolled_student_cannot_complete_a_lesson(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
         $lesson = Lesson::factory()->for($module)->richText()->create(['is_published' => true]);
 
         /** @var User $aluno */
-        $aluno = User::factory()->create(['org_id' => null]);
+        $aluno = User::factory()->inOrg($org->id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
         $this->actingAs($aluno);
 

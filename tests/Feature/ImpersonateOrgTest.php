@@ -193,8 +193,8 @@ class ImpersonateOrgTest extends TestCase
     {
         $organizationA = Organization::factory()->create();
         $organizationB = Organization::factory()->create();
-        $courseA = Course::factory()->create(['org_id' => $organizationA->id]);
-        $courseB = Course::factory()->create(['org_id' => $organizationB->id]);
+        $courseA = Course::factory()->inOrg($organizationA->id)->create();
+        $courseB = Course::factory()->inOrg($organizationB->id)->create();
 
         $this->actingAsAdmin();
 

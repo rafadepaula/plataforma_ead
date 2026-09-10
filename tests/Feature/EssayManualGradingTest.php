@@ -26,7 +26,7 @@ class EssayManualGradingTest extends TestCase
     private function attemptAwaitingGrading(): array
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
         $lesson = Lesson::factory()->for($module)->create(['type' => 'quiz', 'is_published' => true]);
         $quiz = Quiz::factory()->for($lesson)->create(['min_score_percentage' => 50]);
@@ -38,7 +38,7 @@ class EssayManualGradingTest extends TestCase
         $essayQuestion = QuizQuestion::factory()->for($quiz)->essay()->create();
 
         /** @var User $aluno */
-        $aluno = User::factory()->create(['org_id' => null]);
+        $aluno = User::factory()->inOrg($course->org_id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
         $aluno->courses()->attach($course->id, ['status' => 'active', 'enrolled_at' => now()]);
 
@@ -53,7 +53,7 @@ class EssayManualGradingTest extends TestCase
     private function gestorFor(Organization $org): User
     {
         /** @var User $gestor */
-        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor = User::factory()->inOrg($org->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
 
         return $gestor;
@@ -108,7 +108,7 @@ class EssayManualGradingTest extends TestCase
     public function test_finalization_only_happens_once_every_essay_answer_of_the_attempt_is_graded(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
         $lesson = Lesson::factory()->for($module)->create(['type' => 'quiz', 'is_published' => true]);
         $quiz = Quiz::factory()->for($lesson)->create();
@@ -117,7 +117,7 @@ class EssayManualGradingTest extends TestCase
         $essayTwo = QuizQuestion::factory()->for($quiz)->essay()->create();
 
         /** @var User $aluno */
-        $aluno = User::factory()->create(['org_id' => null]);
+        $aluno = User::factory()->inOrg($course->org_id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
         $aluno->courses()->attach($course->id, ['status' => 'active', 'enrolled_at' => now()]);
 
@@ -148,7 +148,7 @@ class EssayManualGradingTest extends TestCase
     public function test_finalize_grading_uses_the_same_score_formula_as_auto_grading_including_unanswered_questions_as_wrong(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
         $lesson = Lesson::factory()->for($module)->create(['type' => 'quiz', 'is_published' => true]);
         $quiz = Quiz::factory()->for($lesson)->create(['min_score_percentage' => 50]);
@@ -163,7 +163,7 @@ class EssayManualGradingTest extends TestCase
         QuizQuestion::factory()->for($quiz)->singleChoice()->create();
 
         /** @var User $aluno */
-        $aluno = User::factory()->create(['org_id' => null]);
+        $aluno = User::factory()->inOrg($course->org_id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
         $aluno->courses()->attach($course->id, ['status' => 'active', 'enrolled_at' => now()]);
 
@@ -197,6 +197,7 @@ class EssayManualGradingTest extends TestCase
     {
         [$attempt, , $org] = $this->attemptAwaitingGrading();
         $gestor = $this->gestorFor($org);
+        $this->withOrgContext($org);
 
         $this->assertTrue($gestor->can('grade', $attempt));
     }
@@ -206,7 +207,7 @@ class EssayManualGradingTest extends TestCase
         [$attempt] = $this->attemptAwaitingGrading();
 
         /** @var User $admin */
-        $admin = User::factory()->create(['org_id' => null]);
+        $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole(RolesEnum::ADMIN->value);
 
         $this->assertTrue($admin->can('grade', $attempt));

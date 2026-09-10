@@ -9,6 +9,7 @@ use App\Models\Course;
 use App\Models\InvitationLink;
 use App\Models\Organization;
 use App\Models\User;
+use Illuminate\Support\Facades\Hash;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
@@ -25,9 +26,9 @@ class UserAdminManagementTest extends TestCase
     public function test_gestor_gets_403_on_every_admin_users_route(): void
     {
         $org = Organization::factory()->create();
-        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor = User::factory()->inOrg($org->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
-        $target = User::factory()->create(['org_id' => $org->id]);
+        $target = User::factory()->inOrg($org->id)->create();
         $target->assignRole(RolesEnum::ALUNO->value);
 
         $this->actingAs($gestor);
@@ -43,9 +44,9 @@ class UserAdminManagementTest extends TestCase
     public function test_aluno_gets_403_on_every_admin_users_route(): void
     {
         $org = Organization::factory()->create();
-        $aluno = User::factory()->create(['org_id' => $org->id]);
+        $aluno = User::factory()->inOrg($org->id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
-        $target = User::factory()->create(['org_id' => $org->id]);
+        $target = User::factory()->inOrg($org->id)->create();
         $target->assignRole(RolesEnum::ALUNO->value);
 
         $this->actingAs($aluno);
@@ -74,13 +75,13 @@ class UserAdminManagementTest extends TestCase
         $orgA = Organization::factory()->create();
         $orgB = Organization::factory()->create();
 
-        $gestorA = User::factory()->create(['org_id' => $orgA->id, 'name' => 'Gestor Da Org A']);
+        $gestorA = User::factory()->inOrg($orgA->id)->create(['name' => 'Gestor Da Org A']);
         $gestorA->assignRole(RolesEnum::GESTOR->value);
 
-        $alunoB = User::factory()->create(['org_id' => $orgB->id, 'name' => 'Aluno Da Org B']);
+        $alunoB = User::factory()->inOrg($orgB->id)->create(['name' => 'Aluno Da Org B']);
         $alunoB->assignRole(RolesEnum::ALUNO->value);
 
-        $otherAdmin = User::factory()->create(['org_id' => null, 'name' => 'Outro Admin Do Sistema']);
+        $otherAdmin = User::factory()->inOrg(null)->create(['name' => 'Outro Admin Do Sistema']);
         $otherAdmin->assignRole(RolesEnum::ADMIN->value);
 
         $response = $this->get(route('admin.users.index'));
@@ -110,9 +111,9 @@ class UserAdminManagementTest extends TestCase
         $this->actingAsAdmin();
         $org = Organization::factory()->create();
 
-        $match = User::factory()->create(['org_id' => $org->id, 'name' => 'Fulano da Silva']);
+        $match = User::factory()->inOrg($org->id)->create(['name' => 'Fulano da Silva']);
         $match->assignRole(RolesEnum::ALUNO->value);
-        $miss = User::factory()->create(['org_id' => $org->id, 'name' => 'Beltrano Souza']);
+        $miss = User::factory()->inOrg($org->id)->create(['name' => 'Beltrano Souza']);
         $miss->assignRole(RolesEnum::ALUNO->value);
 
         $response = $this->get(route('admin.users.index', ['name' => 'Fulano']));
@@ -125,9 +126,9 @@ class UserAdminManagementTest extends TestCase
         $this->actingAsAdmin();
         $org = Organization::factory()->create();
 
-        $match = User::factory()->create(['org_id' => $org->id, 'email' => 'alvo@example.com']);
+        $match = User::factory()->inOrg($org->id)->create(['email' => 'alvo@example.com']);
         $match->assignRole(RolesEnum::ALUNO->value);
-        $miss = User::factory()->create(['org_id' => $org->id, 'email' => 'outro@example.com']);
+        $miss = User::factory()->inOrg($org->id)->create(['email' => 'outro@example.com']);
         $miss->assignRole(RolesEnum::ALUNO->value);
 
         $response = $this->get(route('admin.users.index', ['email' => 'alvo@']));
@@ -141,9 +142,9 @@ class UserAdminManagementTest extends TestCase
         $orgA = Organization::factory()->create();
         $orgB = Organization::factory()->create();
 
-        $inOrgA = User::factory()->create(['org_id' => $orgA->id, 'name' => 'Usuário Da Org A']);
+        $inOrgA = User::factory()->inOrg($orgA->id)->create(['name' => 'Usuário Da Org A']);
         $inOrgA->assignRole(RolesEnum::ALUNO->value);
-        $inOrgB = User::factory()->create(['org_id' => $orgB->id, 'name' => 'Usuário Da Org B']);
+        $inOrgB = User::factory()->inOrg($orgB->id)->create(['name' => 'Usuário Da Org B']);
         $inOrgB->assignRole(RolesEnum::ALUNO->value);
 
         $response = $this->get(route('admin.users.index', ['org_id' => $orgA->id]));
@@ -156,9 +157,9 @@ class UserAdminManagementTest extends TestCase
         $this->actingAsAdmin();
         $org = Organization::factory()->create();
 
-        $active = User::factory()->create(['org_id' => $org->id, 'name' => 'Usuário Ativo', 'status' => 'active']);
+        $active = User::factory()->inOrg($org->id)->create(['name' => 'Usuário Ativo']);
         $active->assignRole(RolesEnum::ALUNO->value);
-        $inactive = User::factory()->create(['org_id' => $org->id, 'name' => 'Usuário Inativo', 'status' => 'inactive']);
+        $inactive = User::factory()->inOrg($org->id)->inactive()->create(['name' => 'Usuário Inativo']);
         $inactive->assignRole(RolesEnum::ALUNO->value);
 
         $response = $this->get(route('admin.users.index', ['status' => 'inactive']));
@@ -171,9 +172,9 @@ class UserAdminManagementTest extends TestCase
         $this->actingAsAdmin();
         $org = Organization::factory()->create();
 
-        $gestor = User::factory()->create(['org_id' => $org->id, 'name' => 'É Gestor']);
+        $gestor = User::factory()->inOrg($org->id)->create(['name' => 'É Gestor']);
         $gestor->assignRole(RolesEnum::GESTOR->value);
-        $aluno = User::factory()->create(['org_id' => $org->id, 'name' => 'É Aluno']);
+        $aluno = User::factory()->inOrg($org->id)->create(['name' => 'É Aluno']);
         $aluno->assignRole(RolesEnum::ALUNO->value);
 
         $response = $this->get(route('admin.users.index', ['role' => RolesEnum::GESTOR->value]));
@@ -186,9 +187,9 @@ class UserAdminManagementTest extends TestCase
         $this->actingAsAdmin();
         $org = Organization::factory()->create();
 
-        $old = User::factory()->create(['org_id' => $org->id, 'name' => 'Usuário Antigo', 'created_at' => now()->subYear()]);
+        $old = User::factory()->inOrg($org->id)->create(['name' => 'Usuário Antigo', 'created_at' => now()->subYear()]);
         $old->assignRole(RolesEnum::ALUNO->value);
-        $recent = User::factory()->create(['org_id' => $org->id, 'name' => 'Usuário Recente', 'created_at' => now()]);
+        $recent = User::factory()->inOrg($org->id)->create(['name' => 'Usuário Recente', 'created_at' => now()]);
         $recent->assignRole(RolesEnum::ALUNO->value);
 
         $response = $this->get(route('admin.users.index', [
@@ -205,15 +206,13 @@ class UserAdminManagementTest extends TestCase
         $org = Organization::factory()->create();
 
         for ($i = 0; $i < 30; $i++) {
-            $aluno = User::factory()->create([
-                'org_id' => $org->id,
+            $aluno = User::factory()->inOrg($org)->create([
                 'name' => "Aluno Filtrado {$i}",
-                'status' => 'active',
             ]);
             $aluno->assignRole(RolesEnum::ALUNO->value);
         }
 
-        $gestor = User::factory()->create(['org_id' => $org->id, 'status' => 'active']);
+        $gestor = User::factory()->inOrg($org->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
 
         $response = $this->get(route('admin.users.index', [
@@ -235,7 +234,7 @@ class UserAdminManagementTest extends TestCase
         $this->actingAsAdmin();
         $org = Organization::factory()->create();
 
-        $user = User::factory()->create(['org_id' => $org->id, 'name' => 'Perfil Completo']);
+        $user = User::factory()->inOrg($org->id)->create(['name' => 'Perfil Completo']);
         $user->assignRole(RolesEnum::ALUNO->value);
 
         $response = $this->get(route('admin.users.show', $user));
@@ -249,7 +248,7 @@ class UserAdminManagementTest extends TestCase
     {
         $org = Organization::factory()->create();
 
-        $user = User::factory()->create(['org_id' => $org->id, 'name' => 'Perfil Com Historico']);
+        $user = User::factory()->inOrg($org->id)->create(['name' => 'Perfil Com Historico']);
         $user->assignRole(RolesEnum::ALUNO->value);
 
         $completedCourse = Course::factory()->for($org)->create(['title' => 'Curso Concluido']);
@@ -299,7 +298,7 @@ class UserAdminManagementTest extends TestCase
         $this->actingAsAdmin();
         $org = Organization::factory()->create();
 
-        $user = User::factory()->create(['org_id' => $org->id]);
+        $user = User::factory()->inOrg($org->id)->create();
         $user->assignRole(RolesEnum::ALUNO->value);
 
         $this->get(route('admin.users.edit', $user))
@@ -323,7 +322,7 @@ class UserAdminManagementTest extends TestCase
         $this->actingAsAdmin();
         $org = Organization::factory()->create();
 
-        $user = User::factory()->create(['org_id' => $org->id]);
+        $user = User::factory()->inOrg($org->id)->create();
         $user->assignRole(RolesEnum::ALUNO->value);
 
         $payload = [
@@ -350,7 +349,7 @@ class UserAdminManagementTest extends TestCase
 
         $originOrg = Organization::factory()->create();
         $destinationOrg = Organization::factory()->create();
-        $target = User::factory()->create(['org_id' => $originOrg->id]);
+        $target = User::factory()->inOrg($originOrg->id)->create();
         $target->assignRole(RolesEnum::ALUNO->value);
 
         $response = $this->put(route('admin.users.update', $target), [
@@ -365,8 +364,10 @@ class UserAdminManagementTest extends TestCase
 
         $target->refresh();
         $this->assertSame('Perfil Atualizado', $target->name);
-        $this->assertSame($destinationOrg->id, $target->org_id);
         $this->assertTrue($target->hasRole(RolesEnum::GESTOR->value));
+        // o painel global não move membership: a conta continua na org de origem
+        $this->assertNotNull($target->credentialFor($originOrg));
+        $this->assertNull($target->credentialFor($destinationOrg));
     }
 
     public function test_admin_can_set_a_new_password_for_a_user(): void
@@ -374,9 +375,9 @@ class UserAdminManagementTest extends TestCase
         $this->actingAsAdmin();
 
         $org = Organization::factory()->create();
-        $target = User::factory()->create(['org_id' => $org->id]);
+        $target = User::factory()->inOrg($org->id)->create();
         $target->assignRole(RolesEnum::ALUNO->value);
-        $originalHash = $target->password;
+        $originalHash = $target->credentialFor($org)->password;
 
         $response = $this->put(route('admin.users.update', $target), [
             'name' => $target->name,
@@ -388,15 +389,18 @@ class UserAdminManagementTest extends TestCase
         ]);
 
         $response->assertRedirect(route('admin.users.index'));
-        $this->assertNotSame($originalHash, $target->fresh()->password);
+
+        $freshCredential = $target->fresh()->credentialFor($org);
+        $this->assertNotSame($originalHash, $freshCredential->password);
+        $this->assertTrue(Hash::check('nova-senha-123', $freshCredential->password));
     }
 
-    public function test_admin_can_promote_a_user_to_admin_clearing_org_id(): void
+    public function test_admin_can_promote_a_user_to_admin(): void
     {
         $this->actingAsAdmin();
 
         $org = Organization::factory()->create();
-        $target = User::factory()->create(['org_id' => $org->id]);
+        $target = User::factory()->inOrg($org->id)->create();
         $target->assignRole(RolesEnum::ALUNO->value);
 
         $response = $this->put(route('admin.users.update', $target), [
@@ -410,16 +414,17 @@ class UserAdminManagementTest extends TestCase
         $response->assertRedirect(route('admin.users.index'));
 
         $target->refresh();
-        $this->assertNull($target->org_id);
         $this->assertTrue($target->hasRole(RolesEnum::ADMIN->value));
+        // a conta por org não é removida pela promoção
+        $this->assertNotNull($target->credentialFor($org));
     }
 
-    public function test_admin_promotion_clears_stale_org_id_even_when_field_is_left_unchanged(): void
+    public function test_admin_promotion_keeps_the_membership_even_when_the_org_field_is_sent(): void
     {
         $this->actingAsAdmin();
 
         $org = Organization::factory()->create();
-        $target = User::factory()->create(['org_id' => $org->id]);
+        $target = User::factory()->inOrg($org->id)->create();
         $target->assignRole(RolesEnum::GESTOR->value);
 
         // Simulates the caller leaving the pre-filled Organização select
@@ -435,16 +440,17 @@ class UserAdminManagementTest extends TestCase
         $response->assertRedirect(route('admin.users.index'));
 
         $target->refresh();
-        $this->assertNull($target->org_id);
         $this->assertTrue($target->hasRole(RolesEnum::ADMIN->value));
+        // a conta por org não é removida pela promoção
+        $this->assertNotNull($target->credentialFor($org));
     }
 
-    public function test_org_id_is_required_when_role_is_not_admin(): void
+    public function test_org_id_sent_by_the_payload_is_ignored_by_the_global_surface(): void
     {
         $this->actingAsAdmin();
 
         $org = Organization::factory()->create();
-        $target = User::factory()->create(['org_id' => $org->id]);
+        $target = User::factory()->inOrg($org->id)->create();
         $target->assignRole(RolesEnum::ALUNO->value);
 
         $response = $this->put(route('admin.users.update', $target), [
@@ -454,7 +460,9 @@ class UserAdminManagementTest extends TestCase
             'org_id' => '',
         ]);
 
-        $response->assertSessionHasErrors('org_id');
+        // membership não é editável no painel global: org_id é ignorado
+        $response->assertRedirect(route('admin.users.index'));
+        $this->assertNotNull($target->fresh()->credentialFor($org));
     }
 
     public function test_admin_can_deactivate_an_active_user_and_it_is_audited(): void
@@ -462,7 +470,7 @@ class UserAdminManagementTest extends TestCase
         $admin = $this->actingAsAdmin();
 
         $org = Organization::factory()->create();
-        $target = User::factory()->create(['org_id' => $org->id, 'status' => 'active']);
+        $target = User::factory()->inOrg($org->id)->create();
         $target->assignRole(RolesEnum::ALUNO->value);
 
         $response = $this->patch(route('admin.users.status', $target), [
@@ -471,7 +479,7 @@ class UserAdminManagementTest extends TestCase
         ]);
 
         $response->assertRedirect(route('admin.users.index'));
-        $this->assertSame('inactive', $target->fresh()->status);
+        $this->assertSame('inactive', $target->fresh()->credentials()->first()->status);
 
         $this->assertDatabaseHas('audit_logs', [
             'event' => 'user.status_changed',
@@ -489,13 +497,13 @@ class UserAdminManagementTest extends TestCase
         $this->actingAsAdmin();
 
         $org = Organization::factory()->create();
-        $target = User::factory()->create(['org_id' => $org->id, 'status' => 'inactive']);
+        $target = User::factory()->inOrg($org->id)->inactive()->create();
         $target->assignRole(RolesEnum::ALUNO->value);
 
         $this->patch(route('admin.users.status', $target), ['status' => 'active'])
             ->assertRedirect(route('admin.users.index'));
 
-        $this->assertSame('active', $target->fresh()->status);
+        $this->assertSame('active', $target->fresh()->credentials()->first()->status);
     }
 
     public function test_admin_cannot_deactivate_their_own_account(): void
@@ -505,7 +513,7 @@ class UserAdminManagementTest extends TestCase
         $response = $this->patch(route('admin.users.status', $admin), ['status' => 'inactive']);
 
         $response->assertForbidden();
-        $this->assertSame('active', $admin->fresh()->status);
+        $this->assertSame('active', $admin->fresh()->credentials()->first()->status);
     }
 
     public function test_admin_can_delete_another_users_account_and_it_is_audited(): void
@@ -513,7 +521,7 @@ class UserAdminManagementTest extends TestCase
         $admin = $this->actingAsAdmin();
 
         $org = Organization::factory()->create();
-        $target = User::factory()->create(['org_id' => $org->id]);
+        $target = User::factory()->inOrg($org->id)->create();
         $target->assignRole(RolesEnum::ALUNO->value);
 
         $response = $this->delete(route('admin.users.destroy', $target));
@@ -534,7 +542,7 @@ class UserAdminManagementTest extends TestCase
         $this->assertSame($target->id, $log->new_values['user_id']);
     }
 
-    public function test_admin_cannot_deactivate_their_own_account_via_the_full_update_form(): void
+    public function test_admin_own_account_keeps_active_status_when_updated_via_the_full_update_form(): void
     {
         $admin = $this->actingAsAdmin();
 
@@ -542,12 +550,13 @@ class UserAdminManagementTest extends TestCase
             'name' => $admin->name,
             'email' => $admin->email,
             'role' => RolesEnum::ADMIN->value,
-            'org_id' => '',
             'status' => 'inactive',
         ]);
 
-        $response->assertForbidden();
-        $this->assertSame('active', $admin->fresh()->status);
+        // o formulário completo não carrega mais status: desativação é só via
+        // PATCH, que bloqueia auto-desativação (test_admin_cannot_deactivate_their_own_account)
+        $response->assertRedirect(route('admin.users.index'));
+        $this->assertSame('active', $admin->fresh()->credentials()->first()->status);
     }
 
     public function test_admin_cannot_change_their_own_role_away_from_admin(): void
@@ -570,9 +579,9 @@ class UserAdminManagementTest extends TestCase
     public function test_admin_cannot_delete_a_user_who_has_issued_certificates(): void
     {
         $org = Organization::factory()->create();
-        $target = User::factory()->create(['org_id' => $org->id]);
+        $target = User::factory()->inOrg($org->id)->create();
         $target->assignRole(RolesEnum::ALUNO->value);
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         Certificate::factory()->create(['user_id' => $target->id, 'course_id' => $course->id]);
 
         $this->actingAsAdmin();
@@ -587,9 +596,9 @@ class UserAdminManagementTest extends TestCase
     public function test_admin_cannot_delete_a_user_who_has_created_invitation_links(): void
     {
         $org = Organization::factory()->create();
-        $target = User::factory()->create(['org_id' => $org->id]);
+        $target = User::factory()->inOrg($org->id)->create();
         $target->assignRole(RolesEnum::GESTOR->value);
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         InvitationLink::factory()->create([
             'org_id' => $org->id,
             'course_id' => $course->id,
@@ -609,9 +618,9 @@ class UserAdminManagementTest extends TestCase
     {
         $orgA = Organization::factory()->create();
         $orgB = Organization::factory()->create();
-        $target = User::factory()->create(['org_id' => $orgA->id]);
+        $target = User::factory()->inOrg($orgA->id)->create();
         $target->assignRole(RolesEnum::GESTOR->value);
-        $course = Course::factory()->create(['org_id' => $orgA->id]);
+        $course = Course::factory()->inOrg($orgA->id)->create();
         InvitationLink::factory()->create([
             'org_id' => $orgA->id,
             'course_id' => $course->id,
@@ -650,12 +659,12 @@ class UserAdminManagementTest extends TestCase
     {
         $org = Organization::factory()->create();
         $otherOrg = Organization::factory()->create();
-        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor = User::factory()->inOrg($org->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
 
-        $ownAluno = User::factory()->create(['org_id' => $org->id]);
+        $ownAluno = User::factory()->inOrg($org->id)->create();
         $ownAluno->assignRole(RolesEnum::ALUNO->value);
-        $otherOrgAluno = User::factory()->create(['org_id' => $otherOrg->id]);
+        $otherOrgAluno = User::factory()->inOrg($otherOrg->id)->create();
         $otherOrgAluno->assignRole(RolesEnum::ALUNO->value);
 
         $response = $this->actingAs($gestor)->get(route('users.index'));
@@ -672,8 +681,6 @@ class UserAdminManagementTest extends TestCase
             'name' => $target->name,
             'email' => $target->email,
             'role' => RolesEnum::ALUNO->value,
-            'org_id' => $target->org_id,
-            'status' => $target->status,
         ];
     }
 }

@@ -16,7 +16,7 @@ class ProfileTest extends TestCase
 {
     public function test_authenticated_user_can_view_their_own_profile(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->inOrg(Organization::factory()->create())->create();
         $this->actingAs($user);
 
         $this->get('/profile')
@@ -33,7 +33,7 @@ class ProfileTest extends TestCase
 
     public function test_user_can_update_their_name_email_and_cpf(): void
     {
-        $user = User::factory()->create(['cpf' => null]);
+        $user = User::factory()->inOrg(Organization::factory()->create())->create(['cpf' => null]);
         $this->actingAs($user);
 
         $response = $this->patch('/profile', [
@@ -53,7 +53,7 @@ class ProfileTest extends TestCase
 
     public function test_updating_to_an_email_already_used_by_another_user_fails_validation(): void
     {
-        $user = User::factory()->create(['email' => 'mine@example.com']);
+        $user = User::factory()->inOrg(Organization::factory()->create())->create(['email' => 'mine@example.com']);
         $other = User::factory()->create(['email' => 'taken@example.com']);
         $this->actingAs($user);
 
@@ -69,7 +69,7 @@ class ProfileTest extends TestCase
 
     public function test_updating_to_a_cpf_already_used_by_another_user_fails_validation(): void
     {
-        $user = User::factory()->create(['cpf' => null]);
+        $user = User::factory()->inOrg(Organization::factory()->create())->create(['cpf' => null]);
         $other = User::factory()->create(['cpf' => '52998224725']);
         $this->actingAs($user);
 
@@ -85,7 +85,7 @@ class ProfileTest extends TestCase
 
     public function test_updating_with_an_invalid_checksum_cpf_fails_validation(): void
     {
-        $user = User::factory()->create(['cpf' => null]);
+        $user = User::factory()->inOrg(Organization::factory()->create())->create(['cpf' => null]);
         $this->actingAs($user);
 
         $response = $this->patch('/profile', [
@@ -99,7 +99,7 @@ class ProfileTest extends TestCase
 
     public function test_changing_email_does_not_reset_email_verified_at(): void
     {
-        $user = User::factory()->create([
+        $user = User::factory()->inOrg(Organization::factory()->create())->create([
             'email' => 'old@example.com',
             'email_verified_at' => now()->subDay(),
         ]);
@@ -133,7 +133,8 @@ class ProfileTest extends TestCase
         ]);
 
         $user->refresh();
-        $this->assertSame($org->id, $user->org_id);
-        $this->assertSame('active', $user->status);
+        $this->assertNotNull($user->credentialFor($org));
+        $this->assertNull($user->credentialFor($otherOrg));
+        $this->assertSame('active', $user->credentialFor($org)->status);
     }
 }

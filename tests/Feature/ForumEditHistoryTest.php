@@ -24,7 +24,7 @@ class ForumEditHistoryTest extends TestCase
     private function enrolledStudent(Course $course): User
     {
         /** @var User $student */
-        $student = User::factory()->create(['org_id' => null]);
+        $student = User::factory()->inOrg($course->org_id)->create();
         $student->assignRole(RolesEnum::ALUNO->value);
         $course->students()->attach($student->id, ['enrolled_at' => now(), 'status' => 'active']);
 
@@ -34,9 +34,9 @@ class ForumEditHistoryTest extends TestCase
     public function test_editing_a_reply_writes_a_forum_post_edits_row_with_the_pre_edit_content(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $student = $this->enrolledStudent($course);
-        $topic = ForumTopic::factory()->for($course)->for($student)->create(['org_id' => $course->org_id]);
+        $topic = ForumTopic::factory()->for($course)->for($student)->inOrg($course->org_id)->create();
         $reply = ForumReply::factory()->for($topic, 'topic')->for($student)->create(['content' => 'Resposta original.']);
 
         $this->actingAs($student)->put(route('forum-replies.update', [$course, $topic, $reply]), [
@@ -55,10 +55,10 @@ class ForumEditHistoryTest extends TestCase
     public function test_a_non_author_aluno_cannot_edit_someone_elses_reply(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $author = $this->enrolledStudent($course);
         $otherStudent = $this->enrolledStudent($course);
-        $topic = ForumTopic::factory()->for($course)->for($author)->create(['org_id' => $course->org_id]);
+        $topic = ForumTopic::factory()->for($course)->for($author)->inOrg($course->org_id)->create();
         $reply = ForumReply::factory()->for($topic, 'topic')->for($author)->create();
 
         $this->actingAs($otherStudent)->put(route('forum-replies.update', [$course, $topic, $reply]), [
@@ -69,10 +69,10 @@ class ForumEditHistoryTest extends TestCase
     public function test_any_user_with_topic_access_can_see_the_edit_history_not_only_the_author_or_gestor(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $author = $this->enrolledStudent($course);
         $otherStudent = $this->enrolledStudent($course);
-        $topic = ForumTopic::factory()->for($course)->for($author)->create(['org_id' => $course->org_id, 'content' => 'Conteúdo atual.']);
+        $topic = ForumTopic::factory()->for($course)->for($author)->inOrg($course->org_id)->create(['content' => 'Conteúdo atual.']);
 
         ForumPostEdit::factory()->create([
             'postable_type' => ForumTopic::class,
@@ -93,9 +93,9 @@ class ForumEditHistoryTest extends TestCase
     public function test_a_topic_with_no_edits_shows_no_edited_badge(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $student = $this->enrolledStudent($course);
-        $topic = ForumTopic::factory()->for($course)->for($student)->create(['org_id' => $course->org_id, 'edited_at' => null]);
+        $topic = ForumTopic::factory()->for($course)->for($student)->inOrg($course->org_id)->create(['edited_at' => null]);
 
         $response = $this->actingAs($student)->get(route('forum.show', [$course, $topic]));
 

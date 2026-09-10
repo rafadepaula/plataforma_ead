@@ -32,7 +32,7 @@ class ProfessorEssayGradingTest extends TestCase
      */
     private function courseWithEssayQuiz(Organization $org): array
     {
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
         $lesson = Lesson::factory()->for($module)->create(['type' => 'quiz', 'is_published' => true]);
         $quiz = Quiz::factory()->for($lesson)->create(['min_score_percentage' => 50]);
@@ -49,7 +49,7 @@ class ProfessorEssayGradingTest extends TestCase
     private function enrolledAluno(Course $course, string $name): User
     {
         /** @var User $aluno */
-        $aluno = User::factory()->create(['org_id' => null, 'name' => $name]);
+        $aluno = User::factory()->inOrg($course->org_id)->create(['name' => $name]);
         $aluno->assignRole('aluno');
         $aluno->courses()->attach($course->id, ['status' => 'active', 'enrolled_at' => now()]);
 
@@ -64,7 +64,7 @@ class ProfessorEssayGradingTest extends TestCase
     private function professorFor(Organization $org, string $name = 'Professor Titular'): User
     {
         /** @var User $professor */
-        $professor = User::factory()->professor()->create(['org_id' => $org->id, 'name' => $name]);
+        $professor = User::factory()->professor()->inOrg($org->id)->create(['name' => $name]);
 
         return $professor;
     }
@@ -167,7 +167,7 @@ class ProfessorEssayGradingTest extends TestCase
     public function test_assigned_professor_grades_the_attempt_and_the_score_is_recalculated_like_the_gestors(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
         $lesson = Lesson::factory()->for($module)->create(['type' => 'quiz', 'is_published' => true]);
         $quiz = Quiz::factory()->for($lesson)->create(['min_score_percentage' => 50]);

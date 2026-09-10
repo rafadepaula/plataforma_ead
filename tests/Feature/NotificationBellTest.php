@@ -70,7 +70,7 @@ class NotificationBellTest extends TestCase
     public function test_read_all_does_not_mark_notifications_belonging_to_another_user(): void
     {
         $user = $this->actingAsOrgUser(role: 'aluno');
-        $otherUser = User::factory()->create(['org_id' => $user->org_id]);
+        $otherUser = User::factory()->inOrg($user->org_id)->create();
         $otherUser->assignRole('aluno');
 
         $othersNotification = $this->createNotification($otherUser);
@@ -122,8 +122,8 @@ class NotificationBellTest extends TestCase
     public function test_user_cannot_mark_another_users_notification_as_read_even_by_guessing_uuid(): void
     {
         $userA = $this->actingAsOrgUser(role: 'aluno');
-        $organization = $userA->organization;
-        $userB = User::factory()->create(['org_id' => $organization->id]);
+        $organization = $userA->credentials()->first()->organization;
+        $userB = User::factory()->inOrg($organization->id)->create();
         $userB->assignRole('aluno');
 
         $notificationOfB = $this->createNotification($userB);

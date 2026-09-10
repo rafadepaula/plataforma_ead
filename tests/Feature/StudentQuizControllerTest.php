@@ -20,7 +20,7 @@ class StudentQuizControllerTest extends TestCase
     private function createQuizSetup(array $quizAttributes = []): array
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
         $lesson = Lesson::factory()->for($module)->create(['type' => 'quiz', 'is_published' => true]);
         $quiz = Quiz::factory()->for($lesson)->create(array_merge([
@@ -30,7 +30,7 @@ class StudentQuizControllerTest extends TestCase
         ], $quizAttributes));
 
         /** @var User $aluno */
-        $aluno = User::factory()->create(['org_id' => null]);
+        $aluno = User::factory()->inOrg($course->org_id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
         $aluno->courses()->attach($course->id, ['status' => 'active', 'enrolled_at' => now()]);
 
@@ -50,7 +50,7 @@ class StudentQuizControllerTest extends TestCase
         [$aluno, $lesson] = $this->createQuizSetup();
 
         /** @var User $otherAluno */
-        $otherAluno = User::factory()->create(['org_id' => null]);
+        $otherAluno = User::factory()->inOrg($lesson->module->course->org_id)->create();
         $otherAluno->assignRole(RolesEnum::ALUNO->value);
 
         $response = $this->actingAs($otherAluno)->get(route('student.quizzes.show', $lesson));

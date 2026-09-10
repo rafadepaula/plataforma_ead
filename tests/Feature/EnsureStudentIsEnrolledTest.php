@@ -31,7 +31,7 @@ class EnsureStudentIsEnrolledTest extends TestCase
 
     private function courseWithLesson(Organization $org): array
     {
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->create(['course_id' => $course->id]);
         $lesson = Lesson::factory()->create(['module_id' => $module->id, 'is_published' => true]);
 
@@ -70,7 +70,7 @@ class EnsureStudentIsEnrolledTest extends TestCase
     {
         $org = Organization::factory()->create();
         [$course] = $this->courseWithLesson($org);
-        $student = User::factory()->create();
+        $student = User::factory()->inOrg(Organization::factory()->create())->create();
         $student->assignRole(RolesEnum::ALUNO->value);
         $course->students()->attach($student->id, ['enrolled_at' => now(), 'status' => 'active']);
         $this->actingAs($student);
@@ -82,7 +82,7 @@ class EnsureStudentIsEnrolledTest extends TestCase
     {
         $org = Organization::factory()->create();
         [$course] = $this->courseWithLesson($org);
-        $student = User::factory()->create();
+        $student = User::factory()->inOrg(Organization::factory()->create())->create();
         $student->assignRole(RolesEnum::ALUNO->value);
         $course->students()->attach($student->id, ['enrolled_at' => now(), 'status' => 'completed']);
         $this->actingAs($student);
@@ -94,7 +94,7 @@ class EnsureStudentIsEnrolledTest extends TestCase
     {
         $org = Organization::factory()->create();
         [$course] = $this->courseWithLesson($org);
-        $student = User::factory()->create();
+        $student = User::factory()->inOrg(Organization::factory()->create())->create();
         $student->assignRole(RolesEnum::ALUNO->value);
         $course->students()->attach($student->id, ['enrolled_at' => now(), 'status' => 'cancelled']);
         $this->actingAs($student);
@@ -109,7 +109,7 @@ class EnsureStudentIsEnrolledTest extends TestCase
     {
         $org = Organization::factory()->create();
         [$course] = $this->courseWithLesson($org);
-        $student = User::factory()->create();
+        $student = User::factory()->inOrg(Organization::factory()->create())->create();
         $student->assignRole(RolesEnum::ALUNO->value);
         $this->actingAs($student);
 
@@ -123,7 +123,7 @@ class EnsureStudentIsEnrolledTest extends TestCase
     {
         $org = Organization::factory()->create();
         [$course] = $this->courseWithLesson($org);
-        $student = User::factory()->create();
+        $student = User::factory()->inOrg(Organization::factory()->create())->create();
         $student->assignRole(RolesEnum::ALUNO->value);
         $this->actingAs($student);
 
@@ -138,7 +138,7 @@ class EnsureStudentIsEnrolledTest extends TestCase
     {
         $org = Organization::factory()->create();
         [$course] = $this->courseWithLesson($org);
-        $student = User::factory()->create();
+        $student = User::factory()->inOrg(Organization::factory()->create())->create();
         $student->assignRole(RolesEnum::ALUNO->value);
         $this->actingAs($student);
 
@@ -149,7 +149,7 @@ class EnsureStudentIsEnrolledTest extends TestCase
     {
         $org = Organization::factory()->create();
         [$course, $lesson] = $this->courseWithLesson($org);
-        $student = User::factory()->create();
+        $student = User::factory()->inOrg(Organization::factory()->create())->create();
         $student->assignRole(RolesEnum::ALUNO->value);
         $course->students()->attach($student->id, ['enrolled_at' => now(), 'status' => 'active']);
         $this->actingAs($student);

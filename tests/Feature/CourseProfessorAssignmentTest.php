@@ -19,8 +19,8 @@ class CourseProfessorAssignmentTest extends TestCase
     private function courseWithGestor(): array
     {
         $org = Organization::factory()->create();
-        $gestor = User::factory()->gestor()->create(['org_id' => $org->id]);
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $gestor = User::factory()->gestor()->inOrg($org->id)->create();
+        $course = Course::factory()->inOrg($org->id)->create();
 
         $this->actingAs($gestor);
 
@@ -30,8 +30,7 @@ class CourseProfessorAssignmentTest extends TestCase
     public function test_gestor_sees_the_panel_listing_assigned_professors(): void
     {
         [$org, $gestor, $course] = $this->courseWithGestor();
-        $professor = User::factory()->professor()->create([
-            'org_id' => $org->id,
+        $professor = User::factory()->professor()->inOrg($org)->create([
             'name' => 'Professora Atribuída',
         ]);
         $course->professors()->attach($professor->id, ['assigned_by' => $gestor->id]);
@@ -47,8 +46,8 @@ class CourseProfessorAssignmentTest extends TestCase
     public function test_admin_impersonating_the_org_also_sees_the_panel(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
-        $professor = User::factory()->professor()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
+        $professor = User::factory()->professor()->inOrg($org->id)->create();
         $course->professors()->attach($professor->id);
 
         // `actingAsAdmin()` seeds `session('active_org_id')`, the same
@@ -63,7 +62,7 @@ class CourseProfessorAssignmentTest extends TestCase
     public function test_store_attaches_a_same_org_professor_recording_assigned_by(): void
     {
         [$org, $gestor, $course] = $this->courseWithGestor();
-        $professor = User::factory()->professor()->create(['org_id' => $org->id]);
+        $professor = User::factory()->professor()->inOrg($org->id)->create();
 
         $this->post(route('courses.professors.store', $course), [
             'user_id' => $professor->id,
@@ -87,9 +86,9 @@ class CourseProfessorAssignmentTest extends TestCase
     {
         $org = Organization::factory()->create();
         $otherOrg = Organization::factory()->create();
-        $gestor = User::factory()->gestor()->create(['org_id' => $org->id]);
-        $course = Course::factory()->create(['org_id' => $org->id]);
-        $foreignProfessor = User::factory()->professor()->create(['org_id' => $otherOrg->id]);
+        $gestor = User::factory()->gestor()->inOrg($org->id)->create();
+        $course = Course::factory()->inOrg($org->id)->create();
+        $foreignProfessor = User::factory()->professor()->inOrg($otherOrg->id)->create();
 
         $this->actingAs($gestor);
 
@@ -109,7 +108,7 @@ class CourseProfessorAssignmentTest extends TestCase
     public function test_store_rejects_a_same_org_user_who_is_not_a_professor(): void
     {
         [$org, , $course] = $this->courseWithGestor();
-        $aluno = User::factory()->aluno()->create(['org_id' => $org->id]);
+        $aluno = User::factory()->aluno()->inOrg($org->id)->create();
 
         $this->post(route('courses.professors.store', $course), [
             'user_id' => $aluno->id,
@@ -124,7 +123,7 @@ class CourseProfessorAssignmentTest extends TestCase
     public function test_duplicate_assignment_never_creates_a_second_row(): void
     {
         [$org, , $course] = $this->courseWithGestor();
-        $professor = User::factory()->professor()->create(['org_id' => $org->id]);
+        $professor = User::factory()->professor()->inOrg($org->id)->create();
 
         $this->post(route('courses.professors.store', $course), ['user_id' => $professor->id])
             ->assertRedirect(route('courses.professors.index', $course));
@@ -142,7 +141,7 @@ class CourseProfessorAssignmentTest extends TestCase
     public function test_destroy_detaches_the_professor(): void
     {
         [$org, $gestor, $course] = $this->courseWithGestor();
-        $professor = User::factory()->professor()->create(['org_id' => $org->id]);
+        $professor = User::factory()->professor()->inOrg($org->id)->create();
         $course->professors()->attach($professor->id, ['assigned_by' => $gestor->id]);
 
         $this->delete(route('courses.professors.destroy', [$course, $professor]))
@@ -158,7 +157,7 @@ class CourseProfessorAssignmentTest extends TestCase
     public function test_professor_is_forbidden_on_the_assignment_panel(): void
     {
         [$org, $gestor, $course] = $this->courseWithGestor();
-        $professor = User::factory()->professor()->create(['org_id' => $org->id]);
+        $professor = User::factory()->professor()->inOrg($org->id)->create();
         $course->professors()->attach($professor->id, ['assigned_by' => $gestor->id]);
         $this->actingAs($professor);
 
@@ -180,10 +179,10 @@ class CourseProfessorAssignmentTest extends TestCase
     {
         $org = Organization::factory()->create();
         $otherOrg = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
-        $professor = User::factory()->professor()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
+        $professor = User::factory()->professor()->inOrg($org->id)->create();
         $course->professors()->attach($professor->id);
-        $foreignGestor = User::factory()->gestor()->create(['org_id' => $otherOrg->id]);
+        $foreignGestor = User::factory()->gestor()->inOrg($otherOrg->id)->create();
 
         $this->actingAs($foreignGestor);
 

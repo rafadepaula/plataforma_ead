@@ -29,10 +29,10 @@ class QuizAuthoringDuskTest extends DuskTestCase
     public function test_gestor_quiz_question_builder_ui_and_save_flow_lifecycle(): void
     {
         $org = Organization::factory()->create();
-        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor = User::factory()->inOrg($org->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
 
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
         $lesson = Lesson::factory()->for($module)->create(['type' => 'quiz', 'is_published' => true]);
         $quiz = Quiz::factory()->for($lesson)->create();
@@ -207,10 +207,10 @@ class QuizAuthoringDuskTest extends DuskTestCase
     public function test_question_without_a_correct_option_is_rejected_with_a_422_validation_error(): void
     {
         $org = Organization::factory()->create();
-        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor = User::factory()->inOrg($org->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
 
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
         $lesson = Lesson::factory()->for($module)->create(['type' => 'quiz', 'is_published' => true]);
         $quiz = Quiz::factory()->for($lesson)->create();

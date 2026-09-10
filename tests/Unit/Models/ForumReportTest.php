@@ -19,11 +19,11 @@ class ForumReportTest extends TestCase
     public function test_it_has_reporter_and_reviewer_relationships(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
-        $author = User::factory()->create(['org_id' => $org->id]);
-        $reporter = User::factory()->create(['org_id' => $org->id]);
-        $reviewer = User::factory()->create(['org_id' => $org->id]);
-        $topic = ForumTopic::factory()->for($course)->for($author)->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
+        $author = User::factory()->inOrg($org->id)->create();
+        $reporter = User::factory()->inOrg($org->id)->create();
+        $reviewer = User::factory()->inOrg($org->id)->create();
+        $topic = ForumTopic::factory()->for($course)->for($author)->inOrg($org->id)->create();
 
         $report = ForumReport::factory()->create([
             'postable_type' => ForumTopic::class,
@@ -39,9 +39,9 @@ class ForumReportTest extends TestCase
     public function test_postable_resolves_the_reported_topic(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
-        $user = User::factory()->create(['org_id' => $org->id]);
-        $topic = ForumTopic::factory()->for($course)->for($user)->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
+        $user = User::factory()->inOrg($org->id)->create();
+        $topic = ForumTopic::factory()->for($course)->for($user)->inOrg($org->id)->create();
 
         $report = ForumReport::factory()->create([
             'postable_type' => ForumTopic::class,

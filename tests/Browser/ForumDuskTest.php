@@ -26,7 +26,7 @@ class ForumDuskTest extends DuskTestCase
     private function enrolledStudent(Course $course): User
     {
         /** @var User $student */
-        $student = User::factory()->create(['org_id' => null]);
+        $student = User::factory()->inOrg($course->org_id)->create();
         $student->assignRole(RolesEnum::ALUNO->value);
         $course->students()->attach($student->id, ['enrolled_at' => now(), 'status' => 'active']);
 
@@ -36,7 +36,7 @@ class ForumDuskTest extends DuskTestCase
     public function test_student_forum_participation_lifecycle(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $student = $this->enrolledStudent($course);
 
         $this->browse(function (Browser $browser) use ($student, $course): void {
@@ -134,9 +134,9 @@ class ForumDuskTest extends DuskTestCase
     public function test_forum_report_and_moderation_lifecycle(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $student = $this->enrolledStudent($course);
-        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor = User::factory()->inOrg($org->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
 
         $topic = ForumTopic::factory()->for($course)->for($student)->create([
@@ -196,9 +196,9 @@ class ForumDuskTest extends DuskTestCase
     public function test_gestor_can_dismiss_or_remove_reported_posts_and_author_can_delete_own_posts(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $student = $this->enrolledStudent($course);
-        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor = User::factory()->inOrg($org->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
 
         // Um tópico cuja denúncia será dispensada ("Manter").
@@ -291,7 +291,7 @@ class ForumDuskTest extends DuskTestCase
     public function test_a_student_cannot_edit_someone_elses_topic(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $author = $this->enrolledStudent($course);
         $otherStudent = $this->enrolledStudent($course);
 
@@ -326,8 +326,8 @@ class ForumDuskTest extends DuskTestCase
     public function test_gestor_reaches_the_forum_from_the_course_catalog_lifecycle(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
-        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
+        $gestor = User::factory()->inOrg($org->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
 
         $this->browse(function (Browser $browser) use ($gestor, $course): void {
@@ -369,10 +369,10 @@ class ForumDuskTest extends DuskTestCase
     public function test_a_student_who_is_not_enrolled_is_sent_back_to_the_catalog_instead_of_the_forum(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
 
         /** @var User $notEnrolledStudent */
-        $notEnrolledStudent = User::factory()->create(['org_id' => $org->id]);
+        $notEnrolledStudent = User::factory()->inOrg($org->id)->create();
         $notEnrolledStudent->assignRole(RolesEnum::ALUNO->value);
 
         $this->browse(function (Browser $browser) use ($notEnrolledStudent, $course): void {

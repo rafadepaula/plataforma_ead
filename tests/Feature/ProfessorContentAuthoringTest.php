@@ -23,8 +23,8 @@ class ProfessorContentAuthoringTest extends TestCase
 {
     private function assignedProfessor(Organization $org): array
     {
-        $professor = User::factory()->professor()->create(['org_id' => $org->id]);
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $professor = User::factory()->professor()->inOrg($org->id)->create();
+        $course = Course::factory()->inOrg($org->id)->create();
 
         // Same attach call shape the assignment panel uses.
         $course->professors()->attach($professor->id, ['assigned_by' => $professor->id]);
@@ -94,7 +94,7 @@ class ProfessorContentAuthoringTest extends TestCase
     {
         $org = Organization::factory()->create();
         [$professor] = $this->assignedProfessor($org);
-        $otherCourse = Course::factory()->create(['org_id' => $org->id]);
+        $otherCourse = Course::factory()->inOrg($org->id)->create();
         $first = Module::factory()->for($otherCourse)->create(['order_index' => 0]);
         $second = Module::factory()->for($otherCourse)->create(['order_index' => 1]);
 
@@ -165,8 +165,8 @@ class ProfessorContentAuthoringTest extends TestCase
     public function test_unassigned_professor_from_the_same_org_is_forbidden_on_every_content_endpoint(): void
     {
         $org = Organization::factory()->create();
-        $professor = User::factory()->professor()->create(['org_id' => $org->id]);
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $professor = User::factory()->professor()->inOrg($org->id)->create();
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
         $lesson = Lesson::factory()->for($module)->create();
         $this->actingAs($professor);
@@ -209,10 +209,10 @@ class ProfessorContentAuthoringTest extends TestCase
     {
         $org = Organization::factory()->create();
         $otherOrg = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $otherOrg->id]);
+        $course = Course::factory()->inOrg($otherOrg->id)->create();
         $module = Module::factory()->for($course)->create();
         $lesson = Lesson::factory()->for($module)->create();
-        $professor = User::factory()->professor()->create(['org_id' => $org->id]);
+        $professor = User::factory()->professor()->inOrg($org->id)->create();
         $this->actingAs($professor);
 
         // The route-bound `Course` is OrgScope-filtered for a foreign-org
@@ -253,7 +253,7 @@ class ProfessorContentAuthoringTest extends TestCase
     public function test_gestor_of_the_same_org_still_creates_modules(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $this->actingAsOrgUser($org, 'gestor');
 
         $this->post(route('courses.modules.store', $course), [

@@ -41,7 +41,7 @@ class MigrateRawYoutubeUrlsToEmbedTest extends TestCase
         parent::setUp();
 
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $this->module = Module::factory()->for($course)->create();
 
         Schema::table('lessons', function (Blueprint $table): void {

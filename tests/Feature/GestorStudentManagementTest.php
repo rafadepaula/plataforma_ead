@@ -21,7 +21,7 @@ class GestorStudentManagementTest extends TestCase
     private function enrolledAluno(Organization $org, ?string $name = null, string $pivotStatus = 'active'): User
     {
         $course = Course::factory()->for($org)->create();
-        $aluno = User::factory()->create(['org_id' => $org->id] + ($name !== null ? ['name' => $name] : []));
+        $aluno = User::factory()->inOrg($org)->create($name !== null ? ['name' => $name] : []);
         $aluno->assignRole(RolesEnum::ALUNO->value);
         $aluno->courses()->attach($course->id, ['status' => $pivotStatus, 'enrolled_at' => now()]);
 
@@ -34,19 +34,19 @@ class GestorStudentManagementTest extends TestCase
     {
         $org = Organization::factory()->create();
         $otherOrg = Organization::factory()->create();
-        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor = User::factory()->inOrg($org->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
 
         $enrolled = $this->enrolledAluno($org, 'Aluno Matriculado');
         // own-org Aluno with a cancelled (revoked) enrollment.
         $cancelled = $this->enrolledAluno($org, 'Aluno Cancelado', 'cancelled');
         // own-org Aluno with no enrollment at all.
-        $unEnrolled = User::factory()->create(['org_id' => $org->id, 'name' => 'Aluno Sem Matrícula']);
+        $unEnrolled = User::factory()->inOrg($org->id)->create(['name' => 'Aluno Sem Matrícula']);
         $unEnrolled->assignRole(RolesEnum::ALUNO->value);
         // a foreign-org Aluno.
         $this->enrolledAluno($otherOrg, 'Aluno De Outra Org');
         // an own-org staff account (never listed on this screen).
-        $fellowGestor = User::factory()->create(['org_id' => $org->id, 'name' => 'Gestor Colega']);
+        $fellowGestor = User::factory()->inOrg($org->id)->create(['name' => 'Gestor Colega']);
         $fellowGestor->assignRole(RolesEnum::GESTOR->value);
 
         $response = $this->actingAs($gestor)->get(route('gestor.students.index'));
@@ -69,7 +69,7 @@ class GestorStudentManagementTest extends TestCase
         // finished Course — the Aluno remains enrolled (history kept by
         // the pivot's soft-status design), so they stay on the screen.
         $org = Organization::factory()->create();
-        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor = User::factory()->inOrg($org->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
 
         $aluno = $this->enrolledAluno($org, 'Aluno Formado', 'completed');
@@ -157,7 +157,7 @@ class GestorStudentManagementTest extends TestCase
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
 
-        $fellowGestor = User::factory()->create(['org_id' => $org->id]);
+        $fellowGestor = User::factory()->inOrg($org->id)->create();
         $fellowGestor->assignRole(RolesEnum::GESTOR->value);
 
         $this->get(route('gestor.students.edit', $fellowGestor))->assertForbidden();

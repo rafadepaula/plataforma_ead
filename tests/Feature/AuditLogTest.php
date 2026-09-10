@@ -64,7 +64,7 @@ class AuditLogTest extends TestCase
 
         AuditLog::query()->delete();
 
-        $user = User::factory()->create(['org_id' => $org->id, 'password' => bcrypt('secret-password')]);
+        $user = User::factory()->inOrg($org->id)->withPassword('secret-password')->create();
 
         $log = AuditLog::withoutGlobalScopes()
             ->where('auditable_type', $user->getMorphClass())
@@ -73,16 +73,27 @@ class AuditLogTest extends TestCase
             ->first();
 
         $this->assertNotNull($log);
-        $this->assertSame($org->id, $log->org_id);
+        // a User é a identidade global: diff sem org e sem password
+        $this->assertNull($log->org_id);
         $this->assertIsArray($log->new_values);
-        $this->assertArrayHasKey('password', $log->new_values);
-        $this->assertSame('[REDACTED]', $log->new_values['password']);
+        $this->assertArrayNotHasKey('password', $log->new_values);
+
+        // a senha vive na conta por org (credential) e sai redatada
+        $credential = $user->credentialFor($org);
+        $credentialLog = AuditLog::withoutGlobalScopes()
+            ->where('auditable_type', $credential->getMorphClass())
+            ->where('auditable_id', $credential->id)
+            ->where('event', $credential->getMorphClass().'.created')
+            ->first();
+
+        $this->assertNotNull($credentialLog);
+        $this->assertSame('[REDACTED]', $credentialLog->new_values['password']);
     }
 
     public function test_auditable_trait_records_an_updated_event_with_old_and_new_values(): void
     {
         $org = Organization::factory()->create();
-        $user = User::factory()->create(['org_id' => $org->id, 'name' => 'Original Name']);
+        $user = User::factory()->inOrg($org->id)->create(['name' => 'Original Name']);
 
         AuditLog::query()->delete();
 
@@ -121,16 +132,17 @@ class AuditLogTest extends TestCase
     public function test_auditable_trait_redacts_password_even_though_it_is_hidden(): void
     {
         $org = Organization::factory()->create();
-        $user = User::factory()->create(['org_id' => $org->id]);
+        $user = User::factory()->inOrg($org->id)->create();
+        $credential = $user->credentialFor($org);
 
         AuditLog::query()->delete();
 
-        $user->update(['password' => bcrypt('brand-new-password')]);
+        $credential->update(['password' => 'brand-new-password']);
 
         $log = AuditLog::withoutGlobalScopes()
-            ->where('auditable_type', $user->getMorphClass())
-            ->where('auditable_id', $user->id)
-            ->where('event', $user->getMorphClass().'.updated')
+            ->where('auditable_type', $credential->getMorphClass())
+            ->where('auditable_id', $credential->id)
+            ->where('event', $credential->getMorphClass().'.updated')
             ->first();
 
         $this->assertNotNull($log);
@@ -296,6 +308,7 @@ class AuditLogTest extends TestCase
         });
 
         $this->actingAsOrgUser($orgA, 'gestor');
+        $this->withOrgContext($orgA);
 
         $events = AuditLog::query()->pluck('event')->all();
 
@@ -387,8 +400,11 @@ class AuditLogTest extends TestCase
     public function test_successful_login_records_a_login_success_event_with_password_redacted(): void
     {
         $org = Organization::factory()->create();
-        $user = User::factory()->create(['org_id' => $org->id, 'password' => bcrypt('correct-password')]);
+        $user = User::factory()->inOrg($org->id)->withPassword('correct-password')->create();
         $user->assignRole(RolesEnum::ALUNO->value);
+
+        // a conta por org só autentica no portal (host) da própria org
+        $this->onHost($org->host);
 
         AuditLog::query()->delete();
 
@@ -420,7 +436,7 @@ class AuditLogTest extends TestCase
     public function test_failed_login_records_a_login_failed_event_with_null_org_and_user(): void
     {
         $org = Organization::factory()->create();
-        $user = User::factory()->create(['org_id' => $org->id, 'password' => bcrypt('correct-password')]);
+        $user = User::factory()->inOrg($org->id)->withPassword('correct-password')->create();
 
         AuditLog::query()->delete();
 
@@ -453,7 +469,10 @@ class AuditLogTest extends TestCase
     public function test_password_reset_records_a_password_reset_event_with_password_redacted(): void
     {
         $org = Organization::factory()->create();
-        $user = User::factory()->create(['org_id' => $org->id]);
+        $user = User::factory()->inOrg($org->id)->create();
+
+        // o reset troca a senha da conta do host da org
+        $this->onHost($org->host);
 
         AuditLog::query()->delete();
 
@@ -530,7 +549,7 @@ class AuditLogTest extends TestCase
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org, 'gestor');
 
-        $student = User::factory()->create(['org_id' => $org->id, 'status' => 'active']);
+        $student = User::factory()->inOrg($org->id)->create();
         $student->assignRole(RolesEnum::ALUNO->value);
 
         AuditLog::query()->delete();
@@ -555,7 +574,7 @@ class AuditLogTest extends TestCase
         $quiz = Quiz::factory()->for($lesson)->create(['min_score_percentage' => 50]);
         $essayQuestion = QuizQuestion::factory()->for($quiz)->essay()->create();
 
-        $aluno = User::factory()->create(['org_id' => null]);
+        $aluno = User::factory()->inOrg($org->id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
         $aluno->courses()->attach($course->id, ['status' => 'active', 'enrolled_at' => now()]);
 
@@ -581,7 +600,7 @@ class AuditLogTest extends TestCase
     {
         $org = Organization::factory()->create();
         $course = Course::factory()->for($org)->create();
-        $student = User::factory()->create(['org_id' => $org->id]);
+        $student = User::factory()->inOrg($org->id)->create();
         $student->assignRole(RolesEnum::ALUNO->value);
         $course->students()->attach($student->id, [
             'enrolled_at' => now(),
@@ -610,7 +629,7 @@ class AuditLogTest extends TestCase
     {
         $org = Organization::factory()->create();
         $course = Course::factory()->for($org)->create();
-        $student = User::factory()->create(['org_id' => $org->id]);
+        $student = User::factory()->inOrg($org->id)->create();
         $student->assignRole(RolesEnum::ALUNO->value);
         $course->students()->attach($student->id, [
             'enrolled_at' => now(),
@@ -817,7 +836,7 @@ class AuditLogTest extends TestCase
         }
 
         $org = Organization::factory()->create();
-        $matchingUser = User::factory()->create(['org_id' => $org->id, 'name' => 'Findable Person']);
+        $matchingUser = User::factory()->inOrg($org->id)->create(['name' => 'Findable Person']);
 
         AuditLog::withoutEvents(function () use ($org, $matchingUser) {
             AuditLog::factory()->for($org, 'organization')->for($matchingUser, 'user')->create([

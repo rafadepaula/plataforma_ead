@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\Permissions\RolesEnum;
 use App\Models\Course;
+use App\Models\Credential;
 use App\Models\InvitationLink;
 use App\Models\Organization;
 use App\Models\User;
@@ -22,10 +23,11 @@ class InvitationHttpTest extends TestCase
     public function test_show_renders_a_usable_invitation_link(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $this->onHost($org->host);
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $invitationLink = InvitationLink::factory()->for($course)->create([
             'org_id' => $org->id,
-            'created_by' => User::factory()->create(['org_id' => $org->id])->id,
+            'created_by' => User::factory()->inOrg($org->id)->create()->id,
         ]);
 
         $this->get(route('invitation.show', $invitationLink->token))
@@ -36,10 +38,11 @@ class InvitationHttpTest extends TestCase
     public function test_show_rejects_an_expired_invitation_link(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $this->onHost($org->host);
+        $course = Course::factory()->inOrg($org->id)->create();
         $invitationLink = InvitationLink::factory()->expired()->for($course)->create([
             'org_id' => $org->id,
-            'created_by' => User::factory()->create(['org_id' => $org->id])->id,
+            'created_by' => User::factory()->inOrg($org->id)->create()->id,
         ]);
 
         $this->get(route('invitation.show', $invitationLink->token))
@@ -50,10 +53,11 @@ class InvitationHttpTest extends TestCase
     public function test_show_rejects_a_revoked_invitation_link(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $this->onHost($org->host);
+        $course = Course::factory()->inOrg($org->id)->create();
         $invitationLink = InvitationLink::factory()->revoked()->for($course)->create([
             'org_id' => $org->id,
-            'created_by' => User::factory()->create(['org_id' => $org->id])->id,
+            'created_by' => User::factory()->inOrg($org->id)->create()->id,
         ]);
 
         $this->get(route('invitation.show', $invitationLink->token))
@@ -63,6 +67,8 @@ class InvitationHttpTest extends TestCase
 
     public function test_show_rejects_an_unknown_token(): void
     {
+        $this->onHost(Organization::factory()->create()->host);
+
         $this->get(route('invitation.show', 'does-not-exist'))
             ->assertStatus(404)
             ->assertSee('Este convite não foi encontrado.');
@@ -70,7 +76,10 @@ class InvitationHttpTest extends TestCase
 
     public function test_check_email_reports_existing_and_new_emails(): void
     {
-        User::factory()->create(['email' => 'ja-cadastrado@example.com']);
+        $org = Organization::factory()->create();
+        $this->onHost($org->host);
+
+        User::factory()->inOrg($org)->create(['email' => 'ja-cadastrado@example.com']);
 
         $this->postJson(route('invitation.check-email'), ['email' => 'ja-cadastrado@example.com'])
             ->assertOk()
@@ -84,10 +93,11 @@ class InvitationHttpTest extends TestCase
     public function test_store_creates_a_new_user_and_enrolls_them(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $this->onHost($org->host);
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $invitationLink = InvitationLink::factory()->for($course)->create([
             'org_id' => $org->id,
-            'created_by' => User::factory()->create(['org_id' => $org->id])->id,
+            'created_by' => User::factory()->inOrg($org->id)->create()->id,
         ]);
 
         $response = $this->post(route('invitation.store', $invitationLink->token), [
@@ -114,10 +124,11 @@ class InvitationHttpTest extends TestCase
     public function test_store_rejects_a_checksum_invalid_cpf_for_a_new_user(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $this->onHost($org->host);
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $invitationLink = InvitationLink::factory()->for($course)->create([
             'org_id' => $org->id,
-            'created_by' => User::factory()->create(['org_id' => $org->id])->id,
+            'created_by' => User::factory()->inOrg($org->id)->create()->id,
         ]);
 
         $this->post(route('invitation.store', $invitationLink->token), [
@@ -136,12 +147,14 @@ class InvitationHttpTest extends TestCase
     public function test_store_authenticates_an_existing_user_without_duplicating_the_account(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $this->onHost($org->host);
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $invitationLink = InvitationLink::factory()->for($course)->create([
             'org_id' => $org->id,
-            'created_by' => User::factory()->create(['org_id' => $org->id])->id,
+            'created_by' => User::factory()->inOrg($org->id)->create()->id,
         ]);
-        $existing = User::factory()->create(['email' => 'existente@example.com', 'password' => bcrypt('senha-correta')]);
+        $existing = User::factory()->create(['email' => 'existente@example.com']);
+        Credential::factory()->forOrg($org)->withPassword('senha-correta')->create(['user_id' => $existing->id]);
 
         $response = $this->post(route('invitation.store', $invitationLink->token), [
             'email' => 'existente@example.com',
@@ -157,12 +170,14 @@ class InvitationHttpTest extends TestCase
     public function test_store_rejects_wrong_password_for_existing_user(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $this->onHost($org->host);
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $invitationLink = InvitationLink::factory()->for($course)->create([
             'org_id' => $org->id,
-            'created_by' => User::factory()->create(['org_id' => $org->id])->id,
+            'created_by' => User::factory()->inOrg($org->id)->create()->id,
         ]);
-        User::factory()->create(['email' => 'existente2@example.com', 'password' => bcrypt('senha-correta')]);
+        $existente2 = User::factory()->create(['email' => 'existente2@example.com']);
+        Credential::factory()->forOrg($org)->withPassword('senha-correta')->create(['user_id' => $existente2->id]);
 
         $this->post(route('invitation.store', $invitationLink->token), [
             'email' => 'existente2@example.com',
@@ -176,8 +191,9 @@ class InvitationHttpTest extends TestCase
     public function test_invitation_link_controller_index_create_store_destroy_flow(): void
     {
         $org = Organization::factory()->create();
+        $this->onHost($org->host);
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
 
         $this->get(route('courses.invitation-links.index', $course))->assertOk();
         $this->get(route('courses.invitation-links.create', $course))->assertOk();
@@ -198,7 +214,7 @@ class InvitationHttpTest extends TestCase
     public function test_gestor_from_another_org_cannot_manage_invitation_links(): void
     {
         $otherOrg = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $otherOrg->id]);
+        $course = Course::factory()->inOrg($otherOrg->id)->create();
         $this->actingAsOrgUser(role: RolesEnum::GESTOR->value);
 
         // `Course` carries its own `OrgScope`, so a cross-org `{course}`
@@ -211,10 +227,10 @@ class InvitationHttpTest extends TestCase
     public function test_gestor_from_another_org_cannot_revoke_invitation_link(): void
     {
         $otherOrg = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $otherOrg->id]);
+        $course = Course::factory()->inOrg($otherOrg->id)->create();
         $invitationLink = InvitationLink::factory()->for($course)->create([
             'org_id' => $otherOrg->id,
-            'created_by' => User::factory()->create(['org_id' => $otherOrg->id])->id,
+            'created_by' => User::factory()->inOrg($otherOrg->id)->create()->id,
         ]);
         $this->actingAsOrgUser(role: RolesEnum::GESTOR->value);
 
@@ -230,11 +246,12 @@ class InvitationHttpTest extends TestCase
     public function test_revoking_an_invitation_link_of_a_soft_deleted_course_redirects_without_crashing(): void
     {
         $org = Organization::factory()->create();
+        $this->onHost($org->host);
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $invitationLink = InvitationLink::factory()->for($course)->create([
             'org_id' => $org->id,
-            'created_by' => User::factory()->create(['org_id' => $org->id])->id,
+            'created_by' => User::factory()->inOrg($org->id)->create()->id,
         ]);
 
         $course->delete();
@@ -248,9 +265,10 @@ class InvitationHttpTest extends TestCase
     public function test_enrollment_controller_index_store_destroy_flow(): void
     {
         $org = Organization::factory()->create();
+        $this->onHost($org->host);
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
-        $course = Course::factory()->create(['org_id' => $org->id]);
-        $student = User::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
+        $student = User::factory()->inOrg($org->id)->create();
         $student->assignRole(RolesEnum::ALUNO->value);
 
         $this->get(route('courses.enrollments.index', $course))->assertOk();
@@ -278,9 +296,10 @@ class InvitationHttpTest extends TestCase
     public function test_cannot_double_enroll_an_already_active_student(): void
     {
         $org = Organization::factory()->create();
+        $this->onHost($org->host);
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
-        $course = Course::factory()->create(['org_id' => $org->id]);
-        $student = User::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
+        $student = User::factory()->inOrg($org->id)->create();
         $course->students()->attach($student->id, ['enrolled_at' => now(), 'status' => 'active']);
 
         $this->post(route('courses.enrollments.store', $course), [
@@ -291,10 +310,11 @@ class InvitationHttpTest extends TestCase
     public function test_store_rejects_a_missing_consent_with_the_enrollment_wording(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $this->onHost($org->host);
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $invitationLink = InvitationLink::factory()->for($course)->create([
             'org_id' => $org->id,
-            'created_by' => User::factory()->create(['org_id' => $org->id])->id,
+            'created_by' => User::factory()->inOrg($org->id)->create()->id,
         ]);
 
         $this->from(route('invitation.show', $invitationLink->token))

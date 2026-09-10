@@ -18,7 +18,7 @@ class OrgScopeUnresolvedContextTest extends TestCase
 {
     public function test_admin_without_active_org_context_throws_when_creating_scoped_model(): void
     {
-        $admin = User::factory()->create(['org_id' => null]);
+        $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole('admin');
         $this->actingAs($admin);
 
@@ -30,7 +30,7 @@ class OrgScopeUnresolvedContextTest extends TestCase
     public function test_org_less_non_admin_user_throws_when_creating_scoped_model(): void
     {
         // e.g. an "aluno" that has not yet enrolled/joined any organization.
-        $orgLessUser = User::factory()->create(['org_id' => null]);
+        $orgLessUser = User::factory()->inOrg(null)->create();
         $orgLessUser->assignRole('aluno');
         $this->actingAs($orgLessUser);
 
@@ -43,7 +43,7 @@ class OrgScopeUnresolvedContextTest extends TestCase
     {
         $organization = Organization::factory()->create();
 
-        $admin = User::factory()->create(['org_id' => null]);
+        $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole('admin');
         $this->actingAs($admin);
         $this->withSession(['active_org_id' => $organization->id]);
@@ -54,13 +54,14 @@ class OrgScopeUnresolvedContextTest extends TestCase
         $this->assertSame($organization->id, $course->fresh()->org_id);
     }
 
-    public function test_org_bound_user_does_not_throw_and_org_id_is_auto_assigned(): void
+    public function test_org_id_is_auto_assigned_from_the_resolved_context(): void
     {
         $organization = Organization::factory()->create();
 
-        $gestor = User::factory()->create(['org_id' => $organization->id]);
+        $gestor = User::factory()->inOrg($organization->id)->create();
         $gestor->assignRole('gestor');
         $this->actingAs($gestor);
+        $this->withOrgContext($organization);
 
         $course = Course::factory()->make(['org_id' => null]);
         $course->save();

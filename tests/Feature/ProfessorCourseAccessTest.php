@@ -33,7 +33,7 @@ class ProfessorCourseAccessTest extends TestCase
     public function test_assigned_professor_lists_only_their_assigned_courses(): void
     {
         $org = Organization::factory()->create();
-        $professor = User::factory()->professor()->create(['org_id' => $org->id]);
+        $professor = User::factory()->professor()->inOrg($org->id)->create();
 
         // Fixtures are created BEFORE `actingAs()` so `OrgScope`'s
         // `creating` hook never overwrites the explicit `org_id`.
@@ -49,7 +49,7 @@ class ProfessorCourseAccessTest extends TestCase
         // Same Organization for both Courses: the pivot — not the tenant
         // scope — is what must keep the unassigned Course out of the list.
         $this->assignProfessor($professor, $assignedCourse);
-        $otherProfessor = User::factory()->professor()->create(['org_id' => $org->id]);
+        $otherProfessor = User::factory()->professor()->inOrg($org->id)->create();
         $this->assignProfessor($otherProfessor, $foreignCourse);
 
         $this->actingAs($professor);
@@ -63,9 +63,9 @@ class ProfessorCourseAccessTest extends TestCase
     public function test_professor_without_assignments_renders_the_empty_state(): void
     {
         $org = Organization::factory()->create();
-        $professor = User::factory()->professor()->create(['org_id' => $org->id]);
+        $professor = User::factory()->professor()->inOrg($org->id)->create();
         // A sibling Course of the same Organization nobody assigned him to.
-        Course::factory()->create(['org_id' => $org->id]);
+        Course::factory()->inOrg($org->id)->create();
 
         $this->actingAs($professor);
 
@@ -77,8 +77,8 @@ class ProfessorCourseAccessTest extends TestCase
     public function test_assigned_professor_accesses_classroom_and_forum(): void
     {
         $org = Organization::factory()->create();
-        $professor = User::factory()->professor()->create(['org_id' => $org->id]);
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $professor = User::factory()->professor()->inOrg($org->id)->create();
+        $course = Course::factory()->inOrg($org->id)->create();
         $this->assignProfessor($professor, $course);
 
         $this->actingAs($professor);
@@ -91,8 +91,8 @@ class ProfessorCourseAccessTest extends TestCase
     public function test_unassigned_professor_from_the_same_org_is_forbidden_on_classroom_and_forum(): void
     {
         $org = Organization::factory()->create();
-        $professor = User::factory()->professor()->create(['org_id' => $org->id]);
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $professor = User::factory()->professor()->inOrg($org->id)->create();
+        $course = Course::factory()->inOrg($org->id)->create();
 
         $this->actingAs($professor);
 
@@ -105,8 +105,8 @@ class ProfessorCourseAccessTest extends TestCase
     public function test_only_professors_reach_the_professor_course_listing(): void
     {
         $org = Organization::factory()->create();
-        $aluno = User::factory()->aluno()->create();
-        $gestor = User::factory()->gestor()->create(['org_id' => $org->id]);
+        $aluno = User::factory()->aluno()->inOrg($org)->create();
+        $gestor = User::factory()->gestor()->inOrg($org->id)->create();
 
         $this->actingAs($aluno);
         $this->get(route('professor.courses.index'))->assertForbidden();
@@ -118,10 +118,10 @@ class ProfessorCourseAccessTest extends TestCase
     public function test_professor_role_is_registered_for_the_platform_roles_enum(): void
     {
         $org = Organization::factory()->create();
-        $professor = User::factory()->professor()->create(['org_id' => $org->id]);
+        $professor = User::factory()->professor()->inOrg($org->id)->create();
 
         $this->assertTrue($professor->hasRole(RolesEnum::PROFESSOR->value));
-        $this->assertNotNull($professor->org_id);
+        $this->assertNotNull($professor->credentialFor($org));
     }
 
     /**
@@ -134,8 +134,8 @@ class ProfessorCourseAccessTest extends TestCase
     public function test_assigned_professor_cannot_take_a_quiz_as_if_a_student(): void
     {
         $org = Organization::factory()->create();
-        $professor = User::factory()->professor()->create(['org_id' => $org->id]);
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $professor = User::factory()->professor()->inOrg($org->id)->create();
+        $course = Course::factory()->inOrg($org->id)->create();
         $this->assignProfessor($professor, $course);
 
         $module = Module::factory()->for($course)->create();

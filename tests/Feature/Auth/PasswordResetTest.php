@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Models\Organization;
 use App\Models\User;
 use App\Notifications\ResetPasswordNotification;
 use Illuminate\Auth\Notifications\ResetPassword;
@@ -35,7 +36,9 @@ class PasswordResetTest extends TestCase
 
     public function test_reset_password_screen_renders_exactly_one_top_level_heading(): void
     {
-        $user = User::factory()->create(['email' => 'user@example.com']);
+        $org = Organization::factory()->create();
+        $user = User::factory()->inOrg($org)->create(['email' => 'user@example.com']);
+        $this->onHost($org->host);
         $token = Password::createToken($user);
 
         $html = $this->get('/reset-password/'.$token.'?email='.urlencode($user->email))
@@ -50,7 +53,9 @@ class PasswordResetTest extends TestCase
     {
         Notification::fake();
 
-        $user = User::factory()->create(['email' => 'user@example.com']);
+        $org = Organization::factory()->create();
+        $user = User::factory()->inOrg($org)->create(['email' => 'user@example.com']);
+        $this->onHost($org->host);
 
         $this->post('/forgot-password', ['email' => 'user@example.com'])
             ->assertSessionHasNoErrors();
@@ -72,7 +77,9 @@ class PasswordResetTest extends TestCase
     {
         Notification::fake();
 
-        $user = User::factory()->create(['email' => 'user@example.com']);
+        $org = Organization::factory()->create();
+        $user = User::factory()->inOrg($org)->create(['email' => 'user@example.com']);
+        $this->onHost($org->host);
         $this->post('/forgot-password', ['email' => 'user@example.com']);
 
         Notification::assertSentTo($user, ResetPasswordNotification::class, function (ResetPassword $notification) use ($user): bool {
@@ -88,10 +95,12 @@ class PasswordResetTest extends TestCase
     {
         Notification::fake();
 
-        $user = User::factory()->create(['email' => 'user@example.com']);
+        $org = Organization::factory()->create();
+        $user = User::factory()->inOrg($org)->create(['email' => 'user@example.com']);
+        $this->onHost($org->host);
         $this->post('/forgot-password', ['email' => 'user@example.com']);
 
-        Notification::assertSentTo($user, ResetPasswordNotification::class, function (ResetPassword $notification) use ($user): bool {
+        Notification::assertSentTo($user, ResetPasswordNotification::class, function (ResetPassword $notification) use ($user, $org): bool {
             $this->post('/reset-password', [
                 'token' => $notification->token,
                 'email' => $user->email,
@@ -100,7 +109,7 @@ class PasswordResetTest extends TestCase
             ])->assertSessionHasNoErrors()->assertRedirect(route('login'));
 
             $this->assertTrue(
-                Hash::check('new-strong-password', $user->fresh()->password)
+                Hash::check('new-strong-password', $user->fresh()->credentialFor($org)->password)
             );
 
             return true;
@@ -111,7 +120,9 @@ class PasswordResetTest extends TestCase
     {
         Notification::fake();
 
-        $user = User::factory()->create(['email' => 'user@example.com']);
+        $org = Organization::factory()->create();
+        $user = User::factory()->inOrg($org)->create(['email' => 'user@example.com']);
+        $this->onHost($org->host);
         $this->post('/forgot-password', ['email' => 'user@example.com']);
 
         Notification::assertSentTo($user, ResetPasswordNotification::class, function (ResetPassword $notification) use ($user): bool {
@@ -136,7 +147,9 @@ class PasswordResetTest extends TestCase
 
     public function test_password_cannot_be_reset_with_an_invalid_token(): void
     {
-        $user = User::factory()->create(['email' => 'user@example.com']);
+        $org = Organization::factory()->create();
+        $user = User::factory()->inOrg($org)->create(['email' => 'user@example.com']);
+        $this->onHost($org->host);
 
         $this->post('/reset-password', [
             'token' => 'not-a-real-token',
@@ -146,7 +159,7 @@ class PasswordResetTest extends TestCase
         ])->assertSessionHasErrors('email');
 
         $this->assertFalse(
-            Hash::check('new-strong-password', $user->fresh()->password)
+            Hash::check('new-strong-password', $user->fresh()->credentialFor($org)->password)
         );
     }
 

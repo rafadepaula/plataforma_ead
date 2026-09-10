@@ -326,7 +326,7 @@ class LessonDispatchOrderTest extends TestCase
     public function test_gestor_previewing_a_lesson_without_enrollment_cannot_mark_it_complete(): void
     {
         $organization = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $organization->id]);
+        $course = Course::factory()->inOrg($organization->id)->create();
         $module = Module::factory()->for($course)->create();
 
         /** @var Lesson $lesson */
@@ -337,7 +337,7 @@ class LessonDispatchOrderTest extends TestCase
         ]);
 
         /** @var User $gestor */
-        $gestor = User::factory()->create(['org_id' => $organization->id]);
+        $gestor = User::factory()->inOrg($organization->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
 
         $this->actingAs($gestor);
@@ -357,7 +357,7 @@ class LessonDispatchOrderTest extends TestCase
     public function test_gestor_previewing_a_video_lesson_does_not_get_the_progress_polling_wiring(): void
     {
         $organization = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $organization->id]);
+        $course = Course::factory()->inOrg($organization->id)->create();
         $module = Module::factory()->for($course)->create();
 
         /** @var Lesson $lesson */
@@ -369,7 +369,7 @@ class LessonDispatchOrderTest extends TestCase
         ]);
 
         /** @var User $gestor */
-        $gestor = User::factory()->create(['org_id' => $organization->id]);
+        $gestor = User::factory()->inOrg($organization->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
 
         $this->actingAs($gestor);
@@ -449,14 +449,14 @@ class LessonDispatchOrderTest extends TestCase
     private function publishedLesson(array $attributes): Lesson
     {
         $organization = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $organization->id]);
+        $course = Course::factory()->inOrg($organization->id)->create();
         $module = Module::factory()->for($course)->create();
 
         /** @var Lesson $lesson */
         $lesson = Lesson::factory()->for($module)->create($attributes + ['is_published' => true]);
 
         /** @var User $aluno */
-        $aluno = User::factory()->create(['org_id' => null]);
+        $aluno = User::factory()->inOrg($course->org_id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
         $aluno->courses()->attach($course->id, [
             'status' => 'active',

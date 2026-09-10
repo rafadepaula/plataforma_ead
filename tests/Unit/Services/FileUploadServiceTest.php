@@ -23,7 +23,7 @@ class FileUploadServiceTest extends TestCase
         Storage::fake('public');
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org);
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
 
         $service = new FileUploadService;
         $path = $service->storeImage(UploadedFile::fake()->image('capa.png'), $course);
@@ -38,7 +38,7 @@ class FileUploadServiceTest extends TestCase
         Storage::fake('local');
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org);
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
 
         $service = new FileUploadService;
         $path = $service->storePdf(UploadedFile::fake()->create('apostila.pdf', 100, 'application/pdf'), $course);
@@ -53,7 +53,7 @@ class FileUploadServiceTest extends TestCase
         Storage::fake('public');
         $courseOrg = Organization::factory()->create();
         $otherOrg = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $courseOrg->id]);
+        $course = Course::factory()->inOrg($courseOrg->id)->create();
 
         // An Admin impersonating a *different* org than the Course's own.
         $this->actingAsAdmin($otherOrg);

@@ -37,9 +37,9 @@ class ModuleAndLessonManagementDuskTest extends DuskTestCase
     private function makeOrgGestorAndCourse(): array
     {
         $org = Organization::factory()->create();
-        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor = User::factory()->inOrg($org->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
 
         return [$org, $gestor, $course];
     }
@@ -448,7 +448,7 @@ class ModuleAndLessonManagementDuskTest extends DuskTestCase
     {
         [, $gestor] = $this->makeOrgGestorAndCourse();
         $otherOrg = Organization::factory()->create();
-        $otherCourse = Course::factory()->create(['org_id' => $otherOrg->id]);
+        $otherCourse = Course::factory()->inOrg($otherOrg->id)->create();
         $otherModule = Module::factory()->for($otherCourse)->create(['order_index' => 0]);
         $otherLesson = Lesson::factory()->for($otherModule)->richText()->create();
 

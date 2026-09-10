@@ -32,7 +32,7 @@ class ForumTopicTest extends TestCase
     private function enrolledStudent(Course $course): User
     {
         /** @var User $student */
-        $student = User::factory()->create(['org_id' => null]);
+        $student = User::factory()->inOrg($course->org_id)->create();
         $student->assignRole(RolesEnum::ALUNO->value);
         $course->students()->attach($student->id, ['enrolled_at' => now(), 'status' => 'active']);
 
@@ -42,11 +42,11 @@ class ForumTopicTest extends TestCase
     public function test_pinned_topics_are_listed_before_newer_unpinned_ones(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $student = $this->enrolledStudent($course);
 
-        $older = ForumTopic::factory()->for($course)->for($student)->create(['org_id' => $course->org_id, 'created_at' => now()->subDays(2)]);
-        $newer = ForumTopic::factory()->for($course)->for($student)->create(['org_id' => $course->org_id, 'created_at' => now()->subDay()]);
+        $older = ForumTopic::factory()->for($course)->for($student)->inOrg($course->org_id)->create(['created_at' => now()->subDays(2)]);
+        $newer = ForumTopic::factory()->for($course)->for($student)->inOrg($course->org_id)->create(['created_at' => now()->subDay()]);
         $pinned = ForumTopic::factory()->for($course)->for($student)->create([
             'org_id' => $course->org_id,
             'is_pinned' => true,
@@ -69,10 +69,10 @@ class ForumTopicTest extends TestCase
     public function test_a_non_enrolled_aluno_is_sent_back_to_the_catalog_instead_of_the_forum(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
 
         /** @var User $outsider */
-        $outsider = User::factory()->create(['org_id' => null]);
+        $outsider = User::factory()->inOrg($org->id)->create();
         $outsider->assignRole(RolesEnum::ALUNO->value);
 
         $response = $this->actingAs($outsider)->get(route('forum.index', $course));
@@ -84,7 +84,7 @@ class ForumTopicTest extends TestCase
     public function test_an_enrolled_aluno_can_create_a_topic_and_reply_to_it(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $student = $this->enrolledStudent($course);
 
         $this->actingAs($student)->post(route('forum.store', $course), [
@@ -119,9 +119,9 @@ class ForumTopicTest extends TestCase
     public function test_only_gestor_or_admin_can_pin_a_topic(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $student = $this->enrolledStudent($course);
-        $topic = ForumTopic::factory()->for($course)->for($student)->create(['org_id' => $course->org_id, 'is_pinned' => false]);
+        $topic = ForumTopic::factory()->for($course)->for($student)->inOrg($course->org_id)->create(['is_pinned' => false]);
 
         $this->actingAs($student)->post(route('forum.pin', [$course, $topic]))->assertForbidden();
 
@@ -134,9 +134,9 @@ class ForumTopicTest extends TestCase
     public function test_the_topic_author_can_edit_their_own_post_at_any_time_and_it_writes_an_edit_history_row(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $student = $this->enrolledStudent($course);
-        $topic = ForumTopic::factory()->for($course)->for($student)->create(['org_id' => $course->org_id, 'content' => 'Conteúdo original.']);
+        $topic = ForumTopic::factory()->for($course)->for($student)->inOrg($course->org_id)->create(['content' => 'Conteúdo original.']);
 
         $this->actingAs($student)->put(route('forum.update', [$course, $topic]), [
             'title' => $topic->title,
@@ -154,10 +154,10 @@ class ForumTopicTest extends TestCase
     public function test_author_can_delete_their_own_topic_but_another_aluno_cannot(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $author = $this->enrolledStudent($course);
         $otherStudent = $this->enrolledStudent($course);
-        $topic = ForumTopic::factory()->for($course)->for($author)->create(['org_id' => $course->org_id]);
+        $topic = ForumTopic::factory()->for($course)->for($author)->inOrg($course->org_id)->create();
 
         $this->actingAs($otherStudent)->delete(route('forum.destroy', [$course, $topic]))->assertForbidden();
         $this->actingAs($author)->delete(route('forum.destroy', [$course, $topic]))->assertRedirect();
@@ -168,9 +168,9 @@ class ForumTopicTest extends TestCase
     public function test_gestor_or_admin_can_delete_any_topic_directly_without_a_report(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $student = $this->enrolledStudent($course);
-        $topic = ForumTopic::factory()->for($course)->for($student)->create(['org_id' => $course->org_id]);
+        $topic = ForumTopic::factory()->for($course)->for($student)->inOrg($course->org_id)->create();
         $gestor = $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
 
         $this->actingAs($gestor)->delete(route('forum.destroy', [$course, $topic]))->assertRedirect();
@@ -181,7 +181,7 @@ class ForumTopicTest extends TestCase
     public function test_an_enrolled_aluno_can_view_the_standalone_create_topic_page(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $student = $this->enrolledStudent($course);
 
         $this->actingAs($student)->get(route('forum.create', $course))->assertOk();
@@ -190,10 +190,10 @@ class ForumTopicTest extends TestCase
     public function test_author_can_delete_their_own_reply_but_another_aluno_cannot(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $author = $this->enrolledStudent($course);
         $otherStudent = $this->enrolledStudent($course);
-        $topic = ForumTopic::factory()->for($course)->for($author)->create(['org_id' => $course->org_id]);
+        $topic = ForumTopic::factory()->for($course)->for($author)->inOrg($course->org_id)->create();
         $reply = ForumReply::factory()->for($topic, 'topic')->for($author)->create();
 
         $this->actingAs($otherStudent)->delete(route('forum-replies.destroy', [$course, $topic, $reply]))->assertForbidden();
@@ -205,12 +205,12 @@ class ForumTopicTest extends TestCase
     public function test_an_admin_can_view_the_forum_with_pin_and_moderate_permissions(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $student = $this->enrolledStudent($course);
-        $topic = ForumTopic::factory()->for($course)->for($student)->create(['org_id' => $course->org_id]);
+        $topic = ForumTopic::factory()->for($course)->for($student)->inOrg($course->org_id)->create();
 
         /** @var User $admin */
-        $admin = User::factory()->create(['org_id' => null]);
+        $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole(RolesEnum::ADMIN->value);
 
         $this->actingAs($admin)->get(route('forum.index', $course))->assertOk();
@@ -222,9 +222,9 @@ class ForumTopicTest extends TestCase
     public function test_fetch_new_replies_only_returns_replies_newer_than_since_id(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $student = $this->enrolledStudent($course);
-        $topic = ForumTopic::factory()->for($course)->for($student)->create(['org_id' => $course->org_id]);
+        $topic = ForumTopic::factory()->for($course)->for($student)->inOrg($course->org_id)->create();
 
         $old = ForumReply::factory()->for($topic, 'topic')->for($student)->create();
         $new = ForumReply::factory()->for($topic, 'topic')->for($student)->create();

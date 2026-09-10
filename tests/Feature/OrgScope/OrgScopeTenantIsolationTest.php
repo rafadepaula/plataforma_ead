@@ -18,12 +18,13 @@ class OrgScopeTenantIsolationTest extends TestCase
         $orgA = Organization::factory()->create();
         $orgB = Organization::factory()->create();
 
-        Course::factory()->count(2)->create(['org_id' => $orgA->id]);
-        Course::factory()->count(3)->create(['org_id' => $orgB->id]);
+        Course::factory()->count(2)->inOrg($orgA->id)->create();
+        Course::factory()->count(3)->inOrg($orgB->id)->create();
 
-        $userFromOrgA = User::factory()->create(['org_id' => $orgA->id]);
+        $userFromOrgA = User::factory()->inOrg($orgA->id)->create();
         $userFromOrgA->assignRole('gestor');
         $this->actingAs($userFromOrgA);
+        $this->withOrgContext($orgA);
 
         $this->assertCount(2, Course::all());
         $this->assertTrue(Course::all()->every(fn (Course $course) => $course->org_id === $orgA->id));
@@ -34,9 +35,9 @@ class OrgScopeTenantIsolationTest extends TestCase
         $orgA = Organization::factory()->create();
         $orgB = Organization::factory()->create();
 
-        $courseInOrgB = Course::factory()->create(['org_id' => $orgB->id]);
+        $courseInOrgB = Course::factory()->inOrg($orgB->id)->create();
 
-        $userFromOrgA = User::factory()->create(['org_id' => $orgA->id]);
+        $userFromOrgA = User::factory()->inOrg($orgA->id)->create();
         $userFromOrgA->assignRole('gestor');
         $this->actingAs($userFromOrgA);
 
@@ -46,9 +47,9 @@ class OrgScopeTenantIsolationTest extends TestCase
     public function test_org_less_non_admin_user_sees_no_scoped_rows(): void
     {
         $organization = Organization::factory()->create();
-        Course::factory()->count(2)->create(['org_id' => $organization->id]);
+        Course::factory()->count(2)->inOrg($organization->id)->create();
 
-        $orgLessUser = User::factory()->create(['org_id' => null]);
+        $orgLessUser = User::factory()->inOrg(null)->create();
         $orgLessUser->assignRole('aluno');
         $this->actingAs($orgLessUser);
 
@@ -60,8 +61,8 @@ class OrgScopeTenantIsolationTest extends TestCase
         $orgA = Organization::factory()->create();
         $orgB = Organization::factory()->create();
 
-        Course::factory()->create(['org_id' => $orgA->id]);
-        Course::factory()->create(['org_id' => $orgB->id]);
+        Course::factory()->inOrg($orgA->id)->create();
+        Course::factory()->inOrg($orgB->id)->create();
 
         $this->assertCount(2, Course::all());
     }

@@ -190,7 +190,7 @@ class LessonVideoRenderingTest extends TestCase
     private function createPublishedLesson(array $attributes = []): Lesson
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
 
         return Lesson::factory()->for($module)->create(array_merge([
@@ -207,7 +207,7 @@ class LessonVideoRenderingTest extends TestCase
     private function publishedVideoLessonFor(string $storedVideoUrl, ?string $provider): Lesson
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
         $lesson = Lesson::factory()->for($module)->create([
             'type' => 'content',
@@ -231,7 +231,7 @@ class LessonVideoRenderingTest extends TestCase
      */
     private function enrolledAlunoWatching(Lesson $lesson): Lesson
     {
-        $aluno = User::factory()->create(['org_id' => null]);
+        $aluno = User::factory()->inOrg($lesson->module->course_id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
         $aluno->courses()->attach($lesson->module->course_id, [
             'status' => 'active',

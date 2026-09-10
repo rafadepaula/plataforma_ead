@@ -42,9 +42,9 @@ class AuditLogUiTest extends DuskTestCase
     public function test_admin_audit_logs_screen_lifecycle(): void
     {
         $org = Organization::factory()->create();
-        $admin = User::factory()->create(['org_id' => null]);
+        $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole(RolesEnum::ADMIN->value);
-        $target = User::factory()->create(['org_id' => $org->id, 'name' => 'Alvo Da Auditoria']);
+        $target = User::factory()->inOrg($org->id)->create(['name' => 'Alvo Da Auditoria']);
 
         $log = $this->seedLog(
             $org,
@@ -116,7 +116,7 @@ class AuditLogUiTest extends DuskTestCase
         $ownOrg = Organization::factory()->create();
         $otherOrg = Organization::factory()->create();
 
-        $gestor = User::factory()->create(['org_id' => $ownOrg->id]);
+        $gestor = User::factory()->inOrg($ownOrg->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
 
         $ownLog = $this->seedLog($ownOrg, null, 'login.success');

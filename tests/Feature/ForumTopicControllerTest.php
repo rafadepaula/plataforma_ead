@@ -25,7 +25,7 @@ class ForumTopicControllerTest extends TestCase
     private function enrolledStudent(Course $course): User
     {
         /** @var User $student */
-        $student = User::factory()->create(['org_id' => null]);
+        $student = User::factory()->inOrg($course->org_id)->create();
         $student->assignRole(RolesEnum::ALUNO->value);
         $course->students()->attach($student->id, ['enrolled_at' => now(), 'status' => 'active']);
 
@@ -36,7 +36,7 @@ class ForumTopicControllerTest extends TestCase
     {
         $organization ??= Organization::factory()->create();
 
-        return Course::factory()->create(['org_id' => $organization->id, 'is_published' => true]);
+        return Course::factory()->inOrg($organization->id)->create(['is_published' => true]);
     }
 
     private function topicFor(Course $course, User $author, array $attributes = []): ForumTopic
@@ -77,7 +77,7 @@ class ForumTopicControllerTest extends TestCase
         $course = $this->publishedCourse();
 
         /** @var User $admin */
-        $admin = User::factory()->create(['org_id' => null]);
+        $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole(RolesEnum::ADMIN->value);
 
         $response = $this->actingAs($admin)->get(route('forum.index', $course));
@@ -91,7 +91,7 @@ class ForumTopicControllerTest extends TestCase
         $course = $this->publishedCourse();
         $student = $this->enrolledStudent($course);
 
-        ForumTopic::factory()->count(20)->for($course)->for($student)->create(['org_id' => $course->org_id]);
+        ForumTopic::factory()->count(20)->for($course)->for($student)->inOrg($course->org_id)->create();
 
         $response = $this->actingAs($student)->get(route('forum.index', $course));
 
@@ -124,7 +124,7 @@ class ForumTopicControllerTest extends TestCase
         $course = $this->publishedCourse();
 
         /** @var User $outsider */
-        $outsider = User::factory()->create(['org_id' => null]);
+        $outsider = User::factory()->inOrg($course->org_id)->create();
         $outsider->assignRole(RolesEnum::ALUNO->value);
 
         $this->actingAs($outsider)

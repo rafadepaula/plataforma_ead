@@ -95,7 +95,7 @@ class AdminTopbarTest extends DuskTestCase
 
     private function systemAdmin(): User
     {
-        $admin = User::factory()->create(['org_id' => null]);
+        $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole(RolesEnum::ADMIN->value);
 
         return $admin;

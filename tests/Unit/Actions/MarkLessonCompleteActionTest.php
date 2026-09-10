@@ -25,7 +25,7 @@ class MarkLessonCompleteActionTest extends TestCase
     private function makeLesson(): Lesson
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->create(['course_id' => $course->id]);
 
         return Lesson::factory()->create(['module_id' => $module->id, 'is_published' => true]);

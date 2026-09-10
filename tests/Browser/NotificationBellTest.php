@@ -49,13 +49,13 @@ class NotificationBellTest extends DuskTestCase
     {
         $org = Organization::factory()->create();
 
-        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor = User::factory()->inOrg($org->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
 
-        $aluno = User::factory()->create(['org_id' => $org->id]);
+        $aluno = User::factory()->inOrg($org->id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
 
-        $admin = User::factory()->create(['org_id' => null]);
+        $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole(RolesEnum::ADMIN->value);
 
         $this->browse(function (Browser $browser) use ($gestor, $aluno, $admin): void {
@@ -82,7 +82,7 @@ class NotificationBellTest extends DuskTestCase
     public function test_notification_bell_interaction_lifecycle(): void
     {
         $org = Organization::factory()->create();
-        $aluno = User::factory()->create(['org_id' => $org->id]);
+        $aluno = User::factory()->inOrg($org->id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
 
         $notifications = [];

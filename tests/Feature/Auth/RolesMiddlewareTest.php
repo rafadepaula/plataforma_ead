@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
@@ -25,7 +26,7 @@ class RolesMiddlewareTest extends TestCase
 
     public function test_admin_can_access_admin_only_route(): void
     {
-        $admin = User::factory()->create(['org_id' => null]);
+        $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole('admin');
 
         $this->actingAs($admin)
@@ -35,7 +36,7 @@ class RolesMiddlewareTest extends TestCase
 
     public function test_gestor_is_forbidden_from_admin_only_route(): void
     {
-        $gestor = User::factory()->create();
+        $gestor = User::factory()->inOrg(Organization::factory()->create())->create();
         $gestor->assignRole('gestor');
 
         $this->actingAs($gestor)
@@ -45,7 +46,7 @@ class RolesMiddlewareTest extends TestCase
 
     public function test_gestor_can_access_gestor_only_route(): void
     {
-        $gestor = User::factory()->create();
+        $gestor = User::factory()->inOrg(Organization::factory()->create())->create();
         $gestor->assignRole('gestor');
 
         $this->actingAs($gestor)
@@ -55,7 +56,7 @@ class RolesMiddlewareTest extends TestCase
 
     public function test_aluno_is_forbidden_from_gestor_only_route(): void
     {
-        $aluno = User::factory()->create();
+        $aluno = User::factory()->inOrg(Organization::factory()->create())->create();
         $aluno->assignRole('aluno');
 
         $this->actingAs($aluno)
@@ -65,7 +66,7 @@ class RolesMiddlewareTest extends TestCase
 
     public function test_aluno_can_access_aluno_only_route(): void
     {
-        $aluno = User::factory()->create();
+        $aluno = User::factory()->inOrg(Organization::factory()->create())->create();
         $aluno->assignRole('aluno');
 
         $this->actingAs($aluno)

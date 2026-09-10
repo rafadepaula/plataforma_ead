@@ -24,7 +24,7 @@ class ForumModerationQueueTest extends TestCase
     private function enrolledStudent(Course $course): User
     {
         /** @var User $student */
-        $student = User::factory()->create(['org_id' => null]);
+        $student = User::factory()->inOrg($course->org_id)->create();
         $student->assignRole(RolesEnum::ALUNO->value);
         $course->students()->attach($student->id, ['enrolled_at' => now(), 'status' => 'active']);
 
@@ -34,9 +34,9 @@ class ForumModerationQueueTest extends TestCase
     public function test_an_enrolled_aluno_can_report_a_topic_and_it_lands_in_the_pending_queue(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $student = $this->enrolledStudent($course);
-        $topic = ForumTopic::factory()->for($course)->for($student)->create(['org_id' => $course->org_id]);
+        $topic = ForumTopic::factory()->for($course)->for($student)->inOrg($course->org_id)->create();
 
         // The HTTP/JS boundary always uses the short `forum_topic`/
         // `forum_reply` strings (`StoreForumReportRequest`'s
@@ -61,9 +61,9 @@ class ForumModerationQueueTest extends TestCase
     public function test_an_enrolled_aluno_can_report_a_reply_and_it_lands_in_the_pending_queue(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $student = $this->enrolledStudent($course);
-        $topic = ForumTopic::factory()->for($course)->for($student)->create(['org_id' => $course->org_id]);
+        $topic = ForumTopic::factory()->for($course)->for($student)->inOrg($course->org_id)->create();
         $reply = ForumReply::factory()->for($topic, 'topic')->for($student)->create();
 
         $this->actingAs($student)->post(route('forum-reports.store', $course), [
@@ -83,9 +83,9 @@ class ForumModerationQueueTest extends TestCase
     public function test_reporting_without_a_reason_fails_validation(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $student = $this->enrolledStudent($course);
-        $topic = ForumTopic::factory()->for($course)->for($student)->create(['org_id' => $course->org_id]);
+        $topic = ForumTopic::factory()->for($course)->for($student)->inOrg($course->org_id)->create();
 
         $this->actingAs($student)->post(route('forum-reports.store', $course), [
             'postable_type' => 'forum_topic',
@@ -97,7 +97,7 @@ class ForumModerationQueueTest extends TestCase
     public function test_an_aluno_cannot_view_the_moderation_queue(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $student = $this->enrolledStudent($course);
 
         $this->actingAs($student)->get(route('forum-moderation.index'))->assertForbidden();
@@ -107,12 +107,12 @@ class ForumModerationQueueTest extends TestCase
     {
         $orgA = Organization::factory()->create();
         $orgB = Organization::factory()->create();
-        $courseA = Course::factory()->create(['org_id' => $orgA->id, 'is_published' => true]);
-        $courseB = Course::factory()->create(['org_id' => $orgB->id, 'is_published' => true]);
+        $courseA = Course::factory()->inOrg($orgA->id)->create(['is_published' => true]);
+        $courseB = Course::factory()->inOrg($orgB->id)->create(['is_published' => true]);
         $studentA = $this->enrolledStudent($courseA);
         $studentB = $this->enrolledStudent($courseB);
-        $topicA = ForumTopic::factory()->for($courseA)->for($studentA)->create(['org_id' => $courseA->org_id]);
-        $topicB = ForumTopic::factory()->for($courseB)->for($studentB)->create(['org_id' => $courseB->org_id]);
+        $topicA = ForumTopic::factory()->for($courseA)->for($studentA)->inOrg($courseA->org_id)->create();
+        $topicB = ForumTopic::factory()->for($courseB)->for($studentB)->inOrg($courseB->org_id)->create();
 
         ForumReport::factory()->create([
             'postable_type' => ForumTopic::class,
@@ -140,9 +140,9 @@ class ForumModerationQueueTest extends TestCase
     public function test_gestor_can_dismiss_a_report_and_the_post_remains_visible(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $student = $this->enrolledStudent($course);
-        $topic = ForumTopic::factory()->for($course)->for($student)->create(['org_id' => $course->org_id]);
+        $topic = ForumTopic::factory()->for($course)->for($student)->inOrg($course->org_id)->create();
         $report = ForumReport::factory()->create([
             'postable_type' => ForumTopic::class,
             'postable_id' => $topic->id,
@@ -160,9 +160,9 @@ class ForumModerationQueueTest extends TestCase
     public function test_gestor_can_remove_the_reported_post_which_soft_deletes_it_and_preserves_history(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $student = $this->enrolledStudent($course);
-        $topic = ForumTopic::factory()->for($course)->for($student)->create(['org_id' => $course->org_id, 'content' => 'Conteúdo denunciado.']);
+        $topic = ForumTopic::factory()->for($course)->for($student)->inOrg($course->org_id)->create(['content' => 'Conteúdo denunciado.']);
         $report = ForumReport::factory()->create([
             'postable_type' => ForumTopic::class,
             'postable_id' => $topic->id,
@@ -185,9 +185,9 @@ class ForumModerationQueueTest extends TestCase
     public function test_moderation_queue_does_not_crash_when_the_reported_reply_was_already_removed(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $student = $this->enrolledStudent($course);
-        $topic = ForumTopic::factory()->for($course)->for($student)->create(['org_id' => $course->org_id]);
+        $topic = ForumTopic::factory()->for($course)->for($student)->inOrg($course->org_id)->create();
         $reply = ForumReply::factory()->for($topic, 'topic')->for($student)->create();
         $reply->delete();
 

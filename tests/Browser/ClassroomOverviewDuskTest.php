@@ -162,13 +162,13 @@ class ClassroomOverviewDuskTest extends DuskTestCase
             'order_index' => 0,
         ]);
 
-        $admin = User::factory()->create(['org_id' => null]);
+        $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole(RolesEnum::ADMIN->value);
 
-        $ownGestor = User::factory()->create(['org_id' => $courseOrg->id]);
+        $ownGestor = User::factory()->inOrg($courseOrg->id)->create();
         $ownGestor->assignRole(RolesEnum::GESTOR->value);
 
-        $foreignGestor = User::factory()->create(['org_id' => $otherOrg->id]);
+        $foreignGestor = User::factory()->inOrg($otherOrg->id)->create();
         $foreignGestor->assignRole(RolesEnum::GESTOR->value);
 
         $this->browse(function (Browser $browser) use ($admin, $ownGestor, $foreignGestor, $course, $module, $lesson): void {
@@ -242,7 +242,7 @@ class ClassroomOverviewDuskTest extends DuskTestCase
             'order_index' => 0,
         ]);
 
-        $student = User::factory()->create(['org_id' => null]);
+        $student = User::factory()->inOrg($course->org_id)->create();
         $student->assignRole(RolesEnum::ALUNO->value);
         $course->students()->attach($student->id, [
             'enrolled_at' => now(),

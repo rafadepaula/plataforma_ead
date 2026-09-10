@@ -18,9 +18,9 @@ class ForumReplyTest extends TestCase
     public function test_deleting_a_reply_soft_deletes_it(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
-        $user = User::factory()->create(['org_id' => $org->id]);
-        $topic = ForumTopic::factory()->for($course)->for($user)->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
+        $user = User::factory()->inOrg($org->id)->create();
+        $topic = ForumTopic::factory()->for($course)->for($user)->inOrg($org->id)->create();
         $reply = ForumReply::factory()->for($topic, 'topic')->for($user)->create();
 
         $reply->delete();

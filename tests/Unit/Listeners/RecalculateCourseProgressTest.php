@@ -29,7 +29,7 @@ class RecalculateCourseProgressTest extends TestCase
     public function test_recalculates_progress_percentage_after_a_lesson_is_completed(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->create(['course_id' => $course->id]);
         $lessons = Lesson::factory()->count(4)->create(['module_id' => $module->id, 'is_published' => true]);
 
@@ -55,7 +55,7 @@ class RecalculateCourseProgressTest extends TestCase
     public function test_ignores_unpublished_lessons_in_the_denominator(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->create(['course_id' => $course->id]);
         $publishedLessons = Lesson::factory()->count(2)->create(['module_id' => $module->id, 'is_published' => true]);
         Lesson::factory()->count(3)->create(['module_id' => $module->id, 'is_published' => false]);
@@ -81,7 +81,7 @@ class RecalculateCourseProgressTest extends TestCase
     public function test_a_course_with_zero_published_lessons_does_not_divide_by_zero(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->create(['course_id' => $course->id]);
         $lesson = Lesson::factory()->create(['module_id' => $module->id, 'is_published' => false]);
 
@@ -108,7 +108,7 @@ class RecalculateCourseProgressTest extends TestCase
         Event::fake([CourseCompletedByStudent::class]);
 
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->create(['course_id' => $course->id]);
         $lessons = Lesson::factory()->count(2)->create(['module_id' => $module->id, 'is_published' => true]);
 
@@ -146,7 +146,7 @@ class RecalculateCourseProgressTest extends TestCase
         Event::fake([CourseCompletedByStudent::class]);
 
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->create(['course_id' => $course->id]);
         $lesson = Lesson::factory()->create(['module_id' => $module->id, 'is_published' => true]);
 
@@ -180,7 +180,7 @@ class RecalculateCourseProgressTest extends TestCase
     public function test_no_completion_rules_at_all_does_not_crash(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->create(['course_id' => $course->id]);
         $lesson = Lesson::factory()->create(['module_id' => $module->id, 'is_published' => true]);
 
@@ -208,7 +208,7 @@ class RecalculateCourseProgressTest extends TestCase
         Event::fake([CourseCompletedByStudent::class]);
 
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->create(['course_id' => $course->id]);
         $lesson = Lesson::factory()->create(['module_id' => $module->id, 'type' => 'quiz', 'is_published' => true]);
         $quiz = Quiz::factory()->for($lesson)->create();
@@ -241,7 +241,7 @@ class RecalculateCourseProgressTest extends TestCase
         Event::fake([CourseCompletedByStudent::class]);
 
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->create(['course_id' => $course->id]);
         $lessons = Lesson::factory()->count(2)->create(['module_id' => $module->id, 'is_published' => true]);
 

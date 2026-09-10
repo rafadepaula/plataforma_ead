@@ -52,10 +52,9 @@ class ProfessorRoleTest extends TestCase
     {
         $org = Organization::factory()->create();
 
-        $professor = User::factory()->professor()->create(['org_id' => $org->id]);
+        $professor = User::factory()->professor()->inOrg($org->id)->create();
 
-        $this->assertSame($org->id, $professor->org_id);
-        $this->assertSame($org->id, $professor->organization->id);
+        $this->assertNotNull($professor->credentialFor($org));
     }
 
     public function test_a_professor_created_without_an_explicit_org_gets_one(): void
@@ -65,9 +64,8 @@ class ProfessorRoleTest extends TestCase
         // leaving `org_id` null (the org-less default of `aluno`).
         $professor = User::factory()->professor()->create();
 
-        $this->assertNotNull($professor->org_id);
-        $this->assertInstanceOf(Organization::class, $professor->organization);
-        $this->assertDatabaseHas('organizations', ['id' => $professor->org_id]);
+        $this->assertSame(1, $professor->credentials()->count());
+        $this->assertInstanceOf(Organization::class, $professor->credentials()->first()->organization);
     }
 
     // ── Course assignment pivot ──────────────────────────────────────
@@ -75,7 +73,7 @@ class ProfessorRoleTest extends TestCase
     public function test_a_professor_does_not_teach_a_course_they_were_never_assigned_to(): void
     {
         $org = Organization::factory()->create();
-        $professor = User::factory()->professor()->create(['org_id' => $org->id]);
+        $professor = User::factory()->professor()->inOrg($org->id)->create();
         $course = Course::factory()->for($org)->create();
 
         $this->assertFalse($professor->teaches($course));
@@ -86,8 +84,8 @@ class ProfessorRoleTest extends TestCase
     public function test_assigning_a_course_makes_the_professor_teach_it_and_records_the_assigner(): void
     {
         $org = Organization::factory()->create();
-        $gestor = User::factory()->gestor()->create(['org_id' => $org->id]);
-        $professor = User::factory()->professor()->create(['org_id' => $org->id]);
+        $gestor = User::factory()->gestor()->inOrg($org->id)->create();
+        $professor = User::factory()->professor()->inOrg($org->id)->create();
         $course = Course::factory()->for($org)->create();
 
         $course->professors()->attach($professor->id, ['assigned_by' => $gestor->id]);
@@ -108,8 +106,8 @@ class ProfessorRoleTest extends TestCase
     public function test_reassigning_the_same_course_is_idempotent(): void
     {
         $org = Organization::factory()->create();
-        $gestor = User::factory()->gestor()->create(['org_id' => $org->id]);
-        $professor = User::factory()->professor()->create(['org_id' => $org->id]);
+        $gestor = User::factory()->gestor()->inOrg($org->id)->create();
+        $professor = User::factory()->professor()->inOrg($org->id)->create();
         $course = Course::factory()->for($org)->create();
 
         // `UNIQUE(course_id, user_id)` backs the idempotency: attaching the
@@ -124,7 +122,7 @@ class ProfessorRoleTest extends TestCase
     public function test_a_duplicated_course_professor_pair_is_rejected_by_the_database(): void
     {
         $org = Organization::factory()->create();
-        $professor = User::factory()->professor()->create(['org_id' => $org->id]);
+        $professor = User::factory()->professor()->inOrg($org->id)->create();
         $course = Course::factory()->for($org)->create();
         $course->professors()->attach($professor->id);
 
@@ -154,7 +152,7 @@ class ProfessorRoleTest extends TestCase
     public function test_an_aluno_is_forbidden_from_the_professor_routes(): void
     {
         $org = Organization::factory()->create();
-        $aluno = User::factory()->create(['org_id' => $org->id]);
+        $aluno = User::factory()->inOrg($org->id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
         $this->actingAs($aluno);
 
@@ -165,7 +163,7 @@ class ProfessorRoleTest extends TestCase
     public function test_a_gestor_is_forbidden_from_the_professor_routes(): void
     {
         $org = Organization::factory()->create();
-        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor = User::factory()->inOrg($org->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
         $this->actingAs($gestor);
 
@@ -184,7 +182,7 @@ class ProfessorRoleTest extends TestCase
     public function test_a_professor_reaches_their_own_dashboard(): void
     {
         $org = Organization::factory()->create();
-        $professor = User::factory()->professor()->create(['org_id' => $org->id]);
+        $professor = User::factory()->professor()->inOrg($org->id)->create();
         $course = Course::factory()->for($org)->create();
         $course->professors()->attach($professor->id);
         $this->actingAs($professor);

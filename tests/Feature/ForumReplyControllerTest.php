@@ -42,7 +42,7 @@ class ForumReplyControllerTest extends TestCase
     private function enrolledStudent(Course $course): User
     {
         /** @var User $student */
-        $student = User::factory()->create(['org_id' => null]);
+        $student = User::factory()->inOrg($course->org_id)->create();
         $student->assignRole(RolesEnum::ALUNO->value);
         $course->students()->attach($student->id, ['enrolled_at' => now(), 'status' => 'active']);
 
@@ -53,12 +53,12 @@ class ForumReplyControllerTest extends TestCase
     {
         $organization ??= Organization::factory()->create();
 
-        return Course::factory()->create(['org_id' => $organization->id, 'is_published' => true]);
+        return Course::factory()->inOrg($organization->id)->create(['is_published' => true]);
     }
 
     private function topicFor(Course $course, User $author): ForumTopic
     {
-        return ForumTopic::factory()->for($course)->for($author)->create(['org_id' => $course->org_id]);
+        return ForumTopic::factory()->for($course)->for($author)->inOrg($course->org_id)->create();
     }
 
     public function test_store_persists_the_reply_and_dispatches_the_reply_posted_event(): void
@@ -234,7 +234,7 @@ class ForumReplyControllerTest extends TestCase
         $course = $this->publishedCourse($organization);
 
         /** @var User $student */
-        $student = User::factory()->create(['org_id' => null, 'name' => 'Maria da Silva Souza']);
+        $student = User::factory()->inOrg($course->org_id)->create(['name' => 'Maria da Silva Souza']);
         $student->assignRole(RolesEnum::ALUNO->value);
         $course->students()->attach($student->id, ['enrolled_at' => now(), 'status' => 'active']);
 
@@ -264,7 +264,7 @@ class ForumReplyControllerTest extends TestCase
         $topic = $this->topicFor($course, $student);
 
         /** @var User $gestor */
-        $gestor = User::factory()->create(['org_id' => $organization->id, 'name' => 'Ana Tutora']);
+        $gestor = User::factory()->inOrg($organization->id)->create(['name' => 'Ana Tutora']);
         $gestor->assignRole(RolesEnum::GESTOR->value);
         ForumReply::factory()->for($topic, 'topic')->for($gestor)->create();
 
@@ -317,7 +317,7 @@ class ForumReplyControllerTest extends TestCase
         ForumReply::factory()->for($topic, 'topic')->for($student)->create();
 
         /** @var User $outsider */
-        $outsider = User::factory()->create(['org_id' => null]);
+        $outsider = User::factory()->inOrg($course->org_id)->create();
         $outsider->assignRole(RolesEnum::ALUNO->value);
 
         $this->actingAs($outsider)

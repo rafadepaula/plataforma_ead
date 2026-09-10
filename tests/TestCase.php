@@ -6,8 +6,11 @@ use App\Enums\Permissions\RolesEnum;
 use App\Models\Credential;
 use App\Models\Organization;
 use App\Models\User;
+use App\Services\OrgContext;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
+use Illuminate\Support\Facades\URL;
 
 abstract class TestCase extends BaseTestCase
 {
@@ -33,16 +36,66 @@ abstract class TestCase extends BaseTestCase
     {
         $this->testHost = $host;
 
+        // Keep `route()` consistent with the pinned host: requests AND
+        // assertions (`assertRedirect(route(...))`) must speak the same
+        // authority, otherwise host-scoped redirects never match.
+        URL::forceRootUrl($host !== null ? 'http://'.$host : null);
+
         return $this;
     }
 
     protected function prepareUrlForRequest($uri)
     {
-        if ($this->testHost !== null && str_starts_with($uri, '/')) {
-            $uri = 'http://'.$this->testHost.$uri;
+        if ($this->testHost !== null) {
+            if (str_starts_with($uri, '/')) {
+                $uri = 'http://'.$this->testHost.$uri;
+            } else {
+                $uri = (string) preg_replace('~^https?://[^/]+~', 'http://'.$this->testHost, $uri);
+            }
         }
 
         return parent::prepareUrlForRequest($uri);
+    }
+
+    /**
+     * Bind the OrgContext singleton directly — for Unit tests that exercise
+     * org-aware services/actions outside the HTTP middleware (no host
+     * resolution happens there). `null` simulates state zero; the flag
+     * mirrors an active/inactive Organization.
+     */
+    protected function withOrgContext(?Organization $organization, bool $orgIsActive = true): void
+    {
+        $this->app->instance(OrgContext::class, new OrgContext($organization, $orgIsActive));
+    }
+
+    /**
+     * `actingAs` with automatic host pinning: an admin lands on the
+     * neutral state-zero host, any other user lands on the host of the
+     * Organization account (credential) they hold — mirroring the real
+     * portals, where the host is decided before authentication. Tests
+     * that need a different host still call `onHost()` after (it wins).
+     */
+    public function actingAs(Authenticatable $user, $guard = null)
+    {
+        if ($this->testHost === null && $user instanceof User) {
+            $this->onHost($this->hostForUser($user));
+        }
+
+        return parent::actingAs($user, $guard);
+    }
+
+    private function hostForUser(User $user): ?string
+    {
+        if ($user->hasRole(RolesEnum::ADMIN->value)) {
+            return self::ADMIN_HOST;
+        }
+
+        return $user->credentials()
+            ->whereNotNull('org_id')
+            ->with('organization')
+            ->first()
+            ?->organization
+            ?->host;
     }
 
     /**
@@ -90,5 +143,27 @@ abstract class TestCase extends BaseTestCase
         $this->onHost($organization->host);
 
         return $user;
+    }
+
+    /**
+     * Assert the person holds an account (credential) in the Organization.
+     */
+    protected function assertAccountIn(Organization $organization, User $user): void
+    {
+        $this->assertNotNull(
+            $user->credentialFor($organization),
+            "Expected [{$user->email}] to hold an account in [{$organization->name}]."
+        );
+    }
+
+    /**
+     * Assert the person holds NO account in the Organization.
+     */
+    protected function assertNoAccountIn(Organization $organization, User $user): void
+    {
+        $this->assertNull(
+            $user->credentialFor($organization),
+            "Expected [{$user->email}] to hold no account in [{$organization->name}]."
+        );
     }
 }

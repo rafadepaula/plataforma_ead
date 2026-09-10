@@ -91,6 +91,8 @@ class ContextualHelpFallbackTest extends TestCase
 
     public function test_help_button_renders_inert_icon_without_error_when_no_article_exists(): void
     {
+        $this->onHost(Organization::factory()->create(['landing_view' => 'ligacerto'])->host);
+
         $response = $this->get(route('landing.show'));
 
         $response->assertOk();

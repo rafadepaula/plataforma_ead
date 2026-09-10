@@ -16,7 +16,7 @@ class ImpersonateOrgTest extends DuskTestCase
 {
     public function test_admin_can_impersonate_and_exit_an_organization_via_the_ui(): void
     {
-        $admin = User::factory()->create(['org_id' => null]);
+        $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole(RolesEnum::ADMIN->value);
         $organization = Organization::factory()->create(['name' => 'Organização Alvo']);
 

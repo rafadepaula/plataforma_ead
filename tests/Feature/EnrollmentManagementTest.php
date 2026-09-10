@@ -24,8 +24,8 @@ class EnrollmentManagementTest extends TestCase
     {
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
-        $course = Course::factory()->create(['org_id' => $org->id]);
-        $student = User::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
+        $student = User::factory()->inOrg($org->id)->create();
         $course->students()->attach($student->id, ['enrolled_at' => now(), 'status' => 'active']);
 
         $this->get(route('courses.enrollments.index', $course))
@@ -38,8 +38,8 @@ class EnrollmentManagementTest extends TestCase
     {
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
-        $course = Course::factory()->create(['org_id' => $org->id]);
-        $student = User::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
+        $student = User::factory()->inOrg($org->id)->create();
         $student->assignRole(RolesEnum::ALUNO->value);
 
         $response = $this->post(route('courses.enrollments.store', $course), [
@@ -58,8 +58,8 @@ class EnrollmentManagementTest extends TestCase
     {
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
-        $course = Course::factory()->create(['org_id' => $org->id]);
-        $student = User::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
+        $student = User::factory()->inOrg($org->id)->create();
         $course->students()->attach($student->id, ['enrolled_at' => now(), 'status' => 'active']);
 
         $this->post(route('courses.enrollments.store', $course), [
@@ -71,8 +71,8 @@ class EnrollmentManagementTest extends TestCase
     {
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
-        $course = Course::factory()->create(['org_id' => $org->id]);
-        $student = User::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
+        $student = User::factory()->inOrg($org->id)->create();
         $student->assignRole(RolesEnum::ALUNO->value);
         $course->students()->attach($student->id, ['enrolled_at' => now()->subMonth(), 'status' => 'cancelled']);
 
@@ -92,8 +92,8 @@ class EnrollmentManagementTest extends TestCase
     {
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
-        $course = Course::factory()->create(['org_id' => $org->id]);
-        $student = User::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
+        $student = User::factory()->inOrg($org->id)->create();
         $course->students()->attach($student->id, ['enrolled_at' => now(), 'status' => 'active']);
 
         $this->delete(route('courses.enrollments.destroy', [$course, $student]))
@@ -112,8 +112,8 @@ class EnrollmentManagementTest extends TestCase
 
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
-        $course = Course::factory()->create(['org_id' => $org->id]);
-        $student = User::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
+        $student = User::factory()->inOrg($org->id)->create();
         $enrolledAt = Carbon::parse('2026-03-15 10:00:00');
         $course->students()->attach($student->id, [
             'enrolled_at' => $enrolledAt,
@@ -146,8 +146,8 @@ class EnrollmentManagementTest extends TestCase
     {
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
-        $course = Course::factory()->create(['org_id' => $org->id]);
-        $neverEnrolled = User::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
+        $neverEnrolled = User::factory()->inOrg($org->id)->create();
 
         $this->post(route('courses.enrollments.restore', [$course, $neverEnrolled]))
             ->assertNotFound();
@@ -159,8 +159,8 @@ class EnrollmentManagementTest extends TestCase
 
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
-        $course = Course::factory()->create(['org_id' => $org->id]);
-        $student = User::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
+        $student = User::factory()->inOrg($org->id)->create();
         $course->students()->attach($student->id, ['enrolled_at' => now(), 'status' => 'active']);
 
         $this->post(route('courses.enrollments.restore', [$course, $student]))
@@ -182,8 +182,8 @@ class EnrollmentManagementTest extends TestCase
 
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
-        $course = Course::factory()->create(['org_id' => $org->id]);
-        $student = User::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
+        $student = User::factory()->inOrg($org->id)->create();
         $course->students()->attach($student->id, [
             'enrolled_at' => now()->subMonths(2),
             'status' => 'completed',
@@ -214,9 +214,9 @@ class EnrollmentManagementTest extends TestCase
     {
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
-        $course = Course::factory()->create(['org_id' => $org->id]);
-        $active = User::factory()->create(['org_id' => $org->id, 'name' => 'Aluno Ativo']);
-        $cancelled = User::factory()->create(['org_id' => $org->id, 'name' => 'Aluno Cancelado']);
+        $course = Course::factory()->inOrg($org->id)->create();
+        $active = User::factory()->inOrg($org->id)->create(['name' => 'Aluno Ativo']);
+        $cancelled = User::factory()->inOrg($org->id)->create(['name' => 'Aluno Cancelado']);
         $course->students()->attach($active->id, [
             'enrolled_at' => Carbon::parse('2026-03-15 10:00:00'),
             'status' => 'active',
@@ -248,8 +248,8 @@ class EnrollmentManagementTest extends TestCase
     {
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
-        $course = Course::factory()->create(['org_id' => $org->id]);
-        $student = User::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
+        $student = User::factory()->inOrg($org->id)->create();
         $course->students()->attach($student->id, ['enrolled_at' => now(), 'status' => 'active']);
 
         $this->from(route('courses.enrollments.index', $course))
@@ -268,8 +268,8 @@ class EnrollmentManagementTest extends TestCase
     public function test_aluno_is_forbidden_from_the_enrollments_panel(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
-        $student = User::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
+        $student = User::factory()->inOrg($org->id)->create();
         $this->actingAsOrgUser($org, RolesEnum::ALUNO->value);
 
         $this->get(route('courses.enrollments.index', $course))->assertForbidden();
@@ -280,7 +280,7 @@ class EnrollmentManagementTest extends TestCase
     public function test_gestor_from_another_org_cannot_manage_enrollments_of_a_course_they_do_not_own(): void
     {
         $otherOrg = Organization::factory()->create();
-        $otherCourse = Course::factory()->create(['org_id' => $otherOrg->id]);
+        $otherCourse = Course::factory()->inOrg($otherOrg->id)->create();
         $this->actingAsOrgUser(role: RolesEnum::GESTOR->value);
 
         // `OrgScope` on `Course` hides the row entirely for a Gestor of a
@@ -296,10 +296,10 @@ class EnrollmentManagementTest extends TestCase
     {
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
 
         $otherOrg = Organization::factory()->create();
-        $outsider = User::factory()->create(['org_id' => $otherOrg->id]);
+        $outsider = User::factory()->inOrg($otherOrg->id)->create();
         $outsider->assignRole(RolesEnum::ALUNO->value);
 
         $this->post(route('courses.enrollments.store', $course), [
@@ -316,9 +316,9 @@ class EnrollmentManagementTest extends TestCase
     {
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
 
-        $anotherGestor = User::factory()->create(['org_id' => $org->id]);
+        $anotherGestor = User::factory()->inOrg($org->id)->create();
         $anotherGestor->assignRole(RolesEnum::GESTOR->value);
 
         $this->post(route('courses.enrollments.store', $course), [
@@ -333,7 +333,7 @@ class EnrollmentManagementTest extends TestCase
 
     public function test_guest_is_redirected_away_from_the_enrollments_panel(): void
     {
-        $course = Course::factory()->create(['org_id' => Organization::factory()->create()->id]);
+        $course = Course::factory()->inOrg(Organization::factory()->create()->id)->create();
 
         $this->get(route('courses.enrollments.index', $course))->assertRedirect();
     }
@@ -342,13 +342,13 @@ class EnrollmentManagementTest extends TestCase
     {
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
 
-        $byName = User::factory()->create(['org_id' => $org->id, 'name' => 'Mariana Souza']);
+        $byName = User::factory()->inOrg($org->id)->create(['name' => 'Mariana Souza']);
         $byName->assignRole(RolesEnum::ALUNO->value);
-        $byEmail = User::factory()->create(['org_id' => $org->id, 'email' => 'carlos.mendes@example.com']);
+        $byEmail = User::factory()->inOrg($org->id)->create(['email' => 'carlos.mendes@example.com']);
         $byEmail->assignRole(RolesEnum::ALUNO->value);
-        $byCpf = User::factory()->create(['org_id' => $org->id, 'cpf' => '52998224725']);
+        $byCpf = User::factory()->inOrg($org->id)->create(['cpf' => '52998224725']);
         $byCpf->assignRole(RolesEnum::ALUNO->value);
 
         // Nome parcial
@@ -372,17 +372,17 @@ class EnrollmentManagementTest extends TestCase
     {
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
 
-        $activeStudent = User::factory()->create(['org_id' => $org->id, 'name' => 'Aluno Ativo']);
+        $activeStudent = User::factory()->inOrg($org->id)->create(['name' => 'Aluno Ativo']);
         $activeStudent->assignRole(RolesEnum::ALUNO->value);
         $course->students()->attach($activeStudent->id, ['enrolled_at' => now(), 'status' => 'active']);
 
-        $cancelledStudent = User::factory()->create(['org_id' => $org->id, 'name' => 'Aluno Cancelado']);
+        $cancelledStudent = User::factory()->inOrg($org->id)->create(['name' => 'Aluno Cancelado']);
         $cancelledStudent->assignRole(RolesEnum::ALUNO->value);
         $course->students()->attach($cancelledStudent->id, ['enrolled_at' => now(), 'status' => 'cancelled']);
 
-        $staff = User::factory()->create(['org_id' => $org->id, 'name' => 'Gestor Buscado']);
+        $staff = User::factory()->inOrg($org->id)->create(['name' => 'Gestor Buscado']);
         $staff->assignRole(RolesEnum::GESTOR->value);
 
         $response = $this->getJson(route('courses.enrollments.search', [$course, 'q' => 'Buscado']))
@@ -401,7 +401,7 @@ class EnrollmentManagementTest extends TestCase
     {
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
 
         $this->getJson(route('courses.enrollments.search', $course))
             ->assertUnprocessable()
@@ -411,7 +411,7 @@ class EnrollmentManagementTest extends TestCase
     public function test_aluno_and_cross_org_gestor_cannot_use_the_search_endpoint(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
 
         $this->actingAsOrgUser($org, RolesEnum::ALUNO->value);
         $this->getJson(route('courses.enrollments.search', [$course, 'q' => 'a']))->assertForbidden();
@@ -438,7 +438,7 @@ class EnrollmentManagementTest extends TestCase
 
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
 
         $this->post(route('courses.enrollments.store-student', $course), [
             'name' => 'Nova Aluna',
@@ -448,12 +448,13 @@ class EnrollmentManagementTest extends TestCase
             ->assertSessionHas('success');
 
         $student = User::query()->where('email', 'nova.aluna@example.com')->firstOrFail();
-        $this->assertSame($org->id, $student->org_id);
         $this->assertSame('11144477735', $student->cpf);
-        $this->assertSame('active', $student->status);
+        $credential = $student->credentialFor($org);
+        $this->assertNotNull($credential);
+        $this->assertSame('active', $credential->status);
         $this->assertTrue($student->hasRole(RolesEnum::ALUNO->value));
         // A senha inicial é o CPF normalizado em dígitos.
-        $this->assertTrue(Hash::check('11144477735', $student->password));
+        $this->assertTrue(Hash::check('11144477735', $credential->password));
 
         $this->assertDatabaseHas('course_user', [
             'course_id' => $course->id,
@@ -468,10 +469,9 @@ class EnrollmentManagementTest extends TestCase
     {
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
 
-        $existing = User::factory()->create([
-            'org_id' => $org->id,
+        $existing = User::factory()->inOrg($org)->create([
             'email' => 'existente@example.com',
             'cpf' => '52998224725',
         ]);

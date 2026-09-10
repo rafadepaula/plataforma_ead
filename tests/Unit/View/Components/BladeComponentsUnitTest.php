@@ -16,7 +16,7 @@ class BladeComponentsUnitTest extends TestCase
     {
         $org = Organization::factory()->create();
 
-        $admin = User::factory()->create(['org_id' => null]);
+        $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole(RolesEnum::ADMIN->value);
         Auth::login($admin);
 
@@ -33,6 +33,7 @@ class BladeComponentsUnitTest extends TestCase
         });
 
         session(['active_org_id' => $org->id]);
+        $this->withOrgContext($org);
 
         $component = new HelpButton('courses.index');
 
@@ -45,9 +46,10 @@ class BladeComponentsUnitTest extends TestCase
     {
         $org = Organization::factory()->create();
 
-        $user = User::factory()->create(['org_id' => $org->id]);
+        $user = User::factory()->inOrg($org->id)->create();
         $user->assignRole(RolesEnum::GESTOR->value);
         Auth::login($user);
+        $this->withOrgContext($org);
 
         $orgArticle = HelpArticle::factory()->forOrg($org)->create([
             'target_page_key' => 'dashboard',
@@ -63,14 +65,16 @@ class BladeComponentsUnitTest extends TestCase
     public function test_help_button_resolves_global_article_when_no_org_article_exists(): void
     {
         $org = Organization::factory()->create();
-        $user = User::factory()->create(['org_id' => $org->id]);
+        $user = User::factory()->inOrg($org->id)->create();
         $user->assignRole(RolesEnum::ALUNO->value);
         Auth::login($user);
+        $this->withOrgContext($org);
 
-        $global = HelpArticle::factory()->global()->create([
+        // artigo global (org_id null) não pode passar pelo hook de criação
+        $global = HelpArticle::withoutEvents(fn () => HelpArticle::factory()->global()->create([
             'target_page_key' => 'student.quizzes.show',
             'title' => 'Instruções da Prova',
-        ]);
+        ]));
 
         $component = new HelpButton('student.quizzes.show');
 
@@ -161,11 +165,14 @@ class BladeComponentsUnitTest extends TestCase
         $this->assertStringNotContainsString('provas interativas', $rendered);
     }
 
-    public function test_guest_panel_falls_back_to_the_session_tenant_name(): void
+    public function test_guest_panel_falls_back_to_the_host_org_brand(): void
     {
-        session(['tenant_name' => 'Instituto Alfa Beta']);
+        $this->withOrgContext(Organization::factory()->create(['name' => 'Instituto Alfa Beta']));
 
-        $rendered = (string) $this->blade('<x-layout.guest-panel />');
+        $rendered = (string) $this->blade(
+            '<x-layout.guest-panel />',
+            ['orgBrand' => ['name' => 'Instituto Alfa Beta', 'logoPath' => null]],
+        );
 
         $this->assertStringContainsString('Instituto Alfa Beta', $rendered);
         $this->assertStringContainsString('>IA<', $rendered);
@@ -173,9 +180,12 @@ class BladeComponentsUnitTest extends TestCase
 
     public function test_guest_panel_can_render_only_the_tenant_brand_for_the_mobile_column(): void
     {
-        session(['tenant_name' => 'Conselho Regional']);
+        $this->withOrgContext(Organization::factory()->create(['name' => 'Conselho Regional']));
 
-        $rendered = (string) $this->blade('<x-layout.guest-panel brand-only class="d-lg-none" />');
+        $rendered = (string) $this->blade(
+            '<x-layout.guest-panel brand-only class="d-lg-none" />',
+            ['orgBrand' => ['name' => 'Conselho Regional', 'logoPath' => null]],
+        );
 
         $this->assertStringContainsString('Conselho Regional', $rendered);
         $this->assertStringContainsString('>CR<', $rendered);

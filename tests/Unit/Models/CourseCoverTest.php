@@ -39,7 +39,7 @@ class CourseCoverTest extends TestCase
         Storage::fake('public');
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org);
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
 
         $service = new FileUploadService;
         $path = $service->storeCover(UploadedFile::fake()->image('capa.png'), $course);

@@ -51,7 +51,6 @@ class CertificatePdfTest extends TestCase
 
         /** @var User $student */
         $student = User::factory()->create([
-            'org_id' => null,
             'name' => $names['name'] ?? 'Maria Silva',
         ]);
         $student->assignRole('aluno');
@@ -146,10 +145,10 @@ class CertificatePdfTest extends TestCase
         Storage::disk('public')->put('logos/org.png', $fixture['bytes']);
 
         $org = Organization::factory()->create(['logo_path' => 'logos/org.png']);
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
 
         /** @var User $student */
-        $student = User::factory()->create(['org_id' => null]);
+        $student = User::factory()->inOrg($org->id)->create();
         $certificate = Certificate::factory()->for($course)->for($student)->create();
 
         $logo = $this->service->presentation()->build($certificate)['logo'];
@@ -174,10 +173,10 @@ class CertificatePdfTest extends TestCase
         Storage::disk('public')->put('logos/big.png', $bytes);
 
         $org = Organization::factory()->create(['logo_path' => 'logos/big.png']);
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
 
         /** @var User $student */
-        $student = User::factory()->create(['org_id' => null]);
+        $student = User::factory()->inOrg($org->id)->create();
         $certificate = Certificate::factory()->for($course)->for($student)->create();
 
         $logo = $this->service->presentation()->build($certificate)['logo'];

@@ -3,6 +3,7 @@
 namespace Tests\Feature\Auth;
 
 use App\Enums\Permissions\RolesEnum;
+use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Support\Facades\RateLimiter;
 use Tests\TestCase;
@@ -33,7 +34,7 @@ class LoginTest extends TestCase
 
     public function test_authenticated_admin_is_redirected_away_from_login_screen(): void
     {
-        $admin = User::factory()->create(['org_id' => null]);
+        $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole(RolesEnum::ADMIN->value);
 
         $this->actingAs($admin)->get('/login')->assertRedirect(route('admin.dashboard'));
@@ -48,14 +49,14 @@ class LoginTest extends TestCase
 
     public function test_authenticated_aluno_is_redirected_away_from_login_screen(): void
     {
-        $aluno = User::factory()->aluno()->create();
+        $aluno = User::factory()->aluno()->inOrg(Organization::factory()->create())->create();
 
         $this->actingAs($aluno)->get('/login')->assertRedirect(route('student.courses.index'));
     }
 
     public function test_authenticated_user_with_intended_url_is_redirected_to_intended_from_login(): void
     {
-        $aluno = User::factory()->aluno()->create();
+        $aluno = User::factory()->aluno()->inOrg(Organization::factory()->create())->create();
 
         // Set an intended URL in the session, then visit /login while authenticated.
         // The middleware should redirect to the intended URL (priority over role-based home).
@@ -67,11 +68,13 @@ class LoginTest extends TestCase
 
     public function test_user_can_login_with_valid_credentials(): void
     {
-        $user = User::factory()->create([
+        $org = Organization::factory()->create();
+        $user = User::factory()->aluno()->inOrg($org)->withPassword('correct-password')->create([
             'email' => 'user@example.com',
-            'password' => bcrypt('correct-password'),
         ]);
-        $user->assignRole(RolesEnum::ALUNO->value);
+
+        // a conta por org só autentica no portal (host) da própria org
+        $this->onHost($org->host);
 
         $this->post('/login', [
             'email' => 'user@example.com',
@@ -83,10 +86,12 @@ class LoginTest extends TestCase
 
     public function test_user_cannot_login_with_invalid_password(): void
     {
-        $user = User::factory()->create([
+        $org = Organization::factory()->create();
+        User::factory()->aluno()->inOrg($org)->withPassword('correct-password')->create([
             'email' => 'user@example.com',
-            'password' => bcrypt('correct-password'),
         ]);
+
+        $this->onHost($org->host);
 
         $this->post('/login', [
             'email' => 'user@example.com',
@@ -108,11 +113,12 @@ class LoginTest extends TestCase
 
     public function test_inactive_user_is_blocked_from_logging_in(): void
     {
-        $user = User::factory()->inactive()->create([
+        $org = Organization::factory()->create();
+        $user = User::factory()->aluno()->inOrg($org)->withPassword('correct-password')->inactive()->create([
             'email' => 'inactive@example.com',
-            'password' => bcrypt('correct-password'),
         ]);
-        $user->assignRole(RolesEnum::ALUNO->value);
+
+        $this->onHost($org->host);
 
         $this->post('/login', [
             'email' => 'inactive@example.com',
@@ -124,7 +130,7 @@ class LoginTest extends TestCase
 
     public function test_admin_role_redirects_to_admin_area(): void
     {
-        $admin = User::factory()->create(['org_id' => null, 'password' => bcrypt('correct-password')]);
+        $admin = User::factory()->inOrg(null)->withPassword('correct-password')->create();
         $admin->assignRole(RolesEnum::ADMIN->value);
 
         $this->post('/login', [
@@ -137,10 +143,12 @@ class LoginTest extends TestCase
 
     public function test_login_is_rate_limited_after_too_many_failed_attempts(): void
     {
-        $user = User::factory()->create([
+        $org = Organization::factory()->create();
+        User::factory()->aluno()->inOrg($org)->withPassword('correct-password')->create([
             'email' => 'user@example.com',
-            'password' => bcrypt('correct-password'),
         ]);
+
+        $this->onHost($org->host);
 
         for ($i = 0; $i < 5; $i++) {
             $this->post('/login', [
@@ -161,11 +169,11 @@ class LoginTest extends TestCase
 
     public function test_user_can_logout(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->inOrg(Organization::factory()->create())->create();
 
         $this->actingAs($user)
             ->post('/logout')
-            ->assertRedirect('/');
+            ->assertRedirect(route('landing.show'));
 
         $this->assertGuest();
     }

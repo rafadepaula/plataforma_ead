@@ -16,10 +16,10 @@ class DashboardDuskTest extends DuskTestCase
         $org = Organization::factory()->create(['name' => 'Instituto Alfa']);
         $course = Course::factory()->for($org)->create(['title' => 'NR12 — Segurança em Máquinas']);
 
-        $admin = User::factory()->create(['org_id' => null]);
+        $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole('admin');
 
-        $student = User::factory()->create(['org_id' => $org->id, 'name' => 'João Pereira']);
+        $student = User::factory()->inOrg($org->id)->create(['name' => 'João Pereira']);
         $student->assignRole('aluno');
 
         $course->students()->attach($student->id, [
@@ -100,12 +100,12 @@ class DashboardDuskTest extends DuskTestCase
         $courseA = Course::factory()->for($orgA)->create();
         $courseB = Course::factory()->for($orgB)->create();
 
-        $gestor = User::factory()->create(['org_id' => $orgA->id]);
+        $gestor = User::factory()->inOrg($orgA->id)->create();
         $gestor->assignRole('gestor');
 
-        $studentA = User::factory()->create(['org_id' => $orgA->id, 'name' => 'Ana Costa']);
+        $studentA = User::factory()->inOrg($orgA->id)->create(['name' => 'Ana Costa']);
         $studentA->assignRole('aluno');
-        $studentB = User::factory()->create(['org_id' => $orgB->id, 'name' => 'Marcos Silva']);
+        $studentB = User::factory()->inOrg($orgB->id)->create(['name' => 'Marcos Silva']);
         $studentB->assignRole('aluno');
 
         $courseA->students()->attach($studentA->id, [

@@ -22,15 +22,20 @@ class SmartInvitationTest extends TestCase
     private function makeInvitationLink(array $attributes = []): InvitationLink
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
-        $creator = User::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
+        $creator = User::factory()->inOrg($org->id)->create();
         $creator->assignRole(RolesEnum::GESTOR->value);
 
-        return InvitationLink::factory()->create(array_merge([
+        $invitationLink = InvitationLink::factory()->create(array_merge([
             'org_id' => $org->id,
             'course_id' => $course->id,
             'created_by' => $creator->id,
         ], $attributes));
+
+        // o convite só é resolvível no portal (host) da própria org
+        $this->onHost(Organization::find($invitationLink->org_id)->host);
+
+        return $invitationLink;
     }
 
     public function test_show_renders_the_form_for_a_valid_link(): void
@@ -72,6 +77,8 @@ class SmartInvitationTest extends TestCase
 
     public function test_show_returns_404_for_an_unknown_token(): void
     {
+        $this->onHost(Organization::factory()->create()->host);
+
         $this->get('/convite/token-que-nao-existe')
             ->assertNotFound()
             ->assertSee('Este convite não foi encontrado.');
@@ -79,7 +86,9 @@ class SmartInvitationTest extends TestCase
 
     public function test_check_email_reports_true_for_an_existing_email(): void
     {
-        User::factory()->create(['email' => 'existente@example.com']);
+        // "exists" é por portal: a pessoa precisa de conta na org do host
+        $this->onHost(Organization::factory()->create()->host);
+        User::factory()->inOrg(Organization::query()->where('host', $this->testHost)->first())->create(['email' => 'existente@example.com']);
 
         $this->postJson('/convite/check-email', ['email' => 'existente@example.com'])
             ->assertOk()
@@ -88,6 +97,8 @@ class SmartInvitationTest extends TestCase
 
     public function test_check_email_reports_false_for_a_new_email(): void
     {
+        $this->onHost(Organization::factory()->create()->host);
+
         $this->postJson('/convite/check-email', ['email' => 'novo@example.com'])
             ->assertOk()
             ->assertExactJson(['exists' => false]);
@@ -95,6 +106,8 @@ class SmartInvitationTest extends TestCase
 
     public function test_check_email_validates_the_email_field(): void
     {
+        $this->onHost(Organization::factory()->create()->host);
+
         $this->post('/convite/check-email', ['email' => 'nao-e-um-email'])
             ->assertRedirect()
             ->assertSessionHasErrors('email');
@@ -129,9 +142,8 @@ class SmartInvitationTest extends TestCase
     public function test_store_authenticates_an_existing_user_and_enrolls_them_without_duplicating_the_account(): void
     {
         $invitationLink = $this->makeInvitationLink();
-        $existing = User::factory()->aluno()->create([
+        $existing = User::factory()->aluno()->inOrg($invitationLink->org_id)->withPassword('senha-correta')->create([
             'email' => 'existente@example.com',
-            'password' => 'senha-correta',
         ]);
 
         $response = $this->post('/convite/'.$invitationLink->token, [
@@ -153,9 +165,8 @@ class SmartInvitationTest extends TestCase
     public function test_store_rejects_an_existing_email_with_the_wrong_password(): void
     {
         $invitationLink = $this->makeInvitationLink();
-        User::factory()->aluno()->create([
+        User::factory()->aluno()->inOrg($invitationLink->org_id)->withPassword('senha-correta')->create([
             'email' => 'existente@example.com',
-            'password' => 'senha-correta',
         ]);
 
         $this->from('/convite/'.$invitationLink->token)
@@ -181,11 +192,10 @@ class SmartInvitationTest extends TestCase
     public function test_store_enrolls_an_existing_user_that_also_posts_the_registration_fields(): void
     {
         $invitationLink = $this->makeInvitationLink();
-        $existing = User::factory()->aluno()->create([
+        $existing = User::factory()->aluno()->inOrg($invitationLink->org_id)->withPassword('senha-correta')->create([
             'name' => 'Aluno Existente',
             'email' => 'existente@example.com',
             'cpf' => '12345678909',
-            'password' => 'senha-correta',
         ]);
 
         $this->post('/convite/'.$invitationLink->token, [
@@ -215,9 +225,8 @@ class SmartInvitationTest extends TestCase
     public function test_store_rejects_an_existing_account_that_is_inactive(): void
     {
         $invitationLink = $this->makeInvitationLink();
-        User::factory()->aluno()->inactive()->create([
+        User::factory()->aluno()->inOrg($invitationLink->org_id)->withPassword('senha-correta')->inactive()->create([
             'email' => 'inativo@example.com',
-            'password' => 'senha-correta',
         ]);
 
         $this->from('/convite/'.$invitationLink->token)
@@ -472,7 +481,7 @@ class SmartInvitationTest extends TestCase
     public function test_show_displays_the_inviting_organization_brand(): void
     {
         $organization = Organization::factory()->create(['name' => 'Instituto Ponte Verde']);
-        $course = Course::factory()->create(['org_id' => $organization->id, 'is_published' => true]);
+        $course = Course::factory()->inOrg($organization->id)->create(['is_published' => true]);
         $invitationLink = $this->makeInvitationLink([
             'org_id' => $organization->id,
             'course_id' => $course->id,
@@ -490,9 +499,8 @@ class SmartInvitationTest extends TestCase
     public function test_store_marks_the_email_field_invalid_when_a_staff_account_is_used(): void
     {
         $invitationLink = $this->makeInvitationLink();
-        $gestor = User::factory()->create([
+        $gestor = User::factory()->inOrg($invitationLink->org_id)->withPassword('senha-correta')->create([
             'email' => 'gestor-invalido@example.com',
-            'password' => 'senha-correta',
         ]);
         $gestor->assignRole(RolesEnum::GESTOR->value);
 
@@ -527,7 +535,7 @@ class SmartInvitationTest extends TestCase
     public function test_show_returns_404_when_the_linked_course_is_unpublished(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => false]);
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => false]);
         $invitationLink = $this->makeInvitationLink(['course_id' => $course->id]);
 
         $this->get('/convite/'.$invitationLink->token)
@@ -538,7 +546,7 @@ class SmartInvitationTest extends TestCase
     public function test_show_returns_404_when_the_linked_course_is_soft_deleted(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $invitationLink = $this->makeInvitationLink(['course_id' => $course->id]);
         $course->delete();
 
@@ -548,7 +556,7 @@ class SmartInvitationTest extends TestCase
     public function test_store_returns_404_when_the_linked_course_is_unpublished(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => false]);
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => false]);
         $invitationLink = $this->makeInvitationLink(['course_id' => $course->id]);
 
         $this->post('/convite/'.$invitationLink->token, [
@@ -566,9 +574,8 @@ class SmartInvitationTest extends TestCase
     public function test_store_rejects_an_existing_staff_email_from_using_the_self_service_flow(): void
     {
         $invitationLink = $this->makeInvitationLink();
-        $gestor = User::factory()->create([
+        $gestor = User::factory()->inOrg($invitationLink->org_id)->withPassword('senha-correta')->create([
             'email' => 'gestor@example.com',
-            'password' => 'senha-correta',
         ]);
         $gestor->assignRole(RolesEnum::GESTOR->value);
 

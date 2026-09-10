@@ -32,7 +32,7 @@ class LessonPdfViewerDuskTest extends DuskTestCase
         parent::setUp();
 
         $org = Organization::factory()->create();
-        $this->course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $this->course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $this->module = Module::factory()->create(['course_id' => $this->course->id]);
 
         $this->student = User::factory()->create();
@@ -152,7 +152,7 @@ class LessonPdfViewerDuskTest extends DuskTestCase
         ]);
 
         /** @var User $gestor */
-        $gestor = User::factory()->create(['org_id' => $this->course->org_id]);
+        $gestor = User::factory()->inOrg($this->course->org_id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
 
         try {

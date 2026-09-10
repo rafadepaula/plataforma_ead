@@ -24,9 +24,9 @@ class OrgDashboardTest extends TestCase
         $courseA = Course::factory()->for($orgA)->create();
         $courseB = Course::factory()->for($orgB)->create();
 
-        $studentA = User::factory()->create(['org_id' => $orgA->id]);
+        $studentA = User::factory()->inOrg($orgA->id)->create();
         $studentA->assignRole('aluno');
-        $studentB = User::factory()->create(['org_id' => $orgB->id]);
+        $studentB = User::factory()->inOrg($orgB->id)->create();
         $studentB->assignRole('aluno');
 
         $courseA->students()->attach($studentA->id, [
@@ -64,9 +64,9 @@ class OrgDashboardTest extends TestCase
         $courseA = Course::factory()->for($orgA)->create();
         $courseB = Course::factory()->for($orgB)->create();
 
-        $studentA = User::factory()->create(['org_id' => $orgA->id]);
+        $studentA = User::factory()->inOrg($orgA->id)->create();
         $studentA->assignRole('aluno');
-        $studentB = User::factory()->create(['org_id' => $orgB->id]);
+        $studentB = User::factory()->inOrg($orgB->id)->create();
         $studentB->assignRole('aluno');
 
         $courseA->students()->attach($studentA->id, [
@@ -100,9 +100,9 @@ class OrgDashboardTest extends TestCase
         $courseA = Course::factory()->for($orgA)->create();
         $courseB = Course::factory()->for($orgB)->create();
 
-        $studentA = User::factory()->create(['org_id' => $orgA->id]);
+        $studentA = User::factory()->inOrg($orgA->id)->create();
         $studentA->assignRole('aluno');
-        $studentB = User::factory()->create(['org_id' => $orgB->id]);
+        $studentB = User::factory()->inOrg($orgB->id)->create();
         $studentB->assignRole('aluno');
 
         $courseA->students()->attach($studentA->id, [
@@ -143,7 +143,7 @@ class OrgDashboardTest extends TestCase
 
         $courseA = Course::factory()->for($orgA)->create();
 
-        $studentA = User::factory()->create(['org_id' => $orgA->id]);
+        $studentA = User::factory()->inOrg($orgA->id)->create();
         $studentA->assignRole('aluno');
 
         $courseA->students()->attach($studentA->id, [
@@ -202,7 +202,7 @@ class OrgDashboardTest extends TestCase
         $org = Organization::factory()->create();
         Course::factory()->for($org)->published()->count(2)->create();
         $draftCourse = Course::factory()->for($org)->create(['title' => 'Curso em rascunho']);
-        $student = User::factory()->create(['org_id' => $org->id, 'name' => 'Ana Lima']);
+        $student = User::factory()->inOrg($org->id)->create(['name' => 'Ana Lima']);
         $student->assignRole('aluno');
         $draftCourse->students()->attach($student->id, [
             'enrolled_at' => now(),
@@ -259,7 +259,7 @@ class OrgDashboardTest extends TestCase
     {
         $org = Organization::factory()->create();
         $course = Course::factory()->for($org)->create();
-        $student = User::factory()->create(['org_id' => $org->id]);
+        $student = User::factory()->inOrg($org->id)->create();
         $student->assignRole('aluno');
 
         $module = Module::factory()->for($course)->create();
@@ -267,7 +267,7 @@ class OrgDashboardTest extends TestCase
         $quiz = Quiz::factory()->for($lesson)->create();
         QuizAttempt::factory()->for($quiz)->for($student)->awaitingManualGrading()->create();
 
-        $topic = ForumTopic::factory()->for($course)->for($student)->create(['org_id' => $org->id]);
+        $topic = ForumTopic::factory()->for($course)->for($student)->inOrg($org->id)->create();
         ForumReport::factory()->for($student, 'reporter')->create([
             'postable_type' => ForumTopic::class,
             'postable_id' => $topic->id,
@@ -295,7 +295,7 @@ class OrgDashboardTest extends TestCase
 
         foreach (['Curso Alfa', 'Curso Beta', 'Curso Gama', 'Curso Zeta'] as $title) {
             $course = Course::factory()->for($org)->create(['title' => $title]);
-            $student = User::factory()->create(['org_id' => $org->id]);
+            $student = User::factory()->inOrg($org->id)->create();
             $student->assignRole('aluno');
             $course->students()->attach($student->id, [
                 'enrolled_at' => now(),

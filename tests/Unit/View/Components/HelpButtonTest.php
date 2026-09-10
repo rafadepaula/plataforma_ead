@@ -28,6 +28,7 @@ class HelpButtonTest extends TestCase
         $global = HelpArticle::withoutEvents(fn () => HelpArticle::factory()->global()->create(['target_page_key' => 'dashboard']));
 
         $this->actingAsOrgUser($org, 'gestor');
+        $this->withOrgContext($org);
 
         $orgSpecific = HelpArticle::factory()->forOrg($org)->create(['target_page_key' => 'dashboard']);
 

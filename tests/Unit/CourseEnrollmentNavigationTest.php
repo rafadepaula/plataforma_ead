@@ -23,7 +23,7 @@ class CourseEnrollmentNavigationTest extends TestCase
 
     public function test_first_published_lesson_for_returns_null_when_course_has_no_published_lessons(): void
     {
-        $course = Course::factory()->create(['org_id' => Organization::factory()->create()->id]);
+        $course = Course::factory()->inOrg(Organization::factory()->create()->id)->create();
         $module = Module::factory()->for($course)->create(['order_index' => 0]);
         Lesson::factory()->for($module)->create(['is_published' => false, 'order_index' => 0]);
 
@@ -32,7 +32,7 @@ class CourseEnrollmentNavigationTest extends TestCase
 
     public function test_first_published_lesson_for_orders_by_module_then_lesson_order_index(): void
     {
-        $course = Course::factory()->create(['org_id' => Organization::factory()->create()->id]);
+        $course = Course::factory()->inOrg(Organization::factory()->create()->id)->create();
         $moduleTwo = Module::factory()->for($course)->create(['order_index' => 1]);
         $moduleOne = Module::factory()->for($course)->create(['order_index' => 0]);
 
@@ -48,7 +48,7 @@ class CourseEnrollmentNavigationTest extends TestCase
 
     public function test_first_published_lesson_for_skips_unpublished_lessons(): void
     {
-        $course = Course::factory()->create(['org_id' => Organization::factory()->create()->id]);
+        $course = Course::factory()->inOrg(Organization::factory()->create()->id)->create();
         $module = Module::factory()->for($course)->create(['order_index' => 0]);
         Lesson::factory()->for($module)->create(['is_published' => false, 'order_index' => 0]);
         $published = Lesson::factory()->for($module)->create(['is_published' => true, 'order_index' => 1]);
@@ -61,7 +61,7 @@ class CourseEnrollmentNavigationTest extends TestCase
 
     public function test_resume_lesson_for_returns_null_when_course_has_no_published_lessons(): void
     {
-        $course = Course::factory()->create(['org_id' => Organization::factory()->create()->id]);
+        $course = Course::factory()->inOrg(Organization::factory()->create()->id)->create();
         $user = User::factory()->create();
 
         $this->assertNull($course->resumeLessonFor($user));
@@ -69,7 +69,7 @@ class CourseEnrollmentNavigationTest extends TestCase
 
     public function test_resume_lesson_for_falls_back_to_first_published_lesson_when_no_progress_exists(): void
     {
-        $course = Course::factory()->create(['org_id' => Organization::factory()->create()->id]);
+        $course = Course::factory()->inOrg(Organization::factory()->create()->id)->create();
         $module = Module::factory()->for($course)->create();
         $lesson = Lesson::factory()->for($module)->create(['is_published' => true, 'order_index' => 0]);
         $user = User::factory()->create();
@@ -82,7 +82,7 @@ class CourseEnrollmentNavigationTest extends TestCase
 
     public function test_resume_lesson_for_returns_the_most_recently_touched_lesson_when_all_are_completed(): void
     {
-        $course = Course::factory()->create(['org_id' => Organization::factory()->create()->id]);
+        $course = Course::factory()->inOrg(Organization::factory()->create()->id)->create();
         $module = Module::factory()->for($course)->create();
         $lessonOne = Lesson::factory()->for($module)->create(['is_published' => true, 'order_index' => 0]);
         $lessonTwo = Lesson::factory()->for($module)->create(['is_published' => true, 'order_index' => 1]);
@@ -112,7 +112,7 @@ class CourseEnrollmentNavigationTest extends TestCase
 
     public function test_resume_lesson_for_returns_the_correct_partial_progress_target(): void
     {
-        $course = Course::factory()->create(['org_id' => Organization::factory()->create()->id]);
+        $course = Course::factory()->inOrg(Organization::factory()->create()->id)->create();
         $module = Module::factory()->for($course)->create();
         $lessonOne = Lesson::factory()->for($module)->create(['is_published' => true, 'order_index' => 0]);
         $lessonTwo = Lesson::factory()->for($module)->create(['is_published' => true, 'order_index' => 1]);
@@ -134,7 +134,7 @@ class CourseEnrollmentNavigationTest extends TestCase
 
     public function test_resume_lesson_for_falls_back_when_last_touched_lesson_is_no_longer_published(): void
     {
-        $course = Course::factory()->create(['org_id' => Organization::factory()->create()->id]);
+        $course = Course::factory()->inOrg(Organization::factory()->create()->id)->create();
         $module = Module::factory()->for($course)->create();
         $unpublished = Lesson::factory()->for($module)->create(['is_published' => false, 'order_index' => 0]);
         $stillPublished = Lesson::factory()->for($module)->create(['is_published' => true, 'order_index' => 1]);
@@ -156,7 +156,7 @@ class CourseEnrollmentNavigationTest extends TestCase
 
     public function test_enrollment_display_status_for_returns_expirado_when_active_and_past_its_expiry_regardless_of_progress(): void
     {
-        $course = Course::factory()->create(['org_id' => Organization::factory()->create()->id]);
+        $course = Course::factory()->inOrg(Organization::factory()->create()->id)->create();
 
         $pastZeroProgress = (object) ['status' => 'active', 'progress_percentage' => 0, 'expires_at' => now()->subDay(), 'completed_at' => null];
         $pastPartialProgress = (object) ['status' => 'active', 'progress_percentage' => 99, 'expires_at' => now()->subDay(), 'completed_at' => null];
@@ -167,7 +167,7 @@ class CourseEnrollmentNavigationTest extends TestCase
 
     public function test_enrollment_display_status_for_never_returns_expirado_when_expires_at_is_null(): void
     {
-        $course = Course::factory()->create(['org_id' => Organization::factory()->create()->id]);
+        $course = Course::factory()->inOrg(Organization::factory()->create()->id)->create();
 
         $noProgress = (object) ['status' => 'active', 'progress_percentage' => 0, 'expires_at' => null, 'completed_at' => null];
         $someProgress = (object) ['status' => 'active', 'progress_percentage' => 40, 'expires_at' => null, 'completed_at' => null];
@@ -178,7 +178,7 @@ class CourseEnrollmentNavigationTest extends TestCase
 
     public function test_enrollment_display_status_for_returns_nao_iniciado_when_active_with_zero_progress(): void
     {
-        $course = Course::factory()->create(['org_id' => Organization::factory()->create()->id]);
+        $course = Course::factory()->inOrg(Organization::factory()->create()->id)->create();
         $pivot = (object) ['status' => 'active', 'progress_percentage' => 0, 'expires_at' => null, 'completed_at' => null];
 
         $this->assertSame('nao_iniciado', $course->enrollmentDisplayStatusFor($pivot));
@@ -186,7 +186,7 @@ class CourseEnrollmentNavigationTest extends TestCase
 
     public function test_enrollment_display_status_for_returns_em_andamento_when_active_with_partial_progress(): void
     {
-        $course = Course::factory()->create(['org_id' => Organization::factory()->create()->id]);
+        $course = Course::factory()->inOrg(Organization::factory()->create()->id)->create();
         $pivot = (object) ['status' => 'active', 'progress_percentage' => 55, 'expires_at' => now()->addDay(), 'completed_at' => null];
 
         $this->assertSame('em_andamento', $course->enrollmentDisplayStatusFor($pivot));
@@ -194,7 +194,7 @@ class CourseEnrollmentNavigationTest extends TestCase
 
     public function test_enrollment_display_status_for_returns_concluido_when_status_is_completed(): void
     {
-        $course = Course::factory()->create(['org_id' => Organization::factory()->create()->id]);
+        $course = Course::factory()->inOrg(Organization::factory()->create()->id)->create();
         $pivot = (object) ['status' => 'completed', 'progress_percentage' => 100, 'expires_at' => null, 'completed_at' => now()];
 
         $this->assertSame('concluido', $course->enrollmentDisplayStatusFor($pivot));

@@ -27,7 +27,7 @@ class QuizManagementTest extends TestCase
 {
     private function quizLesson(Organization $org): Lesson
     {
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
 
         return Lesson::factory()->for($module)->create(['type' => 'quiz', 'is_published' => true]);
@@ -35,14 +35,14 @@ class QuizManagementTest extends TestCase
 
     private function awaitingManualGradingAttempt(Organization $org, string $courseTitle): QuizAttempt
     {
-        $course = Course::factory()->create(['org_id' => $org->id, 'title' => $courseTitle]);
+        $course = Course::factory()->inOrg($org->id)->create(['title' => $courseTitle]);
         $module = Module::factory()->for($course)->create();
         $lesson = Lesson::factory()->for($module)->create(['type' => 'quiz', 'is_published' => true]);
         $quiz = Quiz::factory()->for($lesson)->create();
         $question = QuizQuestion::factory()->for($quiz)->essay()->create();
 
         /** @var User $aluno */
-        $aluno = User::factory()->create(['org_id' => null]);
+        $aluno = User::factory()->inOrg($lesson->module->course_id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
 
         $attempt = QuizAttempt::factory()->for($quiz)->for($aluno)->awaitingManualGrading()->create();
@@ -92,7 +92,7 @@ class QuizManagementTest extends TestCase
         ]);
 
         /** @var User $aluno */
-        $aluno = User::factory()->create(['org_id' => null]);
+        $aluno = User::factory()->inOrg($lesson->module->course_id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
         $aluno->courses()->attach($lesson->module->course_id, ['status' => 'active', 'enrolled_at' => now()]);
         $this->actingAs($aluno);
@@ -533,7 +533,7 @@ class QuizManagementTest extends TestCase
         $correctOption = QuizOption::factory()->for($question, 'question')->correct()->create();
 
         /** @var User $aluno */
-        $aluno = User::factory()->create(['org_id' => null]);
+        $aluno = User::factory()->inOrg($lesson->module->course_id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
         $aluno->courses()->attach($lesson->module->course_id, ['status' => 'active', 'enrolled_at' => now()]);
         $this->actingAs($aluno);
@@ -562,7 +562,7 @@ class QuizManagementTest extends TestCase
         $wrongOption = QuizOption::factory()->for($question, 'question')->incorrect()->create();
 
         /** @var User $aluno */
-        $aluno = User::factory()->create(['org_id' => null]);
+        $aluno = User::factory()->inOrg($lesson->module->course_id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
         $aluno->courses()->attach($lesson->module->course_id, ['status' => 'active', 'enrolled_at' => now()]);
         $this->actingAs($aluno);
@@ -590,7 +590,7 @@ class QuizManagementTest extends TestCase
         $correctOption = QuizOption::factory()->for($question, 'question')->correct()->create();
 
         /** @var User $aluno */
-        $aluno = User::factory()->create(['org_id' => null]);
+        $aluno = User::factory()->inOrg($lesson->module->course_id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
         $aluno->courses()->attach($lesson->module->course_id, ['status' => 'active', 'enrolled_at' => now()]);
         $this->actingAs($aluno);

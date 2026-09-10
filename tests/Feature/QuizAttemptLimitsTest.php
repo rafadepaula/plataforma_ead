@@ -25,13 +25,13 @@ class QuizAttemptLimitsTest extends TestCase
     private function enrolledAlunoAndQuiz(array $quizAttributes = []): array
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
         $lesson = Lesson::factory()->for($module)->create(['type' => 'quiz', 'is_published' => true]);
         $quiz = Quiz::factory()->for($lesson)->create($quizAttributes);
 
         /** @var User $aluno */
-        $aluno = User::factory()->create(['org_id' => null]);
+        $aluno = User::factory()->inOrg($course->org_id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
         $aluno->courses()->attach($course->id, ['status' => 'active', 'enrolled_at' => now()]);
 
@@ -116,7 +116,7 @@ class QuizAttemptLimitsTest extends TestCase
             'min_score_percentage' => 0,
         ]);
 
-        $aluno = User::factory()->create(['org_id' => null]);
+        $aluno = User::factory()->inOrg($quiz->lesson->module->course_id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
 
         // Crafted directly (bypassing the Action's own started_at

@@ -22,7 +22,7 @@ class QuizPolicyTest extends TestCase
 {
     private function quiz(Organization $org): Quiz
     {
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
         $lesson = Lesson::factory()->for($module)->create(['type' => 'quiz']);
 
@@ -35,8 +35,9 @@ class QuizPolicyTest extends TestCase
         $quiz = $this->quiz($org);
 
         /** @var User $gestor */
-        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor = User::factory()->inOrg($org->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
+        $this->withOrgContext($org);
 
         $this->assertTrue((new QuizPolicy)->view($gestor, $quiz));
     }
@@ -47,7 +48,7 @@ class QuizPolicyTest extends TestCase
         $quiz = $this->quiz($org);
 
         /** @var User $otherGestor */
-        $otherGestor = User::factory()->create(['org_id' => Organization::factory()->create()->id]);
+        $otherGestor = User::factory()->inOrg(Organization::factory()->create()->id)->create();
         $otherGestor->assignRole(RolesEnum::GESTOR->value);
 
         $this->assertFalse((new QuizPolicy)->view($otherGestor, $quiz));
@@ -59,7 +60,7 @@ class QuizPolicyTest extends TestCase
         $quiz = $this->quiz($org);
 
         /** @var User $aluno */
-        $aluno = User::factory()->create(['org_id' => null]);
+        $aluno = User::factory()->inOrg(Organization::factory()->create())->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
 
         $this->assertFalse((new QuizPolicy)->view($aluno, $quiz));
@@ -70,7 +71,7 @@ class QuizPolicyTest extends TestCase
         $quiz = $this->quiz(Organization::factory()->create());
 
         /** @var User $admin */
-        $admin = User::factory()->create(['org_id' => null]);
+        $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole(RolesEnum::ADMIN->value);
 
         $this->assertTrue((new QuizPolicy)->view($admin, $quiz));

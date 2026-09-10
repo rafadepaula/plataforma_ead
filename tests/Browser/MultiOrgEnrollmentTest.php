@@ -34,7 +34,7 @@ class MultiOrgEnrollmentTest extends DuskTestCase
 {
     private function invitationLinkFor(Organization $org, Course $course, string $state = 'valid'): InvitationLink
     {
-        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor = User::factory()->inOrg($org->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
 
         $factory = InvitationLink::factory();
@@ -55,7 +55,7 @@ class MultiOrgEnrollmentTest extends DuskTestCase
     public function test_existing_multi_org_user_invitation_lifecycle(): void
     {
         $orgA = Organization::factory()->create();
-        $courseA = Course::factory()->create(['org_id' => $orgA->id]);
+        $courseA = Course::factory()->inOrg($orgA->id)->create();
         $student = User::factory()->create([
             'org_id' => $orgA->id,
             'email' => 'multiorg@example.com',
@@ -65,7 +65,7 @@ class MultiOrgEnrollmentTest extends DuskTestCase
         $courseA->students()->attach($student->id, ['enrolled_at' => now(), 'status' => 'active']);
 
         $orgB = Organization::factory()->create();
-        $courseB = Course::factory()->create(['org_id' => $orgB->id, 'is_published' => true]);
+        $courseB = Course::factory()->inOrg($orgB->id)->create(['is_published' => true]);
         $invitationLink = $this->invitationLinkFor($orgB, $courseB);
 
         $this->browse(function (Browser $browser) use ($invitationLink, $student, $courseB): void {
@@ -127,7 +127,7 @@ class MultiOrgEnrollmentTest extends DuskTestCase
     public function test_a_new_user_can_register_and_enroll_through_an_invitation_link(): void
     {
         $orgB = Organization::factory()->create();
-        $courseB = Course::factory()->create(['org_id' => $orgB->id, 'is_published' => true]);
+        $courseB = Course::factory()->inOrg($orgB->id)->create(['is_published' => true]);
         $invitationLink = $this->invitationLinkFor($orgB, $courseB);
 
         $this->browse(function (Browser $browser) use ($invitationLink): void {
@@ -173,7 +173,7 @@ class MultiOrgEnrollmentTest extends DuskTestCase
     public function test_invalid_invitation_link_states_are_rejected(): void
     {
         $orgB = Organization::factory()->create();
-        $courseB = Course::factory()->create(['org_id' => $orgB->id, 'is_published' => true]);
+        $courseB = Course::factory()->inOrg($orgB->id)->create(['is_published' => true]);
 
         $expired = $this->invitationLinkFor($orgB, $courseB, 'expired');
         $revoked = $this->invitationLinkFor($orgB, $courseB, 'revoked');

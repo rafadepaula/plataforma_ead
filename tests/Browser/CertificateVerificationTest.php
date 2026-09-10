@@ -48,15 +48,15 @@ class CertificateVerificationTest extends DuskTestCase
     public function test_public_certificate_verification_states_lifecycle(): void
     {
         $org = Organization::factory()->create(['name' => 'Instituto Dusk']);
-        $course = Course::factory()->create(['org_id' => $org->id, 'title' => 'Curso Válido Dusk', 'workload_hours' => 40]);
-        $student = User::factory()->create(['org_id' => null, 'name' => 'Aluno Válido Dusk']);
+        $course = Course::factory()->inOrg($org->id)->create(['title' => 'Curso Válido Dusk', 'workload_hours' => 40]);
+        $student = User::factory()->inOrg($org->id)->create(['name' => 'Aluno Válido Dusk']);
 
         $validCertificate = $this->makeCertificate($course, $student);
 
         $revokedOrg = Organization::factory()->create(['name' => 'Instituto Revogado Dusk']);
-        $revokedCourse = Course::factory()->create(['org_id' => $revokedOrg->id, 'title' => 'Curso Revogado Dusk']);
-        $revokedStudent = User::factory()->create(['org_id' => null, 'name' => 'Aluno Revogado Dusk']);
-        $revoker = User::factory()->create(['org_id' => $revokedOrg->id]);
+        $revokedCourse = Course::factory()->inOrg($revokedOrg->id)->create(['title' => 'Curso Revogado Dusk']);
+        $revokedStudent = User::factory()->inOrg($revokedOrg->id)->create(['name' => 'Aluno Revogado Dusk']);
+        $revoker = User::factory()->inOrg($revokedOrg->id)->create();
 
         $revokedCertificate = $this->makeCertificate($revokedCourse, $revokedStudent, [
             'revoked_at' => Carbon::now(),
@@ -124,7 +124,7 @@ class CertificateVerificationTest extends DuskTestCase
             'title' => 'Curso Consulta Dusk',
             'workload_hours' => 20,
         ]);
-        $student = User::factory()->create(['org_id' => null, 'name' => 'Aluno Consulta Dusk']);
+        $student = User::factory()->inOrg($org->id)->create(['name' => 'Aluno Consulta Dusk']);
 
         $certificate = $this->makeCertificate($course, $student);
 

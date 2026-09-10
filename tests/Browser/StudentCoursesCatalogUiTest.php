@@ -31,20 +31,20 @@ class StudentCoursesCatalogUiTest extends DuskTestCase
 
         // "Em andamento": a published lesson exists, the pivot has partial
         // progress, no `expires_at` — CTA is "Continuar" to the resume lesson.
-        $inProgressCourse = Course::factory()->create(['org_id' => $org->id, 'title' => 'Curso Em Andamento', 'workload_hours' => 4]);
+        $inProgressCourse = Course::factory()->inOrg($org->id)->create(['title' => 'Curso Em Andamento', 'workload_hours' => 4]);
         $inProgressModule = Module::factory()->for($inProgressCourse)->create(['order_index' => 0]);
         Lesson::factory()->for($inProgressModule)->create(['is_published' => true, 'order_index' => 0]);
         Lesson::factory()->for($inProgressModule)->create(['is_published' => true, 'order_index' => 1]);
 
         // "Concluído": pivot status completed, a Certificate already issued
         // — primary CTA is "Ver sala de aula", secondary is the certificate.
-        $completedCourse = Course::factory()->create(['org_id' => $org->id, 'title' => 'Curso Concluido', 'workload_hours' => 2]);
+        $completedCourse = Course::factory()->inOrg($org->id)->create(['title' => 'Curso Concluido', 'workload_hours' => 2]);
         $completedModule = Module::factory()->for($completedCourse)->create(['order_index' => 0]);
         Lesson::factory()->for($completedModule)->create(['is_published' => true, 'order_index' => 0]);
 
         // "Expirado": pivot status active, `expires_at` in the past — CTA is
         // the read-only "Ver o que você fez" classroom link.
-        $expiredCourse = Course::factory()->create(['org_id' => $org->id, 'title' => 'Curso Expirado', 'workload_hours' => 3]);
+        $expiredCourse = Course::factory()->inOrg($org->id)->create(['title' => 'Curso Expirado', 'workload_hours' => 3]);
         $expiredModule = Module::factory()->for($expiredCourse)->create(['order_index' => 0]);
         Lesson::factory()->for($expiredModule)->create(['is_published' => true, 'order_index' => 0]);
 
@@ -124,7 +124,7 @@ class StudentCoursesCatalogUiTest extends DuskTestCase
     public function test_student_courses_catalog_shows_contextual_empty_state_per_tab(): void
     {
         /** @var User $student */
-        $student = User::factory()->create(['org_id' => null]);
+        $student = User::factory()->inOrg(Organization::factory()->create()->id)->create();
         $student->assignRole(RolesEnum::ALUNO->value);
 
         $this->browse(function (Browser $browser) use ($student): void {

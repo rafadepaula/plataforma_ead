@@ -52,7 +52,7 @@ class LessonPdfStreamTest extends TestCase
         $lesson = $this->lessonWithPdf('%PDF-1.4 fake-bytes', enrolled: false);
 
         /** @var User $aluno */
-        $aluno = User::factory()->create(['org_id' => null]);
+        $aluno = User::factory()->inOrg($lesson->module->course->org_id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
         $this->actingAs($aluno);
 
@@ -69,7 +69,7 @@ class LessonPdfStreamTest extends TestCase
         $otherOrg = Organization::factory()->create();
 
         /** @var User $gestor */
-        $gestor = User::factory()->create(['org_id' => $otherOrg->id]);
+        $gestor = User::factory()->inOrg($otherOrg->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
         $this->actingAs($gestor);
 
@@ -92,7 +92,7 @@ class LessonPdfStreamTest extends TestCase
         $lesson = $this->lessonWithPdf('%PDF-1.4 fake-bytes', published: false, enrolled: false);
 
         /** @var User $admin */
-        $admin = User::factory()->create(['org_id' => null]);
+        $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole(RolesEnum::ADMIN->value);
         $this->actingAs($admin);
 
@@ -124,7 +124,7 @@ class LessonPdfStreamTest extends TestCase
         Storage::disk('local')->put('orgs/1/courses/1/pdfs/segundo.pdf', '%PDF-1.4 segundo');
 
         $organization = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $organization->id]);
+        $course = Course::factory()->inOrg($organization->id)->create();
         $module = Module::factory()->for($course)->create();
 
         /** @var Lesson $lesson */
@@ -153,7 +153,7 @@ class LessonPdfStreamTest extends TestCase
     private function lessonWithPdf(?string $bytes, bool $published = true, bool $enrolled = true): Lesson
     {
         $organization = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $organization->id]);
+        $course = Course::factory()->inOrg($organization->id)->create();
         $module = Module::factory()->for($course)->create();
 
         /** @var Lesson $lesson */
@@ -177,7 +177,7 @@ class LessonPdfStreamTest extends TestCase
     private function actAsEnrolledAluno(Course $course): User
     {
         /** @var User $aluno */
-        $aluno = User::factory()->create(['org_id' => null]);
+        $aluno = User::factory()->inOrg($course->org_id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
         $aluno->courses()->attach($course->id, [
             'status' => 'active',

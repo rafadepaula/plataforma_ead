@@ -27,7 +27,7 @@ class LessonMultimediaTest extends TestCase
     {
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
 
         return [$org, $course, $module];
@@ -423,7 +423,7 @@ class LessonMultimediaTest extends TestCase
     public function test_aluno_cannot_create_a_lesson(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
         $this->actingAsOrgUser($org, RolesEnum::ALUNO->value);
 
@@ -436,7 +436,7 @@ class LessonMultimediaTest extends TestCase
     public function test_gestor_is_forbidden_from_creating_a_lesson_in_another_orgs_module(): void
     {
         $otherOrg = Organization::factory()->create();
-        $otherCourse = Course::factory()->create(['org_id' => $otherOrg->id]);
+        $otherCourse = Course::factory()->inOrg($otherOrg->id)->create();
         $otherModule = Module::factory()->for($otherCourse)->create();
         $this->actingAsOrgUser(role: RolesEnum::GESTOR->value);
 
@@ -449,7 +449,7 @@ class LessonMultimediaTest extends TestCase
     public function test_gestor_is_forbidden_from_managing_lessons_of_another_orgs_module_by_guessing_the_id(): void
     {
         $otherOrg = Organization::factory()->create();
-        $otherCourse = Course::factory()->create(['org_id' => $otherOrg->id]);
+        $otherCourse = Course::factory()->inOrg($otherOrg->id)->create();
         $otherModule = $otherCourse->modules()->create(['title' => 'Módulo Alheio', 'order_index' => 0]);
         $otherLesson = Lesson::factory()->for($otherModule)->richText()->create();
 

@@ -23,7 +23,7 @@ class MultiOrgStudentClassroomTest extends TestCase
     private function makeAluno(): User
     {
         /** @var User $aluno */
-        $aluno = User::factory()->create(['org_id' => null]);
+        $aluno = User::factory()->inOrg(Organization::factory()->create())->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
 
         return $aluno;
@@ -36,8 +36,8 @@ class MultiOrgStudentClassroomTest extends TestCase
         $orgA = Organization::factory()->create();
         $orgB = Organization::factory()->create();
 
-        $courseA = Course::factory()->create(['org_id' => $orgA->id]);
-        $courseB = Course::factory()->create(['org_id' => $orgB->id]);
+        $courseA = Course::factory()->inOrg($orgA->id)->create();
+        $courseB = Course::factory()->inOrg($orgB->id)->create();
 
         $aluno->courses()->attach($courseA->id, ['status' => 'active', 'enrolled_at' => now()]);
         $aluno->courses()->attach($courseB->id, ['status' => 'active', 'enrolled_at' => now()]);
@@ -54,8 +54,8 @@ class MultiOrgStudentClassroomTest extends TestCase
         $aluno = $this->makeAluno();
 
         $org = Organization::factory()->create();
-        $activeCourse = Course::factory()->create(['org_id' => $org->id]);
-        $cancelledCourse = Course::factory()->create(['org_id' => $org->id]);
+        $activeCourse = Course::factory()->inOrg($org->id)->create();
+        $cancelledCourse = Course::factory()->inOrg($org->id)->create();
 
         $aluno->courses()->attach($activeCourse->id, ['status' => 'active', 'enrolled_at' => now()]);
         $aluno->courses()->attach($cancelledCourse->id, ['status' => 'cancelled', 'enrolled_at' => now()]);
@@ -81,7 +81,7 @@ class MultiOrgStudentClassroomTest extends TestCase
     {
         $aluno = $this->makeAluno();
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
         $lesson = Lesson::factory()->for($module)->richText()->create(['is_published' => true]);
 
@@ -99,7 +99,7 @@ class MultiOrgStudentClassroomTest extends TestCase
     {
         $aluno = $this->makeAluno();
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
         $lesson = Lesson::factory()->for($module)->richText()->create(['is_published' => true]);
 
@@ -121,7 +121,7 @@ class MultiOrgStudentClassroomTest extends TestCase
     {
         $aluno = $this->makeAluno();
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         Module::factory()->for($course)->create();
 
         $response = $this->actingAs($aluno)->get(route('classroom.show', $course));
@@ -134,7 +134,7 @@ class MultiOrgStudentClassroomTest extends TestCase
     {
         $aluno = $this->makeAluno();
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         Module::factory()->for($course)->create();
 
         $aluno->courses()->attach($course->id, ['status' => 'cancelled', 'enrolled_at' => now()]);
@@ -149,7 +149,7 @@ class MultiOrgStudentClassroomTest extends TestCase
     {
         $aluno = $this->makeAluno();
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
 
         $publishedLesson = Lesson::factory()->for($module)->richText()->create([
@@ -183,7 +183,7 @@ class MultiOrgStudentClassroomTest extends TestCase
         $alunoB = $this->makeAluno();
 
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
 
         $lesson1 = Lesson::factory()->for($module)->richText()->create(['is_published' => true, 'order_index' => 0]);
@@ -225,7 +225,7 @@ class MultiOrgStudentClassroomTest extends TestCase
     {
         $aluno = $this->makeAluno();
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
 
         $module1 = Module::factory()->for($course)->create(['order_index' => 0]);
         $module2 = Module::factory()->for($course)->create(['order_index' => 1]);
@@ -273,7 +273,7 @@ class MultiOrgStudentClassroomTest extends TestCase
     {
         $aluno = $this->makeAluno();
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
         Lesson::factory()->for($module)->richText()->create(['is_published' => true]);
 
@@ -299,7 +299,7 @@ class MultiOrgStudentClassroomTest extends TestCase
     public function test_admin_can_preview_the_classroom_without_enrollment(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
         $lesson = Lesson::factory()->for($module)->richText()->create(['is_published' => true]);
 
@@ -314,7 +314,7 @@ class MultiOrgStudentClassroomTest extends TestCase
     public function test_gestor_from_the_same_org_can_preview_the_classroom_without_enrollment(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
         $lesson = Lesson::factory()->for($module)->richText()->create(['is_published' => true]);
 
@@ -329,7 +329,7 @@ class MultiOrgStudentClassroomTest extends TestCase
     public function test_gestor_from_a_different_org_cannot_view_the_classroom(): void
     {
         $courseOrg = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $courseOrg->id]);
+        $course = Course::factory()->inOrg($courseOrg->id)->create();
         Module::factory()->for($course)->create();
 
         $otherOrg = Organization::factory()->create();
@@ -344,7 +344,7 @@ class MultiOrgStudentClassroomTest extends TestCase
     {
         $aluno = $this->makeAluno();
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
         $lesson = Lesson::factory()->for($module)->richText()->create(['is_published' => true]);
 
@@ -369,7 +369,7 @@ class MultiOrgStudentClassroomTest extends TestCase
     {
         $aluno = $this->makeAluno();
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
         $lesson = Lesson::factory()->for($module)->richText()->create(['is_published' => false]);
 
@@ -383,7 +383,7 @@ class MultiOrgStudentClassroomTest extends TestCase
     public function test_admin_and_gestor_can_preview_unpublished_lesson(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
         $lesson = Lesson::factory()->for($module)->richText()->create(['is_published' => false]);
 
@@ -405,7 +405,7 @@ class MultiOrgStudentClassroomTest extends TestCase
     {
         $aluno = $this->makeAluno();
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
 
         $completedLesson = Lesson::factory()->for($module)->richText()->create(['is_published' => true, 'order_index' => 0]);
@@ -444,7 +444,7 @@ class MultiOrgStudentClassroomTest extends TestCase
     {
         $aluno = $this->makeAluno();
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
 
         $textLesson = Lesson::factory()->for($module)->richText()->create(['is_published' => true, 'order_index' => 0]);
@@ -474,7 +474,7 @@ class MultiOrgStudentClassroomTest extends TestCase
     {
         $aluno = $this->makeAluno();
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
         Lesson::factory()->for($module)->richText()->create(['is_published' => true]);
 
@@ -523,7 +523,7 @@ class MultiOrgStudentClassroomTest extends TestCase
 
     private function makeCourseWithTrack(Organization $org, int $modules, int $lessonsPerModule): Course
     {
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
 
         for ($moduleIndex = 0; $moduleIndex < $modules; $moduleIndex++) {
             $module = Module::factory()->for($course)->create(['order_index' => $moduleIndex]);

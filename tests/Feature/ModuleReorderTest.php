@@ -20,7 +20,7 @@ class ModuleReorderTest extends TestCase
     {
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $first = Module::factory()->for($course)->create(['order_index' => 0]);
         $second = Module::factory()->for($course)->create(['order_index' => 1]);
         $third = Module::factory()->for($course)->create(['order_index' => 2]);
@@ -39,8 +39,8 @@ class ModuleReorderTest extends TestCase
     {
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
-        $course = Course::factory()->create(['org_id' => $org->id]);
-        $otherCourse = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
+        $otherCourse = Course::factory()->inOrg($org->id)->create();
         $ownModule = Module::factory()->for($course)->create(['order_index' => 0]);
         $foreignModule = Module::factory()->for($otherCourse)->create(['order_index' => 0]);
 
@@ -56,7 +56,7 @@ class ModuleReorderTest extends TestCase
     {
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $first = Module::factory()->for($course)->create(['order_index' => 0]);
         $second = Module::factory()->for($course)->create(['order_index' => 1]);
 
@@ -78,7 +78,7 @@ class ModuleReorderTest extends TestCase
     {
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         // Simulate the historical sparse state (deletes without re-densify,
         // legacy imports): 0, 5, 9 instead of 0, 1, 2.
         $first = Module::factory()->for($course)->create(['order_index' => 0]);
@@ -106,7 +106,7 @@ class ModuleReorderTest extends TestCase
     {
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $first = Module::factory()->for($course)->create(['order_index' => 0]);
         $second = Module::factory()->for($course)->create(['order_index' => 1]);
         $third = Module::factory()->for($course)->create(['order_index' => 2]);
@@ -128,9 +128,9 @@ class ModuleReorderTest extends TestCase
         // Fixtures are created before `actingAsOrgUser()` so `OrgScope`'s
         // `creating` hook doesn't overwrite the explicit `org_id` with the
         // (not-yet-authenticated) acting user's own tenant.
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create(['order_index' => 0]);
-        $otherCourse = Course::factory()->create(['org_id' => $otherOrg->id]);
+        $otherCourse = Course::factory()->inOrg($otherOrg->id)->create();
         $foreignModule = $otherCourse->modules()->create(['title' => 'Alheio', 'order_index' => 0]);
 
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
@@ -145,7 +145,7 @@ class ModuleReorderTest extends TestCase
     public function test_aluno_cannot_reorder_modules(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
         $this->actingAsOrgUser($org, RolesEnum::ALUNO->value);
 
@@ -158,7 +158,7 @@ class ModuleReorderTest extends TestCase
     {
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create(['title' => 'Módulo Editável']);
 
         $this->get(route('courses.modules.create', $course))
@@ -174,7 +174,7 @@ class ModuleReorderTest extends TestCase
     {
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
         $first = Lesson::factory()->for($module)->create(['order_index' => 0]);
         $second = Lesson::factory()->for($module)->create(['order_index' => 1]);
@@ -192,7 +192,7 @@ class ModuleReorderTest extends TestCase
     {
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
         $otherModule = Module::factory()->for($course)->create();
         $ownLesson = Lesson::factory()->for($module)->create(['order_index' => 0]);
@@ -208,7 +208,7 @@ class ModuleReorderTest extends TestCase
     public function test_aluno_cannot_reorder_lessons(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
         $lesson = Lesson::factory()->for($module)->create();
         $this->actingAsOrgUser($org, RolesEnum::ALUNO->value);

@@ -178,7 +178,7 @@ class KeyboardNavigationTest extends DuskTestCase
 
     private function admin(): User
     {
-        $admin = User::factory()->create(['org_id' => null]);
+        $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole(RolesEnum::ADMIN->value);
 
         return $admin;
@@ -190,11 +190,11 @@ class KeyboardNavigationTest extends DuskTestCase
     private function studentWithClassroom(): array
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $module = Module::factory()->for($course)->create();
         $lesson = Lesson::factory()->richText()->for($module)->create(['is_published' => true]);
 
-        $student = User::factory()->create(['org_id' => null]);
+        $student = User::factory()->inOrg($course->org_id)->create();
         $student->assignRole(RolesEnum::ALUNO->value);
         $course->students()->attach($student->id, ['enrolled_at' => now(), 'status' => 'active']);
 
@@ -207,7 +207,7 @@ class KeyboardNavigationTest extends DuskTestCase
     private function studentWithQuiz(): array
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $module = Module::factory()->for($course)->create();
         $lesson = Lesson::factory()->for($module)->create(['type' => 'quiz', 'is_published' => true]);
         $quiz = Quiz::factory()->for($lesson)->create();
@@ -215,7 +215,7 @@ class KeyboardNavigationTest extends DuskTestCase
         $option = QuizOption::factory()->for($question, 'question')->correct()->create();
         QuizOption::factory()->for($question, 'question')->incorrect()->create();
 
-        $student = User::factory()->create(['org_id' => null]);
+        $student = User::factory()->inOrg($course->org_id)->create();
         $student->assignRole(RolesEnum::ALUNO->value);
         $course->students()->attach($student->id, ['enrolled_at' => now(), 'status' => 'active']);
 

@@ -28,13 +28,13 @@ class UserPolicyGlobalAbilitiesTest extends TestCase
 
     public function test_only_admin_passes_view_any_global(): void
     {
-        $admin = User::factory()->create(['org_id' => null]);
+        $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole(RolesEnum::ADMIN->value);
 
         $org = Organization::factory()->create();
-        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor = User::factory()->inOrg($org->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
-        $aluno = User::factory()->create(['org_id' => $org->id]);
+        $aluno = User::factory()->inOrg($org->id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
 
         $this->assertTrue($this->policy->viewAnyGlobal($admin));
@@ -44,11 +44,11 @@ class UserPolicyGlobalAbilitiesTest extends TestCase
 
     public function test_admin_can_view_and_update_a_user_from_any_org_without_impersonation(): void
     {
-        $admin = User::factory()->create(['org_id' => null]);
+        $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole(RolesEnum::ADMIN->value);
 
         $org = Organization::factory()->create();
-        $target = User::factory()->create(['org_id' => $org->id]);
+        $target = User::factory()->inOrg($org->id)->create();
         $target->assignRole(RolesEnum::ALUNO->value);
 
         // No `session('active_org_id')` set — this is exactly what the
@@ -62,10 +62,10 @@ class UserPolicyGlobalAbilitiesTest extends TestCase
     public function test_gestor_and_aluno_fail_every_global_ability(): void
     {
         $org = Organization::factory()->create();
-        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor = User::factory()->inOrg($org->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
 
-        $target = User::factory()->create(['org_id' => $org->id]);
+        $target = User::factory()->inOrg($org->id)->create();
         $target->assignRole(RolesEnum::ALUNO->value);
 
         $this->assertFalse($this->policy->viewGlobal($gestor, $target));
@@ -75,7 +75,7 @@ class UserPolicyGlobalAbilitiesTest extends TestCase
 
     public function test_admin_cannot_delete_their_own_account_via_delete_global(): void
     {
-        $admin = User::factory()->create(['org_id' => null]);
+        $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole(RolesEnum::ADMIN->value);
 
         $this->assertFalse($this->policy->deleteGlobal($admin, $admin));
@@ -83,11 +83,11 @@ class UserPolicyGlobalAbilitiesTest extends TestCase
 
     public function test_admin_can_delete_another_users_account_via_delete_global(): void
     {
-        $admin = User::factory()->create(['org_id' => null]);
+        $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole(RolesEnum::ADMIN->value);
 
         $org = Organization::factory()->create();
-        $target = User::factory()->create(['org_id' => $org->id]);
+        $target = User::factory()->inOrg($org->id)->create();
         $target->assignRole(RolesEnum::GESTOR->value);
 
         $this->assertTrue($this->policy->deleteGlobal($admin, $target));
@@ -101,11 +101,11 @@ class UserPolicyGlobalAbilitiesTest extends TestCase
      */
     public function test_operational_abilities_are_unaffected_by_the_new_global_abilities(): void
     {
-        $admin = User::factory()->create(['org_id' => null]);
+        $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole(RolesEnum::ADMIN->value);
 
         $org = Organization::factory()->create();
-        $target = User::factory()->create(['org_id' => $org->id]);
+        $target = User::factory()->inOrg($org->id)->create();
         $target->assignRole(RolesEnum::ALUNO->value);
 
         // Admin has no active impersonation: the operational ability

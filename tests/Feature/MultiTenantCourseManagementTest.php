@@ -26,8 +26,8 @@ class MultiTenantCourseManagementTest extends TestCase
     {
         $org = Organization::factory()->create();
         $otherOrg = Organization::factory()->create();
-        Course::factory()->create(['org_id' => $org->id, 'title' => 'Curso da Minha Org']);
-        Course::factory()->create(['org_id' => $otherOrg->id, 'title' => 'Curso de Outra Org']);
+        Course::factory()->inOrg($org->id)->create(['title' => 'Curso da Minha Org']);
+        Course::factory()->inOrg($otherOrg->id)->create(['title' => 'Curso de Outra Org']);
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
 
         $this->get(route('courses.index'))
@@ -46,10 +46,10 @@ class MultiTenantCourseManagementTest extends TestCase
     public function test_course_catalog_offers_a_forum_entry_point_to_the_gestor(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
-        $author = User::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
+        $author = User::factory()->inOrg($org->id)->create();
         $author->assignRole(RolesEnum::ALUNO->value);
-        $topic = ForumTopic::factory()->for($course)->for($author)->create(['org_id' => $org->id]);
+        $topic = ForumTopic::factory()->for($course)->for($author)->inOrg($org->id)->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
 
         $html = $this->get(route('courses.index'))->assertOk()->getContent();
@@ -65,8 +65,8 @@ class MultiTenantCourseManagementTest extends TestCase
     public function test_course_catalog_offers_the_same_forum_entry_point_to_the_admin(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
-        $admin = User::factory()->create(['org_id' => null]);
+        $course = Course::factory()->inOrg($org->id)->create();
+        $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole(RolesEnum::ADMIN->value);
 
         $html = $this->actingAs($admin)
@@ -90,7 +90,7 @@ class MultiTenantCourseManagementTest extends TestCase
     {
         $org = Organization::factory()->create();
         $otherOrg = Organization::factory()->create();
-        $foreignCourse = Course::factory()->create(['org_id' => $otherOrg->id]);
+        $foreignCourse = Course::factory()->inOrg($otherOrg->id)->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
 
         $html = $this->get(route('courses.index'))->assertOk()->getContent();
@@ -102,7 +102,7 @@ class MultiTenantCourseManagementTest extends TestCase
     public function test_courses_catalog_renders_explicit_column_classes_and_alignment(): void
     {
         $org = Organization::factory()->create();
-        Course::factory()->create(['org_id' => $org->id]);
+        Course::factory()->inOrg($org->id)->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
 
         $response = $this->get(route('courses.index'));
@@ -129,9 +129,9 @@ class MultiTenantCourseManagementTest extends TestCase
     {
         $org = Organization::factory()->create();
         $otherOrg = Organization::factory()->create();
-        Course::factory()->create(['org_id' => $org->id, 'title' => 'Formação em Liderança']);
-        Course::factory()->create(['org_id' => $org->id, 'title' => 'Introdução ao Atendimento']);
-        Course::factory()->create(['org_id' => $otherOrg->id, 'title' => 'Liderança de Equipes']);
+        Course::factory()->inOrg($org->id)->create(['title' => 'Formação em Liderança']);
+        Course::factory()->inOrg($org->id)->create(['title' => 'Introdução ao Atendimento']);
+        Course::factory()->inOrg($otherOrg->id)->create(['title' => 'Liderança de Equipes']);
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
 
         $response = $this->get(route('courses.index', ['search' => 'Liderança']));
@@ -146,9 +146,9 @@ class MultiTenantCourseManagementTest extends TestCase
     public function test_courses_index_combines_title_and_publication_status_filters(): void
     {
         $org = Organization::factory()->create();
-        Course::factory()->published()->create(['org_id' => $org->id, 'title' => 'Gestão Publicada']);
-        Course::factory()->create(['org_id' => $org->id, 'title' => 'Gestão em Rascunho']);
-        Course::factory()->published()->create(['org_id' => $org->id, 'title' => 'Comunicação Publicada']);
+        Course::factory()->published()->inOrg($org->id)->create(['title' => 'Gestão Publicada']);
+        Course::factory()->inOrg($org->id)->create(['title' => 'Gestão em Rascunho']);
+        Course::factory()->published()->inOrg($org->id)->create(['title' => 'Comunicação Publicada']);
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
 
         $publishedResponse = $this->get(route('courses.index', [
@@ -173,8 +173,8 @@ class MultiTenantCourseManagementTest extends TestCase
     public function test_courses_index_ignores_array_shaped_and_unknown_filters(): void
     {
         $org = Organization::factory()->create();
-        Course::factory()->published()->create(['org_id' => $org->id, 'title' => 'Curso Publicado']);
-        Course::factory()->create(['org_id' => $org->id, 'title' => 'Curso em Rascunho']);
+        Course::factory()->published()->inOrg($org->id)->create(['title' => 'Curso Publicado']);
+        Course::factory()->inOrg($org->id)->create(['title' => 'Curso em Rascunho']);
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
 
         $arrayResponse = $this->get(route('courses.index', [
@@ -221,14 +221,14 @@ class MultiTenantCourseManagementTest extends TestCase
     public function test_courses_index_exposes_module_lesson_and_student_counts_per_course(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'title' => 'Curso com Contagens']);
+        $course = Course::factory()->inOrg($org->id)->create(['title' => 'Curso com Contagens']);
         $moduleOne = Module::factory()->for($course)->create();
         $moduleTwo = Module::factory()->for($course)->create();
         Lesson::factory()->for($moduleOne)->count(2)->create();
         Lesson::factory()->for($moduleTwo)->count(1)->create();
-        $activeStudent = User::factory()->create(['org_id' => $org->id]);
-        $cancelledStudent = User::factory()->create(['org_id' => $org->id]);
-        $completedStudent = User::factory()->create(['org_id' => $org->id]);
+        $activeStudent = User::factory()->inOrg($org->id)->create();
+        $cancelledStudent = User::factory()->inOrg($org->id)->create();
+        $completedStudent = User::factory()->inOrg($org->id)->create();
         $course->students()->attach($activeStudent->id, ['enrolled_at' => now(), 'status' => 'active']);
         $course->students()->attach($cancelledStudent->id, ['enrolled_at' => now(), 'status' => 'cancelled']);
         $course->students()->attach($completedStudent->id, ['enrolled_at' => now(), 'status' => 'completed']);
@@ -331,7 +331,7 @@ class MultiTenantCourseManagementTest extends TestCase
     public function test_gestor_cannot_view_the_edit_form_for_another_orgs_course(): void
     {
         $otherOrg = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $otherOrg->id]);
+        $course = Course::factory()->inOrg($otherOrg->id)->create();
         $this->actingAsOrgUser(role: RolesEnum::GESTOR->value);
 
         // OrgScope hides the row entirely for a Gestor of a different org,
@@ -343,7 +343,7 @@ class MultiTenantCourseManagementTest extends TestCase
     {
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
-        $course = Course::factory()->create(['org_id' => $org->id, 'title' => 'Nome Antigo']);
+        $course = Course::factory()->inOrg($org->id)->create(['title' => 'Nome Antigo']);
 
         $response = $this->put(route('courses.update', $course), [
             'title' => 'Nome Novo',
@@ -408,7 +408,7 @@ class MultiTenantCourseManagementTest extends TestCase
         $org = Organization::factory()->create();
         $otherOrg = Organization::factory()->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
 
         $this->put(route('courses.update', $course), [
             'title' => 'Curso Atualizado',
@@ -431,7 +431,7 @@ class MultiTenantCourseManagementTest extends TestCase
     {
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
 
         $this->delete(route('courses.destroy', $course))
             ->assertRedirect(route('courses.index'));
@@ -443,8 +443,8 @@ class MultiTenantCourseManagementTest extends TestCase
     {
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
-        $course = Course::factory()->create(['org_id' => $org->id]);
-        $student = User::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
+        $student = User::factory()->inOrg($org->id)->create();
         $course->students()->attach($student->id, ['enrolled_at' => now(), 'status' => 'active']);
 
         $this->from(route('courses.index'))
@@ -459,8 +459,8 @@ class MultiTenantCourseManagementTest extends TestCase
     {
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
-        $course = Course::factory()->create(['org_id' => $org->id]);
-        $student = User::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
+        $student = User::factory()->inOrg($org->id)->create();
         $course->students()->attach($student->id, ['enrolled_at' => now(), 'status' => 'active']);
 
         $this->deleteJson(route('courses.destroy', $course))
@@ -474,9 +474,9 @@ class MultiTenantCourseManagementTest extends TestCase
     {
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
-        $course = Course::factory()->create(['org_id' => $org->id]);
-        $cancelled = User::factory()->create(['org_id' => $org->id]);
-        $completed = User::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
+        $cancelled = User::factory()->inOrg($org->id)->create();
+        $completed = User::factory()->inOrg($org->id)->create();
         $course->students()->attach($cancelled->id, ['enrolled_at' => now(), 'status' => 'cancelled']);
         $course->students()->attach($completed->id, ['enrolled_at' => now(), 'status' => 'completed']);
 
@@ -489,7 +489,7 @@ class MultiTenantCourseManagementTest extends TestCase
     public function test_aluno_cannot_delete_a_course(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $this->actingAsOrgUser($org, RolesEnum::ALUNO->value);
 
         $this->delete(route('courses.destroy', $course))->assertForbidden();
@@ -499,7 +499,7 @@ class MultiTenantCourseManagementTest extends TestCase
     {
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
 
         $this->get(route('courses.modules.index', $course))
             ->assertOk()
@@ -529,7 +529,7 @@ class MultiTenantCourseManagementTest extends TestCase
     public function test_gestor_is_forbidden_from_managing_modules_of_another_orgs_course_by_guessing_the_id(): void
     {
         $otherOrg = Organization::factory()->create();
-        $otherCourse = Course::factory()->create(['org_id' => $otherOrg->id]);
+        $otherCourse = Course::factory()->inOrg($otherOrg->id)->create();
         $otherModule = $otherCourse->modules()->create(['title' => 'Módulo Alheio', 'order_index' => 0]);
 
         $this->actingAsOrgUser(role: RolesEnum::GESTOR->value);

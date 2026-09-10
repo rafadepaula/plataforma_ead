@@ -26,7 +26,7 @@ class ClassroomOverviewRenderingTest extends TestCase
     private function makeAluno(): User
     {
         /** @var User $aluno */
-        $aluno = User::factory()->create(['org_id' => null]);
+        $aluno = User::factory()->inOrg(Organization::factory()->create())->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
 
         return $aluno;
@@ -38,7 +38,7 @@ class ClassroomOverviewRenderingTest extends TestCase
     private function makeEnrolledClassroom(int $progressPercentage = 0): array
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $module = Module::factory()->create(['course_id' => $course->id, 'order_index' => 0]);
         $lesson = Lesson::factory()->richText()->create([
             'module_id' => $module->id,
@@ -184,7 +184,7 @@ class ClassroomOverviewRenderingTest extends TestCase
     public function test_course_without_modules_renders_the_empty_state(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
 
         $aluno = $this->makeAluno();
         $course->students()->attach($aluno->id, [
@@ -203,7 +203,7 @@ class ClassroomOverviewRenderingTest extends TestCase
     public function test_course_with_modules_but_no_published_lessons_renders_the_empty_state(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $module = Module::factory()->create(['course_id' => $course->id, 'order_index' => 0]);
         Lesson::factory()->richText()->create([
             'module_id' => $module->id,
@@ -349,7 +349,7 @@ class ClassroomOverviewRenderingTest extends TestCase
     public function test_staff_preview_without_enrollment_renders_zero_progress(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $module = Module::factory()->create(['course_id' => $course->id, 'order_index' => 0]);
         $lesson = Lesson::factory()->richText()->create([
             'module_id' => $module->id,
@@ -474,7 +474,7 @@ class ClassroomOverviewRenderingTest extends TestCase
     public function test_completion_captions_report_the_real_partial_counts(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
 
         $startedModule = Module::factory()->create(['course_id' => $course->id, 'order_index' => 0]);
         $untouchedModule = Module::factory()->create(['course_id' => $course->id, 'order_index' => 1]);

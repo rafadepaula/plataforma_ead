@@ -30,13 +30,13 @@ class SubmitQuizAttemptActionTest extends TestCase
     private function enrolledAlunoAndQuiz(array $quizAttributes = []): array
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
         $lesson = Lesson::factory()->for($module)->create(['type' => 'quiz', 'is_published' => true]);
         $quiz = Quiz::factory()->for($lesson)->create($quizAttributes);
 
         /** @var User $aluno */
-        $aluno = User::factory()->create(['org_id' => null]);
+        $aluno = User::factory()->inOrg($course->org_id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
         $aluno->courses()->attach($course->id, ['status' => 'active', 'enrolled_at' => now()]);
 
@@ -90,7 +90,7 @@ class SubmitQuizAttemptActionTest extends TestCase
         $this->assertSame(0.0, (float) $attempt->score_percentage);
         $this->assertFalse($attempt->is_passed);
 
-        $secondAluno = User::factory()->create(['org_id' => null]);
+        $secondAluno = User::factory()->inOrg($lesson->module->course_id)->create();
         $secondAluno->assignRole(RolesEnum::ALUNO->value);
         $secondAluno->courses()->attach($lesson->module->course_id, ['status' => 'active', 'enrolled_at' => now()]);
 
@@ -237,14 +237,14 @@ class SubmitQuizAttemptActionTest extends TestCase
     public function test_a_student_without_an_active_enrollment_cannot_submit(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
         $lesson = Lesson::factory()->for($module)->create(['type' => 'quiz', 'is_published' => true]);
         $quiz = Quiz::factory()->for($lesson)->create();
         [$question, $correctOption] = $this->singleChoiceQuestion($quiz);
 
         /** @var User $aluno */
-        $aluno = User::factory()->create(['org_id' => null]);
+        $aluno = User::factory()->inOrg($course->org_id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
 
         try {

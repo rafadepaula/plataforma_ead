@@ -25,7 +25,7 @@ class QuizAttemptPolicyTest extends TestCase
 {
     private function attempt(Organization $org): QuizAttempt
     {
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
         $lesson = Lesson::factory()->for($module)->create(['type' => 'quiz']);
         $quiz = Quiz::factory()->for($lesson)->create();
@@ -41,7 +41,7 @@ class QuizAttemptPolicyTest extends TestCase
         $attempt = $this->attempt(Organization::factory()->create());
 
         /** @var User $aluno */
-        $aluno = User::factory()->create(['org_id' => null]);
+        $aluno = User::factory()->inOrg(Organization::factory()->create())->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
 
         $policy = new QuizAttemptPolicy;

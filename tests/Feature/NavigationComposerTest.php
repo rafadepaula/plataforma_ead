@@ -20,7 +20,7 @@ class NavigationComposerTest extends TestCase
 {
     public function test_composer_injects_navigation_sections_for_an_authenticated_admin(): void
     {
-        $admin = User::factory()->create(['org_id' => null]);
+        $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole(RolesEnum::ADMIN->value);
 
         $this->actingAs($admin);
@@ -32,7 +32,7 @@ class NavigationComposerTest extends TestCase
 
     public function test_composer_injects_a_role_aware_brand_url_for_admin(): void
     {
-        $admin = User::factory()->create(['org_id' => null]);
+        $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole(RolesEnum::ADMIN->value);
 
         $this->actingAs($admin);
@@ -45,7 +45,7 @@ class NavigationComposerTest extends TestCase
     public function test_composer_injects_a_role_aware_brand_url_for_aluno(): void
     {
         $org = Organization::factory()->create();
-        $aluno = User::factory()->create(['org_id' => $org->id]);
+        $aluno = User::factory()->inOrg($org->id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
 
         $this->actingAs($aluno);
@@ -62,7 +62,7 @@ class NavigationComposerTest extends TestCase
         $this->assertStringContainsString(route('login'), $guestView);
 
         // An authenticated user sees the logout form instead.
-        $admin = User::factory()->create(['org_id' => null]);
+        $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole(RolesEnum::ADMIN->value);
         $this->actingAs($admin);
 

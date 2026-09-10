@@ -25,7 +25,7 @@ class UserManagementTest extends DuskTestCase
     public function test_gestor_student_management_full_lifecycle(): void
     {
         $org = Organization::factory()->create();
-        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor = User::factory()->inOrg($org->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
         $course = Course::factory()->for($org)->create();
         $aluno = User::factory()->aluno()->create([
@@ -100,11 +100,11 @@ class UserManagementTest extends DuskTestCase
     public function test_gestor_course_enrollment_and_revocation_lifecycle(): void
     {
         $org = Organization::factory()->create();
-        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor = User::factory()->inOrg($org->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
-        $aluno = User::factory()->create(['org_id' => $org->id, 'name' => 'Aluno Matriculável']);
+        $aluno = User::factory()->inOrg($org->id)->create(['name' => 'Aluno Matriculável']);
         $aluno->assignRole(RolesEnum::ALUNO->value);
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
 
         $this->browse(function (Browser $browser) use ($gestor, $aluno, $course): void {
             // 1. Matrícula manual via modal: o formulário mora dentro de
@@ -176,7 +176,7 @@ class UserManagementTest extends DuskTestCase
     public function test_create_user_validation_rejections(): void
     {
         $org = Organization::factory()->create();
-        $admin = User::factory()->create(['org_id' => null]);
+        $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole(RolesEnum::ADMIN->value);
         User::factory()->aluno()->create([
             'org_id' => $org->id,

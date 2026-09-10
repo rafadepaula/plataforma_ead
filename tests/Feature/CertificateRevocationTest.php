@@ -22,10 +22,10 @@ class CertificateRevocationTest extends TestCase
 {
     private function certificateFor(Organization $org): Certificate
     {
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
 
         /** @var User $student */
-        $student = User::factory()->create(['org_id' => null]);
+        $student = User::factory()->inOrg($org->id)->create();
         $student->assignRole(RolesEnum::ALUNO->value);
 
         return Certificate::factory()->for($course)->for($student)->create();
@@ -36,6 +36,7 @@ class CertificateRevocationTest extends TestCase
         $org = Organization::factory()->create();
         $certificate = $this->certificateFor($org);
         $gestor = $this->actingAsOrgUser($org);
+        $this->withOrgContext($org);
 
         $this->assertTrue($gestor->can('revoke', $certificate));
 
@@ -100,7 +101,7 @@ class CertificateRevocationTest extends TestCase
         $certificate = $this->certificateFor($org);
 
         /** @var User $student */
-        $student = User::factory()->create(['org_id' => null]);
+        $student = User::factory()->inOrg($org->id)->create();
         $student->assignRole(RolesEnum::ALUNO->value);
 
         $this->assertFalse($student->can('revoke', $certificate));

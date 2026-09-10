@@ -13,18 +13,19 @@ use Tests\TestCase;
  */
 class OrganizationTest extends TestCase
 {
-    public function test_it_has_a_users_relationship(): void
+    public function test_it_has_a_memberships_relationship_to_the_org_accounts(): void
     {
         $organization = Organization::factory()->create();
-        $user = User::factory()->create(['org_id' => $organization->id]);
+        $user = User::factory()->inOrg($organization->id)->create();
 
-        $this->assertTrue($organization->users->contains($user));
+        // a pessoa conecta-se à org via sua conta (credential), não mais via users.org_id
+        $this->assertTrue($organization->memberships->contains('user_id', $user->id));
     }
 
     public function test_it_has_a_courses_relationship(): void
     {
         $organization = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $organization->id]);
+        $course = Course::factory()->inOrg($organization->id)->create();
 
         $this->assertTrue($organization->courses->contains($course));
     }

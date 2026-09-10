@@ -37,9 +37,9 @@ class NavigationMenuDuskTest extends DuskTestCase
     public function test_admin_navigation_lifecycle(): void
     {
         $org = Organization::factory()->create();
-        $admin = User::factory()->create(['org_id' => null]);
+        $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole(RolesEnum::ADMIN->value);
-        $aluno = User::factory()->create(['org_id' => $org->id, 'name' => 'Aluno Da Org']);
+        $aluno = User::factory()->inOrg($org->id)->create(['name' => 'Aluno Da Org']);
         $aluno->assignRole(RolesEnum::ALUNO->value);
 
         $this->browse(function (Browser $browser) use ($admin, $org, $aluno): void {
@@ -87,7 +87,7 @@ class NavigationMenuDuskTest extends DuskTestCase
     public function test_gestor_navigation_scope(): void
     {
         $org = Organization::factory()->create();
-        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor = User::factory()->inOrg($org->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
 
         $this->browse(function (Browser $browser) use ($gestor): void {
@@ -125,7 +125,7 @@ class NavigationMenuDuskTest extends DuskTestCase
         $course = Course::factory()->for($org)->create();
         $module = Module::factory()->for($course)->create();
         Lesson::factory()->for($module)->create(['is_published' => true]);
-        $aluno = User::factory()->create(['org_id' => $org->id]);
+        $aluno = User::factory()->inOrg($org->id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
 
         $this->browse(function (Browser $browser) use ($aluno, $course): void {
@@ -212,9 +212,9 @@ class NavigationMenuDuskTest extends DuskTestCase
     public function test_active_item_highlight_is_applied_on_a_sub_route(): void
     {
         $org = Organization::factory()->create();
-        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor = User::factory()->inOrg($org->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
-        $aluno = User::factory()->create(['org_id' => $org->id]);
+        $aluno = User::factory()->inOrg($org->id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
 
         // The `students` item is the Gestor-exclusive people-management

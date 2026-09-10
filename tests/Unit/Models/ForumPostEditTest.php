@@ -23,9 +23,9 @@ class ForumPostEditTest extends TestCase
     public function test_postable_resolves_a_forum_topic(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
-        $user = User::factory()->create(['org_id' => $org->id]);
-        $topic = ForumTopic::factory()->for($course)->for($user)->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
+        $user = User::factory()->inOrg($org->id)->create();
+        $topic = ForumTopic::factory()->for($course)->for($user)->inOrg($org->id)->create();
 
         $edit = ForumPostEdit::factory()->for($user, 'editor')->create([
             'postable_type' => ForumTopic::class,
@@ -38,9 +38,9 @@ class ForumPostEditTest extends TestCase
     public function test_postable_resolves_a_forum_reply(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
-        $user = User::factory()->create(['org_id' => $org->id]);
-        $topic = ForumTopic::factory()->for($course)->for($user)->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
+        $user = User::factory()->inOrg($org->id)->create();
+        $topic = ForumTopic::factory()->for($course)->for($user)->inOrg($org->id)->create();
         $reply = ForumReply::factory()->for($topic, 'topic')->for($user)->create();
 
         $edit = ForumPostEdit::factory()->for($user, 'editor')->create([
@@ -54,9 +54,9 @@ class ForumPostEditTest extends TestCase
     public function test_postable_resolves_a_soft_deleted_target(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
-        $user = User::factory()->create(['org_id' => $org->id]);
-        $topic = ForumTopic::factory()->for($course)->for($user)->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
+        $user = User::factory()->inOrg($org->id)->create();
+        $topic = ForumTopic::factory()->for($course)->for($user)->inOrg($org->id)->create();
         $topic->delete();
 
         $report = ForumReport::factory()->for($user, 'reporter')->create([

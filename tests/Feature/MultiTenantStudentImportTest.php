@@ -23,8 +23,8 @@ class MultiTenantStudentImportTest extends TestCase
     {
         $org = Organization::factory()->create();
         $otherOrg = Organization::factory()->create();
-        Course::factory()->create(['org_id' => $org->id, 'title' => 'Curso da Minha Org']);
-        Course::factory()->create(['org_id' => $otherOrg->id, 'title' => 'Curso de Outra Org']);
+        Course::factory()->inOrg($org->id)->create(['title' => 'Curso da Minha Org']);
+        Course::factory()->inOrg($otherOrg->id)->create(['title' => 'Curso de Outra Org']);
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
 
         $this->get('/users/import')
@@ -38,15 +38,13 @@ class MultiTenantStudentImportTest extends TestCase
     {
         $originalOrg = Organization::factory()->create();
         $newOrg = Organization::factory()->create();
-        $newOrgCourse = Course::factory()->create(['org_id' => $newOrg->id]);
+        $newOrgCourse = Course::factory()->inOrg($newOrg->id)->create();
 
         $existingPasswordHash = Hash::make('original-secret-password');
-        $existingUser = User::factory()->create([
-            'org_id' => $originalOrg->id,
+        $existingUser = User::factory()->aluno()->inOrg($originalOrg)->withPassword('original-secret-password')->create([
             'email' => 'aluno@example.com',
-            'password' => $existingPasswordHash,
         ]);
-        $existingUser->assignRole(RolesEnum::ALUNO->value);
+        $existingPasswordHash = $existingUser->credentialFor($originalOrg)->password;
 
         $service = new UserImportService;
         $result = $service->importChunk(
@@ -60,15 +58,17 @@ class MultiTenantStudentImportTest extends TestCase
         $this->assertCount(1, User::where('email', 'aluno@example.com')->get());
 
         $existingUser->refresh();
-        $this->assertSame($originalOrg->id, $existingUser->org_id);
-        $this->assertSame($existingPasswordHash, $existingUser->password);
+        $this->assertNotNull($existingUser->credentialFor($originalOrg));
+        // a importação provisiona conta na org importadora (senha aleatória)
+        $this->assertNotNull($existingUser->credentialFor($newOrg));
+        $this->assertSame($existingPasswordHash, $existingUser->credentialFor($originalOrg)->password);
         $this->assertTrue($existingUser->courses()->where('course_id', $newOrgCourse->id)->exists());
     }
 
     public function test_new_email_creates_user_with_current_org_id_and_enrolls(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
 
         $service = new UserImportService;
         $result = $service->importChunk(
@@ -81,7 +81,7 @@ class MultiTenantStudentImportTest extends TestCase
         $this->assertSame(1, $result['enrolled']);
 
         $user = User::where('email', 'novo@example.com')->firstOrFail();
-        $this->assertSame($org->id, $user->org_id);
+        $this->assertNotNull($user->credentialFor($org));
         $this->assertTrue($user->hasRole(RolesEnum::ALUNO->value));
         $this->assertTrue($user->courses()->where('course_id', $course->id)->exists());
     }
@@ -89,7 +89,7 @@ class MultiTenantStudentImportTest extends TestCase
     public function test_chunk_boundary_of_exactly_50_rows_processes_every_row(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
 
         $rows = [];
         for ($i = 0; $i < 50; $i++) {
@@ -107,7 +107,7 @@ class MultiTenantStudentImportTest extends TestCase
     public function test_malformed_rows_are_skipped_without_aborting_the_whole_chunk(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
 
         $service = new UserImportService;
         $result = $service->importChunk(
@@ -129,7 +129,7 @@ class MultiTenantStudentImportTest extends TestCase
 
     public function test_admin_without_active_org_context_gets_unresolved_org_context_via_import_endpoint(): void
     {
-        $course = Course::factory()->create(['org_id' => Organization::factory()->create()->id]);
+        $course = Course::factory()->inOrg(Organization::factory()->create()->id)->create();
 
         $this->actingAsAdmin();
 
@@ -144,7 +144,7 @@ class MultiTenantStudentImportTest extends TestCase
     public function test_gestor_import_chunk_endpoint_enrolls_students_into_own_org_course(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $gestor = $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
 
         $response = $this->postJson('/users/import/chunk', [
@@ -156,6 +156,6 @@ class MultiTenantStudentImportTest extends TestCase
         $response->assertJson(['created' => 1, 'enrolled' => 1]);
 
         $user = User::where('email', 'fulano@example.com')->firstOrFail();
-        $this->assertSame($org->id, $user->org_id);
+        $this->assertNotNull($user->credentialFor($org));
     }
 }

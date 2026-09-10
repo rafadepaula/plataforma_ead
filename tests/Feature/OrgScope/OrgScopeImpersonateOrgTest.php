@@ -19,10 +19,10 @@ class OrgScopeImpersonateOrgTest extends TestCase
         $orgA = Organization::factory()->create();
         $orgB = Organization::factory()->create();
 
-        Course::factory()->create(['org_id' => $orgA->id]);
-        Course::factory()->create(['org_id' => $orgB->id]);
+        Course::factory()->inOrg($orgA->id)->create();
+        Course::factory()->inOrg($orgB->id)->create();
 
-        $admin = User::factory()->create(['org_id' => null]);
+        $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole('admin');
         $this->actingAs($admin);
 
@@ -34,10 +34,10 @@ class OrgScopeImpersonateOrgTest extends TestCase
         $orgA = Organization::factory()->create();
         $orgB = Organization::factory()->create();
 
-        Course::factory()->create(['org_id' => $orgA->id]);
-        Course::factory()->create(['org_id' => $orgB->id]);
+        Course::factory()->inOrg($orgA->id)->create();
+        Course::factory()->inOrg($orgB->id)->create();
 
-        $admin = User::factory()->create(['org_id' => null]);
+        $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole('admin');
         $this->actingAs($admin);
         $this->withSession(['active_org_id' => $orgA->id]);
@@ -53,10 +53,10 @@ class OrgScopeImpersonateOrgTest extends TestCase
         $orgA = Organization::factory()->create();
         $orgB = Organization::factory()->create();
 
-        Course::factory()->create(['org_id' => $orgA->id]);
-        Course::factory()->create(['org_id' => $orgB->id]);
+        Course::factory()->inOrg($orgA->id)->create();
+        Course::factory()->inOrg($orgB->id)->create();
 
-        $admin = User::factory()->create(['org_id' => null]);
+        $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole('admin');
         $this->actingAs($admin);
 
@@ -71,7 +71,7 @@ class OrgScopeImpersonateOrgTest extends TestCase
     {
         $organization = Organization::factory()->create();
 
-        $admin = User::factory()->create(['org_id' => null]);
+        $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole('admin');
         $this->actingAs($admin);
         $this->withSession(['active_org_id' => $organization->id]);

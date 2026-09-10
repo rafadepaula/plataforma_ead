@@ -28,7 +28,7 @@ class EssayGradingTest extends TestCase
     private function makeCourseWithEssayQuiz(?Organization $org = null): array
     {
         $org ??= Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
         $lesson = Lesson::factory()->for($module)->create(['type' => 'quiz', 'is_published' => true]);
         $quiz = Quiz::factory()->for($lesson)->create(['min_score_percentage' => 50]);
@@ -45,7 +45,7 @@ class EssayGradingTest extends TestCase
     private function enrolledAluno(Course $course): User
     {
         /** @var User $aluno */
-        $aluno = User::factory()->create(['org_id' => null]);
+        $aluno = User::factory()->inOrg($course->org_id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
         $aluno->courses()->attach($course->id, ['status' => 'active', 'enrolled_at' => now()]);
 
@@ -55,7 +55,7 @@ class EssayGradingTest extends TestCase
     private function gestorFor(Organization $org): User
     {
         /** @var User $gestor */
-        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor = User::factory()->inOrg($org->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
 
         return $gestor;
@@ -105,7 +105,7 @@ class EssayGradingTest extends TestCase
     public function test_admin_can_view_pending_queue(): void
     {
         /** @var User $admin */
-        $admin = User::factory()->create(['org_id' => null]);
+        $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole(RolesEnum::ADMIN->value);
 
         $response = $this->actingAs($admin)->get(route('quiz-attempts.pending'));
@@ -116,7 +116,7 @@ class EssayGradingTest extends TestCase
     public function test_aluno_cannot_view_pending_queue(): void
     {
         /** @var User $aluno */
-        $aluno = User::factory()->create(['org_id' => null]);
+        $aluno = User::factory()->inOrg(Organization::factory()->create())->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
 
         $response = $this->actingAs($aluno)->get(route('quiz-attempts.pending'));
@@ -198,7 +198,7 @@ class EssayGradingTest extends TestCase
         $essayAnswer = $attempt->answers()->where('question_id', $essayQuestion->id)->firstOrFail();
 
         /** @var User $admin */
-        $admin = User::factory()->create(['org_id' => null]);
+        $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole(RolesEnum::ADMIN->value);
 
         $response = $this->actingAs($admin)->post(route('quiz-attempts.grade', $attempt), [

@@ -27,7 +27,7 @@ class RoleMenuVisibilityTest extends TestCase
         // the Admin only gets that link while impersonating an
         // Organization; see the dedicated cases below.
         $org = Organization::factory()->create();
-        $admin = User::factory()->create(['org_id' => null]);
+        $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole(RolesEnum::ADMIN->value);
 
         $response = $this->actingAs($admin)
@@ -49,7 +49,7 @@ class RoleMenuVisibilityTest extends TestCase
     public function test_gestor_menu_never_leaks_the_organizations_link(): void
     {
         $org = Organization::factory()->create();
-        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor = User::factory()->inOrg($org->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
 
         $response = $this->actingAs($gestor)->get(route('admin.dashboard'));
@@ -72,7 +72,7 @@ class RoleMenuVisibilityTest extends TestCase
     public function test_aluno_menu_has_no_administration_links_at_all(): void
     {
         $org = Organization::factory()->create();
-        $aluno = User::factory()->create(['org_id' => $org->id]);
+        $aluno = User::factory()->inOrg($org->id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
 
         $response = $this->actingAs($aluno)->get(route('student.courses.index'));
@@ -101,7 +101,7 @@ class RoleMenuVisibilityTest extends TestCase
     {
         $org = Organization::factory()->create();
         $course = Course::factory()->for($org)->create();
-        $aluno = User::factory()->create(['org_id' => $org->id]);
+        $aluno = User::factory()->inOrg($org->id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
         $aluno->courses()->attach($course->id, ['status' => 'active', 'enrolled_at' => now()]);
 
@@ -139,7 +139,7 @@ class RoleMenuVisibilityTest extends TestCase
         $active = Course::factory()->for($org)->create(['title' => 'Curso Atalho']);
         $completed = Course::factory()->for($org)->create(['title' => 'A Concluído']);
         $cancelled = Course::factory()->for($org)->create(['title' => 'B Cancelado']);
-        $aluno = User::factory()->create(['org_id' => $org->id]);
+        $aluno = User::factory()->inOrg($org->id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
         $aluno->courses()->attach($active->id, ['status' => 'active', 'enrolled_at' => now(), 'progress_percentage' => 42]);
         $aluno->courses()->attach($completed->id, ['status' => 'completed', 'enrolled_at' => now()]);
@@ -166,7 +166,7 @@ class RoleMenuVisibilityTest extends TestCase
     public function test_aluno_without_enrollments_gets_only_the_ver_todos_link(): void
     {
         $org = Organization::factory()->create();
-        $aluno = User::factory()->create(['org_id' => $org->id]);
+        $aluno = User::factory()->inOrg($org->id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
 
         $response = $this->actingAs($aluno)->get(route('student.courses.index'));
@@ -189,7 +189,7 @@ class RoleMenuVisibilityTest extends TestCase
         $live = Course::factory()->for($org)->create(['title' => 'A Live']);
         $revoked = Course::factory()->for($org)->create(['title' => 'B Revogado']);
         $none = Course::factory()->for($org)->create(['title' => 'C Nunca Emitido']);
-        $aluno = User::factory()->create(['org_id' => $org->id]);
+        $aluno = User::factory()->inOrg($org->id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
 
         foreach ([$live, $revoked, $none] as $course) {
@@ -221,7 +221,7 @@ class RoleMenuVisibilityTest extends TestCase
     public function test_active_item_highlight_is_applied_on_a_sub_route(): void
     {
         $org = Organization::factory()->create();
-        $admin = User::factory()->create(['org_id' => null]);
+        $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole(RolesEnum::ADMIN->value);
 
         // `users.create` is a sub-route matched by the `users.*` active
@@ -246,7 +246,7 @@ class RoleMenuVisibilityTest extends TestCase
      */
     public function test_admin_without_an_active_org_context_never_sees_the_users_link(): void
     {
-        $admin = User::factory()->create(['org_id' => null]);
+        $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole(RolesEnum::ADMIN->value);
 
         $response = $this->actingAs($admin)->get(route('admin.dashboard'));
@@ -273,7 +273,7 @@ class RoleMenuVisibilityTest extends TestCase
      */
     public function test_admin_without_impersonation_sees_no_organization_scoped_items(): void
     {
-        $admin = User::factory()->create(['org_id' => null]);
+        $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole(RolesEnum::ADMIN->value);
 
         $response = $this->actingAs($admin)->get(route('admin.dashboard'));
@@ -297,7 +297,7 @@ class RoleMenuVisibilityTest extends TestCase
     public function test_admin_impersonating_an_org_sees_the_impersonate_section_in_both_renders(): void
     {
         $org = Organization::factory()->create();
-        $admin = User::factory()->create(['org_id' => null]);
+        $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole(RolesEnum::ADMIN->value);
 
         $response = $this->actingAs($admin)
@@ -324,7 +324,7 @@ class RoleMenuVisibilityTest extends TestCase
     public function test_admin_never_sees_the_meus_cursos_section(): void
     {
         $org = Organization::factory()->create();
-        $admin = User::factory()->create(['org_id' => null]);
+        $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole(RolesEnum::ADMIN->value);
 
         foreach ([[], ['active_org_id' => $org->id]] as $session) {
@@ -347,7 +347,7 @@ class RoleMenuVisibilityTest extends TestCase
     public function test_gestor_menu_is_untouched_and_never_shows_an_impersonate_section(): void
     {
         $org = Organization::factory()->create();
-        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor = User::factory()->inOrg($org->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
 
         $response = $this->actingAs($gestor)
@@ -373,7 +373,7 @@ class RoleMenuVisibilityTest extends TestCase
     public function test_admin_impersonating_an_org_sees_the_users_link_in_both_renders(): void
     {
         $org = Organization::factory()->create();
-        $admin = User::factory()->create(['org_id' => null]);
+        $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole(RolesEnum::ADMIN->value);
 
         $response = $this->actingAs($admin)
@@ -400,7 +400,7 @@ class RoleMenuVisibilityTest extends TestCase
     public function test_gestor_sees_the_students_link_in_both_renders_and_not_the_users_link(): void
     {
         $org = Organization::factory()->create();
-        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor = User::factory()->inOrg($org->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
 
         $response = $this->actingAs($gestor)->get(route('admin.dashboard'));

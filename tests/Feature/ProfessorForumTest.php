@@ -25,7 +25,7 @@ class ProfessorForumTest extends TestCase
     private function enrolledStudent(Course $course, string $name = 'Aluno Autor Borges'): User
     {
         /** @var User $student */
-        $student = User::factory()->create(['org_id' => null, 'name' => $name]);
+        $student = User::factory()->inOrg($course->org_id)->create(['name' => $name]);
         $student->assignRole('aluno');
         $course->students()->attach($student->id, ['enrolled_at' => now(), 'status' => 'active']);
 
@@ -34,7 +34,7 @@ class ProfessorForumTest extends TestCase
 
     private function publishedCourse(Organization $org): Course
     {
-        return Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        return Course::factory()->inOrg($org->id)->create(['is_published' => true]);
     }
 
     private function topicFor(Course $course, User $author, array $attributes = []): ForumTopic
@@ -48,7 +48,7 @@ class ProfessorForumTest extends TestCase
     private function professorFor(Organization $org): User
     {
         /** @var User $professor */
-        $professor = User::factory()->professor()->create(['org_id' => $org->id, 'name' => 'Professora Helena Braga']);
+        $professor = User::factory()->professor()->inOrg($org->id)->create(['name' => 'Professora Helena Braga']);
 
         return $professor;
     }

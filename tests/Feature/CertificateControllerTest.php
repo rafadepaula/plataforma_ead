@@ -21,10 +21,10 @@ class CertificateControllerTest extends TestCase
 {
     private function certificateFor(Organization $org): Certificate
     {
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
 
         /** @var User $student */
-        $student = User::factory()->create(['org_id' => null]);
+        $student = User::factory()->inOrg($org->id)->create();
         $student->assignRole(RolesEnum::ALUNO->value);
 
         return Certificate::factory()->for($course)->for($student)->create();
@@ -64,15 +64,14 @@ class CertificateControllerTest extends TestCase
         $certificate = $this->certificateFor($org);
 
         /** @var User $student */
-        $student = User::factory()->create(['org_id' => null]);
+        $student = User::factory()->inOrg($org->id)->create();
         $student->assignRole(RolesEnum::ALUNO->value);
         $this->actingAs($student);
 
-        // A student has no `active_org_id` session context, so `Course`'s
-        // own `OrgScope` already fails to resolve the route-bound model
-        // before `CoursePolicy::view()` is ever reached — 404, not 403.
+        // o painel de certificados é surface de Gestor/Admin: o Aluno,
+        // mesmo com o contexto do próprio portal, é barrado pelo role — 403.
         $this->get(route('courses.certificates.index', $certificate->course_id))
-            ->assertNotFound();
+            ->assertForbidden();
     }
 
     public function test_a_gestor_can_revoke_a_certificate_via_http(): void
@@ -161,7 +160,7 @@ class CertificateControllerTest extends TestCase
         $certificate = $this->certificateFor($org);
 
         /** @var User $student */
-        $student = User::factory()->create(['org_id' => null]);
+        $student = User::factory()->inOrg($org->id)->create();
         $student->assignRole(RolesEnum::ALUNO->value);
         $this->actingAs($student);
 

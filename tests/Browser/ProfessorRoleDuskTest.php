@@ -63,7 +63,7 @@ class ProfessorRoleDuskTest extends DuskTestCase
             'password' => bcrypt('correct-password'),
         ]);
 
-        $course = Course::factory()->create(['org_id' => $org->id, 'title' => 'Curso de Eletricista']);
+        $course = Course::factory()->inOrg($org->id)->create(['title' => 'Curso de Eletricista']);
 
         $this->browse(function (Browser $browser) use ($professor, $course): void {
             // 1. Login pelo formulário: o Professor cai no dashboard de Ensino,
@@ -118,17 +118,17 @@ class ProfessorRoleDuskTest extends DuskTestCase
     public function test_professor_essay_grading_lifecycle(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
         $lesson = Lesson::factory()->for($module)->create(['type' => 'quiz', 'is_published' => true]);
         $quiz = Quiz::factory()->for($lesson)->create(['min_score_percentage' => 50]);
         $essayQuestion = QuizQuestion::factory()->for($quiz)->essay()->create();
 
         /** @var User $aluno */
-        $aluno = User::factory()->create(['org_id' => null, 'name' => 'Aluno Dusk']);
+        $aluno = User::factory()->inOrg($course->org_id)->create(['name' => 'Aluno Dusk']);
         $aluno->assignRole(RolesEnum::ALUNO->value);
 
-        $professor = User::factory()->professor()->create(['org_id' => $org->id]);
+        $professor = User::factory()->professor()->inOrg($org->id)->create();
         $course->professors()->syncWithoutDetaching([$professor->id]);
 
         $attempt = QuizAttempt::factory()->for($quiz)->for($aluno)->awaitingManualGrading()
@@ -177,14 +177,14 @@ class ProfessorRoleDuskTest extends DuskTestCase
     {
         $org = Organization::factory()->create();
 
-        $gestor = User::factory()->gestor()->create(['org_id' => $org->id]);
+        $gestor = User::factory()->gestor()->inOrg($org->id)->create();
 
         $professor = User::factory()->professor()->create([
             'org_id' => $org->id,
             'name' => 'Prof. Dusk',
         ]);
 
-        $course = Course::factory()->create(['org_id' => $org->id, 'title' => 'Curso de Eletricista']);
+        $course = Course::factory()->inOrg($org->id)->create(['title' => 'Curso de Eletricista']);
 
         $this->browse(function (Browser $browser) use ($gestor, $professor, $course): void {
             // 1. O painel do curso lista o Professor da mesma Organização no

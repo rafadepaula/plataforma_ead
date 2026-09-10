@@ -24,7 +24,7 @@ class MultiTenantQuizManagementTest extends TestCase
 {
     private function quizLesson(Organization $org): Lesson
     {
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
 
         return Lesson::factory()->for($module)->create(['type' => 'quiz', 'is_published' => true]);

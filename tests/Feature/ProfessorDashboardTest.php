@@ -35,14 +35,14 @@ class ProfessorDashboardTest extends TestCase
     private function professorFor(Organization $org): User
     {
         /** @var User $professor */
-        $professor = User::factory()->professor()->create(['org_id' => $org->id, 'name' => 'Professor do Dashboard']);
+        $professor = User::factory()->professor()->inOrg($org->id)->create(['name' => 'Professor do Dashboard']);
 
         return $professor;
     }
 
     private function courseWithEssayQuiz(Organization $org): array
     {
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $module = Module::factory()->for($course)->create();
         $lesson = Lesson::factory()->for($module)->create(['type' => 'quiz', 'is_published' => true]);
         $quiz = Quiz::factory()->for($lesson)->create(['min_score_percentage' => 50]);
@@ -59,7 +59,7 @@ class ProfessorDashboardTest extends TestCase
     private function enrolledAluno(Course $course, string $name): User
     {
         /** @var User $aluno */
-        $aluno = User::factory()->create(['org_id' => null, 'name' => $name]);
+        $aluno = User::factory()->inOrg($course->org_id)->create(['name' => $name]);
         $aluno->assignRole(RolesEnum::ALUNO->value);
         $aluno->courses()->attach($course->id, ['status' => 'active', 'enrolled_at' => now()]);
 
@@ -79,7 +79,7 @@ class ProfessorDashboardTest extends TestCase
 
     private function reportedTopic(Course $course, User $student, string $reason): ForumReport
     {
-        $topic = ForumTopic::factory()->for($course)->for($student)->create(['org_id' => $course->org_id]);
+        $topic = ForumTopic::factory()->for($course)->for($student)->inOrg($course->org_id)->create();
 
         return ForumReport::factory()->create([
             'postable_type' => ForumTopic::class,
@@ -183,7 +183,7 @@ class ProfessorDashboardTest extends TestCase
     public function test_forum_activity_counts_only_the_last_seven_days(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
 
         $gestor = $this->actingAsOrgUser($org);
         $professor = $this->professorFor($org);
@@ -191,7 +191,7 @@ class ProfessorDashboardTest extends TestCase
 
         $student = $this->enrolledAluno($course, 'Aluno Forum Antunes');
 
-        $recentTopic = ForumTopic::factory()->for($course)->for($student)->create(['org_id' => $course->org_id]);
+        $recentTopic = ForumTopic::factory()->for($course)->for($student)->inOrg($course->org_id)->create();
         ForumReply::factory()->for($recentTopic, 'topic')->for($student)->create();
 
         // Both stale rows sit INSIDE the assigned course, so they prove the
@@ -238,7 +238,7 @@ class ProfessorDashboardTest extends TestCase
         $attemptOther = $this->pendingEssay($lessonOther, $alunoOther, $choiceOther, $correctOther, $essayOther, 'Resposta alheia.');
         $attemptOther->update(['completed_at' => Carbon::now()->subDays(3)]);
         $this->reportedTopic($courseOther, $alunoOther, 'Denuncia fora do perimetro.');
-        ForumTopic::factory()->for($courseOther)->for($alunoOther)->create(['org_id' => $courseOther->org_id]);
+        ForumTopic::factory()->for($courseOther)->for($alunoOther)->inOrg($courseOther->org_id)->create();
 
         $attemptAssigned = $this->pendingEssay($lessonAssigned, $alunoAssigned, $choiceAssigned, $correctAssigned, $essayAssigned, 'Resposta visivel.');
         $attemptAssigned->update(['completed_at' => Carbon::now()->subDay()]);
@@ -266,7 +266,7 @@ class ProfessorDashboardTest extends TestCase
         $org = Organization::factory()->create();
 
         /** @var User $aluno */
-        $aluno = User::factory()->create(['org_id' => null]);
+        $aluno = User::factory()->inOrg($org->id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
 
         $gestor = $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
@@ -281,7 +281,7 @@ class ProfessorDashboardTest extends TestCase
         $professor = $this->professorFor($org);
 
         /** @var User $aluno */
-        $aluno = User::factory()->create(['org_id' => null]);
+        $aluno = User::factory()->inOrg($org->id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
 
         $resolver = app(UserHomeResolver::class);

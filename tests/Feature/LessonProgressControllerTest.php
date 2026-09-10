@@ -18,7 +18,7 @@ class LessonProgressControllerTest extends TestCase
     private function createEnrolledAluno(Course $course): User
     {
         /** @var User $aluno */
-        $aluno = User::factory()->create(['org_id' => null]);
+        $aluno = User::factory()->inOrg($course->org_id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
         $aluno->courses()->attach($course->id, [
             'status' => 'active',
@@ -32,7 +32,7 @@ class LessonProgressControllerTest extends TestCase
     private function createCourseWithModule(): array
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
 
         return [$course, $module];
@@ -187,7 +187,7 @@ class LessonProgressControllerTest extends TestCase
         $lesson = Lesson::factory()->for($module)->richText()->create(['is_published' => true]);
 
         /** @var User $aluno */
-        $aluno = User::factory()->create(['org_id' => null]);
+        $aluno = User::factory()->inOrg($course->org_id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
         $this->actingAs($aluno);
 
@@ -329,7 +329,7 @@ class LessonProgressControllerTest extends TestCase
         $lesson = Lesson::factory()->for($module)->withYoutube()->create(['is_published' => true]);
 
         /** @var User $aluno */
-        $aluno = User::factory()->create(['org_id' => null]);
+        $aluno = User::factory()->inOrg($course->org_id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
         $this->actingAs($aluno);
 

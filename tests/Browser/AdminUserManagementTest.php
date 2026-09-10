@@ -23,16 +23,16 @@ class AdminUserManagementTest extends DuskTestCase
 {
     public function test_admin_manages_users_across_orgs_without_impersonating(): void
     {
-        $admin = User::factory()->create(['org_id' => null]);
+        $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole(RolesEnum::ADMIN->value);
 
         $orgA = Organization::factory()->create(['name' => 'Organização Alfa']);
         $orgB = Organization::factory()->create(['name' => 'Organização Beta']);
 
-        $alunoOrgA = User::factory()->create(['org_id' => $orgA->id, 'name' => 'Aluno Da Alfa', 'status' => 'active']);
+        $alunoOrgA = User::factory()->inOrg($orgA->id)->create(['name' => 'Aluno Da Alfa']);
         $alunoOrgA->assignRole(RolesEnum::ALUNO->value);
 
-        $gestorOrgB = User::factory()->create(['org_id' => $orgB->id, 'name' => 'Gestor Da Beta', 'status' => 'active']);
+        $gestorOrgB = User::factory()->inOrg($orgB->id)->create(['name' => 'Gestor Da Beta']);
         $gestorOrgB->assignRole(RolesEnum::GESTOR->value);
 
         $this->browse(function (Browser $browser) use ($admin, $orgA, $alunoOrgA, $gestorOrgB): void {
@@ -84,15 +84,15 @@ class AdminUserManagementTest extends DuskTestCase
 
     public function test_admin_users_listing_shows_the_role_badge_for_all_three_roles(): void
     {
-        $admin = User::factory()->create(['org_id' => null, 'name' => 'Administrador Root']);
+        $admin = User::factory()->inOrg(null)->create(['name' => 'Administrador Root']);
         $admin->assignRole(RolesEnum::ADMIN->value);
 
         $org = Organization::factory()->create();
 
-        $gestor = User::factory()->create(['org_id' => $org->id, 'name' => 'Gestor Da Org']);
+        $gestor = User::factory()->inOrg($org->id)->create(['name' => 'Gestor Da Org']);
         $gestor->assignRole(RolesEnum::GESTOR->value);
 
-        $aluno = User::factory()->create(['org_id' => $org->id, 'name' => 'Aluno Da Org']);
+        $aluno = User::factory()->inOrg($org->id)->create(['name' => 'Aluno Da Org']);
         $aluno->assignRole(RolesEnum::ALUNO->value);
 
         $this->browse(function (Browser $browser) use ($admin, $gestor, $aluno): void {
@@ -123,17 +123,17 @@ class AdminUserManagementTest extends DuskTestCase
      */
     public function test_admin_user_deletion_lifecycle_blocks_fk_conflicts_then_deletes(): void
     {
-        $admin = User::factory()->create(['org_id' => null]);
+        $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole(RolesEnum::ADMIN->value);
 
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
 
-        $withCertificate = User::factory()->create(['org_id' => $org->id, 'name' => 'Aluno Com Certificado']);
+        $withCertificate = User::factory()->inOrg($org->id)->create(['name' => 'Aluno Com Certificado']);
         $withCertificate->assignRole(RolesEnum::ALUNO->value);
         Certificate::factory()->create(['user_id' => $withCertificate->id, 'course_id' => $course->id]);
 
-        $withInvitationLink = User::factory()->create(['org_id' => $org->id, 'name' => 'Gestor Com Convite']);
+        $withInvitationLink = User::factory()->inOrg($org->id)->create(['name' => 'Gestor Com Convite']);
         $withInvitationLink->assignRole(RolesEnum::GESTOR->value);
         InvitationLink::factory()->create([
             'org_id' => $org->id,
@@ -141,7 +141,7 @@ class AdminUserManagementTest extends DuskTestCase
             'created_by' => $withInvitationLink->id,
         ]);
 
-        $target = User::factory()->create(['org_id' => $org->id, 'name' => 'Usuário A Remover']);
+        $target = User::factory()->inOrg($org->id)->create(['name' => 'Usuário A Remover']);
         $target->assignRole(RolesEnum::ALUNO->value);
 
         $this->browse(function (Browser $browser) use ($admin, $withCertificate, $withInvitationLink, $target): void {
@@ -181,11 +181,11 @@ class AdminUserManagementTest extends DuskTestCase
 
     public function test_admin_activates_an_inactive_user_via_confirm_modal(): void
     {
-        $admin = User::factory()->create(['org_id' => null]);
+        $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole(RolesEnum::ADMIN->value);
 
         $org = Organization::factory()->create();
-        $target = User::factory()->create(['org_id' => $org->id, 'name' => 'Usuário Inativo', 'status' => 'inactive']);
+        $target = User::factory()->inOrg($org->id)->inactive()->create(['name' => 'Usuário Inativo']);
         $target->assignRole(RolesEnum::ALUNO->value);
 
         $this->browse(function (Browser $browser) use ($admin, $target): void {
@@ -210,12 +210,12 @@ class AdminUserManagementTest extends DuskTestCase
 
     public function test_admin_views_full_profile_and_edits_it_via_the_real_form(): void
     {
-        $admin = User::factory()->create(['org_id' => null]);
+        $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole(RolesEnum::ADMIN->value);
 
         $originOrg = Organization::factory()->create(['name' => 'Organização Origem']);
         $destinationOrg = Organization::factory()->create(['name' => 'Organização Destino']);
-        $target = User::factory()->create(['org_id' => $originOrg->id, 'name' => 'Perfil Para Editar', 'status' => 'active']);
+        $target = User::factory()->inOrg($originOrg->id)->create(['name' => 'Perfil Para Editar']);
         $target->assignRole(RolesEnum::ALUNO->value);
 
         $this->browse(function (Browser $browser) use ($admin, $target, $destinationOrg): void {
@@ -243,11 +243,11 @@ class AdminUserManagementTest extends DuskTestCase
 
     public function test_admin_edit_form_shows_validation_errors_on_invalid_submission(): void
     {
-        $admin = User::factory()->create(['org_id' => null]);
+        $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole(RolesEnum::ADMIN->value);
 
         $org = Organization::factory()->create();
-        $target = User::factory()->create(['org_id' => $org->id]);
+        $target = User::factory()->inOrg($org->id)->create();
         $target->assignRole(RolesEnum::ALUNO->value);
 
         $this->browse(function (Browser $browser) use ($admin, $target): void {
