@@ -54,6 +54,19 @@ final class OrgContext
     }
 
     /**
+     * True when a real host resolution happened (web request through
+     * `ResolveOrgFromHost`, or an explicit bind). Outside a request —
+     * console, queue, or test setup — nothing is bound and the context is
+     * NOT authoritative: callers that would otherwise reject "no
+     * Organization" (e.g. `OrgScope`'s creating hook) should tolerate an
+     * explicitly provided tenant there instead.
+     */
+    public static function isBound(): bool
+    {
+        return app()->bound(self::class);
+    }
+
+    /**
      * Convenience for org-scoped queries and credential lookups. `null`
      * targets the global Admin account (`credentials.org_id = null`).
      */

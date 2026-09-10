@@ -70,6 +70,14 @@ trait OrgScope
                 : OrgContext::current()->orgId();
 
             if (! $resolvedOrgId) {
+                // No request is in flight (console, queue, test factories):
+                // the context is not authoritative, so an explicitly given
+                // org_id stands. Inside a real request the host always
+                // resolves first — a state-zero write attempt must fail.
+                if (! OrgContext::isBound() && $model->org_id !== null) {
+                    return;
+                }
+
                 throw new UnresolvedOrgContextException(
                     'Não foi possível resolver org_id para criar '.static::class." (usuário #{$user->id} sem organização resolvida por host ou impersonação)."
                 );

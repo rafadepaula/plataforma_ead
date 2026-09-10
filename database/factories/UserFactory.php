@@ -6,6 +6,7 @@ use App\Enums\Permissions\RolesEnum;
 use App\Models\Credential;
 use App\Models\Organization;
 use App\Models\User;
+use Database\Factories\Concerns\ResolvesInOrg;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -13,6 +14,8 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class UserFactory extends Factory
 {
+    use ResolvesInOrg;
+
     /**
      * Define the model's default state.
      *
@@ -44,6 +47,21 @@ class UserFactory extends Factory
     }
 
     /**
+     * Give the person an account (credential) in the given Organization
+     * after creation — `null` means the global admin credential
+     * (`credentials.org_id = null`, valid on every host, including the
+     * state-zero login).
+     */
+    public function inOrg(Organization|int|null $organization): static
+    {
+        return $this->afterCreating(function (User $user) use ($organization): void {
+            Credential::factory()
+                ->forOrg(self::resolveInOrg($organization))
+                ->create(['user_id' => $user->id]);
+        });
+    }
+
+    /**
      * Deactivate every account (credential) of this person — the
      * person-level "kill switch" is "no active credentials".
      */
@@ -62,6 +80,19 @@ class UserFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'cpf' => fake()->unique()->numerify('###########'),
         ]);
+    }
+
+    /**
+     * Set the password on every credential of this person (created after
+     * `inOrg()` in the chain, so the credential already exists).
+     */
+    public function withPassword(string $password): static
+    {
+        return $this->afterCreating(function (User $user) use ($password): void {
+            $user->credentials->each(
+                fn (Credential $credential) => $credential->update(['password' => $password])
+            );
+        });
     }
 
     /**
