@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Auth;
 
+use App\Services\OrgContext;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
@@ -11,8 +12,11 @@ use Illuminate\Validation\ValidationException;
 
 /**
  * validates email/password, throttles repeated failed
- * attempts, and authenticates only `status=active` users (an `inactive`
- * user must never obtain a session, even with correct credentials).
+ * attempts per (email, org, ip), and delegates credential validation to
+ * `OrgCredentialUserProvider`: the password is checked against the
+ * `credentials` row of the request host's Organization, so a person with
+ * no account in the portal they are visiting fails auth exactly like a
+ * wrong password would.
  */
 class LoginRequest extends FormRequest
 {
@@ -44,12 +48,12 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
-        // Adding `status => 'active'` as an extra credential lets
-        // `EloquentUserProvider` fold the check into the lookup query
-        // itself, so an `inactive` user fails auth exactly like a wrong
-        // password would (no separate branch to forget to guard).
+        // Status/password checks live in the provider's per-org
+        // `credentials` lookup — an inactive account, an account of another
+        // Organization, or a disabled tenant all collapse into the same
+        // generic `auth.failed` outcome.
         if (! Auth::attempt(
-            $this->only('email', 'password') + ['status' => 'active'],
+            $this->only('email', 'password'),
             $this->boolean('remember')
         )) {
             RateLimiter::hit($this->throttleKey());
@@ -86,10 +90,14 @@ class LoginRequest extends FormRequest
     }
 
     /**
-     * Get the rate limiting throttle key for the request.
+     * Get the rate limiting throttle key for the request — scoped to the
+     * host Organization (`global` in state zero) so that attempts against
+     * one portal never lock someone out of another.
      */
     public function throttleKey(): string
     {
-        return Str::transliterate(Str::lower($this->string('email')).'|'.$this->ip());
+        $orgKey = OrgContext::current()->orgId() ?? 'global';
+
+        return Str::transliterate(Str::lower($this->string('email')).'|'.$orgKey.'|'.$this->ip());
     }
 }

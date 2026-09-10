@@ -90,8 +90,10 @@ class HostResolutionTest extends TestCase
     {
         Organization::factory()->inactive()->create(['host' => 'portal.acme.test']);
 
-        // Guest em rota não-pública da org inativa volta pra landing.
-        $this->onHost('portal.acme.test')->get('/login')->assertRedirect('/');
+        // Guest: a tela de login fica visível (o POST falha no provider
+        // com o erro genérico), mas rota não-pública volta pra landing.
+        $this->onHost('portal.acme.test')->get('/login')->assertOk();
+        $this->onHost('portal.acme.test')->get('/convite/qualquer-token')->assertRedirect('/');
 
         // Autenticado não-admin é deslogado.
         $user = User::factory()->aluno()->create();

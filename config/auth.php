@@ -63,14 +63,12 @@ return [
 
     'providers' => [
         'users' => [
-            'driver' => 'eloquent',
+            // `org-credential`: passwords/status/remember tokens live in the
+            // `credentials` table, one account per (user, host org) pair —
+            // see `App\Services\OrgCredentialUserProvider`.
+            'driver' => 'org-credential',
             'model' => env('AUTH_MODEL', User::class),
         ],
-
-        // 'users' => [
-        //     'driver' => 'database',
-        //     'table' => 'users',
-        // ],
     ],
 
     /*

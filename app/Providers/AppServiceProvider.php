@@ -7,9 +7,11 @@ use App\Http\View\Composers\NavigationComposer;
 use App\Services\Navigation\ImpersonationContext;
 use App\Services\Navigation\NavigationRegistry;
 use App\Services\Navigation\NavigationService;
+use App\Services\OrgCredentialUserProvider;
 use App\Services\VideoUrlSanitizerManager;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
@@ -20,6 +22,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        //  the `org-credential` driver (see `config/auth.php`) resolves
+        // passwords/status/remember tokens from the per-Organization
+        // `credentials` table keyed by the request host's Organization.
+        Auth::provider('org-credential', function ($app, array $config): OrgCredentialUserProvider {
+            return new OrgCredentialUserProvider($app['hash'], $config['model']);
+        });
+
         //  singleton so the impersonated Organization is resolved
         // (and memoized) once per request, even though the sidebar and the
         // topbar each trigger the `NavigationComposer`.

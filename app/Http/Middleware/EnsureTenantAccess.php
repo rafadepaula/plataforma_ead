@@ -79,12 +79,17 @@ class EnsureTenantAccess
     }
 
     /**
-     * View-only surfaces an inactive tenant still serves to guests: the
-     * landing page and the public certificate lookup. Everything else —
-     * including the invite redemption flow — redirects to the landing.
+     * Surfaces an inactive tenant still serves to guests: the landing, the
+     * public certificate lookup, AND the auth routes — login/forgot POSTs
+     * must reach the provider so they fail with the generic auth error
+     * (the spec mandates "qualquer tentativa de login resulta em falha de
+     * autenticação", not a redirect). Everything else — including the
+     * invite redemption flow — redirects to the landing.
      */
     private function isPublicOnInactiveOrg(Request $request): bool
     {
-        return $request->is('/') || $request->is('validar-certificado', 'validar-certificado/*');
+        return $request->is('/')
+            || $this->isAuthRoute($request)
+            || $request->is('validar-certificado', 'validar-certificado/*');
     }
 }
