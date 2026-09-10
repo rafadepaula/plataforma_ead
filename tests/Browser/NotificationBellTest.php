@@ -3,7 +3,6 @@
 namespace Tests\Browser;
 
 use App\Enums\Permissions\RolesEnum;
-use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Str;
@@ -47,7 +46,7 @@ class NotificationBellTest extends DuskTestCase
 
     public function test_notification_bell_visibility_by_role(): void
     {
-        $org = Organization::factory()->create();
+        $org = $this->duskTenant();
 
         $gestor = User::factory()->inOrg($org->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
@@ -81,7 +80,7 @@ class NotificationBellTest extends DuskTestCase
 
     public function test_notification_bell_interaction_lifecycle(): void
     {
-        $org = Organization::factory()->create();
+        $org = $this->duskTenant();
         $aluno = User::factory()->inOrg($org->id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
 

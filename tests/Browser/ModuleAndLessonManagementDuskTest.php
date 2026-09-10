@@ -36,7 +36,7 @@ class ModuleAndLessonManagementDuskTest extends DuskTestCase
      */
     private function makeOrgGestorAndCourse(): array
     {
-        $org = Organization::factory()->create();
+        $org = $this->duskTenant();
         $gestor = User::factory()->inOrg($org->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
         $course = Course::factory()->inOrg($org->id)->create();
@@ -439,10 +439,9 @@ class ModuleAndLessonManagementDuskTest extends DuskTestCase
 
     /**
      * Cross-tenant guessing against the module and lesson management
-     * routes must be denied with a real 403, rendered end to end through
-     * the browser (the Feature suite already pins the HTTP status in
-     * `MultiTenantCourseManagementTest`, but no Dusk test drove the same
-     * denial through an actual page load until now).
+     * routes is denied with a real 403: the module binding is unscoped,
+     * and `ModulePolicy` compares the host Organization with the parent
+     * Course's — rendered end to end through the browser.
      */
     public function test_module_and_lesson_management_forbidden_across_tenants(): void
     {

@@ -6,7 +6,6 @@ use App\Enums\Permissions\RolesEnum;
 use App\Models\Course;
 use App\Models\Lesson;
 use App\Models\Module;
-use App\Models\Organization;
 use App\Models\Quiz;
 use App\Models\QuizQuestion;
 use App\Models\User;
@@ -28,7 +27,7 @@ class QuizAuthoringDuskTest extends DuskTestCase
 {
     public function test_gestor_quiz_question_builder_ui_and_save_flow_lifecycle(): void
     {
-        $org = Organization::factory()->create();
+        $org = $this->duskTenant();
         $gestor = User::factory()->inOrg($org->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
 
@@ -206,7 +205,7 @@ class QuizAuthoringDuskTest extends DuskTestCase
      */
     public function test_question_without_a_correct_option_is_rejected_with_a_422_validation_error(): void
     {
-        $org = Organization::factory()->create();
+        $org = $this->duskTenant();
         $gestor = User::factory()->inOrg($org->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
 

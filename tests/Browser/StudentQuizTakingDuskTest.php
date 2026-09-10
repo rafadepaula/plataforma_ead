@@ -6,7 +6,6 @@ use App\Enums\Permissions\RolesEnum;
 use App\Models\Course;
 use App\Models\Lesson;
 use App\Models\Module;
-use App\Models\Organization;
 use App\Models\Quiz;
 use App\Models\QuizAttempt;
 use App\Models\QuizOption;
@@ -31,7 +30,7 @@ class StudentQuizTakingDuskTest extends DuskTestCase
 {
     public function test_student_auto_graded_quiz_attempt_lifecycle(): void
     {
-        $org = Organization::factory()->create();
+        $org = $this->duskTenant();
         $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $module = Module::factory()->for($course)->create();
         $lesson = Lesson::factory()->for($module)->create(['type' => 'quiz', 'is_published' => true]);
@@ -89,7 +88,7 @@ class StudentQuizTakingDuskTest extends DuskTestCase
      */
     public function test_student_multiple_choice_question_requires_every_correct_option(): void
     {
-        $org = Organization::factory()->create();
+        $org = $this->duskTenant();
         $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $module = Module::factory()->for($course)->create();
         $lesson = Lesson::factory()->for($module)->create(['type' => 'quiz', 'is_published' => true]);
@@ -162,7 +161,7 @@ class StudentQuizTakingDuskTest extends DuskTestCase
 
     public function test_student_essay_quiz_awaits_manual_grading(): void
     {
-        $org = Organization::factory()->create();
+        $org = $this->duskTenant();
         $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $module = Module::factory()->for($course)->create();
         $lesson = Lesson::factory()->for($module)->create(['type' => 'quiz', 'is_published' => true]);
@@ -206,7 +205,7 @@ class StudentQuizTakingDuskTest extends DuskTestCase
      */
     public function test_the_finalize_button_unlocks_only_when_every_question_is_answered(): void
     {
-        $org = Organization::factory()->create();
+        $org = $this->duskTenant();
         $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $module = Module::factory()->for($course)->create();
         $lesson = Lesson::factory()->for($module)->create(['type' => 'quiz', 'is_published' => true]);
@@ -264,10 +263,10 @@ class StudentQuizTakingDuskTest extends DuskTestCase
      */
     public function test_student_cannot_open_a_quiz_of_a_course_from_another_organization(): void
     {
-        $ownOrg = Organization::factory()->create();
+        $ownOrg = $this->duskTenant();
         $ownCourse = Course::factory()->inOrg($ownOrg->id)->create(['is_published' => true]);
 
-        $foreignOrg = Organization::factory()->create();
+        $foreignOrg = $this->duskTenant();
         $foreignCourse = Course::factory()->inOrg($foreignOrg->id)->create(['is_published' => true]);
         $foreignModule = Module::factory()->for($foreignCourse)->create();
         $foreignLesson = Lesson::factory()->for($foreignModule)->create(['type' => 'quiz', 'is_published' => true]);
@@ -300,7 +299,7 @@ class StudentQuizTakingDuskTest extends DuskTestCase
      */
     public function test_student_quiz_screen_gating_states(): void
     {
-        $org = Organization::factory()->create();
+        $org = $this->duskTenant();
         $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $module = Module::factory()->for($course)->create();
 
@@ -498,7 +497,7 @@ class StudentQuizTakingDuskTest extends DuskTestCase
      */
     public function test_abandoned_timed_attempt_is_expired_on_reopen_and_warns_the_student(): void
     {
-        $org = Organization::factory()->create();
+        $org = $this->duskTenant();
         $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $module = Module::factory()->for($course)->create();
         $lesson = Lesson::factory()->for($module)->create(['type' => 'quiz', 'is_published' => true]);

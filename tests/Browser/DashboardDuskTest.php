@@ -94,7 +94,7 @@ class DashboardDuskTest extends DuskTestCase
 
     public function test_gestor_dashboard_org_scope_lifecycle(): void
     {
-        $orgA = Organization::factory()->create();
+        $orgA = $this->duskTenant();
         $orgB = Organization::factory()->create();
 
         $courseA = Course::factory()->for($orgA)->create();

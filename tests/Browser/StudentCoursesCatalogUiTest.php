@@ -9,7 +9,6 @@ use App\Models\Lesson;
 use App\Models\Module;
 use App\Models\Organization;
 use App\Models\User;
-use Illuminate\Support\Facades\Hash;
 use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 
@@ -27,7 +26,7 @@ class StudentCoursesCatalogUiTest extends DuskTestCase
 {
     public function test_student_courses_catalog_tabs_and_cards_lifecycle(): void
     {
-        $org = Organization::factory()->create();
+        $org = $this->duskTenant();
 
         // "Em andamento": a published lesson exists, the pivot has partial
         // progress, no `expires_at` — CTA is "Continuar" to the resume lesson.
@@ -49,12 +48,9 @@ class StudentCoursesCatalogUiTest extends DuskTestCase
         Lesson::factory()->for($expiredModule)->create(['is_published' => true, 'order_index' => 0]);
 
         /** @var User $student */
-        $student = User::factory()->create([
-            'org_id' => null,
+        $student = User::factory()->aluno()->inOrg($org)->withPassword('senha-correta')->create([
             'email' => 'catalogo@example.com',
-            'password' => Hash::make('senha-correta'),
         ]);
-        $student->assignRole(RolesEnum::ALUNO->value);
 
         $student->courses()->attach($inProgressCourse->id, [
             'status' => 'active',

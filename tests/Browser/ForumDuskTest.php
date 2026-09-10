@@ -7,7 +7,6 @@ use App\Models\Course;
 use App\Models\ForumReply;
 use App\Models\ForumReport;
 use App\Models\ForumTopic;
-use App\Models\Organization;
 use App\Models\User;
 use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
@@ -35,7 +34,7 @@ class ForumDuskTest extends DuskTestCase
 
     public function test_student_forum_participation_lifecycle(): void
     {
-        $org = Organization::factory()->create();
+        $org = $this->duskTenant();
         $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $student = $this->enrolledStudent($course);
 
@@ -133,7 +132,7 @@ class ForumDuskTest extends DuskTestCase
 
     public function test_forum_report_and_moderation_lifecycle(): void
     {
-        $org = Organization::factory()->create();
+        $org = $this->duskTenant();
         $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $student = $this->enrolledStudent($course);
         $gestor = User::factory()->inOrg($org->id)->create();
@@ -195,7 +194,7 @@ class ForumDuskTest extends DuskTestCase
      */
     public function test_gestor_can_dismiss_or_remove_reported_posts_and_author_can_delete_own_posts(): void
     {
-        $org = Organization::factory()->create();
+        $org = $this->duskTenant();
         $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $student = $this->enrolledStudent($course);
         $gestor = User::factory()->inOrg($org->id)->create();
@@ -290,7 +289,7 @@ class ForumDuskTest extends DuskTestCase
      */
     public function test_a_student_cannot_edit_someone_elses_topic(): void
     {
-        $org = Organization::factory()->create();
+        $org = $this->duskTenant();
         $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $author = $this->enrolledStudent($course);
         $otherStudent = $this->enrolledStudent($course);
@@ -325,7 +324,7 @@ class ForumDuskTest extends DuskTestCase
      */
     public function test_gestor_reaches_the_forum_from_the_course_catalog_lifecycle(): void
     {
-        $org = Organization::factory()->create();
+        $org = $this->duskTenant();
         $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $gestor = User::factory()->inOrg($org->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
@@ -368,7 +367,7 @@ class ForumDuskTest extends DuskTestCase
 
     public function test_a_student_who_is_not_enrolled_is_sent_back_to_the_catalog_instead_of_the_forum(): void
     {
-        $org = Organization::factory()->create();
+        $org = $this->duskTenant();
         $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
 
         /** @var User $notEnrolledStudent */

@@ -6,7 +6,6 @@ use App\Enums\Permissions\RolesEnum;
 use App\Models\Course;
 use App\Models\Lesson;
 use App\Models\Module;
-use App\Models\Organization;
 use App\Models\Quiz;
 use App\Models\QuizOption;
 use App\Models\QuizQuestion;
@@ -29,7 +28,7 @@ class KeyboardNavigationTest extends DuskTestCase
         $this->browse(function (Browser $browser): void {
             $browser->visit(route('login'))->waitFor('@login-form');
 
-            $visited = $this->collectTabbedIdentifiers($browser, 8);
+            $visited = $this->collectTabbedIdentifiers($browser, 10);
 
             self::assertContains('login-email', $visited);
             self::assertContains('login-password', $visited);
@@ -79,12 +78,14 @@ class KeyboardNavigationTest extends DuskTestCase
 
             $visited = $this->collectTabbedIdentifiers($browser, 12);
 
-            //  STALE no HEAD: `quiz-attempt-submit` virou trigger de
-            //    confirm-modal e nasce `disabled` enquanto há questões
-            //    sem resposta, então ele nunca é focável por Tab puro
-            //    nesta página — falha independente do menu (verificada
-            //    via stash no HEAD).
-            self::assertContains('quiz-attempt-submit', $visited);
+            //  `quiz-attempt-submit` é trigger de confirm-modal e nasce
+            //    `disabled` enquanto há questões sem resposta — nunca é
+            //    focável por Tab puro; a primeira opção da questão é o
+            //    primeiro controle alcançável do formulário.
+            self::assertNotEmpty(
+                array_filter($visited, fn (string $identifier): bool => str_starts_with($identifier, 'quiz-option-')),
+                'Nenhuma opção de questão foi alcançável por Tab.'
+            );
         });
     }
 
@@ -189,7 +190,7 @@ class KeyboardNavigationTest extends DuskTestCase
      */
     private function studentWithClassroom(): array
     {
-        $org = Organization::factory()->create();
+        $org = $this->duskTenant();
         $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $module = Module::factory()->for($course)->create();
         $lesson = Lesson::factory()->richText()->for($module)->create(['is_published' => true]);
@@ -206,7 +207,7 @@ class KeyboardNavigationTest extends DuskTestCase
      */
     private function studentWithQuiz(): array
     {
-        $org = Organization::factory()->create();
+        $org = $this->duskTenant();
         $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $module = Module::factory()->for($course)->create();
         $lesson = Lesson::factory()->for($module)->create(['type' => 'quiz', 'is_published' => true]);

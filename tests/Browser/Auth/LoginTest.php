@@ -51,21 +51,22 @@ class LoginTest extends DuskTestCase
 
     public function test_login_redirects_by_role_and_logout_lifecycle(): void
     {
-        $aluno = User::factory()->create([
+        $tenant = $this->duskTenant();
+
+        // login por formulário valida a credencial da org do host
+        $aluno = User::factory()->aluno()->inOrg($tenant)->withPassword('correct-password')->create([
             'email' => 'aluno@example.com',
-            'password' => bcrypt('correct-password'),
         ]);
-        $aluno->assignRole(RolesEnum::ALUNO->value);
 
-        $gestor = User::factory()->gestor()->create([
+        $gestor = User::factory()->inOrg($tenant)->withPassword('correct-password')->create([
             'email' => 'gestor@example.com',
-            'password' => bcrypt('correct-password'),
         ]);
+        $gestor->assignRole(RolesEnum::GESTOR->value);
 
-        $admin = User::factory()->create([
-            'org_id' => null,
+        // em host mapeado a credencial global não valida: o admin entra
+        // aqui com conta no próprio portal do Dusk
+        $admin = User::factory()->inOrg($tenant)->withPassword('correct-password')->create([
             'email' => 'admin@example.com',
-            'password' => bcrypt('correct-password'),
         ]);
         $admin->assignRole(RolesEnum::ADMIN->value);
 
@@ -145,17 +146,13 @@ class LoginTest extends DuskTestCase
      */
     public function test_login_credential_rejections(): void
     {
-        User::factory()->create([
+        User::factory()->aluno()->inOrg($this->duskTenant())->withPassword('correct-password')->create([
             'email' => 'aluno@example.com',
-            'password' => bcrypt('correct-password'),
         ]);
 
-        $inactive = User::factory()->create([
+        $inactive = User::factory()->aluno()->inOrg($this->duskTenant())->withPassword('correct-password')->inactive()->create([
             'email' => 'inativo@example.com',
-            'password' => bcrypt('correct-password'),
-            'status' => 'inactive',
         ]);
-        $inactive->assignRole(RolesEnum::ALUNO->value);
 
         $genericMessage = 'Essas credenciais não foram encontradas em nossos registros.';
 
@@ -213,11 +210,9 @@ class LoginTest extends DuskTestCase
 
     public function test_password_reset_lifecycle(): void
     {
-        $user = User::factory()->create([
+        $user = User::factory()->aluno()->inOrg($this->duskTenant())->withPassword('old-password')->create([
             'email' => 'reset@example.com',
-            'password' => bcrypt('old-password'),
         ]);
-        $user->assignRole(RolesEnum::ALUNO->value);
 
         $this->browse(function (Browser $browser) use ($user): void {
             // 1. Solicitação do link de recuperação.
@@ -240,7 +235,7 @@ class LoginTest extends DuskTestCase
                 ->press('@reset-password-submit')
                 ->waitForText('Este token de redefinição de senha é inválido.');
 
-            $this->assertTrue(Hash::check('old-password', $user->fresh()->password));
+            $this->assertTrue(Hash::check('old-password', $user->fresh()->credentialFor($this->duskTenant())->password));
 
             // 3. Token válido troca a senha e o login novo funciona.
             $token = Password::broker()->createToken($user);
@@ -260,6 +255,6 @@ class LoginTest extends DuskTestCase
                 ->assertAuthenticatedAs($user);
         });
 
-        $this->assertTrue(Hash::check('new-password-123', $user->fresh()->password));
+        $this->assertTrue(Hash::check('new-password-123', $user->fresh()->credentialFor($this->duskTenant())->password));
     }
 }

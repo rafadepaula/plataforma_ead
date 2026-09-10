@@ -2,6 +2,7 @@
 
 namespace Tests;
 
+use App\Models\Organization;
 use Facebook\WebDriver\Chrome\ChromeOptions;
 use Facebook\WebDriver\Remote\DesiredCapabilities;
 use Facebook\WebDriver\Remote\RemoteWebDriver;
@@ -74,8 +75,29 @@ abstract class DuskTestCase extends BaseTestCase
     {
         parent::setUp();
 
+        $this->duskTenant();
+
         static::registerBootstrapModalMacros();
         static::registerCaseInsensitiveTextMacros();
+    }
+
+    /**
+     * O portal do Dusk: o Selenium só resolve `laravel.test` (alias da
+     * rede do compose), então TODA navegação do navegador acontece nesse
+     * host. A suíte materializa essa Organization uma vez por teste —
+     * ativa — para que o `ResolveOrgFromHost` nunca caia em estado zero e
+     * o `EnsureTenantAccess` deixe navegar quem já está autenticado.
+     * Quem entra por FORMULÁRIO precisa de conta (credential) nesta org;
+     * quem usa `loginAs()` navega com qualquer conta ativa.
+     */
+    protected function duskTenant(): Organization
+    {
+        $host = parse_url((string) config('app.url'), PHP_URL_HOST) ?: 'laravel.test';
+
+        return Organization::query()->firstOrCreate(
+            ['host' => $host],
+            ['name' => 'Portal Dusk', 'status' => 'active', 'landing_view' => 'ligacerto'],
+        );
     }
 
     /**

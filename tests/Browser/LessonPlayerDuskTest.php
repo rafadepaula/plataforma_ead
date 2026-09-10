@@ -6,7 +6,6 @@ use App\Enums\Permissions\RolesEnum;
 use App\Models\Course;
 use App\Models\Lesson;
 use App\Models\Module;
-use App\Models\Organization;
 use App\Models\User;
 use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
@@ -34,7 +33,7 @@ class LessonPlayerDuskTest extends DuskTestCase
     {
         parent::setUp();
 
-        $org = Organization::factory()->create();
+        $org = $this->duskTenant();
         $this->course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $this->module = Module::factory()->create(['course_id' => $this->course->id]);
 

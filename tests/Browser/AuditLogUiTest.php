@@ -41,7 +41,7 @@ class AuditLogUiTest extends DuskTestCase
 
     public function test_admin_audit_logs_screen_lifecycle(): void
     {
-        $org = Organization::factory()->create();
+        $org = $this->duskTenant();
         $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole(RolesEnum::ADMIN->value);
         $target = User::factory()->inOrg($org->id)->create(['name' => 'Alvo Da Auditoria']);
@@ -113,8 +113,8 @@ class AuditLogUiTest extends DuskTestCase
 
     public function test_gestor_has_no_audit_surface_at_all(): void
     {
-        $ownOrg = Organization::factory()->create();
-        $otherOrg = Organization::factory()->create();
+        $ownOrg = $this->duskTenant();
+        $otherOrg = $this->duskTenant();
 
         $gestor = User::factory()->inOrg($ownOrg->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);

@@ -7,7 +7,6 @@ use App\Models\Course;
 use App\Models\InvitationLink;
 use App\Models\Organization;
 use App\Models\User;
-use Illuminate\Support\Facades\Hash;
 use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 
@@ -56,15 +55,16 @@ class MultiOrgEnrollmentTest extends DuskTestCase
     {
         $orgA = Organization::factory()->create();
         $courseA = Course::factory()->inOrg($orgA->id)->create();
-        $student = User::factory()->create([
-            'org_id' => $orgA->id,
+
+        // a org do link é o portal (host) do navegador; a org original
+        // permanece um tenant externo
+        $orgB = $this->duskTenant();
+
+        $student = User::factory()->inOrg($orgA)->inOrg($orgB)->withPassword('senha-correta')->create([
             'email' => 'multiorg@example.com',
-            'password' => Hash::make('senha-correta'),
         ]);
         $student->assignRole(RolesEnum::ALUNO->value);
         $courseA->students()->attach($student->id, ['enrolled_at' => now(), 'status' => 'active']);
-
-        $orgB = Organization::factory()->create();
         $courseB = Course::factory()->inOrg($orgB->id)->create(['is_published' => true]);
         $invitationLink = $this->invitationLinkFor($orgB, $courseB);
 
@@ -105,12 +105,13 @@ class MultiOrgEnrollmentTest extends DuskTestCase
                 ->assertAuthenticated();
         });
 
-        //  uma única linha de `users`, `org_id` preso à Org original, e
+        //  uma única linha de `users`, a conta original preservada, e
         // matrícula ativa nas duas Organizações.
         $this->assertSame(1, User::where('email', 'multiorg@example.com')->count());
 
         $student = $student->fresh();
-        $this->assertSame($orgA->id, $student->org_id, 'org_id must stay tied to the original Org.');
+        $this->assertNotNull($student->credentialFor($orgA), 'the original portal account must stay put.');
+        $this->assertNotNull($student->credentialFor($orgB), 'a second portal account is created for the new org.');
 
         $this->assertDatabaseHas('course_user', [
             'user_id' => $student->id,
@@ -126,7 +127,7 @@ class MultiOrgEnrollmentTest extends DuskTestCase
 
     public function test_a_new_user_can_register_and_enroll_through_an_invitation_link(): void
     {
-        $orgB = Organization::factory()->create();
+        $orgB = $this->duskTenant();
         $courseB = Course::factory()->inOrg($orgB->id)->create(['is_published' => true]);
         $invitationLink = $this->invitationLinkFor($orgB, $courseB);
 
@@ -150,8 +151,8 @@ class MultiOrgEnrollmentTest extends DuskTestCase
 
         $user = User::where('email', 'novo.aluno@example.com')->firstOrFail();
 
-        $this->assertDatabaseHas('users', [
-            'email' => 'novo.aluno@example.com',
+        $this->assertDatabaseHas('credentials', [
+            'user_id' => $user->id,
             'org_id' => $orgB->id,
         ]);
         $this->assertDatabaseHas('course_user', [
@@ -172,7 +173,7 @@ class MultiOrgEnrollmentTest extends DuskTestCase
      */
     public function test_invalid_invitation_link_states_are_rejected(): void
     {
-        $orgB = Organization::factory()->create();
+        $orgB = $this->duskTenant();
         $courseB = Course::factory()->inOrg($orgB->id)->create(['is_published' => true]);
 
         $expired = $this->invitationLinkFor($orgB, $courseB, 'expired');

@@ -21,7 +21,7 @@ class HelpCenterDuskTest extends DuskTestCase
     public function test_help_button_placeholder_then_resolved_article_lifecycle(): void
     {
         /** @var User $student */
-        $student = User::factory()->inOrg(Organization::factory()->create()->id)->create();
+        $student = User::factory()->inOrg($this->duskTenant())->create();
         $student->assignRole(RolesEnum::ALUNO->value);
 
         $this->browse(function (Browser $browser) use ($student): void {

@@ -142,7 +142,8 @@ class ClassroomOverviewDuskTest extends DuskTestCase
      */
     public function test_staff_preview_the_classroom_without_enrollment_and_foreign_gestor_is_rejected(): void
     {
-        $courseOrg = Organization::factory()->create(['name' => 'Organização Dona']);
+        // o curso pertence ao portal (host) visitado pelo navegador
+        $courseOrg = $this->duskTenant();
         $otherOrg = Organization::factory()->create(['name' => 'Organização Estranha']);
 
         $course = Course::factory()->create([
@@ -193,17 +194,22 @@ class ClassroomOverviewDuskTest extends DuskTestCase
                 ->assertSee('Aula Visualizada')
                 ->assertSeeIn('@course-progress-label', '0%');
 
-            // 3. Gestor de outra Organização: 403.
-            $browser->loginAs($foreignGestor)
-                ->visit(route('classroom.show', $course))
-                ->assertSee('403')
-                ->assertDontSee('Aula Visualizada');
+            // 3. Gestor de outra Organização nunca obtém sessão AQUI: o
+            //    login por formulário valida a credencial da org do host e
+            //    falha com a mensagem genérica.
+            $browser->logout()
+                ->visit('/login')
+                ->type('@login-email', $foreignGestor->email)
+                ->type('@login-password', 'password')
+                ->press('@login-submit')
+                ->waitForText('Essas credenciais não foram encontradas em nossos registros.')
+                ->assertGuest();
         });
     }
 
     public function test_empty_state_when_course_has_no_published_modules(): void
     {
-        $org = Organization::factory()->create();
+        $org = $this->duskTenant();
         $course = Course::factory()->create([
             'org_id' => $org->id,
             'title' => 'Curso Sem Módulos',
@@ -231,7 +237,7 @@ class ClassroomOverviewDuskTest extends DuskTestCase
      */
     private function makeEnrolledClassroom(int $progressPercentage = 0): array
     {
-        $org = Organization::factory()->create();
+        $org = $this->duskTenant();
         $course = Course::factory()->create([
             'org_id' => $org->id,
             'is_published' => true,

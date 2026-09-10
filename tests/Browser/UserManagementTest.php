@@ -4,7 +4,6 @@ namespace Tests\Browser;
 
 use App\Enums\Permissions\RolesEnum;
 use App\Models\Course;
-use App\Models\Organization;
 use App\Models\User;
 use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
@@ -24,12 +23,11 @@ class UserManagementTest extends DuskTestCase
 {
     public function test_gestor_student_management_full_lifecycle(): void
     {
-        $org = Organization::factory()->create();
+        $org = $this->duskTenant();
         $gestor = User::factory()->inOrg($org->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
         $course = Course::factory()->for($org)->create();
-        $aluno = User::factory()->aluno()->create([
-            'org_id' => $org->id,
+        $aluno = User::factory()->aluno()->inOrg($org)->create([
             'name' => 'Aluno Dusk',
             'email' => 'aluno.dusk@example.com',
         ]);
@@ -72,8 +70,8 @@ class UserManagementTest extends DuskTestCase
                 // texto: a caixa é decisão de tema, então a asserção ignora a caixa.
                 ->assertTextEqualsIgnoringCase('@student-status-'.$aluno->id, 'Inativo');
 
-            $this->assertDatabaseHas('users', [
-                'id' => $aluno->id,
+            $this->assertDatabaseHas('credentials', [
+                'user_id' => $aluno->id,
                 'status' => 'inactive',
             ]);
             $this->assertDatabaseHas('audit_logs', [
@@ -93,13 +91,16 @@ class UserManagementTest extends DuskTestCase
         $this->assertDatabaseHas('users', [
             'email' => 'aluno.dusk@example.com',
             'name' => 'Aluno Editado',
+        ]);
+        $this->assertDatabaseHas('credentials', [
+            'user_id' => $aluno->id,
             'status' => 'inactive',
         ]);
     }
 
     public function test_gestor_course_enrollment_and_revocation_lifecycle(): void
     {
-        $org = Organization::factory()->create();
+        $org = $this->duskTenant();
         $gestor = User::factory()->inOrg($org->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
         $aluno = User::factory()->inOrg($org->id)->create(['name' => 'Aluno Matriculável']);
@@ -175,11 +176,10 @@ class UserManagementTest extends DuskTestCase
      */
     public function test_create_user_validation_rejections(): void
     {
-        $org = Organization::factory()->create();
+        $org = $this->duskTenant();
         $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole(RolesEnum::ADMIN->value);
-        User::factory()->aluno()->create([
-            'org_id' => $org->id,
+        User::factory()->aluno()->inOrg($org)->create([
             'email' => 'duplicado@example.com',
         ]);
 

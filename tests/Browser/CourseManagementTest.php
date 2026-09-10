@@ -5,7 +5,6 @@ namespace Tests\Browser;
 use App\Enums\Permissions\RolesEnum;
 use App\Models\Course;
 use App\Models\Module;
-use App\Models\Organization;
 use App\Models\User;
 use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
@@ -14,7 +13,7 @@ class CourseManagementTest extends DuskTestCase
 {
     public function test_gestor_course_module_and_lesson_full_lifecycle(): void
     {
-        $org = Organization::factory()->create();
+        $org = $this->duskTenant();
         $gestor = User::factory()->inOrg($org->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
 
@@ -206,7 +205,7 @@ class CourseManagementTest extends DuskTestCase
 
     public function test_course_with_active_enrollment_delete_is_blocked(): void
     {
-        $org = Organization::factory()->create();
+        $org = $this->duskTenant();
         $gestor = User::factory()->inOrg($org->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
         $course = Course::factory()->inOrg($org->id)->create();

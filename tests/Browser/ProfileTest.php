@@ -21,7 +21,7 @@ class ProfileTest extends DuskTestCase
 {
     public function test_user_profile_and_password_update_lifecycle(): void
     {
-        $user = User::factory()->create(['cpf' => null]);
+        $user = User::factory()->inOrg($this->duskTenant())->create(['cpf' => null]);
 
         $this->browse(function (Browser $browser) use ($user): void {
             // 1. Edição dos dados cadastrais
@@ -56,7 +56,7 @@ class ProfileTest extends DuskTestCase
         });
 
         $user->refresh();
-        $this->assertTrue(Hash::check('NovaSenhaForte123!', $user->password));
+        $this->assertTrue(Hash::check('NovaSenhaForte123!', $user->credentialFor($this->duskTenant())->password));
     }
 
     /**
@@ -67,7 +67,7 @@ class ProfileTest extends DuskTestCase
     public function test_profile_form_inline_validation_rejections(): void
     {
         User::factory()->create(['email' => 'ocupado@example.com']);
-        $user = User::factory()->create(['cpf' => null]);
+        $user = User::factory()->inOrg($this->duskTenant())->create(['cpf' => null]);
         $originalEmail = $user->email;
 
         $this->browse(function (Browser $browser) use ($user): void {
@@ -103,6 +103,6 @@ class ProfileTest extends DuskTestCase
         $user->refresh();
         $this->assertSame($originalEmail, $user->email);
         $this->assertNull($user->cpf);
-        $this->assertTrue(Hash::check('password', $user->password));
+        $this->assertTrue(Hash::check('password', $user->credentialFor($this->duskTenant())->password));
     }
 }

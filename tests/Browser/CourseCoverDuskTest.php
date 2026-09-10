@@ -3,7 +3,6 @@
 namespace Tests\Browser;
 
 use App\Models\Course;
-use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Dusk\Browser;
@@ -52,7 +51,7 @@ class CourseCoverDuskTest extends DuskTestCase
 
     public function test_gestor_course_cover_upload_lifecycle(): void
     {
-        $org = Organization::factory()->create();
+        $org = $this->duskTenant();
         $gestor = User::factory()->gestor()->inOrg($org->id)->create();
         $aluno = User::factory()->aluno()->create();
         $course = Course::factory()->published()->create([
@@ -103,7 +102,7 @@ class CourseCoverDuskTest extends DuskTestCase
 
     public function test_gestor_course_cover_removal_lifecycle(): void
     {
-        $org = Organization::factory()->create();
+        $org = $this->duskTenant();
         $gestor = User::factory()->gestor()->inOrg($org->id)->create();
         $aluno = User::factory()->aluno()->create();
         $course = Course::factory()->published()->create([

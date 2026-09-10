@@ -4,7 +4,6 @@ namespace Tests\Browser;
 
 use App\Models\Certificate;
 use App\Models\Course;
-use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Support\Carbon;
 use Laravel\Dusk\Browser;
@@ -47,13 +46,13 @@ class CertificateVerificationTest extends DuskTestCase
 
     public function test_public_certificate_verification_states_lifecycle(): void
     {
-        $org = Organization::factory()->create(['name' => 'Instituto Dusk']);
+        $org = $this->duskTenant();
         $course = Course::factory()->inOrg($org->id)->create(['title' => 'Curso Válido Dusk', 'workload_hours' => 40]);
         $student = User::factory()->inOrg($org->id)->create(['name' => 'Aluno Válido Dusk']);
 
         $validCertificate = $this->makeCertificate($course, $student);
 
-        $revokedOrg = Organization::factory()->create(['name' => 'Instituto Revogado Dusk']);
+        $revokedOrg = $this->duskTenant();
         $revokedCourse = Course::factory()->inOrg($revokedOrg->id)->create(['title' => 'Curso Revogado Dusk']);
         $revokedStudent = User::factory()->inOrg($revokedOrg->id)->create(['name' => 'Aluno Revogado Dusk']);
         $revoker = User::factory()->inOrg($revokedOrg->id)->create();
@@ -74,7 +73,7 @@ class CertificateVerificationTest extends DuskTestCase
                 ->assertSee('Certificado Válido')
                 ->assertSeeIn('@certificate-student-name', 'Aluno Válido Dusk')
                 ->assertSeeIn('@certificate-course-title', 'Curso Válido Dusk')
-                ->assertSeeIn('@certificate-org-name', 'Instituto Dusk')
+                ->assertSeeIn('@certificate-org-name', 'Portal Dusk')
                 ->assertSeeIn('@certificate-workload', '40h')
                 ->assertDontSee('Baixar PDF');
 
@@ -118,7 +117,7 @@ class CertificateVerificationTest extends DuskTestCase
      */
     public function test_landing_footer_leads_to_the_hash_lookup_form_which_verifies_a_typed_hash(): void
     {
-        $org = Organization::factory()->create(['name' => 'Instituto Consulta Dusk']);
+        $org = $this->duskTenant();
         $course = Course::factory()->create([
             'org_id' => $org->id,
             'title' => 'Curso Consulta Dusk',
@@ -141,7 +140,7 @@ class CertificateVerificationTest extends DuskTestCase
                 ->assertQueryStringHas('hash', $certificate->validation_hash)
                 ->assertSeeIn('@certificate-student-name', 'Aluno Consulta Dusk')
                 ->assertSeeIn('@certificate-course-title', 'Curso Consulta Dusk')
-                ->assertSeeIn('@certificate-org-name', 'Instituto Consulta Dusk');
+                ->assertSeeIn('@certificate-org-name', 'Portal Dusk');
 
             // Hash digitado errado: 404, e não o certificado de outra pessoa.
             $browser->visit('/validar-certificado')

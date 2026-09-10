@@ -6,7 +6,6 @@ use App\Enums\Permissions\RolesEnum;
 use App\Models\Course;
 use App\Models\Lesson;
 use App\Models\Module;
-use App\Models\Organization;
 use App\Models\Quiz;
 use App\Models\QuizAnswer;
 use App\Models\QuizAttempt;
@@ -55,12 +54,10 @@ class ProfessorRoleDuskTest extends DuskTestCase
 {
     public function test_professor_teaching_menu_and_meus_cursos_lifecycle(): void
     {
-        $org = Organization::factory()->create();
+        $org = $this->duskTenant();
 
-        $professor = User::factory()->professor()->create([
-            'org_id' => $org->id,
+        $professor = User::factory()->professor()->inOrg($this->duskTenant())->withPassword('correct-password')->create([
             'email' => 'professor.dusk@example.com',
-            'password' => bcrypt('correct-password'),
         ]);
 
         $course = Course::factory()->inOrg($org->id)->create(['title' => 'Curso de Eletricista']);
@@ -117,7 +114,7 @@ class ProfessorRoleDuskTest extends DuskTestCase
 
     public function test_professor_essay_grading_lifecycle(): void
     {
-        $org = Organization::factory()->create();
+        $org = $this->duskTenant();
         $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
         $lesson = Lesson::factory()->for($module)->create(['type' => 'quiz', 'is_published' => true]);
@@ -175,12 +172,11 @@ class ProfessorRoleDuskTest extends DuskTestCase
 
     public function test_gestor_assigns_professor_to_course_lifecycle(): void
     {
-        $org = Organization::factory()->create();
+        $org = $this->duskTenant();
 
         $gestor = User::factory()->gestor()->inOrg($org->id)->create();
 
-        $professor = User::factory()->professor()->create([
-            'org_id' => $org->id,
+        $professor = User::factory()->professor()->inOrg($org)->create([
             'name' => 'Prof. Dusk',
         ]);
 

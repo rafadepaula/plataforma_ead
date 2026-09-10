@@ -56,7 +56,7 @@ class ForumPollingAndInteractionDuskTest extends DuskTestCase
 
     public function test_forum_topic_creation_listing_and_pin_interactions_lifecycle(): void
     {
-        $org = Organization::factory()->create();
+        $org = $this->duskTenant();
         $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $student = $this->enrolledStudent($course);
         $gestor = $this->gestorFor($org);
@@ -153,7 +153,7 @@ class ForumPollingAndInteractionDuskTest extends DuskTestCase
      */
     public function test_below_the_large_breakpoint_the_fab_replaces_the_header_button_and_publishes_a_topic(): void
     {
-        $org = Organization::factory()->create();
+        $org = $this->duskTenant();
         $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $student = $this->enrolledStudent($course);
 
@@ -210,7 +210,7 @@ class ForumPollingAndInteractionDuskTest extends DuskTestCase
      */
     public function test_a_polled_reply_can_be_reported_through_the_shared_modal_and_reach_the_moderation_queue(): void
     {
-        $org = Organization::factory()->create();
+        $org = $this->duskTenant();
         $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $student = $this->enrolledStudent($course);
         $gestor = $this->gestorFor($org);
@@ -280,7 +280,7 @@ class ForumPollingAndInteractionDuskTest extends DuskTestCase
      */
     public function test_a_topic_removed_by_moderation_ends_the_polling_loop(): void
     {
-        $org = Organization::factory()->create();
+        $org = $this->duskTenant();
         $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $student = $this->enrolledStudent($course);
 
@@ -346,7 +346,7 @@ class ForumPollingAndInteractionDuskTest extends DuskTestCase
      */
     public function test_an_expired_session_or_revoked_access_ends_the_loop_while_a_broken_server_does_not(): void
     {
-        $org = Organization::factory()->create();
+        $org = $this->duskTenant();
         $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $student = $this->enrolledStudent($course);
 

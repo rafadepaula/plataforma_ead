@@ -6,7 +6,6 @@ use App\Enums\Permissions\RolesEnum;
 use App\Models\Course;
 use App\Models\Lesson;
 use App\Models\Module;
-use App\Models\Organization;
 use App\Models\Quiz;
 use App\Models\QuizAnswer;
 use App\Models\QuizAttempt;
@@ -32,7 +31,7 @@ class EssayGradingScreenTest extends DuskTestCase
 {
     public function test_gestor_quiz_authoring_and_essay_grading_lifecycle(): void
     {
-        $org = Organization::factory()->create();
+        $org = $this->duskTenant();
         $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
         $lesson = Lesson::factory()->for($module)->create(['type' => 'quiz', 'is_published' => true]);

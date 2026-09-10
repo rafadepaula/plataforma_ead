@@ -5,7 +5,6 @@ namespace Tests\Browser;
 use App\Enums\Permissions\RolesEnum;
 use App\Models\Course;
 use App\Models\Module;
-use App\Models\Organization;
 use App\Models\User;
 use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
@@ -22,7 +21,7 @@ class ModuleReorderTest extends DuskTestCase
 {
     public function test_reordering_modules_persists_after_reload(): void
     {
-        $org = Organization::factory()->create();
+        $org = $this->duskTenant();
         $gestor = User::factory()->inOrg($org->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
         $course = Course::factory()->inOrg($org->id)->create();
@@ -69,7 +68,7 @@ class ModuleReorderTest extends DuskTestCase
      */
     public function test_move_down_button_persists_after_reload(): void
     {
-        $org = Organization::factory()->create();
+        $org = $this->duskTenant();
         $gestor = User::factory()->inOrg($org->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
         $course = Course::factory()->inOrg($org->id)->create();

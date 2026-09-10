@@ -7,7 +7,6 @@ use App\Models\Course;
 use App\Models\InvitationLink;
 use App\Models\Organization;
 use App\Models\User;
-use Illuminate\Support\Facades\Hash;
 use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 
@@ -57,7 +56,7 @@ class SmartInvitationAdaptiveDuskTest extends DuskTestCase
      */
     public function test_new_account_flow_keeps_the_registration_fields_and_enrolls(): void
     {
-        $org = Organization::factory()->create();
+        $org = $this->duskTenant();
         $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $invitationLink = $this->usableInvitationLink($org, $course);
 
@@ -114,14 +113,12 @@ class SmartInvitationAdaptiveDuskTest extends DuskTestCase
      */
     public function test_existing_account_flow_collapses_the_registration_fields_and_enrolls_without_duplicating_the_user(): void
     {
-        $org = Organization::factory()->create();
+        $org = $this->duskTenant();
         $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $invitationLink = $this->usableInvitationLink($org, $course);
 
-        $student = User::factory()->create([
-            'org_id' => $org->id,
+        $student = User::factory()->inOrg($org)->withPassword('senha-correta')->create([
             'email' => 'ja.cadastrado@example.com',
-            'password' => Hash::make('senha-correta'),
         ]);
         $student->assignRole(RolesEnum::ALUNO->value);
 
@@ -171,14 +168,12 @@ class SmartInvitationAdaptiveDuskTest extends DuskTestCase
      */
     public function test_incremental_typing_flips_the_verdict_and_restores_required(): void
     {
-        $org = Organization::factory()->create();
+        $org = $this->duskTenant();
         $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $invitationLink = $this->usableInvitationLink($org, $course);
 
-        $existing = User::factory()->create([
-            'org_id' => $org->id,
+        $existing = User::factory()->inOrg($org)->withPassword('senha-correta')->create([
             'email' => 'ja.cadastrado@example.com',
-            'password' => Hash::make('senha-correta'),
         ]);
         $existing->assignRole(RolesEnum::ALUNO->value);
 
@@ -211,7 +206,7 @@ class SmartInvitationAdaptiveDuskTest extends DuskTestCase
      */
     public function test_missing_consent_blocks_the_enrollment_on_both_the_client_and_the_server(): void
     {
-        $org = Organization::factory()->create();
+        $org = $this->duskTenant();
         $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $invitationLink = $this->usableInvitationLink($org, $course);
         $path = '/convite/'.$invitationLink->token;
@@ -256,7 +251,7 @@ class SmartInvitationAdaptiveDuskTest extends DuskTestCase
      */
     public function test_an_unusable_invitation_link_renders_the_empty_state_without_the_form(): void
     {
-        $org = Organization::factory()->create();
+        $org = $this->duskTenant();
         $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
 
         $gestor = User::factory()->inOrg($org->id)->create();

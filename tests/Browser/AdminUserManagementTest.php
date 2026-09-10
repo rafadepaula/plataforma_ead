@@ -73,8 +73,8 @@ class AdminUserManagementTest extends DuskTestCase
                 ->assertTextEqualsIgnoringCase('@admin-user-status-'.$alunoOrgA->id, 'Inativo');
         });
 
-        $this->assertDatabaseHas('users', [
-            'id' => $alunoOrgA->id,
+        $this->assertDatabaseHas('credentials', [
+            'user_id' => $alunoOrgA->id,
             'status' => 'inactive',
         ]);
         $this->assertDatabaseHas('audit_logs', [
@@ -202,8 +202,8 @@ class AdminUserManagementTest extends DuskTestCase
                 ->assertTextEqualsIgnoringCase('@admin-user-status-'.$target->id, 'Ativo');
         });
 
-        $this->assertDatabaseHas('users', [
-            'id' => $target->id,
+        $this->assertDatabaseHas('credentials', [
+            'user_id' => $target->id,
             'status' => 'active',
         ]);
     }
@@ -218,7 +218,7 @@ class AdminUserManagementTest extends DuskTestCase
         $target = User::factory()->inOrg($originOrg->id)->create(['name' => 'Perfil Para Editar']);
         $target->assignRole(RolesEnum::ALUNO->value);
 
-        $this->browse(function (Browser $browser) use ($admin, $target, $destinationOrg): void {
+        $this->browse(function (Browser $browser) use ($admin, $target): void {
             $browser->loginAs($admin)
                 ->visit(route('admin.users.index'))
                 ->waitFor('@admin-user-row-'.$target->id)
@@ -229,7 +229,6 @@ class AdminUserManagementTest extends DuskTestCase
                 ->waitFor('@admin-user-form')
                 ->clear('name')
                 ->type('name', 'Perfil Editado')
-                ->select('org_id', (string) $destinationOrg->id)
                 ->select('role', 'gestor')
                 ->press('Salvar Alterações')
                 ->waitForLocation('/admin/users');
@@ -237,8 +236,10 @@ class AdminUserManagementTest extends DuskTestCase
 
         $target->refresh();
         $this->assertSame('Perfil Editado', $target->name);
-        $this->assertSame($destinationOrg->id, $target->org_id);
         $this->assertTrue($target->hasRole(RolesEnum::GESTOR->value));
+        // o painel global não move membership: a conta continua na org de origem
+        $this->assertNotNull($target->credentialFor($originOrg));
+        $this->assertNull($target->credentialFor($destinationOrg));
     }
 
     public function test_admin_edit_form_shows_validation_errors_on_invalid_submission(): void

@@ -125,7 +125,7 @@ class StudentMobileScreensTest extends DuskTestCase
      */
     private function studentWithClassroom(): array
     {
-        $org = Organization::factory()->create();
+        $org = $this->duskTenant();
         $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $module = Module::factory()->for($course)->create();
         $lesson = Lesson::factory()->richText()->for($module)->create(['is_published' => true]);
@@ -142,7 +142,7 @@ class StudentMobileScreensTest extends DuskTestCase
      */
     private function studentWithTwoCourses(): array
     {
-        $org = Organization::factory()->create();
+        $org = $this->duskTenant();
         $courseA = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $courseB = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
 
@@ -159,7 +159,7 @@ class StudentMobileScreensTest extends DuskTestCase
      */
     private function studentWithQuiz(): array
     {
-        $org = Organization::factory()->create();
+        $org = $this->duskTenant();
         $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $module = Module::factory()->for($course)->create();
         $lesson = Lesson::factory()->for($module)->create(['type' => 'quiz', 'is_published' => true]);

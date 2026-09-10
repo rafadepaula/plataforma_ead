@@ -6,7 +6,6 @@ use App\Enums\Permissions\RolesEnum;
 use App\Models\Course;
 use App\Models\Lesson;
 use App\Models\Module;
-use App\Models\Organization;
 use App\Models\User;
 use Laravel\Dusk\Browser;
 use Tests\Browser\Navigation\AdminTopbarTest;
@@ -36,7 +35,7 @@ class NavigationMenuDuskTest extends DuskTestCase
      */
     public function test_admin_navigation_lifecycle(): void
     {
-        $org = Organization::factory()->create();
+        $org = $this->duskTenant();
         $admin = User::factory()->inOrg(null)->create();
         $admin->assignRole(RolesEnum::ADMIN->value);
         $aluno = User::factory()->inOrg($org->id)->create(['name' => 'Aluno Da Org']);
@@ -86,7 +85,7 @@ class NavigationMenuDuskTest extends DuskTestCase
 
     public function test_gestor_navigation_scope(): void
     {
-        $org = Organization::factory()->create();
+        $org = $this->duskTenant();
         $gestor = User::factory()->inOrg($org->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
 
@@ -121,7 +120,7 @@ class NavigationMenuDuskTest extends DuskTestCase
      */
     public function test_aluno_navigation_scope_and_meus_cursos_blocks(): void
     {
-        $org = Organization::factory()->create();
+        $org = $this->duskTenant();
         $course = Course::factory()->for($org)->create();
         $module = Module::factory()->for($course)->create();
         Lesson::factory()->for($module)->create(['is_published' => true]);
@@ -211,7 +210,7 @@ class NavigationMenuDuskTest extends DuskTestCase
 
     public function test_active_item_highlight_is_applied_on_a_sub_route(): void
     {
-        $org = Organization::factory()->create();
+        $org = $this->duskTenant();
         $gestor = User::factory()->inOrg($org->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
         $aluno = User::factory()->inOrg($org->id)->create();

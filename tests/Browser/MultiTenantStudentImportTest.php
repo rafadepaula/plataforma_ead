@@ -37,15 +37,12 @@ class MultiTenantStudentImportTest extends DuskTestCase
         // Usuário já existente em OUTRA Organização:  manda reaproveitar
         // a linha de `users` e nunca sobrescrever seu `org_id`.
         $otherOrg = Organization::factory()->create();
-        $existingUser = User::factory()->create([
-            'org_id' => $otherOrg->id,
+        $existingUser = User::factory()->aluno()->inOrg($otherOrg)->withPassword('senha-original')->create([
             'name' => 'Nome Original',
             'email' => 'ja.existe@example.com',
-            'password' => bcrypt('senha-original'),
         ]);
-        $existingUser->assignRole(RolesEnum::ALUNO->value);
 
-        $org = Organization::factory()->create();
+        $org = $this->duskTenant();
         $course = Course::factory()->inOrg($org->id)->create();
 
         $gestor = User::factory()->inOrg($org->id)->create();
@@ -54,7 +51,7 @@ class MultiTenantStudentImportTest extends DuskTestCase
         $firstCsv = $this->makeCsv("name,email,cpf\nMaria Aluna,maria.aluna@example.com,\nJoao Aluno,joao.aluno@example.com,\n");
         $secondCsv = $this->makeCsv("name,email,cpf\nNome Diferente No CSV,ja.existe@example.com,\nNova Aluna,nova.aluna@example.com,\n");
 
-        $this->browse(function (Browser $browser) use ($gestor, $course, $firstCsv, $secondCsv, $existingUser, $otherOrg): void {
+        $this->browse(function (Browser $browser) use ($gestor, $course, $firstCsv, $secondCsv, $existingUser, $otherOrg, $org): void {
             // 1. Importação válida: 2 alunos novos entram na turma.
             $browser->loginAs($gestor)
                 ->visit(route('users.import.create'))
@@ -66,8 +63,10 @@ class MultiTenantStudentImportTest extends DuskTestCase
                 ->assertSeeIn('[dusk="csv-import-results"]', 'Importação concluída');
 
             $this->assertSame(2, $course->fresh()->students()->count());
-            $this->assertDatabaseHas('users', ['email' => 'maria.aluna@example.com', 'org_id' => $course->org_id]);
-            $this->assertDatabaseHas('users', ['email' => 'joao.aluno@example.com', 'org_id' => $course->org_id]);
+            foreach (['maria.aluna@example.com', 'joao.aluno@example.com'] as $importedEmail) {
+                $imported = User::where('email', $importedEmail)->firstOrFail();
+                $this->assertNotNull($imported->credentialFor($org));
+            }
 
             // 2. Segunda importação na mesma sessão: um e-mail já cadastrado em
             //    outra Organização é reaproveitado , o outro é criado.
@@ -83,7 +82,8 @@ class MultiTenantStudentImportTest extends DuskTestCase
             $this->assertSame(1, User::where('email', 'ja.existe@example.com')->count());
             $freshExistingUser = $existingUser->fresh();
             $this->assertSame('Nome Original', $freshExistingUser->name);
-            $this->assertSame($otherOrg->id, $freshExistingUser->org_id);
+            $this->assertNotNull($freshExistingUser->credentialFor($otherOrg));
+            $this->assertNotNull($freshExistingUser->credentialFor($org), 'a importação provisiona conta na org importadora.');
 
             $newUser = User::where('email', 'nova.aluna@example.com')->firstOrFail();
 
@@ -106,7 +106,7 @@ class MultiTenantStudentImportTest extends DuskTestCase
      */
     public function test_csv_import_validation_rejections(): void
     {
-        $org = Organization::factory()->create();
+        $org = $this->duskTenant();
         $course = Course::factory()->inOrg($org->id)->create();
 
         $gestor = User::factory()->inOrg($org->id)->create();
