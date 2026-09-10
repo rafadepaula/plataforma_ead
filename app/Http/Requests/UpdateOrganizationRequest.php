@@ -25,13 +25,14 @@ class UpdateOrganizationRequest extends FormRequest
 
         return [
             'name' => ['required', 'string', 'max:150'],
-            'slug' => [
-                'required',
+            'host' => [
+                'nullable',
                 'string',
-                'max:160',
-                'alpha_dash',
-                Rule::unique('organizations', 'slug')->ignore($organizationId),
+                'max:253',
+                'regex:/^[a-z0-9.-]+$/',
+                Rule::unique('organizations', 'host')->ignore($organizationId),
             ],
+            'landing_view' => ['nullable', 'string', 'max:100'],
             'cnpj' => [
                 'nullable',
                 'string',

@@ -11,10 +11,21 @@
     />
 
     <x-ui.input
-        name="slug"
-        label="Slug"
-        value="{{ $organization->slug }}"
-        hint="Deixe em branco para gerar automaticamente a partir do Nome."
+        name="host"
+        label="Host do portal"
+        value="{{ $organization->host }}"
+        placeholder="plataforma.suaorg.com"
+        hint="Endereço exclusivo do portal desta organização (minúsculas, sem http://). Sem host, só o admin acessa via IP."
+        dusk="organization-host"
+    />
+
+    <x-ui.input
+        name="landing_view"
+        label="Blade da Landing"
+        value="{{ $organization->landing_view }}"
+        placeholder="ligacerto"
+        hint="Nome do diretório em resources/views/tenants/{nome}/landing.blade.php. Sem blade, a raiz do portal cai no login."
+        dusk="organization-landing-view"
     />
 
     <x-ui.input

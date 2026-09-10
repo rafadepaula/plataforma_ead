@@ -10,7 +10,6 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 
 /**
  * Organization CRUD, reserved to `role:admin` (see
@@ -45,7 +44,6 @@ class OrganizationController extends Controller
     public function store(StoreOrganizationRequest $request): RedirectResponse
     {
         $data = $request->validated();
-        $data['slug'] = $this->resolveSlug($data['name'], $data['slug'] ?? null);
 
         if ($request->hasFile('logo')) {
             $data['logo_path'] = $request->file('logo')->store('organizations/logos', 'public');
@@ -94,27 +92,5 @@ class OrganizationController extends Controller
 
         return redirect()->route('organizations.index')
             ->with('success', 'Organização removida com sucesso.');
-    }
-
-    /**
-     * Derive a unique slug from `name` when the caller didn't provide one
-     * explicitly, appending a numeric suffix on collision.
-     */
-    private function resolveSlug(string $name, ?string $slug): string
-    {
-        if ($slug) {
-            return $slug;
-        }
-
-        $base = Str::slug($name);
-        $candidate = $base;
-        $suffix = 2;
-
-        while (Organization::query()->where('slug', $candidate)->exists()) {
-            $candidate = "{$base}-{$suffix}";
-            $suffix++;
-        }
-
-        return $candidate;
     }
 }

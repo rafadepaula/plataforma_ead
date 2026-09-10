@@ -48,7 +48,7 @@
                         <x-ui.avatar :initials="$initialsFor($organization->name)" />
                         <div class="min-w-0">
                             <div class="fw-semibold">{{ $organization->name }}</div>
-                            <div class="small text-body-secondary font-monospace text-truncate">{{ $organization->slug }}</div>
+                            <div class="small text-body-secondary font-monospace text-truncate">{{ $organization->host ?? 'sem host (estado 0)' }}</div>
                         </div>
                     </div>
                 </td>

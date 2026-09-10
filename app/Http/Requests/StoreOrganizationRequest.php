@@ -7,9 +7,10 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 /**
- * validates a new Organization submission. Slug is
- * optional here: `OrganizationController::store()` auto-derives it from
- * `name` when absent.
+ * validates a new Organization submission. `host` is
+ * the tenant key (exact `HTTP_HOST`, lowercase, port stripped) and
+ * `landing_view` names the Organization's landing blade; both are
+ * admin-only fields on the CRUD.
  */
 class StoreOrganizationRequest extends FormRequest
 {
@@ -25,7 +26,14 @@ class StoreOrganizationRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:150'],
-            'slug' => ['nullable', 'string', 'max:160', 'alpha_dash', 'unique:organizations,slug'],
+            'host' => [
+                'nullable',
+                'string',
+                'max:253',
+                'regex:/^[a-z0-9.-]+$/',
+                'unique:organizations,host',
+            ],
+            'landing_view' => ['nullable', 'string', 'max:100'],
             'cnpj' => [
                 'nullable',
                 'string',
