@@ -5,8 +5,10 @@ namespace App\Actions;
 use App\Enums\Permissions\RolesEnum;
 use App\Events\EnrollmentConfirmed;
 use App\Exceptions\InvitationLinkInvalidException;
+use App\Models\Credential;
 use App\Models\InvitationLink;
 use App\Models\User;
+use App\Services\OrgContext;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -14,11 +16,14 @@ use Illuminate\Validation\ValidationException;
 
 /**
  * consumes an `InvitationLink`: creates (or
- * authenticates) the `User`, enrolls them into the link's `course_id`, and
- * auto-logs them in. Runs inside a `lockForUpdate` transaction so two
- * concurrent requests against the same link at exactly `max_uses` cannot
- * both succeed — the usability check is re-verified *after* the lock is
- * acquired, not just by the caller before invoking this action.
+ * authenticates) the person's account for the link's Organization, enrolls
+ * them into the link's `course_id`, and auto-logs them in. Host-based
+ * tenancy: the account operated on is the `credentials` row of the
+ * request host's Organization — a person already enrolled in another
+ * portal simply gets a new account here, with the password chosen on this
+ * form. Runs inside a `lockForUpdate` transaction so two concurrent
+ * requests against the same link at exactly `max_uses` cannot both
+ * succeed.
  */
 class ProcessSmartInvitationAction
 {
@@ -40,6 +45,12 @@ class ProcessSmartInvitationAction
                 throw InvitationLinkInvalidException::notFound($token);
             }
 
+            // Wrong-host redemption reads as "not found" — same as the
+            // controller's check, re-verified here after the lock.
+            if ((int) $invitationLink->org_id !== (int) OrgContext::current()->orgId()) {
+                throw InvitationLinkInvalidException::notFound($token);
+            }
+
             // Re-checked *after* the lock, never before it: the reason is
             // resolved from the freshly locked row so a link exhausted by a
             // concurrent request reports "limite de vagas" and not the
@@ -53,35 +64,47 @@ class ProcessSmartInvitationAction
             if ($user) {
                 // A staff account (gestor/admin) is not an "aluno" — the
                 // self-service flow must never silently turn a staff
-                // member into a student of a Course they may not even
-                // belong to; rejected as a form-level error on `email`,
-                // distinct from a wrong-password rejection.
+                // member into a student; rejected as a form-level error on
+                // `email`, distinct from a wrong-password rejection.
                 if ($user->hasAnyRole([RolesEnum::GESTOR->value, RolesEnum::ADMIN->value])) {
                     throw ValidationException::withMessages([
                         'email' => ['Este e-mail pertence a uma conta da equipe e não pode usar o convite de auto-matrícula.'],
                     ]);
                 }
 
-                // A wrong password is a form validation error, not an
-                // invalid-link state — surfaced back to the `password`
-                // field, never leaking whether the account exists (that
-                // was already revealed, by design, by `/convite/check-email`
-                // one step earlier in the flow).
-                if (! Hash::check($data['password'], $user->password)) {
-                    throw ValidationException::withMessages([
-                        'password' => ['Senha incorreta para o e-mail informado.'],
-                    ]);
-                }
+                $credential = Credential::query()
+                    ->forOrg($invitationLink->org_id)
+                    ->where('user_id', $user->id)
+                    ->first();
 
-                // A deactivated account must never obtain a session, here
-                // exactly as in `LoginRequest::authenticate()` — otherwise
-                // any usable invitation link would be a way around the
-                // deactivation. Checked *after* the password so the status
-                // of an account is never disclosed to someone who cannot
-                // authenticate into it.
-                if ($user->status !== 'active') {
-                    throw ValidationException::withMessages([
-                        'email' => ['Esta conta está inativa. Procure o gestor da sua organização.'],
+                if ($credential) {
+                    // A wrong password is a form validation error, not an
+                    // invalid-link state — surfaced back to the `password`
+                    // field, never leaking whether the account exists.
+                    if (! Hash::check($data['password'], $credential->password)) {
+                        throw ValidationException::withMessages([
+                            'password' => ['Senha incorreta para o e-mail informado.'],
+                        ]);
+                    }
+
+                    // A deactivated account must never obtain a session,
+                    // here exactly as in the login flow — checked *after*
+                    // the password so the status of an account is never
+                    // disclosed to someone who cannot authenticate into it.
+                    if ($credential->status !== 'active') {
+                        throw ValidationException::withMessages([
+                            'email' => ['Esta conta está inativa. Procure o gestor da sua organização.'],
+                        ]);
+                    }
+                } else {
+                    // The person exists in another portal but holds no
+                    // account here: the password chosen on this form
+                    // creates THIS portal's account.
+                    Credential::create([
+                        'user_id' => $user->id,
+                        'org_id' => $invitationLink->org_id,
+                        'password' => Hash::make($data['password']),
+                        'status' => 'active',
                     ]);
                 }
             } else {
@@ -89,17 +112,16 @@ class ProcessSmartInvitationAction
                     'name' => $data['name'] ?? '',
                     'email' => $data['email'],
                     'cpf' => $data['cpf'] ?? null,
-                    'password' => Hash::make($data['password']),
-                    'status' => 'active',
                     'email_verified_at' => now(),
-                    //  a student's `org_id` is set once, from their
-                    // first invitation link ever consumed, and is never
-                    // overwritten by a later invite from a different Org
-                    // (tenancy for an already-enrolled student is derived
-                    // from their `course_user` rows, not this field).
-                    'org_id' => $invitationLink->org_id,
                 ]);
                 $user->assignRole(RolesEnum::ALUNO->value);
+
+                Credential::create([
+                    'user_id' => $user->id,
+                    'org_id' => $invitationLink->org_id,
+                    'password' => Hash::make($data['password']),
+                    'status' => 'active',
+                ]);
             }
 
             $enrollment = $user->courses()
@@ -115,7 +137,7 @@ class ProcessSmartInvitationAction
 
                 EnrollmentConfirmed::dispatch($invitationLink->course()->withoutGlobalScopes()->firstOrFail(), $user);
             } elseif ($enrollment->pivot->status === 'cancelled') {
-                // A previously revoked enrollment  is reactivated
+                // A previously revoked enrollment is reactivated
                 // rather than throwing on the `UNIQUE(user_id, course_id)`
                 // constraint by attempting a second insert.
                 $user->courses()->updateExistingPivot($invitationLink->course_id, [

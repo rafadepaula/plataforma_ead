@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\Permissions\RolesEnum;
+use App\Models\Credential;
 use App\Models\User;
 use App\Rules\Cpf;
 use Illuminate\Support\Facades\Auth;
@@ -17,12 +18,12 @@ use Throwable;
  * sees an already-decoded array of rows plus the server-resolved
  * `org_id`/`course_id` for the current tenant context.
  *
- *  if the row's e-mail already exists globally (the student is
- * enrolled at a different Organization), the existing `User` row is
- * reused as-is — its `password` and `org_id` are never touched — and only
- * a new `course_user` enrollment is inserted for the current Org's
- * target course. A brand-new e-mail creates the `User` bound to the
- * current `org_id` and enrolls it.
+ * If the row's e-mail already exists globally (the person is enrolled at a
+ * different Organization), the existing `User` row is reused and a NEW
+ * `credentials` account is provisioned for the importing Organization with
+ * a random password (the student regains access through the portal's
+ * forgot-password flow). A brand-new e-mail creates both the `User` and
+ * the Organization account, then enrolls.
  */
 class UserImportService
 {
@@ -50,19 +51,21 @@ class UserImportService
 
             if (! $user) {
                 $user = User::create([
-                    'org_id' => $orgId,
                     'name' => $name,
                     'email' => $email,
                     'cpf' => Cpf::digits($row['cpf'] ?? null),
-                    'password' => Hash::make(Str::random(32)),
-                    'status' => 'active',
                 ]);
                 $user->assignRole(RolesEnum::ALUNO->value);
                 $created++;
             }
 
-            if (! $user->courses()->where('course_id', $courseId)->exists()) {
-                $user->courses()->attach($courseId, [
+            Credential::query()->firstOrCreate(
+                ['user_id' => $user->id, 'org_id' => $orgId],
+                ['password' => Hash::make(Str::random(32)), 'status' => 'active'],
+            );
+
+            if (! $user->courses()->withoutGlobalScopes()->where('course_id', $courseId)->exists()) {
+                $user->courses()->withoutGlobalScopes()->attach($courseId, [
                     'enrolled_at' => now(),
                     'status' => 'active',
                     'progress_percentage' => 0,

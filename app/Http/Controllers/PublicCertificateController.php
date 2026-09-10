@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Certificate;
+use App\Services\OrgContext;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 
@@ -44,6 +45,13 @@ class PublicCertificateController extends Controller
             'course',
             $certificate->course()->withoutGlobalScopes()->with('organization')->firstOrFail(),
         );
+
+        // Host-based tenancy: a hash is only verifiable on the portal of
+        // the Organization that issued it — a valid hash hit from another
+        // organization's portal reads as "not found", never revealing it.
+        if ((int) $certificate->course->org_id !== (int) OrgContext::current()->orgId()) {
+            abort(404);
+        }
 
         return view('public.certificates.show', ['certificate' => $certificate]);
     }
