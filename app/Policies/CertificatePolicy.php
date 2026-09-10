@@ -6,6 +6,7 @@ use App\Enums\Permissions\RolesEnum;
 use App\Models\Certificate;
 use App\Models\Course;
 use App\Models\User;
+use App\Services\OrgContext;
 
 /**
  * `Certificate` is cascade-inherited (org implied by
@@ -32,7 +33,7 @@ class CertificatePolicy
 
         $course = $this->parentCourse($certificate);
 
-        return (int) $user->org_id === (int) $course->org_id;
+        return (int) OrgContext::current()->orgId() === (int) $course->org_id;
     }
 
     /**

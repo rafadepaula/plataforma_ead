@@ -7,6 +7,7 @@ use App\Models\Course;
 use App\Models\Lesson;
 use App\Models\Quiz;
 use App\Models\User;
+use App\Services\OrgContext;
 
 /**
  * `Quiz` CRUD, reserved to `role:admin|gestor`. Cascade
@@ -52,7 +53,7 @@ class QuizPolicy
             return false;
         }
 
-        if ($user->hasRole(RolesEnum::GESTOR->value) && (int) $user->org_id !== (int) $course->org_id) {
+        if ($user->hasRole(RolesEnum::GESTOR->value) && (int) OrgContext::current()->orgId() !== (int) $course->org_id) {
             return false;
         }
 

@@ -6,6 +6,7 @@ use App\Enums\Permissions\RolesEnum;
 use App\Models\Course;
 use App\Models\ForumTopic;
 use App\Models\User;
+use App\Services\OrgContext;
 
 /**
  * `ForumTopic` is directly `OrgScope`d, but course
@@ -118,6 +119,6 @@ class ForumTopicPolicy
             return true;
         }
 
-        return $user->hasRole(RolesEnum::GESTOR->value) && (int) $user->org_id === (int) $course->org_id;
+        return $user->hasRole(RolesEnum::GESTOR->value) && (int) OrgContext::current()->orgId() === (int) $course->org_id;
     }
 }

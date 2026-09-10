@@ -4,6 +4,7 @@ namespace App\Listeners;
 
 use App\Models\User;
 use App\Services\AuditService;
+use App\Services\OrgContext;
 use Illuminate\Auth\Events\PasswordReset;
 
 /**
@@ -25,7 +26,7 @@ class LogPasswordReset
         try {
             AuditService::log(
                 event: 'password.reset',
-                orgId: $user->org_id ? (int) $user->org_id : null,
+                orgId: OrgContext::current()->orgId(),
                 userId: (int) $user->getAuthIdentifier(),
                 payload: [
                     'user_id' => $user->getAuthIdentifier(),

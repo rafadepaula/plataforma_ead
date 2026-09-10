@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\Permissions\RolesEnum;
 use App\Http\Requests\UpdateSystemSettingRequest;
+use App\Services\OrgContext;
 use App\Services\SettingService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -84,6 +85,6 @@ class SystemSettingController extends Controller
             return $activeOrgId ? (int) $activeOrgId : null;
         }
 
-        return $user->org_id ? (int) $user->org_id : null;
+        return OrgContext::current()->orgId();
     }
 }

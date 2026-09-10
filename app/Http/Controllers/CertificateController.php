@@ -8,6 +8,7 @@ use App\Http\Requests\RevokeCertificateRequest;
 use App\Models\Certificate;
 use App\Models\Course;
 use App\Services\CertificatePdfService;
+use App\Services\OrgContext;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Response;
@@ -98,7 +99,7 @@ class CertificateController extends Controller
         if ($user->hasRole(RolesEnum::GESTOR->value)) {
             $course = $certificate->course()->withoutGlobalScopes()->firstOrFail();
 
-            abort_unless((int) $user->org_id === (int) $course->org_id, 403);
+            abort_unless((int) OrgContext::current()->orgId() === (int) $course->org_id, 403);
         }
     }
 }

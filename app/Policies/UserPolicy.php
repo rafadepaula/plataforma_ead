@@ -3,7 +3,9 @@
 namespace App\Policies;
 
 use App\Enums\Permissions\RolesEnum;
+use App\Models\Credential;
 use App\Models\User;
+use App\Services\OrgContext;
 
 /**
  *  Aluno/Gestor CRUD authorization. Admin manages any Organization
@@ -43,24 +45,40 @@ class UserPolicy
 
     /**
      * An Admin may only act on `$model` while impersonating the exact
-     * Organization the target user belongs to; a Gestor may only act on
-     * users within their own `org_id`. Never trusts anything from the
-     * request — both sides of the comparison come from server-resolved
-     * state (`$user->org_id` / `session('active_org_id')`).
+     * Organization the target user holds an account in; a Gestor may only
+     * act on users holding an account in the request host's Organization
+     * (the only Organization they could be browsing). Never trusts
+     * anything from the request — both sides of the comparison come from
+     * server-resolved state (`OrgContext` / `session('active_org_id')`).
      */
     protected function sharesOrgContext(User $user, User $model): bool
     {
         if ($user->hasRole(RolesEnum::ADMIN->value)) {
             $activeOrgId = session('active_org_id');
 
-            return $activeOrgId && (int) $model->org_id === (int) $activeOrgId;
+            return $activeOrgId && $this->holdsAccountIn($model, (int) $activeOrgId);
         }
 
         if ($user->hasRole(RolesEnum::GESTOR->value)) {
-            return $user->org_id && (int) $model->org_id === (int) $user->org_id;
+            $orgId = OrgContext::current()->orgId();
+
+            return $orgId && $this->holdsAccountIn($model, $orgId);
         }
 
         return false;
+    }
+
+    /**
+     * Does `$model` (a person) hold the Organization account
+     * (`credentials` row) for the given org? The per-org membership list
+     * replaced the old single `users.org_id` column.
+     */
+    protected function holdsAccountIn(User $model, int $orgId): bool
+    {
+        return Credential::query()
+            ->where('user_id', $model->id)
+            ->where('org_id', $orgId)
+            ->exists();
     }
 
     /**
@@ -96,9 +114,11 @@ class UserPolicy
      */
     protected function managesSameOrgAluno(User $user, User $model): bool
     {
+        $orgId = OrgContext::current()->orgId();
+
         return $user->hasRole(RolesEnum::GESTOR->value)
-            && $user->org_id
-            && (int) $model->org_id === (int) $user->org_id
+            && $orgId
+            && $this->holdsAccountIn($model, $orgId)
             && $model->hasRole(RolesEnum::ALUNO->value);
     }
 

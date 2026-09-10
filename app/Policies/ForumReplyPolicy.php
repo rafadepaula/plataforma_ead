@@ -7,6 +7,7 @@ use App\Models\Course;
 use App\Models\ForumReply;
 use App\Models\ForumTopic;
 use App\Models\User;
+use App\Services\OrgContext;
 
 /**
  * `ForumReply` is cascade-inherited two levels deeper
@@ -114,6 +115,6 @@ class ForumReplyPolicy
             return true;
         }
 
-        return $user->hasRole(RolesEnum::GESTOR->value) && (int) $user->org_id === (int) $course->org_id;
+        return $user->hasRole(RolesEnum::GESTOR->value) && (int) OrgContext::current()->orgId() === (int) $course->org_id;
     }
 }

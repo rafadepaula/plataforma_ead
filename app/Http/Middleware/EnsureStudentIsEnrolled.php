@@ -6,6 +6,7 @@ use App\Enums\Permissions\RolesEnum;
 use App\Models\Course;
 use App\Models\Lesson;
 use App\Models\User;
+use App\Services\OrgContext;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -46,7 +47,7 @@ class EnsureStudentIsEnrolled
         }
 
         if ($user->hasRole(RolesEnum::GESTOR->value)) {
-            abort_unless((int) $user->org_id === (int) $course->org_id, 403);
+            abort_unless((int) OrgContext::current()->orgId() === (int) $course->org_id, 403);
 
             return $next($request);
         }

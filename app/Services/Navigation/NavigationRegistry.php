@@ -7,6 +7,7 @@ use App\Models\Course;
 use App\Models\Lesson;
 use App\Models\LessonProgress;
 use App\Models\User;
+use App\Services\OrgContext;
 use Illuminate\Support\Facades\Route;
 
 /**
@@ -316,7 +317,9 @@ final class NavigationRegistry
      */
     private function resolveUsersRoute(User $user): ?string
     {
-        $orgId = $user->org_id ?? session('active_org_id');
+        $orgId = $user->hasRole('admin')
+            ? session('active_org_id')
+            : OrgContext::current()->orgId();
 
         if (! $orgId) {
             return null;
@@ -343,7 +346,7 @@ final class NavigationRegistry
      */
     private function resolveOperationalSection(User $user): ?string
     {
-        if (! $user->hasRole('admin') || $user->org_id !== null) {
+        if (! $user->hasRole('admin')) {
             return 'Administração';
         }
 

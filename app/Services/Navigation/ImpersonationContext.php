@@ -31,12 +31,13 @@ final class ImpersonationContext
 
     /**
      * True only for a system Admin currently inside an "Impersonate Org"
-     * context. Never true for a Gestor/Aluno, nor for a dual
-     * Admin/Gestor account bound to its own `org_id`.
+     * context. Never true for a Gestor/Aluno — under host-based tenancy
+     * their tenant always comes from the request host, never from the
+     * session.
      */
     public function isImpersonating(?User $user): bool
     {
-        if ($user === null || $user->org_id !== null || ! $user->hasRole('admin')) {
+        if ($user === null || ! $user->hasRole('admin')) {
             return false;
         }
 

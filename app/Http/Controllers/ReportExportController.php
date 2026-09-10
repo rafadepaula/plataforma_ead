@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\Permissions\RolesEnum;
 use App\Services\CsvStreamExportService;
+use App\Services\OrgContext;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -27,7 +28,7 @@ class ReportExportController extends Controller
         $user = $request->user();
 
         if (! $user->hasRole(RolesEnum::ADMIN->value) && $request->filled('org_id')
-            && (int) $request->query('org_id') !== (int) $user->org_id) {
+            && (int) $request->query('org_id') !== (int) OrgContext::current()->orgId()) {
             abort(403);
         }
 
@@ -48,6 +49,6 @@ class ReportExportController extends Controller
             return $activeOrgId ? (int) $activeOrgId : null;
         }
 
-        return $user->org_id ? (int) $user->org_id : null;
+        return OrgContext::current()->orgId();
     }
 }

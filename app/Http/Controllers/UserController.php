@@ -8,6 +8,7 @@ use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Models\User;
 use App\Services\AuditService;
+use App\Services\OrgContext;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -102,7 +103,7 @@ class UserController extends Controller
             try {
                 AuditService::log(
                     event: 'user.status_changed',
-                    orgId: $user->org_id ? (int) $user->org_id : null,
+                    orgId: OrgContext::current()->orgId(),
                     userId: Auth::id(),
                     payload: [
                         'user_id' => $user->id,

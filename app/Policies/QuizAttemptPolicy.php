@@ -6,6 +6,7 @@ use App\Enums\Permissions\RolesEnum;
 use App\Models\Course;
 use App\Models\QuizAttempt;
 use App\Models\User;
+use App\Services\OrgContext;
 
 /**
  * gates the Gestor's manual essay-grading screen. Scoped
@@ -45,7 +46,7 @@ class QuizAttemptPolicy
             return $user->hasRole(RolesEnum::PROFESSOR->value) && $user->teaches($course);
         }
 
-        if ($user->hasRole(RolesEnum::GESTOR->value) && (int) $user->org_id !== (int) $course->org_id) {
+        if ($user->hasRole(RolesEnum::GESTOR->value) && (int) OrgContext::current()->orgId() !== (int) $course->org_id) {
             return false;
         }
 

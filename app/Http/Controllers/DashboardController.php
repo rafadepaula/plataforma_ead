@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\Permissions\RolesEnum;
 use App\Services\DashboardMetricsService;
+use App\Services\OrgContext;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -60,6 +61,6 @@ class DashboardController extends Controller
             return $activeOrgId ? (int) $activeOrgId : null;
         }
 
-        return $user->org_id ? (int) $user->org_id : null;
+        return OrgContext::current()->orgId();
     }
 }

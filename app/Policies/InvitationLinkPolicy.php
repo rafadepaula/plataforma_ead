@@ -6,6 +6,7 @@ use App\Enums\Permissions\RolesEnum;
 use App\Models\Course;
 use App\Models\InvitationLink;
 use App\Models\User;
+use App\Services\OrgContext;
 
 /**
  * `InvitationLink` management (generate/revoke) is reserved
@@ -37,7 +38,7 @@ class InvitationLinkPolicy
             return false;
         }
 
-        if ($user->hasRole(RolesEnum::GESTOR->value) && (int) $user->org_id !== (int) $course->org_id) {
+        if ($user->hasRole(RolesEnum::GESTOR->value) && (int) OrgContext::current()->orgId() !== (int) $course->org_id) {
             return false;
         }
 

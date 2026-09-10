@@ -7,6 +7,7 @@ use App\Models\Course;
 use App\Models\Lesson;
 use App\Models\Module;
 use App\Models\User;
+use App\Services\OrgContext;
 
 /**
  * same pattern as `ModulePolicy`, one level deeper:
@@ -63,7 +64,7 @@ class LessonPolicy
             return $user->hasRole(RolesEnum::PROFESSOR->value) && $user->teaches($course);
         }
 
-        if ($user->hasRole(RolesEnum::GESTOR->value) && (int) $user->org_id !== (int) $course->org_id) {
+        if ($user->hasRole(RolesEnum::GESTOR->value) && (int) OrgContext::current()->orgId() !== (int) $course->org_id) {
             return false;
         }
 

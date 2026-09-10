@@ -5,6 +5,7 @@ namespace App\View\Components;
 use App\Enums\Permissions\RolesEnum;
 use App\Models\HelpArticle;
 use App\Services\HelpArticleResolverService;
+use App\Services\OrgContext;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\Component;
@@ -46,6 +47,6 @@ class HelpButton extends Component
             return session('active_org_id');
         }
 
-        return $user->org_id;
+        return OrgContext::current()->orgId();
     }
 }

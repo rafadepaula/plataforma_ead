@@ -4,15 +4,26 @@ namespace App\Models\Traits;
 
 use App\Enums\Permissions\RolesEnum;
 use App\Exceptions\UnresolvedOrgContextException;
+use App\Services\OrgContext;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 
 /**
  * Eloquent trait applied to every *directly* org-scoped model
- * (`Course`, `InvitationLink`, `ForumTopic`, `HelpArticle`,
- * `SystemSetting`). Do NOT apply to `User` or to cascade-inherited models
+ * (`Course`, `InvitationLink`, `ForumTopic`, `HelpArticle`).
+ * Do NOT apply to `User`, `Credential` or to cascade-inherited models
  * (see the `tenancy-architecture` skill for the full list) — those inherit
  * their tenant boundary through a parent relation instead.
+ *
+ * Tenant context resolution (host-based tenancy):
+ * - Admin (global account): filtered by `session('active_org_id')` when
+ *   impersonating, unfiltered otherwise.
+ * - Everyone else: the Organization resolved from the request host
+ *   (`OrgContext`) — which is also the only Organization they could have
+ *   logged in on.
+ * - No resolved context (guest, console, state zero): org `0` never
+ *   exists, so the filter reads as "empty set" — a safety fallback, not a
+ *   feature.
  */
 trait OrgScope
 {
@@ -34,11 +45,7 @@ trait OrgScope
                 return;
             }
 
-            if ($user->org_id) {
-                $builder->where($builder->getModel()->getTable().'.org_id', $user->org_id);
-            } else {
-                $builder->whereRaw('1 = 0');
-            }
+            $builder->where($builder->getModel()->getTable().'.org_id', OrgContext::current()->orgId() ?? 0);
         });
     }
 
@@ -56,11 +63,15 @@ trait OrgScope
             // input (e.g. `Model::create($request->validated())`) — that
             // would allow a caller to inject a record into an arbitrary
             // organization, bypassing tenant isolation at write time.
-            $resolvedOrgId = $user->org_id ?? session('active_org_id');
+            // Admins write into their impersonated Organization; every
+            // other role writes into the Organization of the request host.
+            $resolvedOrgId = $user->hasRole(RolesEnum::ADMIN->value)
+                ? session('active_org_id')
+                : OrgContext::current()->orgId();
 
             if (! $resolvedOrgId) {
                 throw new UnresolvedOrgContextException(
-                    'Não foi possível resolver org_id para criar '.static::class." (usuário #{$user->id} sem org_id e sem active_org_id em sessão)."
+                    'Não foi possível resolver org_id para criar '.static::class." (usuário #{$user->id} sem organização resolvida por host ou impersonação)."
                 );
             }
 
