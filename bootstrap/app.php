@@ -6,7 +6,9 @@ use App\Exceptions\UnresolvedOrgContextException;
 use App\Exceptions\UserHasCreatedInvitationLinksException;
 use App\Exceptions\UserHasIssuedCertificatesException;
 use App\Http\Middleware\EnsureStudentIsEnrolled;
+use App\Http\Middleware\EnsureTenantAccess;
 use App\Http\Middleware\RedirectIfAuthenticated;
+use App\Http\Middleware\ResolveOrgFromHost;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -25,6 +27,15 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Host-based tenancy: `ResolveOrgFromHost` runs FIRST in the `web`
+        // group — it maps the request host to the request's `OrgContext`
+        // singleton (state zero when nothing matches) before anything else
+        // can read tenant context. `EnsureTenantAccess` runs after the
+        // group's session middleware (it may log the user out) and enforces
+        // the state-zero / inactive-organization gating rules.
+        $middleware->prependToGroup('web', ResolveOrgFromHost::class);
+        $middleware->appendToGroup('web', EnsureTenantAccess::class);
+
         // Required for `Auth::logoutOtherDevices()` (see `PasswordController`)
         // to actually have an effect: this appends `Illuminate\Session\Middleware\AuthenticateSession`
         // to the `web` group, which compares the session's cached password hash against
