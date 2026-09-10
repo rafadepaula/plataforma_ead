@@ -30,7 +30,7 @@
          aria-labelledby="mobile-sidebar-label">
         <div class="offcanvas-header border-bottom">
             <h2 class="offcanvas-title fw-bold fs-6" id="mobile-sidebar-label">
-                {{ session('tenant_name') ?? config('app.name', 'Conselho EAD') }}
+                {{ $orgBrand['name'] ?? config('app.name', 'Plataforma EAD') }}
             </h2>
             <button type="button"
                     class="btn-close"

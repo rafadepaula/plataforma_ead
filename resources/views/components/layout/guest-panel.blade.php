@@ -21,7 +21,10 @@
 ])
 
 @php
-    $brandName = $tenantName ?: session('tenant_name', config('app.name', 'Plataforma EAD'));
+    // `$orgBrand` (OrgIdentityComposer) resolve a marca do portal: a org do
+    // host — o aluno vê a marca de quem o convidou — ou o `system_name`
+    // global no estado zero.
+    $brandName = $tenantName ?: ($orgBrand['name'] ?? config('app.name', 'Plataforma EAD'));
 
     $initials = collect(preg_split('/\s+/', trim((string) $brandName)))
         ->filter()
@@ -57,7 +60,7 @@
         </div>
 
         <div class="ds-caption text-body-secondary">
-            &copy; {{ date('Y') }} {{ config('app.name', 'Plataforma EAD') }}
+            &copy; {{ date('Y') }} {{ $brandName }}
         </div>
     </div>
 @endif

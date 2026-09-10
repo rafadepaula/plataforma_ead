@@ -6,7 +6,8 @@
     $homeUrl = $brandUrl ?? '/';
     $loginUrl = $loginUrl ?? '#';
     $logoutUrl = $logoutUrl ?? '#';
-    $tenantName = session('tenant_name') ?? config('app.name', 'Conselho EAD');
+    $tenantName = $orgBrand['name'] ?? config('app.name', 'Plataforma EAD');
+    $tenantLogoPath = $orgBrand['logoPath'] ?? null;
 
     $brandMark = collect(preg_split('/\s+/', trim((string) $tenantName)))
         ->filter()
@@ -46,8 +47,14 @@
              `resources/scss/components/_brand-mark.scss`. Em mobile só o
              quadrado aparece ("brand curta" — diretriz de mobile e responsivo). --}}
         <a href="{{ $homeUrl }}" class="d-flex align-items-center gap-3 text-decoration-none text-body" dusk="topbar-brand">
-            <span class="brand-mark" aria-hidden="true">{{ $brandMark }}</span>
-            <span class="fw-bolder fs-5 text-body lh-1 d-none d-sm-inline">{{ $tenantName }}</span>
+            @if ($tenantLogoPath)
+                <span class="brand-mark p-0 overflow-hidden" aria-hidden="true">
+                    <img src="{{ Storage::url($tenantLogoPath) }}" alt="" class="w-100 h-100 object-fit-cover" dusk="topbar-org-logo">
+                </span>
+            @else
+                <span class="brand-mark" aria-hidden="true">{{ $brandMark }}</span>
+            @endif
+            <span class="fw-bolder fs-5 text-body lh-1 d-none d-sm-inline" dusk="topbar-org-name">{{ $tenantName }}</span>
         </a>
     </div>
 

@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Http\View\Composers\ForumBreadcrumbComposer;
 use App\Http\View\Composers\NavigationComposer;
+use App\Http\View\Composers\OrgIdentityComposer;
 use App\Services\Navigation\ImpersonationContext;
 use App\Services\Navigation\NavigationRegistry;
 use App\Services\Navigation\NavigationService;
@@ -57,6 +58,14 @@ class AppServiceProvider extends ServiceProvider
         Paginator::defaultSimpleView('pagination::simple-bootstrap-5');
 
         View::composer(['components.layout.sidebar', 'components.layout.topbar'], NavigationComposer::class);
+
+        // Marca do portal (nome + logo da org do host; `system_name` no
+        // estado zero) para todas as superfícies de shell — topbar,
+        // drawer mobile, painel guest e `<title>`.
+        View::composer(
+            ['components.layout.topbar', 'components.layout.sidebar', 'components.layout.guest-panel', 'layouts.app'],
+            OrgIdentityComposer::class,
+        );
 
         // The role-aware root breadcrumb shared by every forum screen —
         // computed once here instead of copy-pasted into each view.

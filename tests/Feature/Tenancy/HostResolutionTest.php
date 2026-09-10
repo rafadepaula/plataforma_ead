@@ -110,6 +110,6 @@ class HostResolutionTest extends TestCase
     {
         $this->actingAsAdmin();
 
-        $this->get(route('organizations.index'))->assertOk();
+        $this->get('/organizations')->assertOk();
     }
 }
