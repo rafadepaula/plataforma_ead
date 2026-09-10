@@ -326,9 +326,10 @@ class DashboardMetricsService
      * Organization has no related data. Never reads `Auth::user()`/
      * `session('active_org_id')` — that branching belongs to the controller.
      *
-     * - `students_count`: distinct Users with role `aluno`, `status = active`,
-     *   directly owned by the Organization (`users.org_id`), not
-     *   enrollment-derived (different shape than `active_students` above).
+     * - `students_count`: distinct Users with role `aluno` holding an
+     *   `active` account (credential) owned by the Organization
+     *   (`credentials.org_id`), not enrollment-derived (different shape
+     *   than `active_students` above).
      * - `courses_count`: `courses.org_id = organizations.id`, bypassing
      *   `Course`'s `OrgScope` (raw `DB::table` query, not `Course::query()`)
      *   so an Admin sees every Organization's courses regardless of the
@@ -341,14 +342,15 @@ class DashboardMetricsService
     public function organizationsSummary(): Collection
     {
         $studentsCount = DB::table('users')
+            ->join('credentials', 'credentials.user_id', '=', 'users.id')
             ->join('model_has_roles', function ($join): void {
                 $join->on('model_has_roles.model_id', '=', 'users.id')
                     ->where('model_has_roles.model_type', User::class);
             })
             ->join('roles', 'roles.id', '=', 'model_has_roles.role_id')
             ->where('roles.name', RolesEnum::ALUNO->value)
-            ->where('users.status', 'active')
-            ->whereColumn('users.org_id', 'organizations.id')
+            ->where('credentials.status', 'active')
+            ->whereColumn('credentials.org_id', 'organizations.id')
             ->selectRaw('count(distinct users.id)');
 
         $coursesCount = DB::table('courses')

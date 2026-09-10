@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Enums\Permissions\RolesEnum;
 use App\Models\Course;
+use App\Models\Credential;
 use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -32,11 +33,20 @@ class StoreEnrollmentRequest extends FormRequest
                 'required',
                 'integer',
                 //  a Gestor may only manually enroll a User who
-                // already belongs to their own org, closing the same gap
-                // `ProcessSmartInvitationAction` guards for the
-                // self-service flow: no cross-org "guess the ID" force
-                // enrollment.
-                Rule::exists('users', 'id')->where('org_id', $course?->org_id),
+                // already holds an account (credential) in their own org,
+                // closing the same gap `ProcessSmartInvitationAction`
+                // guards for the self-service flow: no cross-org
+                // "guess the ID" force enrollment.
+                function (string $attribute, mixed $value, \Closure $fail) use ($course): void {
+                    $holdsAccount = Credential::query()
+                        ->where('user_id', $value)
+                        ->where('org_id', $course?->org_id)
+                        ->exists();
+
+                    if (! $holdsAccount) {
+                        $fail('Este usuário não pertence à sua organização.');
+                    }
+                },
                 // The target must actually hold the `aluno` role — never a
                 // `gestor`/`admin` account, mirroring
                 // `ProcessSmartInvitationAction`'s rejection of staff

@@ -130,6 +130,18 @@ class User extends Authenticatable
     }
 
     /**
+     * The password hash of this person's account in the request host's
+     * Organization — what Laravel's `current_password` rule validates
+     * against and what `AuthenticateSession` fingerprints the session
+     * with. `null` when the person holds no account here (the session
+     * middleware then skips its check entirely).
+     */
+    public function getAuthPassword(): ?string
+    {
+        return $this->credentialFor(OrgContext::current()->organization)?->password;
+    }
+
+    /**
      * The active/inactive status of this person's account in the request
      * host's Organization — the org-scoped screens' `$user->status` died
      * with the `users.status` column. `null` when the person holds no

@@ -53,7 +53,7 @@ class AttachCourseProfessorRequest extends FormRequest
                         return;
                     }
 
-                    if ((int) $professor->org_id !== (int) $course->org_id) {
+                    if (! $professor->credentials()->where('org_id', $course->org_id)->exists()) {
                         $fail('O Professor deve pertencer à mesma Organização do curso.');
                     }
                 },
