@@ -139,9 +139,45 @@ vendor/bin/sail npm run build
 vendor/bin/sail npm run dev
 ```
 
-### 8. Acessos Disponíveis
-- **Aplicação**: [http://localhost](http://localhost)
-- **Mailpit (Webmail para testes)**: [http://localhost:8025](http://localhost:8025)
+### 8. Mapear os Hosts das Organizações (`/etc/hosts`)
+A plataforma é **multitenant por host**: cada organização é resolvida pelo header `Host` da requisição. Mapeie os hosts de desenvolvimento apontando para `127.0.0.1`:
+```bash
+./scripts/setup-hosts.sh
+```
+O script exige sudo (escreve em `/etc/hosts`) e adiciona:
+```
+127.0.0.1 localhost.ligacerto
+127.0.0.1 localhost.informatica
+```
+
+### 9. Acessos Disponíveis
+
+| URL | Contexto |
+|---|---|
+| [http://localhost.ligacerto:8080](http://localhost.ligacerto:8080) | Portal **Liga Certo** (landing própria + logins gestor/aluno/professor) |
+| [http://localhost.informatica:8080](http://localhost.informatica:8080) | Portal **Informática Mais** |
+| [http://localhost:8080](http://localhost:8080) | **Estado 0** (host sem organização): apenas login do admin |
+| [http://localhost:8025](http://localhost:8025) | Mailpit (webmail para testes) |
+
+Credenciais de desenvolvimento (senha `password` em todos):
+
+| E-mail | Papel | Portal |
+|---|---|---|
+| `admin@plataforma.com` | Admin (senha `admin`) | qualquer host + estado 0 |
+| `gestor.ligacerto@plataforma.com` | Gestor | localhost.ligacerto |
+| `aluno.ligacerto@plataforma.com` | Aluno | localhost.ligacerto |
+| `professor.ligacerto@plataforma.com` | Professor | localhost.ligacerto |
+| `gestor.informatica@plataforma.com` | Gestor | localhost.informatica |
+| `aluno.informatica@plataforma.com` | Aluno | localhost.informatica |
+
+### 🏢 Tenancy por Host (resumo)
+
+- **Resolução**: o middleware `ResolveOrgFromHost` (primeiro do grupo `web`) casa o header `Host` com `organizations.host` e vincula o `OrgContext` da requisição. Host sem organização = **estado 0**.
+- **Estado 0**: visitantes vão ao login; usuários logados de organizações são desconectados; **apenas o admin** navega (para criar orgs e atribuir hosts).
+- **Identidade do aluno**: par `(e-mail, organização)`. A pessoa tem uma linha em `users` (e-mail global único) e uma linha em `credentials` **por organização** — senha, status e remember-me são por portal. O admin tem uma credencial com `org_id = null`, válida em qualquer host.
+- **Organização inativa**: a landing permanece visível, mas login, "esqueci a senha" e convites falham; sessões abertas são encerradas.
+- **Landing page**: campo `landing_view` (editável pelo admin) aponta para o Blade `resources/views/tenants/{landing_view}/landing.blade.php`. Sem Blade configurado/existente → redireciona ao login.
+- **Impersonação**: quando o admin impersona uma organização, a sessão (`active_org_id`) **prevalece sobre o host** — tratamento especial, exclusivo do admin.
 
 ---
 

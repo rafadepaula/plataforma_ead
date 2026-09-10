@@ -3,13 +3,16 @@
 namespace Database\Seeders;
 
 use App\Enums\Permissions\RolesEnum;
+use App\Models\Credential;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 /**
- *   &  §2.2 — seeds the global Super Admin user
- * with `role:admin` and configurable credentials from environment.
+ * Seeds the global Super Admin: a person whose single
+ * `credentials` row has `org_id = null` — the only account valid on every
+ * host, including "state zero" (unmapped host / direct IP).
  */
 class AdminSeeder extends Seeder
 {
@@ -25,10 +28,16 @@ class AdminSeeder extends Seeder
             ['email' => $email],
             [
                 'name' => 'Super Admin',
+                'email_verified_at' => now(),
+            ]
+        );
+
+        Credential::firstOrCreate(
+            ['user_id' => $admin->id, 'org_id' => null],
+            [
                 'password' => Hash::make($password),
                 'status' => 'active',
-                'org_id' => null,
-                'email_verified_at' => now(),
+                'remember_token' => Str::random(60),
             ]
         );
 

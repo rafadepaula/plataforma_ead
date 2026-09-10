@@ -80,6 +80,11 @@ jobs:
             sleep 1
           done
 
+      - name: Map tenant hosts into /etc/hosts
+        run: |
+          echo "127.0.0.1 localhost.ligacerto" | sudo tee -a /etc/hosts
+          echo "127.0.0.1 localhost.informatica" | sudo tee -a /etc/hosts
+
       - name: Start Laravel Application Server
         run: php artisan serve --port=8000 &
 

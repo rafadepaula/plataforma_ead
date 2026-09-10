@@ -42,11 +42,11 @@ class CourseSeeder extends Seeder
      */
     public function run(): void
     {
-        $ligaCerto = Organization::where('slug', 'liga-certo')->first();
+        $ligaCerto = Organization::where('host', 'localhost.ligacerto')->first();
 
         if (! $ligaCerto) {
             $this->call(OrganizationSeeder::class);
-            $ligaCerto = Organization::where('slug', 'liga-certo')->first();
+            $ligaCerto = Organization::where('host', 'localhost.ligacerto')->first();
         }
 
         $aluno = User::where('email', 'aluno.ligacerto@plataforma.com')->first();

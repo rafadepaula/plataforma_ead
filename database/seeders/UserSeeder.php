@@ -3,78 +3,107 @@
 namespace Database\Seeders;
 
 use App\Enums\Permissions\RolesEnum;
+use App\Models\Credential;
 use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class UserSeeder extends Seeder
 {
     /**
-     * Seed the two development accounts of "Liga Certo": one organizer
-     * (gestor) and one student (aluno), both verified with the shared
-     * local password `password`.
+     * Seed the development accounts of both tenants: organizer, student
+     * and professor per portal, all verified with the shared local
+     * password `password`. Each account is the `credentials` row of its
+     * Organization — the same e-mail could hold accounts in both portals
+     * with different passwords.
      */
     public function run(): void
     {
-        $ligaCerto = Organization::where('slug', 'liga-certo')->first();
+        $ligacerto = Organization::where('host', 'localhost.ligacerto')->first();
 
-        if (! $ligaCerto) {
+        if (! $ligacerto) {
             $this->call(OrganizationSeeder::class);
-            $ligaCerto = Organization::where('slug', 'liga-certo')->first();
+            $ligacerto = Organization::where('host', 'localhost.ligacerto')->first();
         }
 
-        User::withoutEvents(function () use ($ligaCerto): void {
-            $gestor = User::firstOrCreate(
-                ['email' => 'gestor.ligacerto@plataforma.com'],
-                [
-                    'name' => 'Organizador Liga Certo',
-                    'password' => Hash::make('password'),
-                    'org_id' => $ligaCerto?->id,
-                    'cpf' => '111.111.111-11',
-                    'status' => 'active',
-                ]
-            );
-            if (! $gestor->email_verified_at) {
-                $gestor->forceFill(['email_verified_at' => now()])->save();
-            }
-            if (! $gestor->hasRole(RolesEnum::GESTOR->value)) {
-                $gestor->assignRole(RolesEnum::GESTOR->value);
-            }
+        $informatica = Organization::where('host', 'localhost.informatica')->first();
 
-            $aluno = User::firstOrCreate(
-                ['email' => 'aluno.ligacerto@plataforma.com'],
-                [
-                    'name' => 'Aluno Liga Certo',
-                    'password' => Hash::make('password'),
-                    'org_id' => $ligaCerto?->id,
-                    'cpf' => '222.222.222-22',
-                    'status' => 'active',
-                ]
-            );
-            if (! $aluno->email_verified_at) {
-                $aluno->forceFill(['email_verified_at' => now()])->save();
-            }
-            if (! $aluno->hasRole(RolesEnum::ALUNO->value)) {
-                $aluno->assignRole(RolesEnum::ALUNO->value);
-            }
+        $this->seedAccount(
+            organization: $ligacerto,
+            email: 'gestor.ligacerto@plataforma.com',
+            name: 'Organizador Liga Certo',
+            role: RolesEnum::GESTOR->value,
+            cpf: '11111111111',
+        );
 
-            $professor = User::firstOrCreate(
-                ['email' => 'professor.ligacerto@plataforma.com'],
-                [
-                    'name' => 'Professor Liga Certo',
-                    'password' => Hash::make('password'),
-                    'org_id' => $ligaCerto?->id,
-                    'cpf' => '333.333.333-33',
-                    'status' => 'active',
-                ]
+        $this->seedAccount(
+            organization: $ligacerto,
+            email: 'aluno.ligacerto@plataforma.com',
+            name: 'Aluno Liga Certo',
+            role: RolesEnum::ALUNO->value,
+            cpf: '22222222222',
+        );
+
+        $this->seedAccount(
+            organization: $ligacerto,
+            email: 'professor.ligacerto@plataforma.com',
+            name: 'Professor Liga Certo',
+            role: RolesEnum::PROFESSOR->value,
+            cpf: '33333333333',
+        );
+
+        if ($informatica) {
+            $this->seedAccount(
+                organization: $informatica,
+                email: 'gestor.informatica@plataforma.com',
+                name: 'Organizador Informática Mais',
+                role: RolesEnum::GESTOR->value,
+                cpf: '44444444444',
             );
-            if (! $professor->email_verified_at) {
-                $professor->forceFill(['email_verified_at' => now()])->save();
-            }
-            if (! $professor->hasRole(RolesEnum::PROFESSOR->value)) {
-                $professor->assignRole(RolesEnum::PROFESSOR->value);
-            }
-        });
+
+            $this->seedAccount(
+                organization: $informatica,
+                email: 'aluno.informatica@plataforma.com',
+                name: 'Aluno Informática Mais',
+                role: RolesEnum::ALUNO->value,
+                cpf: '55555555555',
+            );
+        }
+    }
+
+    private function seedAccount(
+        ?Organization $organization,
+        string $email,
+        string $name,
+        string $role,
+        ?string $cpf,
+    ): void {
+        if (! $organization) {
+            return;
+        }
+
+        $user = User::firstOrCreate(
+            ['email' => $email],
+            [
+                'name' => $name,
+                'cpf' => $cpf,
+                'email_verified_at' => now(),
+            ]
+        );
+
+        Credential::firstOrCreate(
+            ['user_id' => $user->id, 'org_id' => $organization->id],
+            [
+                'password' => Hash::make('password'),
+                'status' => 'active',
+                'remember_token' => Str::random(60),
+            ]
+        );
+
+        if (! $user->hasRole($role)) {
+            $user->assignRole($role);
+        }
     }
 }
