@@ -8,10 +8,8 @@ use App\Models\Traits\AuditableTrait;
 use App\Notifications\ResetPasswordNotification;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -19,12 +17,14 @@ use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 
 /**
- * `org_id = null` for `admin` (queried globally) and, until enrollment,
- * `aluno`. `gestor` always has `org_id` set. `OrgScope` is intentionally
- * NOT applied to this model — see the `tenancy-architecture` skill.
+ * A `User` is the person identity: name, contact e-mail and CPF — global
+ * and unique across the whole platform. Per-organization account data
+ * (password, status, remember token) lives in `Credential` rows keyed by
+ * `(user_id, org_id)`, where the org comes from the request host.
+ * `OrgScope` is intentionally NOT applied to this model — see the
+ * `tenancy-architecture` skill.
  */
-#[Fillable(['name', 'email', 'password', 'org_id', 'cpf', 'status'])]
-#[Hidden(['password', 'remember_token'])]
+#[Fillable(['name', 'email', 'cpf'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
@@ -39,8 +39,6 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-            'org_id' => 'integer',
         ];
     }
 
@@ -104,11 +102,30 @@ class User extends Authenticatable
     }
 
     /**
-     * @return BelongsTo<Organization, $this>
+     * The per-organization accounts (password/status/remember token) of
+     * this person — one row per Organization, plus the single
+     * `org_id = null` Admin account for system Admins.
+     *
+     * @return HasMany<Credential, $this>
      */
-    public function organization(): BelongsTo
+    public function credentials(): HasMany
     {
-        return $this->belongsTo(Organization::class, 'org_id');
+        return $this->hasMany(Credential::class);
+    }
+
+    /**
+     * The account of this person for the given Organization (`null` = the
+     * global Admin account). Returns `null` when the person holds no
+     * account in that organization — the login identity is the
+     * `(user, org)` pair, so the same e-mail says nothing about which
+     * portals a person belongs to.
+     */
+    public function credentialFor(?Organization $organization): ?Credential
+    {
+        /** @var Credential|null $credential */
+        $credential = $this->credentials()->forOrg($organization?->id)->first();
+
+        return $credential;
     }
 
     /**

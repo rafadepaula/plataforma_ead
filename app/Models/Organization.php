@@ -19,7 +19,8 @@ class Organization extends Model
      */
     protected $fillable = [
         'name',
-        'slug',
+        'host',
+        'landing_view',
         'cnpj',
         'logo_path',
         'status',
@@ -36,11 +37,15 @@ class Organization extends Model
     }
 
     /**
-     * @return HasMany<User, $this>
+     * The per-organization accounts (`credentials`) held under this
+     * Organization — the membership list of the tenant. People are unique
+     * (`users`); accounts are per-org.
+     *
+     * @return HasMany<Credential, $this>
      */
-    public function users(): HasMany
+    public function memberships(): HasMany
     {
-        return $this->hasMany(User::class, 'org_id');
+        return $this->hasMany(Credential::class, 'org_id');
     }
 
     /**

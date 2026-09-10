@@ -3,11 +3,10 @@
 namespace Database\Factories;
 
 use App\Enums\Permissions\RolesEnum;
+use App\Models\Credential;
 use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 
 /**
  * @extends Factory<User>
@@ -15,26 +14,22 @@ use Illuminate\Support\Str;
 class UserFactory extends Factory
 {
     /**
-     * The current password being used by the factory.
-     */
-    protected static ?string $password;
-
-    /**
      * Define the model's default state.
+     *
+     * A `User` is only the person identity — account data lives in
+     * `Credential` (see `CredentialFactory`). Attach a credential
+     * explicitly (`Credential::factory()->create([...])`) or through the
+     * `actingAsOrgUser()` test helper.
      *
      * @return array<string, mixed>
      */
     public function definition(): array
     {
         return [
-            'org_id' => null,
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
             'cpf' => null,
-            'password' => static::$password ??= Hash::make('password'),
-            'status' => 'active',
-            'remember_token' => Str::random(10),
         ];
     }
 
@@ -49,17 +44,18 @@ class UserFactory extends Factory
     }
 
     /**
-     * Indicate that the user is inactive.
+     * Deactivate every account (credential) of this person — the
+     * person-level "kill switch" is "no active credentials".
      */
     public function inactive(): static
     {
-        return $this->state(fn (array $attributes) => [
-            'status' => 'inactive',
-        ]);
+        return $this->afterCreating(function (User $user): void {
+            $user->credentials()->update(['status' => 'inactive']);
+        });
     }
 
     /**
-     * Attach a unique CPF  to the user.
+     * Attach a unique CPF to the user.
      */
     public function withCpf(): static
     {
@@ -69,9 +65,9 @@ class UserFactory extends Factory
     }
 
     /**
-     *  assign the `aluno` Spatie role after creation. Does not force
-     * `org_id`: an aluno may be `org_id = null` until enrolled via
-     * `course_user` (see `App\Models\User`'s docblock).
+     * Assign the `aluno` Spatie role after creation. No credential is
+     * created here — students hold one account per Organization and tests
+     * attach them explicitly.
      */
     public function aluno(): static
     {
@@ -81,29 +77,38 @@ class UserFactory extends Factory
     }
 
     /**
-     *  assign the `gestor` Spatie role after creation. A gestor
-     * always carries an `org_id`; one is auto-created if not already set.
+     * Assign the `gestor` role and, when the person holds no account yet,
+     * create one in a fresh Organization (so a bare
+     * `User::factory()->gestor()->create()` is still usable in isolation).
      */
     public function gestor(): static
     {
-        return $this->state(fn (array $attributes) => [
-            'org_id' => $attributes['org_id'] ?? Organization::factory(),
-        ])->afterCreating(function (User $user): void {
+        return $this->afterCreating(function (User $user): void {
+            if (! $user->credentials()->exists()) {
+                Credential::factory()
+                    ->forOrg(Organization::factory()->create())
+                    ->create(['user_id' => $user->id]);
+            }
+
             $user->assignRole(RolesEnum::GESTOR->value);
         });
     }
 
     /**
-     *  assign the `professor` Spatie role after creation. A professor
-     * belongs to exactly one Organization (same rule as `gestor`); one is
-     * auto-created if not already set. Course assignments are NOT made
-     * here — tests attach them explicitly through `Course::professors()`.
+     * Assign the `professor` role and, when the person holds no account
+     * yet, create one in a fresh Organization. Course assignments are NOT
+     * made here — tests attach them explicitly through
+     * `Course::professors()`.
      */
     public function professor(): static
     {
-        return $this->state(fn (array $attributes) => [
-            'org_id' => $attributes['org_id'] ?? Organization::factory(),
-        ])->afterCreating(function (User $user): void {
+        return $this->afterCreating(function (User $user): void {
+            if (! $user->credentials()->exists()) {
+                Credential::factory()
+                    ->forOrg(Organization::factory()->create())
+                    ->create(['user_id' => $user->id]);
+            }
+
             $user->assignRole(RolesEnum::PROFESSOR->value);
         });
     }

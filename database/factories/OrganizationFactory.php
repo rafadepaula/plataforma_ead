@@ -20,7 +20,8 @@ class OrganizationFactory extends Factory
 
         return [
             'name' => $name,
-            'slug' => Str::slug($name).'-'.fake()->unique()->numberBetween(1000, 999999),
+            'host' => Str::slug($name).'.'.fake()->unique()->domainWord().'.test',
+            'landing_view' => null,
             'cnpj' => null,
             'logo_path' => null,
             'status' => 'active',
@@ -44,6 +45,17 @@ class OrganizationFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'cnpj' => fake()->unique()->numerify('##.###.###/####-##'),
+        ]);
+    }
+
+    /**
+     * Point the organization at a named landing blade under
+     * `resources/views/tenants/{view}/landing.blade.php`.
+     */
+    public function withLandingView(string $view): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'landing_view' => $view,
         ]);
     }
 }
