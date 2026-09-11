@@ -17,29 +17,29 @@ class ForumAnnouncementNotificationTest extends TestCase
         Notification::fake();
 
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
 
         /** @var User $professor */
-        $professor = User::factory()->professor()->create(['org_id' => $org->id, 'name' => 'Prof. Roberto']);
+        $professor = User::factory()->professor()->inOrg($org->id)->create(['name' => 'Prof. Roberto']);
         $course->professors()->attach($professor->id);
 
         /** @var User $activeStudent */
-        $activeStudent = User::factory()->create(['org_id' => null, 'name' => 'Aluno Ativo']);
+        $activeStudent = User::factory()->inOrg($org->id)->create(['name' => 'Aluno Ativo']);
         $activeStudent->assignRole(RolesEnum::ALUNO->value);
         $course->students()->attach($activeStudent->id, ['enrolled_at' => now(), 'status' => 'active']);
 
         /** @var User $completedStudent */
-        $completedStudent = User::factory()->create(['org_id' => null, 'name' => 'Aluno Concluido']);
+        $completedStudent = User::factory()->inOrg($org->id)->create(['name' => 'Aluno Concluido']);
         $completedStudent->assignRole(RolesEnum::ALUNO->value);
         $course->students()->attach($completedStudent->id, ['enrolled_at' => now(), 'status' => 'completed']);
 
         /** @var User $cancelledStudent */
-        $cancelledStudent = User::factory()->create(['org_id' => null, 'name' => 'Aluno Cancelado']);
+        $cancelledStudent = User::factory()->inOrg($org->id)->create(['name' => 'Aluno Cancelado']);
         $cancelledStudent->assignRole(RolesEnum::ALUNO->value);
         $course->students()->attach($cancelledStudent->id, ['enrolled_at' => now(), 'status' => 'cancelled']);
 
         /** @var User $otherCourseStudent */
-        $otherCourseStudent = User::factory()->create(['org_id' => null, 'name' => 'Outro Curso']);
+        $otherCourseStudent = User::factory()->create(['name' => 'Outro Curso']);
         $otherCourseStudent->assignRole(RolesEnum::ALUNO->value);
 
         $this->actingAs($professor)->post(route('forum.store', $course), [
@@ -75,14 +75,14 @@ class ForumAnnouncementNotificationTest extends TestCase
         Notification::fake();
 
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
 
         /** @var User $gestor */
-        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor = User::factory()->inOrg($org->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
 
         /** @var User $student */
-        $student = User::factory()->create(['org_id' => null]);
+        $student = User::factory()->create();
         $student->assignRole(RolesEnum::ALUNO->value);
         $course->students()->attach($student->id, ['enrolled_at' => now(), 'status' => 'active']);
 
@@ -97,10 +97,10 @@ class ForumAnnouncementNotificationTest extends TestCase
     public function test_professor_can_see_topbar_notification_bell(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
 
         /** @var User $professor */
-        $professor = User::factory()->professor()->create(['org_id' => $org->id]);
+        $professor = User::factory()->professor()->inOrg($org->id)->create();
         $course->professors()->attach($professor->id);
 
         $response = $this->actingAs($professor)->get(route('forum.index', $course));

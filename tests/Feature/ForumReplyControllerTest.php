@@ -424,7 +424,7 @@ class ForumReplyControllerTest extends TestCase
         $reply = ForumReply::factory()->for($topic, 'topic')->for($student)->create(['is_pinned' => false]);
 
         /** @var User $gestor */
-        $gestor = User::factory()->create(['org_id' => $organization->id]);
+        $gestor = User::factory()->inOrg($organization->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
 
         // Aluno cannot pin
@@ -449,7 +449,7 @@ class ForumReplyControllerTest extends TestCase
 
         // Assigned professor can pin
         /** @var User $professor */
-        $professor = User::factory()->professor()->create(['org_id' => $organization->id]);
+        $professor = User::factory()->professor()->inOrg($organization->id)->create();
         $course->professors()->attach($professor->id);
 
         $this->actingAs($professor)

@@ -61,14 +61,14 @@ class ForumTopicPolicyTest extends TestCase
     public function test_assigned_professor_can_create_topic_for_course_and_unassigned_cannot(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
 
         /** @var User $professor */
-        $professor = User::factory()->professor()->create(['org_id' => $org->id]);
+        $professor = User::factory()->professor()->inOrg($org->id)->create();
         $course->professors()->attach($professor->id);
 
         /** @var User $outsider */
-        $outsider = User::factory()->professor()->create(['org_id' => $org->id]);
+        $outsider = User::factory()->professor()->inOrg($org->id)->create();
 
         $policy = new ForumTopicPolicy;
         $this->assertTrue($policy->create($professor, $course));

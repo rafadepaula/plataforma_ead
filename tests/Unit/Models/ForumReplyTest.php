@@ -32,9 +32,9 @@ class ForumReplyTest extends TestCase
     public function test_reply_is_pinned_attribute_is_cast_to_boolean_and_supports_pinned_state(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
-        $user = User::factory()->create(['org_id' => $org->id]);
-        $topic = ForumTopic::factory()->for($course)->for($user)->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
+        $user = User::factory()->inOrg($org->id)->create();
+        $topic = ForumTopic::factory()->for($course)->for($user)->inOrg($org->id)->create();
 
         $unpinned = ForumReply::factory()->for($topic, 'topic')->for($user)->create();
         $this->assertFalse($unpinned->is_pinned);

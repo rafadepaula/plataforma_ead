@@ -15,19 +15,19 @@ class ForumReplyPinTest extends TestCase
     private function setupCourse(): array
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
 
         /** @var User $student */
-        $student = User::factory()->create(['org_id' => null, 'name' => 'Aluno Lucas']);
+        $student = User::factory()->inOrg($org->id)->create(['name' => 'Aluno Lucas']);
         $student->assignRole(RolesEnum::ALUNO->value);
         $course->students()->attach($student->id, ['enrolled_at' => now(), 'status' => 'active']);
 
         /** @var User $professor */
-        $professor = User::factory()->professor()->create(['org_id' => $org->id]);
+        $professor = User::factory()->professor()->inOrg($org->id)->create();
         $course->professors()->attach($professor->id);
 
         /** @var User $gestor */
-        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor = User::factory()->inOrg($org->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
 
         return [$org, $course, $student, $professor, $gestor];
@@ -37,7 +37,7 @@ class ForumReplyPinTest extends TestCase
     {
         [$org, $course, $student, $professor, $gestor] = $this->setupCourse();
 
-        $topic = ForumTopic::factory()->for($course)->for($student)->create(['org_id' => $org->id]);
+        $topic = ForumTopic::factory()->for($course)->for($student)->inOrg($org->id)->create();
 
         $reply1 = ForumReply::factory()->for($topic, 'topic')->for($student)->create(['content' => 'Primeira resposta (id menor, unpinned)']);
         $reply2 = ForumReply::factory()->for($topic, 'topic')->for($professor)->pinned()->create(['content' => 'Segunda resposta (id medio, pinned)']);
@@ -72,7 +72,7 @@ class ForumReplyPinTest extends TestCase
     {
         [$org, $course, $student] = $this->setupCourse();
 
-        $topic = ForumTopic::factory()->for($course)->for($student)->create(['org_id' => $org->id]);
+        $topic = ForumTopic::factory()->for($course)->for($student)->inOrg($org->id)->create();
 
         $reply1 = ForumReply::factory()->for($topic, 'topic')->for($student)->create();
         $reply2 = ForumReply::factory()->for($topic, 'topic')->for($student)->pinned()->create();
@@ -88,7 +88,7 @@ class ForumReplyPinTest extends TestCase
     {
         [$org, $course, $student, $professor, $gestor] = $this->setupCourse();
 
-        $topic = ForumTopic::factory()->for($course)->for($student)->create(['org_id' => $org->id]);
+        $topic = ForumTopic::factory()->for($course)->for($student)->inOrg($org->id)->create();
         $reply = ForumReply::factory()->for($topic, 'topic')->for($student)->create(['is_pinned' => false]);
 
         // Aluno cannot pin
@@ -122,7 +122,7 @@ class ForumReplyPinTest extends TestCase
     {
         [$org, $course, $student, $professor] = $this->setupCourse();
 
-        $topic = ForumTopic::factory()->for($course)->for($student)->create(['org_id' => $org->id]);
+        $topic = ForumTopic::factory()->for($course)->for($student)->inOrg($org->id)->create();
         $reply = ForumReply::factory()->for($topic, 'topic')->for($student)->create();
 
         // Aluno cannot see pin button

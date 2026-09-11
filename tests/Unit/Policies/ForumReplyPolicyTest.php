@@ -136,17 +136,17 @@ class ForumReplyPolicyTest extends TestCase
     public function test_assigned_professor_can_create_reply_and_pin_it(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
-        $topicAuthor = User::factory()->create(['org_id' => $org->id]);
-        $topic = ForumTopic::factory()->for($course)->for($topicAuthor)->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
+        $topicAuthor = User::factory()->inOrg($org->id)->create();
+        $topic = ForumTopic::factory()->for($course)->for($topicAuthor)->inOrg($org->id)->create();
         $reply = ForumReply::factory()->for($topic, 'topic')->for($topicAuthor)->create();
 
         /** @var User $professor */
-        $professor = User::factory()->professor()->create(['org_id' => $org->id]);
+        $professor = User::factory()->professor()->inOrg($org->id)->create();
         $course->professors()->attach($professor->id);
 
         /** @var User $outsider */
-        $outsider = User::factory()->professor()->create(['org_id' => $org->id]);
+        $outsider = User::factory()->professor()->inOrg($org->id)->create();
 
         $policy = new ForumReplyPolicy;
         $this->assertTrue($policy->create($professor, $topic));
@@ -159,12 +159,12 @@ class ForumReplyPolicyTest extends TestCase
     public function test_aluno_cannot_pin_reply_even_their_own(): void
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id]);
-        $topicAuthor = User::factory()->create(['org_id' => $org->id]);
-        $topic = ForumTopic::factory()->for($course)->for($topicAuthor)->create(['org_id' => $org->id]);
+        $course = Course::factory()->inOrg($org->id)->create();
+        $topicAuthor = User::factory()->inOrg($org->id)->create();
+        $topic = ForumTopic::factory()->for($course)->for($topicAuthor)->inOrg($org->id)->create();
 
         /** @var User $aluno */
-        $aluno = User::factory()->create(['org_id' => $org->id]);
+        $aluno = User::factory()->inOrg($org->id)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
         $aluno->courses()->attach($course->id, ['enrolled_at' => now(), 'status' => 'active']);
 
@@ -180,15 +180,22 @@ class ForumReplyPolicyTest extends TestCase
         $reply = $this->replyIn($org);
 
         /** @var User $gestor */
-        $gestor = User::factory()->create(['org_id' => $org->id]);
+        $gestor = User::factory()->inOrg($org->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
 
         /** @var User $otherGestor */
-        $otherGestor = User::factory()->create(['org_id' => Organization::factory()->create()->id]);
+        $otherGestor = User::factory()->inOrg(Organization::factory()->create()->id)->create();
         $otherGestor->assignRole(RolesEnum::GESTOR->value);
 
+        $otherOrg = $otherGestor->credentials()->first()->organization;
+
         $policy = new ForumReplyPolicy;
+
+        // Gestor resolve a org do curso pelo contexto do host
+        $this->withOrgContext($org);
         $this->assertTrue($policy->pin($gestor, $reply));
+
+        $this->withOrgContext($otherOrg);
         $this->assertFalse($policy->pin($otherGestor, $reply));
     }
 }

@@ -15,19 +15,19 @@ class ForumStaffHighlightsTest extends TestCase
     private function setupCourseWithStaffAndStudent(): array
     {
         $org = Organization::factory()->create();
-        $course = Course::factory()->create(['org_id' => $org->id, 'is_published' => true]);
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
 
         /** @var User $student */
-        $student = User::factory()->create(['org_id' => null, 'name' => 'Aluno Silva']);
+        $student = User::factory()->inOrg($org->id)->create(['name' => 'Aluno Silva']);
         $student->assignRole(RolesEnum::ALUNO->value);
         $course->students()->attach($student->id, ['enrolled_at' => now(), 'status' => 'active']);
 
         /** @var User $professor */
-        $professor = User::factory()->professor()->create(['org_id' => $org->id, 'name' => 'Professora Ana']);
+        $professor = User::factory()->professor()->inOrg($org->id)->create(['name' => 'Professora Ana']);
         $course->professors()->attach($professor->id);
 
         /** @var User $gestor */
-        $gestor = User::factory()->create(['org_id' => $org->id, 'name' => 'Gestor Carlos']);
+        $gestor = User::factory()->inOrg($org->id)->create(['name' => 'Gestor Carlos']);
         $gestor->assignRole(RolesEnum::GESTOR->value);
 
         return [$org, $course, $student, $professor, $gestor];
@@ -37,7 +37,7 @@ class ForumStaffHighlightsTest extends TestCase
     {
         [$org, $course, $student, $professor, $gestor] = $this->setupCourseWithStaffAndStudent();
 
-        $topic = ForumTopic::factory()->for($course)->for($student)->create(['org_id' => $org->id]);
+        $topic = ForumTopic::factory()->for($course)->for($student)->inOrg($org->id)->create();
 
         $studentReply = ForumReply::factory()->for($topic, 'topic')->for($student)->create(['content' => 'Duvida do aluno']);
         $profReply = ForumReply::factory()->for($topic, 'topic')->for($professor)->create(['content' => 'Resposta do professor']);
@@ -94,7 +94,7 @@ class ForumStaffHighlightsTest extends TestCase
     {
         [$org, $course, $student, $professor, $gestor] = $this->setupCourseWithStaffAndStudent();
 
-        $topic = ForumTopic::factory()->for($course)->for($student)->create(['org_id' => $org->id]);
+        $topic = ForumTopic::factory()->for($course)->for($student)->inOrg($org->id)->create();
 
         $replyStudent = ForumReply::factory()->for($topic, 'topic')->for($student)->create();
         $replyProf = ForumReply::factory()->for($topic, 'topic')->for($professor)->create();

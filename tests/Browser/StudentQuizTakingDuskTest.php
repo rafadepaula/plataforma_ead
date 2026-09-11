@@ -62,7 +62,7 @@ class StudentQuizTakingDuskTest extends DuskTestCase
                 ->waitFor('@quiz-attempt-confirm')
                 ->click('@quiz-attempt-confirm')
                 ->waitFor('@quiz-result')
-                ->assertSeeIn('@quiz-result-score', 'Você acertou 100%')
+                ->assertSeeIn('@quiz-result-score', 'Você acertou 100.00%.')
                 ->waitForText('concluída com sucesso')
                 ->click('@back-to-course')
                 ->waitForLocation(parse_url(route('classroom.show', $course), PHP_URL_PATH));
