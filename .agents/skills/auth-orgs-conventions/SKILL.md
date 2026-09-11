@@ -2,13 +2,15 @@
 name: auth-orgs-conventions
 description: >
   Code patterns and guardrails shared by Organization CRUD, User
-  (Aluno/Gestor) CRUD, and CSV Import in the auth/orgs module. Use when
-  writing a controller, Policy, or Form Request managing `Organization` or
-  `User`, handling upload to the `public` disk, wiring an admin-only /
-  gestor-only route, or editing the guest-shell auth views
-  (`auth/login.blade.php`, `layouts/guest.blade.php`, `components/layout/guest-panel.blade.php`),
-  whose heading level, password toggle, `dusk=` hooks and no-self-signup rule
-  are contract.
+  (Aluno/Gestor) CRUD, per-org account provisioning (`credentials`) and
+  CSV Import in the auth/orgs module. Use when writing a controller,
+  Policy, or Form Request managing `Organization` or `User`, provisioning
+  accounts via `ProvisionOrgAccountAction`, touching the login throttle
+  key or generic auth messages, handling upload to the `public` disk,
+  wiring an admin-only / gestor-only route, or editing the guest-shell
+  auth views (`auth/login.blade.php`, `layouts/guest.blade.php`,
+  `components/layout/guest-panel.blade.php`), whose heading level,
+  password toggle, `dusk=` hooks and no-self-signup rule are contract.
 license: MIT
 metadata:
   feature: auth-orgs
@@ -62,7 +64,7 @@ Unauthorized from either path = Laravel default 403. Feature tests assert `asser
 
 ## Policies: One Role Check Per Ability, No Team Scoping
 
-Policies here (`OrganizationPolicy`, later `UserPolicy`) = plain role checks against `RolesEnum`, auto-discovered (`App\Models\{Model}` to `App\Policies\{Model}Policy`, no provider registration):
+Policies here (`OrganizationPolicy`, `UserPolicy`) = plain role checks against `RolesEnum`, auto-discovered (`App\Models\{Model}` to `App\Policies\{Model}Policy`, no provider registration):
 
 ```php
 class OrganizationPolicy
@@ -79,7 +81,43 @@ class OrganizationPolicy
 }
 ```
 
-`UserPolicy` also compares `org_id`: Gestor manages only Users in own `org_id`, resolved like `OrgScope::booted()` does (`$user->org_id ?? session('active_org_id')`). Never trust a route/request-supplied org id.
+`UserPolicy` also compares **tenant membership**: `sharesOrgContext()` asks whether the target person holds a `credentials` account in the acting user's server-resolved org (`UserPolicy::holdsAccountIn()` — Admin: impersonated `session('active_org_id')`; Gestor: `OrgContext::current()->orgId()`). Never trust a route/request-supplied org id.
+
+## Account Provisioning: `ProvisionOrgAccountAction`
+
+Every create-flow that births an org account (Aluno/Gestor/Professor
+CRUDs) goes through `App\Actions\ProvisionOrgAccountAction::execute()` —
+never inline `User::create()` + `Credential::create()` in a controller.
+The e-mail is the GLOBAL person identity: when it already belongs to
+someone — of another portal — that same `User` row is reused and a NEW
+`credentials` row is created with the form's password; the person's
+other-organization accounts (password/status) are never touched. A person
+who already holds an account in THIS organization is a form error
+(`ValidationException` on `email`: "Este e-mail já possui conta nesta
+organização."), never a silent password rewrite. Roles are additive on
+reuse (`assignRole` never demotes elsewhere).
+
+`UserImportService::importChunk()` is the bulk-flavor of the same rule
+(firstOrCreate on the credential, random never-client password,
+reactivates an inactive account instead of duplicating).
+
+## Login Throttle Key Is Org-Scoped
+
+`LoginRequest::throttleKey()` = `lower(email)|orgId|ip`, where the org
+part is `OrgContext::current()->orgId() ?? 'global'`. Never drop the org
+segment back to plain `lower(email)|ip`: one portal's failed attempts
+would lock the same person out of every other portal. Keep the 5-attempt
+limit + `Lockout` event + clear-on-success shape (`ensureIsNotRateLimited()`).
+
+## Auth Failure Messages Stay Generic
+
+Wrong password, unknown e-mail, account of another portal, deactivated
+credential and disabled tenant all collapse into the SAME `auth.failed`
+outcome (`OrgCredentialUserProvider::validateCredentials()` +
+`LoginRequest::authenticate()`), and forgot-password reads "no account in
+this org" and "inactive org" as `Password::INVALID_USER`. Never
+"improve" any of these into a distinguishable message — that is an
+account/tenant-state enumeration oracle.
 
 ## Slug Auto-Generation with Collision Suffix
 
@@ -163,13 +201,14 @@ public function store(Organization $organization): RedirectResponse
 
 Route-model-binding `Organization` (not raw `org_id` + manual lookup) gives 404 free on nonexistent id before the body runs. `destroy()` only calls `session()->forget('active_org_id')`, validates nothing.
 
-## Factories: `inactive()` / `withCnpj()` States
+## Factories: Account States Live on `UserFactory`/`CredentialFactory`
 
-`OrganizationFactory` and `UserFactory` follow the state-method convention already used for `status`/`cpf`. Add a named state, do not pass raw overrides at every call site:
+`User` is the person: `UserFactory` states are `aluno()`/`gestor()`/`professor()` (role assignment; gestor/professor self-provision an org credential so a bare create stays usable), `inOrg($org)` (creates the `credentials` row — `null` = global admin credential), `withPassword($senha)` (requires `inOrg()` earlier in the chain, else `LogicException`) and `inactive()` (deactivates EVERY credential — person-level kill switch). `Organization::factory()` keeps `inactive()`/`withCnpj()`. Add a named state, do not pass raw overrides at every call site:
 
 ```php
 Organization::factory()->inactive()->create();
-Organization::factory()->withCnpj()->create();
+User::factory()->aluno()->inOrg($org)->withPassword('senha')->create();
+Credential::factory()->forOrg($org)->inactive()->create(); // org-account-level states
 ```
 
 ## `auth/login.blade.php`: Guest Shell Markup Contract
@@ -189,16 +228,16 @@ keep:
    utilities, no second toggle implementation.
 4. All seven `dusk=` hooks (`login-form`, `login-email`, `login-password`,
     `password-toggle`, `login-remember`, `login-submit`, `forgot-password-link`) and the
-   `data-password-toggle-*` attributes stay on the **same** nodes — they are an
-   E2E contract asserted by `tests/Browser/Auth/LoginTest.php`, and
-   `DuskSelectorContractTest` fails on a moved or dropped selector.
+    `data-password-toggle-*` attributes stay on the **same** nodes — they are an
+    E2E contract asserted by `tests/Browser/Auth/LoginTest.php`, and
+    `DuskSelectorContractTest` fails on a moved or dropped selector.
 
 There is deliberately **no self-signup path** on this screen: no link to
 `/register`, no "Criar conta"/"Cadastre-se" copy. Students enter the platform
 only through an invitation link (see `invitations-architecture`) or a
 Gestor/Admin-created account. Credential rejection is a single generic message
-for both a wrong password and a non-existent e-mail (anti-enumeration), rendered
-in the `--critical` pastel alert, never red.
+(see "Auth Failure Messages Stay Generic"), rendered in the `--critical`
+pastel alert, never red.
 
 ## Guest Middleware Override
 
@@ -237,6 +276,8 @@ if (($data['status'] ?? null) === 'inactive' && $user->id === Auth::id()) {
 }
 ```
 
+Deactivation on the global screen flips EVERY credential of the person and rotates each one's `remember_token` (`Credential::rotateRememberToken()`), so no remembered device survives.
+
 ## Guard Hard Deletes Behind `ON DELETE RESTRICT` FKs
 
 `users` has no `deleted_at` (no `SoftDeletes`). Before calling `$user->delete()` on any screen, check every FK pointing at `users.id` that is `ON DELETE RESTRICT` and throw a dedicated, catchable exception instead of letting a raw `QueryException` 500 out:
@@ -258,13 +299,13 @@ New FK referencing `users.id` with `ON DELETE RESTRICT` = add its own pre-flight
 
 ## Full-Profile vs Partial Form Requests for the Same Model
 
-`UpdateUserAdminRequest` (global screen) is a distinct Form Request from `UpdateUserRequest` (operational screen), not a superset flag on one class — `role` allows all 4 `RolesEnum` values, `org_id` is editable and conditionally required/prohibited via `Rule::requiredIf()`/`Rule::prohibitedIf()` keyed off the submitted `role`, forced to `null` for `role === admin` in `prepareForValidation()` so a stale `org_id` in the payload can never leak through when the caller only changed the role select:
+`UpdateUserAdminRequest` (global screen) is a distinct Form Request from `UpdateUserRequest` (operational screen), not a superset flag on one class. Neither edits org membership or account status — per-org accounts (`credentials`) own those, managed on each portal. The global editor allows all 4 `RolesEnum` values plus a nullable `password` that resets every credential of the person; the operational editor keeps role pinned to aluno/gestor. Both normalize CPF digits in `prepareForValidation()`:
 
 ```php
 protected function prepareForValidation(): void
 {
-    if ($this->input('role') === RolesEnum::ADMIN->value) {
-        $this->merge(['org_id' => null]);
+    if ($this->has('cpf')) {
+        $this->merge(['cpf' => Cpf::digits($this->input('cpf'))]);
     }
 }
 ```
@@ -285,7 +326,7 @@ Only do this for non-sensitive scalars (a status enum value here) — never put 
 
 ## `admin/users/show.blade.php`: Read-Only Enrollment/Certificate Cards Need Explicit Eager Load
 
-The global admin user-detail screen adds two read-only `<x-ui.card>`s beside the original `<dl>` (which keeps its `dusk=` attributes untouched): "Matrículas" from `$user->courses` (title, enrolled date, pivot status badge) and "Certificados" from `$user->certificates` (course title, issued date, revoked/emitido badge — `accent-2`/`accent` variants, never `danger`). Both relations must be added to `UserAdminController::show()`'s `$user->load([...])` call (`courses`, `certificates.course`) — the base `['organization', 'roles']` load predates this and does not cover them; add any further relation the show view starts rendering the same way rather than letting the view lazy-load per row.
+The global admin user-detail screen adds two read-only `<x-ui.card>`s beside the original `<dl>` (which keeps its `dusk=` attributes untouched): "Matrículas" from `$user->courses` (title, enrolled date, pivot status badge) and "Certificados" from `$user->certificates` (course title, issued date, revoked/emitido badge — `accent-2`/`accent` variants, never `danger`). Both relations must be added to `UserAdminController::show()`'s `$user->load([...])` call (`courses`, `certificates.course`) — the base `['roles', 'credentials.organization']` load predates this and does not cover them; add any further relation the show view starts rendering the same way rather than letting the view lazy-load per row.
 
 ## `UserHomeResolver`
 

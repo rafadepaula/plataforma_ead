@@ -1,5 +1,5 @@
 {
-    "count": 544,
+    "count": 538,
     "entries": [
         {
             "file": "auth/reset-password.blade.php",
@@ -812,30 +812,6 @@
         {
             "file": "convite/show.blade.php",
             "selector": "invitation-submit"
-        },
-        {
-            "file": "landing/show.blade.php",
-            "selector": "landing-login-link"
-        },
-        {
-            "file": "landing/show.blade.php",
-            "selector": "landing-login-link"
-        },
-        {
-            "file": "landing/show.blade.php",
-            "selector": "landing-headline"
-        },
-        {
-            "file": "landing/show.blade.php",
-            "selector": "landing-cta-login"
-        },
-        {
-            "file": "landing/show.blade.php",
-            "selector": "landing-cta-login"
-        },
-        {
-            "file": "landing/show.blade.php",
-            "selector": "contact-button"
         },
         {
             "file": "organizations/edit.blade.php",

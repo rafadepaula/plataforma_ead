@@ -3,7 +3,8 @@ name: invitations-conventions
 description: >
   Code patterns, snippets, guardrails for Smart Invitation & Enrollment
   feature: ProcessSmartInvitationAction lockForUpdate
-  transaction, check-email/adaptive-form contract, EnrollmentController
+  transaction with post-lock host re-check, credential-based
+  check-email/adaptive-form contract, EnrollmentController
   course_user upsert pattern, convite/show.blade.php guest-shell +
   .d-none-only visibility contract, InvitationLinkPolicy/route
   conventions. Use
@@ -37,6 +38,10 @@ return DB::transaction(function () use ($token, $data) {
         throw InvitationLinkInvalidException::notFound($token);
     }
 
+    if ((int) $invitationLink->org_id !== (int) OrgContext::current()->orgId()) {
+        throw InvitationLinkInvalidException::notFound($token);
+    }
+
     if ($reason = $invitationLink->unusableReason()) {
         throw InvitationLinkInvalidException::forReason($reason, $token);
     }
@@ -48,39 +53,69 @@ Never construct `new InvitationLinkInvalidException('some sentence')` at a call
 site: the visitor-facing copy lives on the exception (`userMessage()`), keyed by
 reason, and is rendered once by `bootstrap/app.php` — see
 `invitations-architecture`. Call sites only pick the *reason*: `::notFound()`
-for a null row, `::forReason($link->unusableReason(), $token)` for a row that
-exists but may not be consumed. `InvitationController::show()` uses the exact
-same two-step shape, minus the lock.
+for a null row **and** for a wrong-host row, `::forReason($link->unusableReason(),
+$token)` for a row that exists but may not be consumed.
+`InvitationController::resolveUsableLink()` uses the exact same three-step
+shape, minus the lock. The host check must sit *inside* the transaction,
+after the lock — a redemption racing a link transfer between orgs is
+arbitrated from the freshly locked row, same as the usability verdict.
 
 Never move `isUsable()` check before `lockForUpdate()` call. Never reuse
 `InvitationLink` instance caller loaded before entering transaction. Either
 mistake reopens exact race lock exists to close (see
 `invitations-architecture` two-concurrent-requests example).
 
-## New Account vs. Existing Account: Password Check, Never a Silent Account Switch
+## Existing Person: Branch On The Host Org's Credential, Never On A Global Column
 
 ```php
 $user = User::query()->where('email', $data['email'])->first();
 
 if ($user) {
-    if (! Hash::check($data['password'], $user->password)) {
-        throw ValidationException::withMessages([
-            'password' => ['Senha incorreta para o e-mail informado.'],
+    $credential = Credential::query()
+        ->forOrg($invitationLink->org_id)
+        ->where('user_id', $user->id)
+        ->first();
+
+    if ($credential) {
+        if (! Hash::check($data['password'], $credential->password)) {
+            throw ValidationException::withMessages([
+                'password' => ['Senha incorreta para o e-mail informado.'],
+            ]);
+        }
+
+        if ($credential->status !== 'active') {
+            throw ValidationException::withMessages([
+                'email' => ['Esta conta está inativa. Procure o gestor da sua organização.'],
+            ]);
+        }
+    } else {
+        // Person exists in another portal only: typed password creates
+        // THIS portal's account.
+        Credential::create([
+            'user_id' => $user->id,
+            'org_id' => $invitationLink->org_id,
+            'password' => Hash::make($data['password']),
+            'status' => 'active',
         ]);
     }
 } else {
-    $user = User::create([...(new-account fields)..., 'org_id' => $invitationLink->org_id]);
+    $user = User::create([...(identity fields: name/email/cpf/email_verified_at)...]);
     $user->assignRole(RolesEnum::ALUNO->value);
+    Credential::create([...same shape as above...]);
 }
 ```
 
-Wrong password on existing e-mail is `ValidationException` (surfaced back
-to `password` field, HTTP 422 via normal FormRequest/Exception pipeline),
-**not** `InvitationLinkInvalidException` — link itself is fine, submitted
-credential is wrong. Also deliberately does not re-check "does this e-mail
-exist" here: already revealed, by design, by `/convite/check-email` one
-step earlier in flow (see next section). This branch job is only
-authenticating against *submitted* password.
+Order inside the `$credential` branch is load-bearing: password first,
+status second. Inactive status is blocked **after** the password check so
+the status of an account is never disclosed to someone who cannot
+authenticate into it (same order as login). Never validate against
+`$user->password` — `users.password` no longer exists; the account hash
+lives on the org's `credentials` row (`Credential::forOrg(...)`). Wrong
+password is `ValidationException` (surfaced back to `password` field,
+HTTP 422 via normal FormRequest/Exception pipeline), **not**
+`InvitationLinkInvalidException` — link itself is fine, submitted
+credential is wrong. Never write `org_id` on the `User::create` call:
+`users` has no such column; the link's org lands on the `Credential`.
 
 ## `course_user` Upsert: Read-Then-Branch, Never a Blind `attach()`
 
@@ -114,11 +149,21 @@ second insert. See `invitations-architecture` for why this must never touch
 feature scope; if ever requested, needs own explicit design, not tweak to
 this upsert.
 
-## `check-email`: Reveal Existence By Design, Then Never Re-Reveal It
+## `check-email`: Existence Is Scoped To The Host Org's Credentials
 
 `InvitationController::checkEmail()` is one endpoint in this feature that
 intentionally answers "does account with this e-mail exist?" to
-unauthenticated caller — the whole point of the adaptive form. Every
+unauthenticated caller — the whole point of the adaptive form. The verdict
+is **credential existence in the host org**, not mere user existence:
+
+```php
+$exists = $user !== null
+    && Credential::query()->forOrg($context->orgId())->where('user_id', $user->id)->exists();
+```
+
+So a person registered only in another portal gets `exists: false` here,
+sees the full new-account form, and the typed password provisions this
+portal's credential on submit (see `invitations-architecture`). Every
 other endpoint in this feature must **not** leak same fact through
 different channel (timing, distinct error codes, etc.). In particular
 `ProcessSmartInvitationAction` wrong-password branch above returns same

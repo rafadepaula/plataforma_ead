@@ -27,8 +27,9 @@ These tests guard this module's contract, must stay green (PHPUnit, no Pest):
 - `tests/Feature/ForumTopicControllerTest.php` — controller contract:
   `canCreateTopic`/`canPin` flags per role, 15-per-page pagination,
   `pinnedFirst()` ordering, store validation + sanitization, multi-org
-  Aluno store (`org_id === null`) NOT throwing
-  `UnresolvedOrgContextException`, `lastReplyId` on show, pin both ways,
+  Aluno store NOT throwing `UnresolvedOrgContextException` (the topic is
+  stamped with the Course's own `org_id` via `withoutEvents()`), 
+  `lastReplyId` on show, pin both ways,
   cross-org Gestor 403, non-enrolled Aluno redirect.
 - `tests/Feature/ForumReplyControllerTest.php` — reply store/update/
   destroy plus the `fetchNew` payload: `id > since_id` only, ascending,
@@ -133,12 +134,14 @@ vendor/bin/sail dusk --filter=ForumPollingAndInteractionDuskTest
 
 - Means `ForumTopicController::store()` `ForumTopic::withoutEvents()`
   wrapper removed or bypassed. `OrgScope` `creating` hook then try
-  resolve `org_id` from `$user->org_id ?? session('active_org_id')`,
-  which multi-org Aluno (`org_id === null`, no impersonation
-  session) have neither of, even though `$courseModel->org_id` right
-  there. Restore `withoutEvents()` wrapper instead of setting
-  `session('active_org_id')` for Aluno — that session key is
-  Admin-Impersonate-Org-only (see `tenancy-architecture`).
+  overwrite `org_id` with the resolved tenant context — impersonated org
+  for Admin (`session('active_org_id')`), request-host org
+  (`OrgContext::current()->orgId()`) for everyone else — which a multi-org
+  Aluno writing from a different host cannot resolve (wrong tenant stamped
+  or `UnresolvedOrgContextException`), even though
+  `$courseModel->org_id` right there. Restore `withoutEvents()` wrapper
+  instead of setting `session('active_org_id')` for Aluno — that session
+  key is Admin-Impersonate-Org-only (see `tenancy-architecture`).
 
 ## Cross-Org / Unenrolled Access Returns Wrong Status Code
 

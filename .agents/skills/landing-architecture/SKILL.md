@@ -1,16 +1,16 @@
 ---
 name: landing-architecture
 description: >
-  Public Landing Page & Component Showcase domain: `landing/show.blade.php`
-  rendered as 7 full-bleed bands alternating `--blue-50` and `--surface`,
-  36px (`--radius-2xl`) hero card on a 76px (`--appbar-height`) public
-  header, `--content-max`=1240px band container against a 760px
-  (`--reading-max`) lead column, and why the page is static by design —
-  zero Eloquent queries, thin `LandingPageController::show()` returning
-  `view('landing.show')`, all role branching done in Blade. Use when
-  designing or reviewing the public landing/showcase screen, before
-  adding or reordering a band, or when deciding what a public marketing
-  page is allowed to query.
+  Per-Organization public Landing Page domain (`GET /`, `landing.show`):
+  `LandingPageController` resolves `organizations.landing_view` and
+  renders the tenant's own blade `tenants.{landing_view}.landing`
+  (`resources/views/tenants/{view}/landing.blade.php`; ligacerto,
+  informatica); state-zero host or org without usable blade redirects to
+  login; inactive org keeps landing viewable. Brand resolution via
+  `OrgIdentityComposer`. Band/typography styling in shared
+  `_public-pages.scss`. Use when designing or reviewing the public
+  landing screen, before adding a tenant blade or reordering a band, or
+  when deciding what a public marketing page is allowed to query.
 license: MIT
 metadata:
   feature: landing
@@ -21,126 +21,143 @@ metadata:
 
 ## Overview
 
-Public marketing page (`GET /`, route name `landing.show`) plus a
-**component showcase**: the band that proves the Design System to an
-anonymous visitor by rendering real `<x-ui.*>` components — an in-progress
-course card, an issued-certificate card and a forum-question card —
-instead of stock photos. Same URL serves anonymous visitors and
-authenticated Admin/Gestor/Aluno; the only thing that changes is where
-the two CTAs point.
+Public marketing page of each portal (`GET /`, route name `landing.show`)
+— **per-Organization**. Each tenant's landing is its own Blade view,
+named by `organizations.landing_view` and resolved to
+`resources/views/tenants/{landing_view}/landing.blade.php`. Two exist
+today: `tenants/ligacerto/landing.blade.php` and
+`tenants/informatica/landing.blade.php`. The old single static
+`resources/views/landing/show.blade.php` was removed from the
+repository — never reference or resurrect it. Same URL serves anonymous
+visitors and authenticated Admin/Gestor/Aluno; only the CTA targets
+change.
 
-## Static by Design: Zero Eloquent Queries
-
-`App\Http\Controllers\LandingPageController` is deliberately one line
-thick:
+## Controller Fallback Ladder (`LandingPageController::show()`)
 
 ```php
-public function show(): View
+public function show(): View|RedirectResponse
 {
-    return view('landing.show');
+    $context = OrgContext::current();
+
+    if ($context->isStateZero()) {
+        return redirect()->route('login');
+    }
+
+    $organization = $context->organization;
+    $viewName = filled($organization->landing_view)
+        ? 'tenants.'.$organization->landing_view.'.landing'
+        : null;
+
+    if ($viewName === null || ! ViewFacade::exists($viewName)) {
+        return redirect()->route('login');
+    }
+
+    return view($viewName, ['organization' => $organization]);
 }
 ```
 
-No model, no repository, no `Organization` resolution, no metrics query.
-Every word on the page is literal copy inside
-`resources/views/landing/show.blade.php`; the only dynamic expressions are
-`config('app.name')`, `date('Y')` and route lookups. Consequences:
+Three rungs, in fixed order:
 
-- **No tenant resolution happens server-side.** `OrgScope` never fires,
-  so no `UnresolvedOrgContextException` can ever come out of this route
-  (contrast with `tenancy-architecture`): an anonymous visitor has no org
-  and the page needs none.
-- **Do not "improve" it with real data.** Reading the newest course or the
-  real certificate count here would couple a public, uncacheable-in-tests
-  marketing page to tenant data, and leak cross-org content to anonymous
-  visitors. The showcase is *staged copy that looks like real components*,
-  not a query.
-- **Authenticated branching lives in the view**, not the controller. A
-  `@php` block derives `$dashboardRoute` (`student.courses.index` for
-  `role:aluno`, `admin.dashboard` for the staff roles) and `@auth`/`@else`
-  swaps the CTA target. Adding a third role destination means editing that
-  block, never the controller.
-- **Feature tests are render assertions**, not data assertions — no
-  factory seeding is needed to render this page.
+1. **State zero** (host matched no Organization — direct IP, unknown
+   domain) → straight to the admin login. No tenant surface exists there
+   at all.
+2. **`landing_view` null or Blade missing** (`ViewFacade::exists()`
+   check, so a stale `landing_view` value degrades gracefully) → the
+   org's own login. An org without a published landing is not an error
+   page, it is just a portal whose front door is the login.
+3. Otherwise → render the tenant blade with `organization` injected. An
+   **inactive** org still gets rung 3: `ResolveOrgFromHost` resolves it,
+   `LandingPageController` never checks `status`, so the landing stays
+   viewable while every auth surface behind it fails (asserted by
+   `tests/Feature/Tenancy/LandingTest.php` and
+   `tests/Feature/LandingPageControllerTest.php`). Do not "harden" this
+   into a redirect — a suspended portal's public face staying up is
+   deliberate.
 
-## 7-Band Alternation
+## What The Controller Is Allowed To Query
 
-The view renders as `<x-layout.public :container="false"
-surface="white" class="landing-page">`: the layout emits the
-`<!doctype html>`/`@vite` boilerplate and the `footer` slot, the view
-owns every band full-bleed. Bands alternate `--blue-50` (#f2f6ff) and
-`--surface` (white) so no two neighbours share a ground:
+One `Organization` read (already resolved by `OrgContext`) plus one view
+existence check. No courses, no metrics, no certificate counts. Every
+word on the page is copy inside the tenant blade; the only dynamic
+expressions are the org's own fields (`name`, `logo_path`), `date('Y')`
+and route lookups. Do not "improve" a tenant blade with real course
+data: it couples a public page to tenant data and leaks catalog content
+to anonymous visitors of a portal whose Gestor may not want it exposed.
+
+## Tenant Blade Shape (4 Bands)
+
+Both shipped blades share one skeleton, full-bleed under
+`<x-layout.public :container="false" surface="white" class="landing-page">`:
 
 | # | Band | Ground | Content |
 | --- | --- | --- | --- |
-| 1 | Header público | `--surface` | 76px bar, brand mark, `Entrar`/`Acessar plataforma` |
-| 2 | Hero | `--blue-50` (`.ds-band-blue`) | badge, 44px headline, lead, primary CTA |
-| 3 | Capacidades / 3 pilares | `--surface` | 3 cards |
-| 4 | Como funciona / 4 passos | `--blue-50` (`.ds-band-blue`) | 4 numbered circles |
-| 5 | Vitrine de componentes | `--surface` (`.landing-showcase-band`) | 3 showcase cards |
-| 6 | Contato institucional | `--blue-50` (`.ds-band-blue`) | `#contato` anchor, CTA |
-| 7 | Rodapé público | `--surface` | copyright + validation link |
+| 1 | Header público | `--surface` | org logo (`landing-org-logo`) or `.brand-mark` fallback, `.landing-brand-name`, `<x-help-button key="landing" />`, theme toggle, `Entrar`/`Acessar plataforma` (`landing-login-link`) |
+| 2 | Hero | `--blue-50` (`.ds-band-blue`) | `.tag`, `landing-title` `<h1>`, `.landing-lead`, guest CTA (`landing-hero-cta`) |
+| 3 | Como funciona | `--surface` | `landing-section-title` `<h2>`, 3 `.ds-card` cards in Bootstrap `col-md-4` columns |
+| 4 | Rodapé público | `--surface` | `© {ano} {org}`, `Validar certificado` → `route('certificates.verify')`, guest `Entrar` |
 
-Rules that keep it legible:
+Copy is per-tenant and tenant-owned (LigaCerto: "Capacitação para ligas
+esportivas..."; Informática+: "Cursos de informática..."), pinned
+verbatim by `LandingPageTest`. Adding a tenant = new
+`resources/views/tenants/{slug}/landing.blade.php` + setting
+`organizations.landing_view`; no controller or route change.
 
-- Ground colour is **one class per section** — `.ds-band-blue` for the
-  blue bands, nothing (inheriting `.landing-page { background: var(--surface) }`)
-  for the white ones. Band 5 re-states `var(--surface)` explicitly
-  (`.landing-showcase-band`) so the showcase stays white even if someone
-  later gives `.landing-band` a tint.
-- Inserting a band means re-deriving the alternation, not just appending a
-  `<section>`. Two blue bands in a row read as one broken band.
-- Band 6 carries `id="contato"` and is the target of both the in-page
-  `Suporte` footer link and the anchor contract.
+## Brand In The Shell: `OrgIdentityComposer`
 
-## Width and Radius Tokens
+The brand every shell renders — topbar, sidebar drawer, guest panel and
+`<title>` — resolves once in
+`app/Http/View/Composers/OrgIdentityComposer.php`:
 
-| Token | Value | Where it applies |
-| --- | --- | --- |
-| `--appbar-height` | 76px | `.landing-header` (drops to 64px under 905px) |
-| `--radius-2xl` | 36px | `.landing-hero` and `.ds-hero-card` |
-| `--content-max` | 1240px | `.landing-container`, `.landing-footer-inner`, `.landing-band` inline padding |
-| `--reading-max` | 760px | `.landing-lead`, `.landing-reading-width` (band 6 text) |
-| `--space-10` | 64px | `.landing-hero` vertical padding |
+- Non-admin user (or guest) on a tenant host → host org's `name` +
+  `logo_path`.
+- Authenticated `role:admin` on **any** host (state zero or tenant
+  alike) → global `system_name` setting, no logo — the platform staff is
+  not "of" any portal.
+- State zero (anyone) → `system_name`.
+
+Views receive `orgBrand` (`name`, `logoPath`). Landing-specific brand in
+the tenant blade reads `$organization` directly (header band), which is
+why an Admin visiting a tenant landing sees the org's brand on the
+landing itself but `system_name` in the authenticated shell.
+
+## Width Tokens And Breakpoints (`_public-pages.scss`)
+
+All landing selectors live in
+`resources/scss/components/_public-pages.scss`, **shared** with the
+public certificate-verification screen (`.ds-band-blue`, `.ds-hero-card`,
+`.max-w-reading`, `.icon-circle-*` used by both) — a "landing-only" edit
+there can move the other public screen.
+
+Key tokens:
+
+| Token | Where it applies |
+| --- | --- |
+| `--radius-2xl` (36px) | `.landing-hero` hero card — the screen's signature shape, pinned by the Dusk responsive test |
+| `--content-max` (1240px) | `.landing-container`, `.landing-footer-inner` |
+| `--reading-max` (760px) | `.landing-lead` |
+| `--space-10`/`--space-9` | `.landing-hero` padding (shrinks under 576px) |
 
 `.landing-band` is **full-bleed with token-driven gutters**, not a
 centered container: `padding: var(--space-10)
 max(var(--space-8), calc((100% - var(--content-max)) / 2))`. That is what
 makes the alternation reach the viewport edges while the *content* still
-stops at 1240px. Do not replace it with Bootstrap `.container` — that
-would re-centre a narrower box and break the full-bleed band look
-(`<x-layout.public>` is passed `:container="false"` for exactly this
-reason).
-
-The two maxima are intentionally different: **1240px for grids and the
-footer** (card rows need the width), **760px for prose** (`.landing-lead`
-and band 6 copy). A long paragraph set inside a 1240px band container
-without the 760px cap is a regression.
-
-Hero card: `background: var(--blue-50)` on a blue band — same hue, so the
-36px radius is the only thing delineating it; padding is
-`var(--space-10) var(--space-9)` (64px/48px), shrinking under 576px. Keep
-the radius on the hero when restyling; the 36px hero is the screen's
-signature shape.
-
-## Breakpoints (`_public-pages.scss`)
-
-- **≤1239.98px** — band gutters collapse to `--space-8`; the 4-step grid
-  (`landing-grid-4`/`ds-grid-4`) goes 4 → 2 columns.
-- **≤904.98px** — everything goes single column (`grid-3` and `grid-4`
-  alike), header to 64px, `.landing-brand-name` hidden (mark survives),
-  footer content centres, hero headline drops `--font-size-display`
-  (44px) → `--font-size-h1` (36px).
-
-All landing selectors live in `resources/scss/components/_public-pages.scss`
-shared with the public certificate-verification screen (`.ds-band-blue`,
-`.ds-hero-card`, `.max-w-reading` are used by both) — a "landing-only"
-edit there can move the other public screen.
+stops at 1240px (`<x-layout.public>` is passed `:container="false"` for
+exactly this reason). Below 905px the header drops to 64px and
+`.landing-brand-name` is hidden (logo mark survives).
 
 ## Contextual Help
 
-Standalone public document, no shared layout keying: the view must wire
-`<x-help-button key="landing">` explicitly in its own header band. See
-`help-architecture` for the standalone-document bucket and
+Standalone public document, no shared layout keying: each tenant blade
+wires `<x-help-button key="landing" />` explicitly in its own header
+band. See `help-architecture` for the standalone-document bucket and
 `help-maintenance` for why a missing button there is a wiring omission
 with no automatic enforcement.
+
+## Related
+
+- `landing-conventions` — `dusk=` contract, copy rules, footer link.
+- `landing-maintenance` — tests and failure modes.
+- `tenancy-architecture` — `OrgContext`, state zero, host resolution the
+  controller leans on.
+- `certificates-architecture` — the `certificates.verify` public route
+  the footer links to.

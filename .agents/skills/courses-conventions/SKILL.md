@@ -21,10 +21,11 @@ metadata:
 `Course` model (single-file `storeImage()`/`storePdf()` remain for legacy
 paths), not bare `course_id` int and not logged-in user. Org folder derived
 from `$course->org_id` first, only fall back to
-`auth()->user()->org_id ?? session('active_org_id')` if Course instance somehow
-have no `org_id` yet. Matter because Admin impersonating Org B could otherwise
-upload file into Org A's Course while writing to path derived from own session,
-silently mismatching stored path against Course's real tenant:
+`OrgContext::current()->orgId()` (the request host's Organization) if Course
+instance somehow have no `org_id` yet. Matter because Admin impersonating Org
+B could otherwise upload file into Org A's Course while writing to path
+derived from own session, silently mismatching stored path against Course's
+real tenant:
 
 ```php
 /**
@@ -210,7 +211,7 @@ protected function authorizeForCourse(User $user, Course $course): bool
         return $user->hasRole(RolesEnum::PROFESSOR->value) && $user->teaches($course);
     }
 
-    if ($user->hasRole(RolesEnum::GESTOR->value) && (int) $user->org_id !== (int) $course->org_id) {
+    if ($user->hasRole(RolesEnum::GESTOR->value) && (int) OrgContext::current()->orgId() !== (int) $course->org_id) {
         return false;
     }
 

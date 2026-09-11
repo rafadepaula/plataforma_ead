@@ -34,6 +34,30 @@ class MultiTenantStudentImportTest extends TestCase
             ->assertDontSee('Curso de Outra Org');
     }
 
+    public function test_import_reactivates_an_inactive_account_in_the_importing_org(): void
+    {
+        $org = Organization::factory()->create();
+        $course = Course::factory()->inOrg($org->id)->create();
+
+        $student = User::factory()->aluno()->inOrg($org)->withPassword('senha-antiga')->inactive()->create([
+            'email' => 'inativa@example.com',
+        ]);
+
+        $service = new UserImportService;
+        $result = $service->importChunk(
+            rows: [['name' => 'Aluna Inativa', 'email' => 'inativa@example.com']],
+            courseId: $course->id,
+            orgId: $org->id,
+        );
+
+        $this->assertSame(0, $result['created']);
+        $this->assertSame(1, $result['enrolled']);
+
+        // reimportar = (re)dar acesso: a conta volta a ficar ativa
+        $this->assertSame('active', $student->fresh()->credentialFor($org)->status);
+        $this->assertSame(1, $course->students()->count());
+    }
+
     public function test_existing_global_email_enrolls_in_new_orgs_course_without_duplicating_user_or_overwriting_password(): void
     {
         $originalOrg = Organization::factory()->create();

@@ -28,9 +28,10 @@ use Illuminate\Support\Facades\Gate;
  *
  * `{course}`/`{topic}` are always plain `int` route parameters, never a
  * typed `Course`/`ForumTopic` implicit binding: `ForumTopic` carries
- * `OrgScope`, and a multi-org Aluno (, `org_id === null`, no
- * impersonation session) would have every query silently filtered to
- * nothing under that scope (see `OrgScope::bootOrgScope()`) — every
+ * `OrgScope`, and the acting user's context (host org or impersonated
+ * org) may differ from the target Course's org — under the scope every
+ * lookup here would be silently filtered to nothing (see
+ * `OrgScope::bootOrgScope()`) — so every
  * lookup here explicitly bypasses it by name, via
  * `withoutGlobalScope('org')` — never the blanket
  * `withoutGlobalScopes()`, which would drop `SoftDeletingScope` too and
@@ -80,9 +81,11 @@ class ForumTopicController extends Controller
 
     /**
      * `ForumTopic` carries `OrgScope`, whose `creating` hook (see
-     * `OrgScope::booted()`) unconditionally overwrites `org_id` by
-     * resolving `$user->org_id ?? session('active_org_id')` — a multi-org
-     * Aluno has neither, so it would throw
+     * `OrgScope::booted()`) overwrites `org_id` by resolving the context
+     * chain (impersonated org for Admin, host org otherwise) — a multi-org
+     * Aluno writing from a host whose Organization differs from the
+     * target Course's would get the wrong tenant stamped, and an
+     * unresolvable context would throw
      * `UnresolvedOrgContextException` even though the target Course's
      * tenant is perfectly well known here. `ForumTopic::withoutEvents()`
      * skips that hook for this single write so the Course's own `org_id`

@@ -182,6 +182,33 @@ Single query supplies four aggregates:
 Never use `students_count` for delete protection. Cancelled/completed rows belong
 in displayed total but cannot disable removal.
 
+## Per-Course People Pickers: Active-Credential Eligibility
+
+The Course's own management screens only ever offer people holding an
+**`active` credential in the Course's own Organization** — the per-org
+account, not a global user attribute (`User` has no `org_id`; see
+`tenancy-architecture`):
+
+- **Professor pool** (`CourseProfessorController::index`, the assignment
+  panel behind `courses.professors.*`): candidates are users with the spatie
+  `professor` role AND `whereHas('credentials', org = $course->org_id +
+  status = 'active')`.
+- **Attach validation** (`AttachCourseProfessorRequest`): re-checks the same
+  predicate in a closure rule — role `professor` plus an active credential
+  in the Course's org — so a cross-org or deactivated row can never be
+  created even by crafted request.
+- **Student search for manual enrollment** (`EnrollmentController::search`):
+  same `whereHas('credentials', ...)` + `aluno` role, excluding already-
+  actively-enrolled students.
+- **Manual enrollment** (`StoreEnrollmentRequest`): closure rule requires an
+  active credential on the Course's org **and** the `aluno` role; an
+  inactive-credential account is NOT enrollable — the Gestor must reactivate
+  it first on `gestor.students.*`.
+
+The pattern is uniform: eligibility = role (spatie) + `credentials.org_id` +
+`credentials.status = 'active'`. Never query `users.org_id`/`users.status`
+— those columns do not exist.
+
 ## Related
 
 - `tenancy-architecture` — `OrgScope`, `RolesEnum`, Impersonate Org.

@@ -59,10 +59,16 @@ class UserImportService
                 $created++;
             }
 
-            Credential::query()->firstOrCreate(
+            // Reimportar uma pessoa cuja conta nesta org foi desativada
+            // REATIVA a conta: o import existe para (re)dar acesso + matrícula.
+            $credential = Credential::query()->firstOrCreate(
                 ['user_id' => $user->id, 'org_id' => $orgId],
                 ['password' => Hash::make(Str::random(32)), 'status' => 'active'],
             );
+
+            if ($credential->status !== 'active') {
+                $credential->forceFill(['status' => 'active'])->save();
+            }
 
             if (! $user->courses()->withoutGlobalScopes()->where('course_id', $courseId)->exists()) {
                 $user->courses()->withoutGlobalScopes()->attach($courseId, [

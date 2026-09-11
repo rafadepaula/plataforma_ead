@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\DB;
 /**
  * Métricas do dashboard do Professor (`professor.dashboard`). Sempre
  * parte de `$user->taughtCourses()` (pivot `course_professor`) — nunca de
- * `session('active_org_id')`/`$user->org_id`, semântica do
+ * `session('active_org_id')`/`OrgContext`, semântica do
  * {@see DashboardMetricsService} admin/gestor que aqui NÃO se aplica
  * (o perímetro do Professor é a atribuição por curso, não a Organização).
  */

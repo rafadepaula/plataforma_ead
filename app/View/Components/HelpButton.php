@@ -15,8 +15,9 @@ use Illuminate\View\Component;
  * authenticated screen (topbar) plus every public screen (Landing Page,
  * `/convite/*`, `/validar-certificado/*`). Resolution mirrors `OrgScope`'s
  * own admin-vs-org-user branching (see `tenancy-conventions`) but reads
- * `session('active_org_id')`/`Auth::user()` directly instead of relying on
- * the scope, because the resolved `org_id` must be compared explicitly
+ * `session('active_org_id')` (Admin) / `OrgContext::current()` (everyone
+ * else) directly instead of relying on the scope, because the resolved
+ * `org_id` must be compared explicitly
  * inside `HelpArticleResolverService` rather than applied as a query
  * constraint — and because a guest (no `Auth::user()` at all) must resolve
  * to `org_id = null` rather than throwing.

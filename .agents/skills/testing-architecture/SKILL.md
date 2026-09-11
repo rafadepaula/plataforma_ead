@@ -1,6 +1,6 @@
 ---
 name: testing-architecture
-description: Visão geral, schemas, fluxos, regras da infraestrutura de testes, Quality Gate, esteira CI/CD da Plataforma EAD.
+description: Visão geral, schemas, fluxos, regras da infraestrutura de testes, helpers de tenancy por host (onHost/actingAsAdmin), Quality Gate, esteira CI/CD da Plataforma EAD.
 ---
 
 # Testing Architecture (`testing-architecture`)
@@ -41,6 +41,45 @@ Infraestrutura de testes garante integridade do sistema via Test-Driven Developm
    - Job único `test`, ambiente PHP 8.5, extensão Xdebug ativada.
    - Serviços dedicados `mysql` (base `testing`) e `selenium` (`selenium/standalone-chrome`, rede `host`) sobem em paralelo ao job, com healthchecks (`mysqladmin ping` / `curl` no endpoint `/wd/hub/status`).
    - Execução sequencial: compilar assets com Node 20 / Vite, configurar ambiente `.env.ci` (sqlite `:memory:`, rápido) para suítes Unit/Feature, trocar explícito para `.env.dusk.ci` (mysql `testing`, `DUSK_DRIVER_URL` apontando para serviço `selenium`) imediatamente antes de `php artisan dusk`, verificar limite de cobertura de 95,00%, upload dos artefatos de cobertura.
+   - Passo Dusk roda `php artisan dusk --exclude-group requires-network`: o grupo `requires-network` (ex.: `tests/Browser/LessonPlayerDuskTest.php`, que reproduz streams reais de vídeo) fica fora do CI porque depende de rede externa no Selenium.
+
+---
+
+## Helpers de Tenancy por Host (`tests/TestCase.php`)
+
+A tenancy é resolvida pelo header `Host` de cada request (ver
+`tenancy-architecture`), então toda feature test precisa fixar o host —
+os helpers abaixo centralizam isso:
+
+- **`TestCase::ADMIN_HOST = 'localhost.admin'`**: host neutro de estado
+  zero (nenhuma Organization mapeada) usado nas requests admin-only
+  (`organizations` CRUD, etc.).
+- **`onHost(?string $host)`**: fixa o host de todas as requests
+  subsequentes **reescrevendo a URI** da request (`prepareUrlForRequest()`
+  prefixa `http://{host}`) e chamando `URL::forceRootUrl()` para
+  `route()` e `assertRedirect(route(...))` falarem a mesma authority.
+  **NUNCA use `withServerVariables(['HTTP_HOST' => ...])`**: o client
+  Symfony de hoje **deriva `HTTP_HOST` da URI** e ignora a variável
+  spoofada — `ResolveOrgFromHost` leria o host errado. `null` restaura o
+  default de `app.url` (estado zero em `localhost`).
+- **`withOrgContext(?Organization $organization, bool $orgIsActive = true)`**:
+  bindeia o singleton `OrgContext` direto no container — para testes
+  Unit/sem HTTP que exercitam serviços org-aware fora do middleware
+  (`null` simula estado zero).
+- **`actingAs($user)`**: override que fixa o host automaticamente na
+  primeira chamada — admin cai em `ADMIN_HOST` (estado zero); qualquer
+  outro usuário cai no host da credential org-bound que ele guarda
+  (espelhando os portais reais, onde o host precede a autenticação).
+  Testes que precisam de outro host chamam `onHost()` depois (prevalece).
+- **`actingAsAdmin(?Organization $impersonatedOrg = null)`**: cria admin
+  com credential global (`org_id = null`), autentica no host neutro e,
+  opcionalmente, semeia `session('active_org_id')` para simular
+  Impersonate Org.
+- **`actingAsOrgUser(?Organization $organization = null, string $role = 'gestor')`**:
+  cria usuário com credential na org informada (ou fresh) e autentica no
+  host dela.
+- **`assertAccountIn(Organization, User)` / `assertNoAccountIn(Organization, User)`**:
+  asserções de membership via `User::credentialFor()`.
 
 ---
 
@@ -56,10 +95,10 @@ Infraestrutura de testes garante integridade do sistema via Test-Driven Developm
 [PHPUnit Unit & Feature + Clover XML]
     |
     v
-[Swap to .env.dusk.ci (mysql `testing` + selenium)] -> [Wait for MySQL] -> [Artisan Serve]
+[Swap to .env.dusk.ci (mysql `testing` + selenium)] -> [Wait for MySQL] -> [Map tenant hosts in /etc/hosts] -> [Artisan Serve]
     |
     v
-[Laravel Dusk E2E against `testing` DB] -> [Check Coverage >= 95.00%] -> [Upload Clover Artifact]
+[Laravel Dusk E2E (–-exclude-group requires-network) against `testing` DB] -> [Check Coverage >= 95.00%] -> [Upload Clover Artifact]
 ```
 
-Serviços `mysql`/`selenium` do GitHub Actions são containers-irmãos do job (não `container:` de job), então acesso via `127.0.0.1`/`localhost` com portas publicadas (`3306`, `4444`). Serviço `selenium` roda com `--network=host` para alcançar `php artisan serve` do runner via `localhost`.
+Serviços `mysql`/`selenium` do GitHub Actions são containers-irmãos do job (não `container:` de job), então acesso via `127.0.0.1`/`localhost` com portas publicadas (`3306`, `4444`). Serviço `selenium` roda com `--network=host` para alcançar `php artisan serve` do runner via `localhost`. O passo "Map tenant hosts into /etc/hosts" registra os hosts de tenant que a suíte Dusk navega (ex.: `localhost.ligacerto`), e o `APP_URL` do `.env.dusk.ci` (`http://127.0.0.1:8000`) define a org do portal Dusk via `DuskTestCase::duskTenant()`.

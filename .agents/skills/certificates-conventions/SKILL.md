@@ -48,7 +48,7 @@ $hash = hash('sha256', $userId.$courseId.$issuedAt->format('Y-m-d H:i:s').config
 route('courses.certificates.index', $course);          // GET  courses/{course}/certificates    — role:admin|gestor
 route('certificates.revoke', $certificate);             // PUT  certificates/{certificate}/revoke — role:admin|gestor
 route('certificates.download', $certificate);           // GET  certificates/{certificate}/download — plain `auth` + staff-or-owner (`CertificateController::authorizeDownloadAccess`: owner-Aluno always, else role:admin|gestor with Gestor same-org check)
-route('certificates.verify', $certificate->validation_hash); // GET validar-certificado/{hash?} — NO middleware at all
+route('certificates.verify', $certificate->validation_hash); // GET validar-certificado/{hash?} — NO middleware at all; host-scoped (see below)
 route('certificates.verify');                           // GET validar-certificado — same route, hash omitted: the public lookup form
 ```
 
@@ -63,6 +63,16 @@ the hash-less form, and never link to a placeholder hash — `firstOrFail()`
 resolves the hash from the path segment **or** from `?hash=` (what the
 lookup form's `GET` submit produces); an empty/whitespace hash renders
 `public/certificates/lookup.blade.php` instead of 404ing.
+
+The verification itself is **host-scoped**: the controller loads Course
+unscoped, then `abort(404)` when
+`(int) $certificate->course->org_id !== (int) OrgContext::current()->orgId()`.
+Wrong-host and never-issued hashes are indistinguishable 404s (see
+`certificates-architecture`, and
+`tests/Feature/Tenancy/PublicFlowsHostScopeTest.php`). Any new surface
+linking to `certificates.verify` from queued mail must build the URL with
+`OrgUrl::route($certificate->course->org_id, ...)` — `route()` alone
+lands on `APP_URL`.
 
 `certificates.verify` route parameter is raw hash **string**, not
 route-model-bound `Certificate`. Bad/unknown hash must fall through to
@@ -90,11 +100,13 @@ public function revoke(User $user, Certificate $certificate): bool
 
     $course = $certificate->course()->withoutGlobalScopes()->firstOrFail();
 
-    return $course->org_id === $user->org_id;
+    return (int) OrgContext::current()->orgId() === (int) $course->org_id;
 }
 ```
 
-`RevokeCertificateRequest::authorize()` calls
+Comparison is against the **request host's** org (`OrgContext`), never a
+`users.org_id` — that column no longer exists; a Gestor's org comes from
+the host they are serving. `RevokeCertificateRequest::authorize()` calls
 `Gate::allows('revoke', $this->route('certificate'))`. Never re-implement
 org check inline in Request or Controller.
 
@@ -128,8 +140,8 @@ Request alone.
 - `public/certificates/show.blade.php` — **not** `layouts.app` (no
   session) and **not** `layouts.guest` either (that layout's left panel is
   themed around login copy, wrong fit for audit page). Uses
-  `<x-layout.public :title="...">` (shared standalone shell added in the
-  Fase 7 public-pages redesign pass, also used by `landing/show.blade.php`
+  `<x-layout.public :title="...">` (shared standalone shell, also used by
+  the tenant landing blades `resources/views/tenants/{landing_view}/landing.blade.php`
   — see `bootstrap-conventions` §2), wrapped further in `.max-w-reading`
   (760px column). The verdict is one `<x-ui.card>` holding an
   `.icon-circle-success`/`.icon-circle-critical` (from

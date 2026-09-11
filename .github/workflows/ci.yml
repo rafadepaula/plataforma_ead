@@ -89,7 +89,7 @@ jobs:
         run: php artisan serve --port=8000 &
 
       - name: Run Dusk Browser Tests
-        run: php artisan dusk
+        run: php artisan dusk --exclude-group requires-network
 
       - name: Check Code Coverage Threshold
         run: php scripts/check-coverage.php

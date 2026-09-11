@@ -37,7 +37,8 @@ Tests guard this module's contract. Must stay green (PHPUnit, no Pest):
   `test_organizations_summary_excludes_soft_deleted_organizations`.
 - `tests/Feature/OrgDashboardTest.php` — Admin with no impersonated Org
   see global KPIs/recentEnrollments, Admin impersonating Org see only
-  that Org, Gestor see only own `org_id`; plus 3 cases for the
+  that Org, Gestor see only their request-host Organization
+  (`OrgContext::current()->orgId()`); plus 3 cases for the
   Organizations summary table:
   `test_admin_with_no_impersonated_org_sees_organizations_summary_with_correct_counts`,
   `test_gestor_never_receives_organizations_summary`,
@@ -72,7 +73,7 @@ HTTP process); `DatabaseMigrations` retired (per-method `migrate:fresh`)
   `Route::has` guard, so a typo'd or renamed route (or drifted registry
   entry) produce dead link with no exception to catch it. The only
   `Route::has('admin.dashboard')` fallback lives in
-  `landing/show.blade.php:11`.
+  `tenants/{landing_view}/landing.blade.php`.
 - **KPI/recent-enrollment row leak another Organization data for Gestor,
   or Admin impersonating Org.** `Certificate`, `course_user`, `User` do
   **not** carry `OrgScope` — check `DashboardMetricsService` explicitly
@@ -96,9 +97,10 @@ HTTP process); `DatabaseMigrations` retired (per-method `migrate:fresh`)
   each row with `fputcsv()` as fetched, never collecting rows into array
   first.
 - **Gestor export request with spoofed `?org_id=` query param return
-  another Org rows instead of 403.** Controller must resolve Gestor org
-  strictly from `$user->org_id`, never trust `$request->query('org_id')`
-  for that role — see `dashboard-conventions` exact guard snippet.
+  another Org rows instead of 403.** Controller must resolve non-Admin
+  org strictly from `OrgContext::current()->orgId()` (request host),
+  never trust `$request->query('org_id')` for that role — see
+  `dashboard-conventions` exact guard snippet.
 - **Organizations summary table appears for Gestor, or for an Admin
   impersonating an Org (or is missing for a true global Admin).** The
   gate is `$isGlobalAdminView` computed once in `DashboardController@index`

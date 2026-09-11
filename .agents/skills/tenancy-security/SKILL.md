@@ -25,31 +25,33 @@ across organizations.**
 
 ---
 
-## The Core Tenancy Security Model
+## The Core Tenancy Security Model (host-based)
+
+Tenancy resolves from the request **host**: `ResolveOrgFromHost` (first `web` middleware) maps the `Host` header to `organizations.host` and binds the `OrgContext` singleton. State zero (unmapped host) is Admin-only. `EnsureTenantAccess` gates every request — including the per-request **account kill switch**: on an active Organization, an authenticated non-Admin **without an `active` credential for the host Organization is logged out** (covers deactivated accounts and sessions issued by another portal). Remember-me cookies validate against the credential's stored token AND require `status = 'active'` (`OrgCredentialUserProvider::retrieveByToken`); password changes and deactivations rotate `remember_token` (`Credential::rotateRememberToken()`).
 
 ### The 4 Roles & Data Scoping Rules
 
-| Role (`RolesEnum`) | User `org_id`  | Scope of Access & Security Boundary                                                                                                                                                      |
-| ------------------ | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `admin`            | `null`         | Global access by default. Can switch context to single organization via Impersonate Org (`session('active_org_id')`).                                                                    |
-| `gestor`           | Fixed `org_id` | Restricted **strictly** to data matching their `user->org_id`. Cannot read or write data from any other `org_id`.                                                                        |
-| `aluno`            | Usually `null` | Enrolled across courses in multiple orgs via `course_user` pivot. Must **never** access org-scoped data directly; access is granted **only** through active course enrollment relations. |
-| `professor`        | Fixed `org_id` | Bound to one Organization like `gestor`; course access granted **only** through the `course_professor` pivot (`User::teaches()`). Gated by `role:professor`, lands on `professor.dashboard`, managed by Gestor via `GestorProfessorController`. |
+| Role (`RolesEnum`) | Account (`credentials`) | Scope of Access & Security Boundary |
+| ------------------ | ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `admin`            | Global credential (`org_id = null`); login only on state zero | Global access by default. Operates a single organization via Impersonate Org (`session('active_org_id')`), which overrides the host. |
+| `gestor`           | One credential per Organization held | Restricted **strictly** to data of the host Organization (`OrgContext::current()->orgId()`). Cannot read or write data from any other `org_id`. |
+| `aluno`            | One credential per Organization held | Enrolled across courses in multiple orgs via `course_user` pivot. Must **never** access org-scoped data directly; access is granted **only** through active course enrollment relations. |
+| `professor`        | One credential per Organization held | Bound to one Organization like `gestor`; course access granted **only** through the `course_professor` pivot (`User::teaches()`). Gated by `role:professor`, lands on `professor.dashboard`, managed by Gestor via `GestorProfessorController`. |
 
 ### Model Classifications & Scoping Guardrails
 
 1. **Directly Org-Scoped Models** (has `org_id` column + `OrgScope` trait):
     - Examples: `Course`, `InvitationLink`, `ForumTopic`, `HelpArticle` (nullable), `AuditLog` (nullable).
     - `SystemSetting` is org-scoped by column but does **NOT** use the `OrgScope` trait: non-nullable `org_id` with `default(0)` sentinel (`SystemSetting::GLOBAL_ORG_ID`), composite PK `(setting_key, org_id)` — lookups go through `forOrg()`.
-    - _Security Guardrail_: Queries auto-append `where org_id = ?`. Bypassing `OrgScope` is a critical security vulnerability.
+    - _Security Guardrail_: Queries auto-append `where org_id = ?` from the resolved context. Bypassing `OrgScope` is a critical security vulnerability.
 
 2. **Cascade-Inherited Models** (no `org_id` column; inherited through parent):
     - Examples: `Module`, `Lesson`, `Quiz`, `QuizQuestion`, `QuizOption`, `Certificate`.
-    - _Security Guardrail_: Do NOT have `OrgScope` applied. **Finding by primary key directly (`Lesson::find($id)`) allows cross-tenant ID guessing unless explicitly scoped through parent relation!**
+    - _Security Guardrail_: Do NOT have `OrgScope` applied. Policies authorize through the parent (`ModulePolicy`/`LessonPolicy` compare `OrgContext::current()->orgId()` with the parent Course's `org_id`); raw primary-key lookups must keep that compensating check.
 
 3. **Global / Non-Org-Scoped Models**:
-    - Examples: `User` (has `org_id` column but **NO `OrgScope` trait**), `Notification`.
-    - _Security Guardrail_: `User::all()` returns users from ALL tenants. Controllers must explicitly filter `User::where('org_id', $orgId)` when executing Gestor actions.
+    - Examples: `User` (person identity — **NO `OrgScope` trait**), `Credential` (holds its own `org_id`; explicit `scopeForOrg()` queries), `Notification`.
+    - _Security Guardrail_: `User::all()` returns persons from ALL tenants. Controllers must scope people queries by the host Organization's credentials (`whereHas('credentials', org + status)`) when executing Gestor actions — and never by a `users.org_id` column (it no longer exists).
 
 ---
 

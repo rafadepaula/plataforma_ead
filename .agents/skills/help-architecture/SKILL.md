@@ -57,14 +57,14 @@ Service query with `HelpArticle::withoutGlobalScopes()` on purpose —
 resolution must compare against *caller-supplied* `$orgId` (possibly
 impersonated org, or `null` for anonymous/public screen) instead of
 `OrgScope` own `Auth::user()`/`session('active_org_id')` resolution.
-Relying on scope here break both Admin impersonation (whose own `org_id`
-is `null`) and every guest-facing page.
+Relying on scope here break both Admin impersonation (whose own account is
+global — the `credentials.org_id = null` row) and every guest-facing page.
 
 ## `<x-help-button>` Resolves `org_id` Itself, Independent of `OrgScope`
 
 `App\View\Components\HelpButton` mirror `OrgScope` own Admin-vs-org-user
 branching (see `tenancy-conventions`) but read
-`session('active_org_id')`/`Auth::user()` directly in own
+`session('active_org_id')`/`OrgContext` directly in own
 `resolveOrgId()`, instead of leaning on scoped query:
 
 - No authenticated user (`Auth::user()` is `null`, e.g. Landing Page,
@@ -72,7 +72,8 @@ branching (see `tenancy-conventions`) but read
   `org_id = null`, resolve only global article.
 - `role:admin`: `session('active_org_id')` (currently-impersonated Org,
   or `null` if not impersonating any).
-- `role:gestor` / `role:aluno`: `$user->org_id` directly.
+- `role:gestor` / `role:aluno` / `role:professor`: `OrgContext::current()->orgId()`
+  — the request host's Organization (there is no `users.org_id` column).
 
 This mirror, but do not reuse, `OrgScope` resolution logic — see
 `tenancy-architecture` for why guest must resolve to `org_id = null`
@@ -92,7 +93,7 @@ carry component:
 | --- | --- | --- |
 | Staff (authenticated) | `components/layout/topbar.blade.php`, once, keyed by `Route::currentRouteName()` | every `layouts.app`-based Admin/Gestor/Aluno screen |
 | Guest (unauthenticated, session-aware layout) | `layouts/guest.blade.php`, once, keyed by `Route::currentRouteName()` | `auth/login`, `auth/forgot-password`, `auth/reset-password` |
-| Standalone public documents | inline per view, explicit `key` | `landing/show.blade.php` (`key="landing"`), `public/certificates/show.blade.php` (`key="certificates.verify"`) |
+| Standalone public documents | inline per view, explicit `key` | `tenants/{landing_view}/landing.blade.php` (`key="landing"`), `public/certificates/show.blade.php` (`key="certificates.verify"`) |
 
 `convite/show.blade.php` (`key="invitation.show"`) is **not** in the
 standalone bucket — it `@extends('layouts.guest')`, so its help button is

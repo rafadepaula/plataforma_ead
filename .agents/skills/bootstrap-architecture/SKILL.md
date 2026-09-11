@@ -61,7 +61,7 @@ metadata:
 > `resources/scss/components/_organizations.scss`. **Fase 7 (públicas e
 > acesso) também concluída**: as 7 telas (`auth/login`,
 > `auth/forgot-password`, `auth/reset-password`, `convite/show`, o novo
-> `convite/invalid`, `landing/show`, `public/certificates/show`) rodam sobre
+> `convite/invalid`, `tenants/{landing_view}/landing`, `public/certificates/show`) rodam sobre
 > o Material Bootstrap, mais os layouts `layouts/guest.blade.php` e o novo
 > `layouts/print.blade.php` (exceção isolada para `certificates/pdf.blade.php`
 > — ver `bootstrap-maintenance` §3.1 sobre a exceção). Partial novo:
@@ -165,7 +165,7 @@ substitui a lista antiga (`sidebar`/`topbar`/`stat-card`/`lesson-player`/
 acrescentado na Fase 1 para a coluna de formulário de 440px (`.guest-form`,
 `var(--form-max)`) do `layouts/guest.blade.php`; `_card` e `_organizations`
 na Fase 3/4; `_public-pages` na Fase 7, para os blocos de layout de
-`landing/show` e `public/certificates/show` sem equivalente pronto no
+`tenants/{landing_view}/landing` e `public/certificates/show` sem equivalente pronto no
 Bootstrap (`.hero-panel`, `.numbers-band`, `.max-w-reading`, `.icon-circle*`
 — ver `bootstrap-conventions` §3 item 4 sobre quando um bloco novo vira
 partial em vez de utility); e os três últimos na Fase 8: `_modal` (dialog

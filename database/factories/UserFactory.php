@@ -89,6 +89,14 @@ class UserFactory extends Factory
     public function withPassword(string $password): static
     {
         return $this->afterCreating(function (User $user) use ($password): void {
+            // `withPassword()` não cria conta: sem `inOrg()` antes, a senha
+            // se perderia silenciosamente — falhar alto é o contrato
+            if (! $user->credentials()->exists()) {
+                throw new LogicException(
+                    'UserFactory::withPassword() requer inOrg() antes na cadeia (a credential precisa existir).'
+                );
+            }
+
             $user->credentials->each(
                 fn (Credential $credential) => $credential->update(['password' => $password])
             );

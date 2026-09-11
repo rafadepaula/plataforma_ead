@@ -2,8 +2,9 @@
 name: invitations-architecture
 description: >
   Smart Invitation & Enrollment domain: invitation_links schema,
-  public unauthenticated /convite/{token} flow, multi-org
-  no-duplicate-account guarantee, typed
+  public unauthenticated /convite/{token} flow, host-scoped redemption
+  (wrong host reads as 404), adaptive form keyed on the host org's
+  `credentials` account, typed
   InvitationLinkInvalidException reason contract (one message per cause), manual enrollment panel reusing
   course_user/CoursePolicy instead of dedicated Enrollment model. Use when
   designing or reviewing feature touching InvitationLink or course_user
@@ -23,11 +24,13 @@ Every Course has a shareable `/convite/{token}` link. Unauthenticated
 visitor self-registers (or authenticates into existing account) and gets
 enrolled in that one Course, one step, no admin. Gestor
 (`role:gestor`)/Admin get a manual enroll-or-revoke panel over same
-`course_user` rows, for cases with no invite link. The
-no-duplicate-account guarantee binds both:
-student who already has account (maybe tied to different Organization)
-must never get second `users` row just because they used different Org's
-invite link.
+`course_user` rows, for cases with no invite link. Host-based tenancy
+governs everything here: a link is redeemable **only on its own
+Organization's host**, and the account consumed or created is the
+`credentials` row of the host org — a person already enrolled in another
+portal simply gets a new account here (`credentials` row for this org),
+never a second `users` row (`users` is the global person identity;
+per-org account data lives in `credentials` — see `auth-orgs-architecture`).
 
 ## Schema
 
@@ -74,6 +77,21 @@ while logged in. Both public POSTs are throttled per IP (`throttle:20,1` on
 unauthenticated callers, so the rate limit keeps them from being usable as
 enumeration oracles.
 
+## Wrong-Host Redemption Reads As 404, Never As "Wrong Portal"
+
+`InvitationController::resolveUsableLink()` (private, backs `show()`) and
+`ProcessSmartInvitationAction::execute()` both compare
+`(int) $invitationLink->org_id !== (int) OrgContext::current()->orgId()`
+and throw `InvitationLinkInvalidException::notFound($token)` on mismatch —
+the same 404 (and same `userMessage()` copy) as a token that never
+existed. A valid token hit from another Organization's portal must never
+reveal that the link exists: no redirect to the right host, no distinct
+message, no timing-visible branch. The Action re-checks **after**
+`lockForUpdate()` so the verdict comes from the freshly locked row, not
+from the state the caller read a moment earlier. Same token, same 404
+copy, verified host-scoped in
+`tests/Feature/Tenancy/PublicFlowsHostScopeTest.php`.
+
 ## `InvitationLink::unusableReason()` / `isUsable()` — One Source of Truth, Checked Twice
 
 "Why may this link no longer be consumed?" is answered once, on the model,
@@ -94,18 +112,22 @@ single source of truth both `show()` and Action use now). Do not rely on
 `scopeUsable()` alone to gate course availability. Evaluated deliberately
 in **two different places** for two different reasons:
 
-1. `InvitationController::show()` — `InvitationLink::query()
+1. `InvitationController::show()` (via private `resolveUsableLink()`) —
+   `InvitationLink::query()
    ->withoutGlobalScopes()->where('token', $token)->first()`, then a
-   **two-step verdict**: a missing row throws
-   `InvitationLinkInvalidException::notFound($token)`, a present-but-unusable
-   row throws `::forReason($invitationLink->unusableReason(), $token)`. The
+   **three-step verdict**: a missing row throws
+   `InvitationLinkInvalidException::notFound($token)`, a row whose
+   `org_id` differs from the request host's org throws `::notFound($token)`
+   too (wrong-portal = never-existed), and a present-but-unusable row
+   throws `::forReason($invitationLink->unusableReason(), $token)`. The
    lookup deliberately no longer chains `->usable()`: filtering the row out in
    SQL would collapse "expired" and "never existed" into the same 404 copy.
-2. `ProcessSmartInvitationAction::execute()` — repeats that same
-   null-row/`unusableReason()` split *after* acquiring `lockForUpdate()`
-   inside the transaction, so the reason is resolved from the freshly locked
-   row (a link exhausted by a concurrent request reports `REASON_EXHAUSTED`,
-   not whatever state the caller read a moment earlier).
+2. `ProcessSmartInvitationAction::execute()` — repeats the org-host check
+   and that same null-row/`unusableReason()` split *after* acquiring
+   `lockForUpdate()` inside the transaction, so the verdict is resolved
+   from the freshly locked row (a link exhausted by a concurrent request
+   reports `REASON_EXHAUSTED`, not whatever state the caller read a moment
+   earlier).
    Second check not redundant: without it, two concurrent requests against
    link at exactly `max_uses - 1` remaining uses both pass step 1 check
    before either increments `current_uses`, both insert enrollment. Only
@@ -152,21 +174,40 @@ single neutral fallback (`Este convite não está mais disponível.`) for a rend
 with no `$message` bound; it must never grow a per-reason branch of its own —
 two copies of the same sentence diverge and the test then asserts the wrong one.
 
-## Multi-Org Adaptive Enrollment, No Duplicate Accounts
+## Adaptive Enrollment Operates On The Host Org's `credentials` Account
 
-`ProcessSmartInvitationAction` branches once, on whether `email` already
-belongs to `User` row:
+`ProcessSmartInvitationAction` branches on the `(user, host-org)` pair,
+not on the e-mail alone. After the link guards pass, the Action looks up
+`User::query()->where('email', $data['email'])->first()`, then:
 
-- **New e-mail**: creates `User` (role `aluno`), sets `org_id` to invitation
-  link `org_id`. Only time this flow ever writes student `org_id`.
-- **Existing e-mail**: verifies submitted password against existing row
-  (`Hash::check`), reuses it as-is. **`org_id` never touched on this
-  branch.** Student `org_id` reflects Org they first registered through,
-  permanently, no matter how many other Orgs' courses they later join via
-  other invite links. Multi-org tenancy for enrolled student lives entirely
-  in their `course_user` rows (`user_id` × `course_id`), never in
-  `users.org_id` — see `tenancy-architecture` note that `aluno.org_id` is
-  "usually null" and does not scope their course access.
+- **Person exists, holds credential in the link's org**
+  (`Credential::forOrg($invitationLink->org_id)` hit): submitted password
+  is verified against **that credential's** hash (`Hash::check` against
+  `$credential->password`, not any global column — `users.password` no
+  longer exists). Wrong password surfaces as `errors.password`. An
+  `inactive` credential is blocked **after** the password check
+  (`errors.email`, "Esta conta está inativa...") so status is never
+  disclosed to someone who cannot authenticate into it — same order the
+  login flow uses.
+- **Person exists, no credential in this org** (account lives in another
+  portal only): the Action **creates** this portal's account —
+  `Credential::create([...'org_id' => $invitationLink->org_id, 'password'
+  => Hash::make($data['password']), 'status' => 'active'])` — with the
+  password chosen on this form. The other portal's credential keeps its
+  own password, untouched.
+- **New person**: creates `User` (role `aluno`, `email_verified_at` set)
+  **and** the org's `Credential`. `users` receives no `org_id` — the
+  column no longer exists; the link's org lands on the `credentials` row.
+
+Multi-org tenancy for the enrolled student lives in two places, never in
+a `users.org_id` (gone with the host-tenancy migration): the per-org
+accounts in `credentials`, and the `course_user` rows (`user_id` ×
+`course_id`). See `tenancy-architecture` and `auth-orgs-architecture`.
+The adaptive form mirrors this exactly: `/convite/check-email` answers
+`exists` **by credential existence in the host org**
+(`Credential::query()->forOrg($context->orgId())->where('user_id',
+$user->id)->exists()`), so a person known only to another portal sees the
+full form here and types a brand-new password for this portal.
 
 Either branch then upserts exactly one `course_user` row for
 `[user_id, invitation_link.course_id]`: `firstOrCreate`-equivalent logic
@@ -192,5 +233,9 @@ Distinct rejection from wrong-password case (`errors.password`) — check
 - `courses-architecture` — `Course::students()`/`User::courses()`, pivot
   shape, why `Module`/`Lesson` authorize against parent instead of owning
   Policy (same pattern `EnrollmentController` follows for `course_user`).
-- `tenancy-architecture` — `OrgScope`, `RolesEnum`, why `aluno.org_id` is
-  not source of truth for student course access.
+- `tenancy-architecture` — `OrgScope`, `RolesEnum`, host resolution, why
+  student tenancy lives in `credentials`/`course_user`, not on the
+  `users` row.
+- `auth-orgs-architecture` — `credentials` schema, `Credential::forOrg`,
+  the `(user, org)` login-identity pair this flow creates accounts
+  against.

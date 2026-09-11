@@ -19,7 +19,7 @@ metadata:
 ### Link missing for user who should see it
 - **Cause:** one of three gates (`roles`, `permissions`, `routeResolver`/`Route::has()`) hides it.
 - **Diagnose:** in `tinker`, `app(NavigationService::class)->build($user)`, inspect returned sections/items.
-- **Fix:** item `roles` must match route `role:` middleware; user must hold any `permissions` set; `route` name must be registered (`vendor/bin/sail artisan route:list --name=<name>`).
+- **Fix:** item `roles` must match route `role:` middleware; user must hold any `permissions` set; `route` name must be registered (`vendor/bin/sail artisan route:list --name=<name>`). Resolver-based items (`resolveUsersRoute`) also hide when no tenant context resolves — Admin in global context (no `session('active_org_id')`) legitimately never sees `users`.
 
 ### Restricted link leaks to wrong role
 - **Cause:** `roles` includes role the route middleware denies, or resolver returned URL for user who should not get it.
@@ -36,6 +36,10 @@ metadata:
 ### Dead `#` link back
 - **Cause:** route renamed, registry still points at old name. Or someone added `Route::has(...) ? route(...) : '#'` in Blade.
 - **Fix:** update registry `route`. Re-run `tests/Feature/RoleMenuVisibilityTest::test_admin_menu_renders_all_admin_links_and_no_dead_hash` — asserts no `sidebar-item" href="#"` in served HTML.
+
+### Shell shows wrong brand (org name/logo where `system_name` expected, or vice-versa)
+- **Cause:** brand resolution lives in `OrgIdentityComposer` (bound in `AppServiceProvider::boot()` to topbar, sidebar, guest-panel, `layouts.app`): non-Admin gets the request host's Organization (`OrgContext`), Admin gets `system_name` on any host, state zero gets `system_name`. A view missing from that composer list renders fallback `config('app.name')`.
+- **Fix:** add the view to the composer binding; do not re-derive org/host logic in Blade. The topbar impersonation badge (`dusk="topbar-impersonation"`) is the only place that names the Org being operated for an Admin — keep it even though the Admin brand stays `system_name`.
 
 ## After Renaming a Route
 

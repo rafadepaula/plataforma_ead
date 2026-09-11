@@ -1,21 +1,15 @@
 ---
 name: landing-conventions
 description: >
-  Code patterns and guardrails for the public Landing Page & Component
-  Showcase: frozen `dusk=` contract (`landing-headline`,
-  `landing-cta-login`, `landing-login-link` plus legacy `contact-button`;
-  card/badge/progress/avatar wrappers never receive `dusk=`),
-  showcase-must-be-real-components rule (`<x-ui.card>`, `<x-ui.badge>`,
-  `<x-ui.progress>`, `<x-ui.avatar>`, `<x-ui.icon>`, `<x-ui.button>`; no
-  stock photos, no one-off CSS), no-red/orange/yellow on this screen
-  (mint for success and progress), pt-BR sentence case, and the footer
-  link to the middleware-free `certificates.verify` route, the
-  no-Bootstrap-utility-where-a-media-query-must-win rule on
-  `.landing-footer-inner`, and the `HomePage` Dusk page object whose
-  shortcuts must hold CSS `[dusk="..."]` values. Use when writing or
-  editing `landing/show.blade.php`, adding a showcase card, writing a
-  landing browser test, or touching any `dusk=` attribute on a public
-  screen.
+  Code patterns and guardrails for the per-Organization public Landing
+  Page (`tenants/{landing_view}/landing.blade.php`): per-blade `dusk=`
+  contract (`landing-org-logo`, `landing-login-link`, `landing-hero-cta`;
+  `organization-landing-view` on the org admin form), footer link to the
+  middleware-free host-scoped `certificates.verify` route, pt-BR copy
+  pinned verbatim by Feature tests, `<x-help-button key="landing" />`
+  wiring, band/ground conventions from `_public-pages.scss`. Use when
+  writing or editing a tenant landing blade, adding a new tenant, or
+  touching any `dusk=` attribute on a public screen.
 license: MIT
 metadata:
   feature: landing
@@ -24,186 +18,123 @@ metadata:
 
 # Landing Page Conventions
 
-## `dusk=` Contract Is Frozen
+## `dusk=` Contract Per Tenant Blade
 
-Exactly four selectors exist on this screen and only these may exist:
+Each `resources/views/tenants/{view}/landing.blade.php` carries exactly
+these selectors, and no others:
 
 | Selector | Node | Note |
 | --- | --- | --- |
-| `landing-headline` | hero `<h1>` | exactly one |
-| `landing-cta-login` | hero primary CTA | rendered twice in source (`@auth` / guest branch), one per response |
-| `landing-login-link` | header button | same two-branch pattern |
-| `contact-button` | band 6 contact CTA | **legacy** — predates the current page design, still pinned by the snapshot and by `LandingPageDuskTest`; do not rename, do not remove |
+| `landing-org-logo` | header `<img>` (only when `$organization->logo_path` filled) | absent when logo missing and `.brand-mark` fallback renders |
+| `landing-login-link` | header button, rendered twice in source (`@auth` / `@else` branch) | one per response; authenticated branch points at `$dashboardRoute`, guest branch at `route('login')` |
+| `landing-hero-cta` | hero primary CTA, `@guest` branch only | never rendered for authenticated users |
+
+Plus one admin-form selector outside the blades:
+`organization-landing-view` in `resources/views/components/organizations/_form.blade.php`
+(the `landing_view` picker). The legacy selectors
+`landing-headline`, `landing-cta-login` and `contact-button` no longer
+exist in any view — a test or page-object still referencing them is
+stale, not the views.
 
 Rules:
 
-- Keep `dusk="landing-login-link"` **on both branches** (guest `Entrar`
-  and authenticated `Acessar plataforma`). Tests assert the selector, not
-  the label — the authenticated branch intentionally renders a different
-  string, so a test asserting the literal `Entrar` unconditionally is
-  wrong, not the view.
-- **Never put a new `dusk=` on a wrapper.** No
-  `landing-showcase-card-*`, no per-badge, per-progress or per-avatar
-  selector. `<x-ui.button>` forwards `dusk` to the rendered element via
-  `$attributes->merge()`, which is precisely why it is easy to leak a
-  fifth selector without noticing. Any addition fails
-  `DuskSelectorContractTest` against the frozen 430-entry snapshot
-  (see `landing-maintenance`).
-- Need to target a showcase card in a test? Use its visible copy
-  (`assertSee`) or the shared `.landing-*` class, not a new selector.
+- **Never put a new `dusk=` on a wrapper.** No per-card, per-band or
+  per-footer selector. `<x-ui.button>` forwards `dusk` to the rendered
+  element via `$attributes->merge()`, which is precisely why it is easy
+  to leak a fifth selector without noticing. Any addition fails
+  `tests/Feature/Theme/DuskSelectorContractTest.php` against the frozen
+  snapshot (see `landing-maintenance`).
+- Need to target a "Como funciona" card in a test? Use its visible copy
+  (`assertSee`) or the shared `.ds-card`/`.col-md-4` classes — the Dusk
+  responsive test reads the card ratio through `.landing-band .col-md-4`,
+  not through any `dusk=`.
 
-## Showcase Must Be Real Components, Not Pictures
+## Footer: Validation Link Points At The Hash Lookup Form
 
-Band 5 exists to prove the Design System. Every visual on it is built
-from the system's own components:
+Every tenant blade's footer must keep the `Validar certificado` link
+resolving to the **hash-less** public entry point:
 
 ```blade
-<x-ui.card :border="false" elevation="sm" surface="white" class="landing-card landing-showcase-card h-100">
-    ...
-</x-ui.card>
-```
-
-- Allowed building blocks: `<x-ui.card>`, `<x-ui.badge>`,
-  `<x-ui.progress>`, `<x-ui.avatar>`, `<x-ui.icon>`, `<x-ui.button>`.
-- **No `<img>` stock photos, no placeholder PNGs, no external image URLs.**
-  The course card uses the card's image slot as a pastel band with a
-  floating status badge, not a photo.
-- **No one-off CSS for a look a component already has.** Page-local
-  classes (`.landing-*`) may position and size; they may not re-skin.
-  If a needed look does not exist in the system, extend the component
-  (new `variant`/`size`) instead of hand-rolling the styles here — a
-  hand-rolled mint gradient on the landing page is invisible to every
-  other screen and drifts on the next token change.
-- Status copy on the showcase is staged and literal (`Em andamento`,
-  `62%`, `nº 9f2b7c41`, `7 respostas`) — see `landing-architecture` for
-  why it is never replaced with live queries.
-
-## Colour: No Red, Orange or Yellow Anywhere on This Screen
-
-The landing is a public first impression; nothing on it may read as
-alarm. Success, progress and "conclusion" states use **mint**
-(`--success-container` / `--on-success-container`, `variant="success"`
-on badges and progress) — including the step-4 "done" circle in *Como
-funciona*, which is mint while steps 1–3 stay `--primary-container`.
-
-- Never reach for `variant="danger"`, `warning` or an orange accent here,
-  not even for a decorative flourish.
-- `--blue-50` bands + mint accents is the whole palette story of the
-  page; a second accent colour is a redesign, not a tweak.
-
-## Copy: pt-BR Sentence Case
-
-Every user-visible string is pt-BR in **sentence case** — only the first
-word and proper nouns capitalised (`Segurança do trabalho — NR 35`,
-`Como funciona`, `Educação a distância`-style badge copy aside, keep
-whatever the existing headline/badge strings are byte-identical, since
-Feature tests assert them verbatim). Titles use `—` (em dash) as the
-course/lesson separator. Body copy in cards ends without a period when it
-is a fragment (`4 Módulos · 18 Aulas · 4 horas`), with one when it is a
-sentence. Do not introduce marketing exclamation marks.
-
-## Footer: Validation Link Points at the Hash Lookup Form
-
-The footer's `Validar certificado` link must resolve, never be a `#`
-stub, and must point at the **hash-less** public entry point:
-
-```blade
-<a href="{{ route('certificates.verify') }}" class="text-body-secondary text-decoration-none">Validar certificado</a>
+<a href="{{ route('certificates.verify') }}" class="text-body-secondary">Validar certificado</a>
 ```
 
 `validar-certificado/{hash?}` takes an **optional** hash and is
 registered **outside every `auth`/`guest`/`role` group — no middleware at
-all** (see the route file comment and `certificates-architecture`): it
-must resolve identically for an anonymous visitor and a logged-in Admin.
-That is what makes it safe to link from a public marketing page, and why
-the link must never be moved to an authenticated-only route.
+all** (see `certificates-architecture`). It is public but **host-scoped**:
+a hash verifies only on its issuing org's portal, wrong host 404s. That
+is what makes it safe to link from a public marketing page, and why the
+link must never be moved to an authenticated-only route.
 
-Never embed a placeholder hash (a `str_repeat('0', 64)` or any other
-literal) in this href: `PublicCertificateController::show()` resolves the
-hash with `firstOrFail()`, so a hash that was never issued 404s and the
-only public-validation entry point becomes unreachable. Without a hash
-the same action renders `public/certificates/lookup.blade.php`, whose
-`GET` form submits the typed hash back as `?hash=…`. The Feature test
-pins this: `LandingPageControllerTest` asserts the href is exactly
-`route('certificates.verify')` and that its path is exactly
-`/validar-certificado` (no trailing segment), and
-`PublicVerificationTest` covers the `?hash=` valid/revoked/unknown/blank
-branches.
+Never embed a placeholder hash in this href: a hash that was never issued
+404s and the only public-validation entry point becomes unreachable.
+Without a hash the same action renders `public/certificates/lookup.blade.php`,
+whose `GET` form submits the typed hash back as `?hash=…`.
+`LandingPageControllerTest` pins the href: guest and aluno CTAs carry
+`href="route('login')"`/`href="route('student.courses.index')"`, staff CTAs
+carry `href="route('admin.dashboard')"`, and the footer carries
+`href="route('certificates.verify')"` — all asserted as literal
+`href="..."` strings.
 
-The remaining footer items (`Termos de uso`, `Privacidade`) have no page
-yet and stay `href="#"`; `Suporte` is the in-page `#contato` anchor. Do
-not invent routes that do not exist.
+## CTA Routing Contract
 
-## Details the Feature Tests Pin Verbatim
+The blade derives `$dashboardRoute` in one `@php` block: authenticated
+`role:aluno` → `student.courses.index` (fallback `url('/')` when route
+missing), any other authenticated role → `admin.dashboard`, guest →
+`null`. Header button swaps `Acessar plataforma` (`@auth`) / `Entrar`
+(`@else`); hero CTA renders `@guest` only. Adding a third role
+destination means editing that block, never the controller.
 
-These are contractual — changing them fails
-`LandingPageControllerTest` and needs a deliberate test update:
+## Copy: pt-BR, Tenant-Owned, Pinned Verbatim
 
-- **Final step is mint.** The fourth "Como funciona" step carries
-  `class="landing-step landing-step--success"` (the other three are bare
-  `landing-step`); it is the page's only mint accent besides the badge
-  system, and the Dusk test reads its computed colour to assert it
-  differs from the preceding steps.
-- **Contact button is tonal.**
-  `<x-ui.button variant="tonal" href="mailto:…" dusk="contact-button">`
-  inside `#contato` — not `filled`, not `ghost`; the blue band needs the
-  tonal surface for contrast.
-- **Certificate showcase card uses the `download` icon.**
-  `<x-ui.button variant="ghost" size="sm" icon="download">` renders
-  Lucide `download` (`lucide-download`, tray + arrow) from
-  `components/ui/icon.blade.php`. Swapping the icon name changes the SVG
-  path the test asserts.
+Every user-visible string is pt-BR in sentence case. Copy is
+**per-tenant by design** — each blade owns its badge, headline and lead
+(`LigaCerto — Treinamentos Esportivos` /
+`Capacitação para ligas esportivas com certificado em dia`;
+`Informática+ — Formação em TI` / `Cursos de informática com certificado
+reconhecido`). `LandingPageTest` and `LandingPageDuskTest` assert key
+strings verbatim, so a copy rewrite must land the view edit and the test
+edits in the same task. Titles use `—` (em dash) as org/branding
+separator. No marketing exclamation marks.
 
-## Layout Markup
+## Band Markup And Ground
 
-- Full-bleed bands: `<section class="landing-band">`, plus
-  `.ds-band-blue` when the band is on the blue ground (see
-  `landing-architecture` alternation table).
-- Grids: `.landing-grid` + `.landing-grid-3`/`.landing-grid-4` (keep the
-  matching `ds-grid-3`/`ds-grid-4` class alongside — the Dusk responsive
-  assertions read the shared class).
-- Every card in a row gets `h-100` so equal-height alignment survives
-  content drift.
-- The view must keep `<x-help-button key="landing">` in the header band
-  (`help-conventions`).
+- Full-bleed bands: `<section class="landing-band">`; the hero band
+  adds `.landing-hero-band` + `.ds-band-blue`, the "Como funciona" band
+  stays on plain surface. Bands must alternate — two blue bands in a row
+  read as one broken band (asserted by the Dusk bands test reading
+  computed `backgroundColor`).
+- Cards: `.ds-card p-4 h-100` in Bootstrap `col-md-4` columns; `h-100`
+  keeps equal-height alignment.
+- Brand: org logo `<img class="brand-logo" dusk="landing-org-logo">`
+  when `logo_path` set, `.brand-mark` fallback otherwise;
+  `.landing-brand-name` carries the org name.
+- Every tenant blade mounts `<x-help-button key="landing" />` in the
+  header band (standalone-document bucket — see `help-conventions`).
 
-## Never Put a Bootstrap Utility Where a Media Query Must Win
+## Layout Files
 
-`.landing-footer-inner` carries **only** `d-flex flex-wrap
-align-items-center gap-3` — no `justify-content-between`. The desktop
-distribution comes from the SCSS base rule
-(`.landing-footer-inner { justify-content: space-between }`), because
-Bootstrap compiles `justify-content-*` utilities with `!important`, which
-beats the later normal declaration inside
-`@media (max-width: 904.98px) { .landing-footer-inner { justify-content:
-center } }` — the mobile rule was dead while the utility was on the div.
-`LandingPageDuskTest::test_landing_page_responsive_contract_at_every_breakpoint`
-now reads the computed `justify-content` at every width (`center` below
-905px, `space-between` above), so re-adding the utility fails the suite.
+- Blades: `resources/views/tenants/{landing_view}/landing.blade.php`
+  only. The old `resources/views/landing/show.blade.php` was removed —
+  do not recreate or reference it.
+- Shell: `<x-layout.public :container="false" surface="white"
+  class="landing-page">` — `:container="false"` because `.landing-band`
+  is full-bleed with token-driven gutters (see `landing-architecture`).
+- Styles: shared `resources/scss/components/_public-pages.scss` (also
+  styles the public certificate screens). Page-local `.landing-*`
+  classes may position and size; they may not re-skin a look a component
+  already has.
+- Any property a `_public-pages.scss` media query overrides must be set
+  in SCSS, never by a Bootstrap `!important` utility on the same
+  element. Utilities stay fine for properties no breakpoint touches
+  (`d-flex`, `gap-3`, `h-100`).
 
-The general rule for this screen: any property that a `_public-pages.scss`
-media query overrides must be set in SCSS, never by a Bootstrap utility on
-the same element. Utilities remain fine for properties no breakpoint
-touches (`d-flex`, `gap-3`, `h-100`, spacing).
+## Browser Tests Drive The Blade Directly
 
-## Dusk Tests Go Through the `HomePage` Page Object
-
-`tests/Browser/Pages/HomePage.php` owns the landing shortcuts; new browser
-tests use `->visit('/')->on(new HomePage)->waitFor('@headline')` instead of
-repeating literal selectors:
-
-| Shortcut | Value |
-| --- | --- |
-| `@headline` | `[dusk="landing-headline"]` |
-| `@ctaLogin` | `[dusk="landing-cta-login"]` |
-| `@loginLink` | `[dusk="landing-login-link"]` |
-| `@contact` | `#contato` |
-
-Shortcut **values must be the CSS form** `[dusk="..."]`, never another
-`@`-shortcut such as `'@headline' => '@landing-headline'`:
-`ElementResolver::format()` does a single non-recursive `str_replace` and
-only falls back to the `[dusk=…]` expansion when the selector came back
-unchanged, so a chained shortcut reaches WebDriver as the literal invalid
-selector `@landing-headline`. Adding a shortcut here adds **no** `dusk=`
-attribute, so the frozen snapshot is unaffected — this is the sanctioned
-way to make new browser tests readable.
+`LandingPageDuskTest` visits `/` on the Dusk tenant host (ligacerto
+blade) and uses the `.landing-hero` class plus the raw `@`-selectors
+`@landing-login-link` / `@landing-hero-cta` (Dusk auto-expands `@name`
+to `[dusk="name"]`). `tests/Browser/Pages/HomePage.php` still declares
+legacy shortcuts (`@headline`, `@ctaLogin`, `@loginLink`, `@contact`)
+pointing at selectors the current tenant blades no longer render — do
+not build new tests on them; prefer the live selectors above, and treat
+a HomePage shortcut cleanup as its own deliberate change.

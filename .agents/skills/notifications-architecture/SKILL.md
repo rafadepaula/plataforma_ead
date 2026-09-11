@@ -5,10 +5,12 @@ description: >
   certificate issued, new forum reply, enrollment confirmed. Why
   `notifications` reuse Laravel stock `Notifiable`/`DatabaseNotification`
   shape, no bespoke model. Event, Listener, Notification pipeline per
-  trigger. Mail failure never rolls back transaction. Admin never gets any
-  of 4 types. Use when designing or reviewing feature touching
-  `notifications` rows, before adding 5th trigger, or deciding how new
-  business event notifies recipients.
+  trigger. All 4 Notification classes are queued (`ShouldQueue`) and
+  build tenant links with `App\Services\OrgUrl::route()` — the queue
+  worker has no request host. Mail failure never rolls back transaction.
+  Admin never gets any of 4 types. Use when designing or reviewing
+  feature touching `notifications` rows, before adding 5th trigger, or
+  deciding how new business event notifies recipients.
 license: MIT
 metadata:
   feature: notifications
@@ -22,16 +24,37 @@ metadata:
 Gestor and Aluno get a topbar bell. 4 independent business
 triggers:
 
-| # | Trigger | Channels | Recipient |
-| --- | --- | --- | --- |
-| 1 | `InvitationLink` created | `mail` only | link creator (a `User`, addressed by e-mail, not `->notify()`) |
-| 2 | `Certificate` issued (genuine issuance only) | `database` + `mail` | student certificate belongs to |
-| 3 | New `ForumReply` posted | `database` + `mail` | topic author + prior distinct repliers, minus whoever just posted |
-| 4 | `course_user` created or transitions into `active` | `database` + `mail` | enrolled student |
+| # | Trigger | Channels | Recipient | Link target (`OrgUrl` org) |
+| --- | --- | --- | --- | --- |
+| 1 | `InvitationLink` created | `mail` only | link creator (a `User`, addressed by e-mail, not `->notify()`) | `invitation_link->org_id` → `invitation.show` |
+| 2 | `Certificate` issued (genuine issuance only) | `database` + `mail` | student certificate belongs to | `certificate->course->org_id` → `certificates.verify` |
+| 3 | New `ForumReply` posted | `database` + `mail` | topic author + prior distinct repliers, minus whoever just posted | `topic->org_id` → `forum.show` |
+| 4 | `course_user` created or transitions into `active` | `database` + `mail` | enrolled student | `course->org_id` → `classroom.show` |
 
 Admin never gets any of 4. Topbar bell role-gated
 (`role:gestor`/`role:aluno`, see `notifications-conventions`). No
 Notification class in module ever dispatched to Admin.
+
+## Queued Notifications Build Tenant Links With `OrgUrl`, Never Bare `route()`
+
+Every Notification class in this module implements `ShouldQueue`, so its
+`toMail()`/`toDatabase()` run in the **queue worker**, where there is no
+request: Laravel's `route()`/`url()` generators silently fall back to
+`APP_URL`, producing a link to the wrong portal for every Organization
+except the default one. All tenant-surface action URLs are therefore
+built with `App\Services\OrgUrl::route(Organization|int|null $org, string
+$name, mixed ...$parameters)` (`app/Services/OrgUrl.php`): it renders the
+named route's **path** unscoped, resolves the Organization's own `host`,
+and prefixes scheme/port taken from `APP_URL` (so local
+`http://localhost.informatica:8080`-style hosts keep working). Already
+applied in all 4 classes — see the table's last column for which org id
+each one passes. **Rule for new triggers: any notification linking to a
+tenant surface MUST use `OrgUrl::route()`** with the org that owns the
+target surface; a bare `route()` there is a wrong-portal bug, not a
+style nit. `ResetPasswordNotification` (auth domain, extends the
+framework's `ResetPassword`) is the deliberate counter-example: it is
+**not** queued, is sent synchronously inside the HTTP request, and its
+`resetUrl()` therefore resolves the current host correctly.
 
 ## `notifications` Table Is Framework Shape, No New Migration
 

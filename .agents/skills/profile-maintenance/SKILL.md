@@ -4,7 +4,8 @@ description: >
   Debug, test, edge-case guide for User Profile Self-Service:
   mandatory PHPUnit/Dusk test files (including
   CPF-checksum browser scenario), common
-  `current_password`/`logoutOtherDevices()`/uniqueness failure modes,
+  `current_password`/credential-targeting/session-invalidation/uniqueness
+  failure modes,
   `App\Rules\Cpf` regression surface now wired into live Blade form. Use
   when `ProfileTest`, `PasswordUpdateTest`, `CpfTest`, or
   `tests/Browser/ProfileTest.php` fail, profile update silently no-op, or
@@ -26,12 +27,18 @@ metadata:
 - `tests/Feature/ProfileTest.php` — `ProfileController`/`ProfileUpdateRequest`:
   successful name/email/cpf update, duplicate-email rejection,
   duplicate-CPF rejection, invalid-checksum CPF rejection,
-  `org_id`/`status` never change even if injected in request payload,
+  `org_id`/`status` never mutate even if injected in request payload
+  (asserted through `credentialFor()` states — the columns live on
+  `credentials` now),
   guest redirected to `/login`.
 - `tests/Feature/PasswordUpdateTest.php` — `PasswordController`/
-  `PasswordUpdateRequest`: successful change + `logoutOtherDevices()`
-  actually invalidate another session row, wrong `current_password`
-  rejected and password unchanged, `Password::defaults()` policy
+  `PasswordUpdateRequest`: successful change writes the **host org's
+  credential** (old password stops authenticating, new one starts),
+  wrong `current_password` rejected and password unchanged,
+  `test_changing_password_logs_out_other_active_sessions` drives the
+  real `auth.session` (`AuthenticateSession`) middleware so device B's
+  stale session dies on its next request (not `actingAs()` — never
+  simplify that), `Password::defaults()` policy
   enforced, `throttle:6,1` trigger 429 on 7th attempt within minute.
 - `tests/Browser/ProfileTest.php` (Dusk E2E) — all 5 scenarios: edit
   data successfully, change password successfully, duplicate email/CPF
@@ -72,17 +79,29 @@ HTTP process); `DatabaseMigrations` retired (per-method `migrate:fresh`)
   form) while real screen accept garbage. If this browser test start
   failing, check `ProfileUpdateRequest::rules()` `cpf` array first, then
   `cpf` input `name`/`dusk` attributes in `profile/edit.blade.php`.
-- **Password change not revoke other session.** Verify
-  `SESSION_DRIVER=database` in running environment (degrade silently with
-  `file`/`array` drivers — `logoutOtherDevices()` still "succeed" but no
-  cross-session row to invalidate). Also confirm call happen *before*
-  `Hash::make()` — see `profile-conventions` ordering note; reordered
-  version fail `logoutOtherDevices()` internal password check against
-  already-rotated hash and throw, which broad try/catch elsewhere in
-  stack could mask as "did nothing" rather than visible error.
+- **Password change not revoke other session.** Invalidations now come
+  from two places — `remember_token` rotation on the credential (kills
+  remember-me cookies) and `AuthenticateSession` (`auth.session`
+  middleware, `web` group in `bootstrap/app.php`) fingerprinting the
+  credential hash (kills stale session rows on their next request).
+  Check, in order: middleware still registered on the `web` group;
+  `PasswordController` still rotating `remember_token` alongside the
+  hash; `SESSION_DRIVER=database` in the running environment (with
+  `file`/`array` drivers another device's session may not even survive
+  to be invalidated — test against `database`); and that the change
+  wrote to the **credential** the user actually authenticated with (the
+  host org's row), not some other org's row.
+- **Password change hits the wrong portal's account.** Symptom: person's
+  password changes in org A while they were on org B's host (or worse, a
+  credential is created where none should be). The controller must
+  resolve the target with
+  `$request->user()->credentialFor(OrgContext::current()->organization)`
+  and `abort(403)` when it comes back `null` — never
+  `firstOrCreate`, never `User::update(['password' => ...])`.
 - **`current_password` rule accepted on JSON/API request context.**
   Laravel native `current_password` rule check against *authenticated
-  guard* stored hash for request resolved guard — if this feature ever
+  guard* stored hash — which here means `User::getAuthPassword()`, i.e.
+  the host org credential's hash. If this feature ever
   exposed over `api`/Sanctum with different guard than `web`, re-verify
   rule still target right guard explicitly (`current_password:api`)
   rather than assume default. Not currently issue (feature is `web`-only),

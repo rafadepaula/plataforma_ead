@@ -52,7 +52,41 @@ Zero count renders no badge (`resolveBadge()` returns null).
 
 ## Contextual Aluno Forum URL
 
-Não existe `resolveForumRoute` — o único `routeResolver` do registry é `resolveUsersRoute` (`Registry.php:105`). O fórum no menu é só o item staff `forum-moderation` (`route: forum-moderation.index`, `roles` de staff). O Aluno navega pelo bloco de matrícula `student-courses` ("Meus Cursos", `childrenOnly` + `childrenResolver` por curso, cada filho com seu `forum_url`). Item com resolver tem o campo `route` inerte; o resolver é a única fonte do href.
+Não existe `resolveForumRoute` — o único `routeResolver` do registry é `resolveUsersRoute` (`Registry.php:106`, método privado em `Registry.php:318`). O fórum no menu é só o item staff `forum-moderation` (`route: forum-moderation.index`, `roles` de staff). O Aluno navega pelo bloco de matrícula `student-courses` ("Meus Cursos", `childrenOnly` + `childrenResolver` por curso, cada filho com seu `forum_url`). Item com resolver tem o campo `route` inerte; o resolver é a única fonte do href.
+
+## `resolveUsersRoute`: Cadeia de Resolução de Org
+
+`resolveUsersRoute()` espelha `ResolvesOrgContext::resolveOrgId()` — o item
+`users` só é alcançável quando um contexto de tenant resolve server-side:
+
+- **Admin** lê `session('active_org_id')` (Impersonate Org) — a tela é
+  Admin-only, então não existe branch de Gestor;
+- **demais papéis** leem `OrgContext::current()->orgId()` (Organization do
+  host da requisição);
+- sem contexto resolvido (Admin em estado global) o resolver devolve `null`
+  e o item **desaparece** do `<aside>` e do Offcanvas mobile, em vez de
+  oferecer um link que mora em `back()` + flash "Selecione uma Organização
+  ativa".
+
+## Shell Brand: `OrgIdentityComposer`
+
+O brand que todo shell renderiza (topbar, drawer mobile, painel guest,
+`<title>`) é resolvido uma vez por `OrgIdentityComposer` (bound em
+`AppServiceProvider::boot()` para `components.layout.topbar`, `sidebar`,
+`guest-panel` e `layouts.app`), exposto como `$orgBrand` (`name` +
+`logoPath`):
+
+- **não-Admin** vê nome + logo da Organization do host
+  (`OrgContext::current()->organization`);
+- **Admin** vê o `system_name` global em qualquer host (staff não é "de"
+  nenhum portal), e o **estado zero** (host não mapeado) também;
+- o badge de impersonação do topbar (`dusk="topbar-impersonation"`,
+  form `impersonate-org.destroy`) permanece — é ele que nomeia a Organization
+  sendo operada, já que o brand do Admin continua `system_name`.
+
+A URL do link de brand continua do `NavigationComposer::brandUrl()`
+(Admin/Gestor → `admin.dashboard`, Aluno → `student.courses.index`) — o
+composer separa "para onde o brand aponta" do "qual marca o shell exibe".
 
 ## Related Modules
 

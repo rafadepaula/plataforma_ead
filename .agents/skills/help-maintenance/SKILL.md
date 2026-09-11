@@ -63,7 +63,7 @@ HTTP process); `DatabaseMigrations` retired (per-method `migrate:fresh`)
   `layouts.app` or `layouts.guest` (both wire `<x-help-button>` once, at
   layout level — see `help-architecture` coverage table). Bespoke
   standalone document (own `<!DOCTYPE html>`, like
-  `landing/show.blade.php` or `public/certificates/show.blade.php`) have
+  `tenants/{landing_view}/landing.blade.php` or `public/certificates/show.blade.php`) have
   no shared layout to inherit, must add `<x-help-button key="...">`
   explicitly. This bucket have no automatic enforcement — missing button
   here is wiring omission, not framework bug.
@@ -77,9 +77,11 @@ HTTP process); `DatabaseMigrations` retired (per-method `migrate:fresh`)
   global article even if org-specific one exist for some other Org.
 - **`UnresolvedOrgContextException` (or silently wrong `org_id`) when
   seeding `HelpArticle` meant global.** `HelpArticle` `creating` hook
-  (`OrgScope`) stamp `org_id` from `session('active_org_id')`/acting user
-  regardless of what factory set — wrap creation in
-  `HelpArticle::withoutEvents(fn () => ...)` per `help-conventions`.
+  (`OrgScope`) stamp `org_id` from the resolved tenant context — Admin:
+  `session('active_org_id')`; every other role: the request host's
+  `OrgContext::current()->orgId()` — regardless of what factory set — wrap
+  creation in `HelpArticle::withoutEvents(fn () => ...)` per
+  `help-conventions`.
   Forget this = most common cause of `HelpCenterTest` Admin-screen
   assertion resolving wrong (or no) article.
 - **`HelpCenterDuskTest` intermittently click through to wrong element /

@@ -27,13 +27,27 @@ if (app()->environment('production')) {
 NEVER bare `Model::create()` or raw `DB::table()->insert()`. Every seeder write uses `firstOrCreate` or `updateOrCreate` keyed on natural unique identifier (`email`, `slug`, `title`, FK pair).
 
 ```php
-$org = Organization::firstOrCreate(
-    ['slug' => 'liga-certo'],
-    [
-        'name' => 'Liga Certo',
-        'cnpj' => '12.345.678/0001-90',
-        'status' => 'active',
-    ]
+$org = Organization::withoutEvents(function (): Organization {
+    return Organization::firstOrCreate(
+        ['host' => 'localhost.ligacerto'],
+        [
+            'name' => 'Liga Certo',
+            'landing_view' => 'ligacerto',
+            'cnpj' => '12.345.678/0001-90',
+            'status' => 'active',
+        ]
+    );
+});
+```
+
+Person accounts are two idempotent writes: the global `User` keyed on
+`email`, then the per-org `Credential` keyed on the `(user_id, org_id)` pair:
+
+```php
+$user = User::firstOrCreate(['email' => $email], [...]);
+Credential::firstOrCreate(
+    ['user_id' => $user->id, 'org_id' => $org->id],
+    ['password' => Hash::make('password'), 'status' => 'active', ...],
 );
 ```
 

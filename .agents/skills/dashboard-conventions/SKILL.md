@@ -133,7 +133,9 @@ static link.
 `DashboardController`, `ReportExportController`, and `SystemSettingController`
 each carry own **identical**
 `protected function resolveViewingOrgId(Request $request): ?int` method (Admin:
-`session('active_org_id')` or `null` for global; anyone else: `$user->org_id`).
+`session('active_org_id')` or `null` for global; anyone else:
+`OrgContext::current()->orgId()` — the request-host Organization; there is no
+`users.org_id` column anymore).
 Deliberate 3-way duplication, **not**
 `App\Http\Controllers\Concerns\ResolvesOrgContext` (that trait is the
 Aluno/Gestor-CRUD helper used by `UserController`/`UserImportController`; it
@@ -150,7 +152,7 @@ Gestor, but read condition as written):
 
 ```php
 if (! $user->hasRole(RolesEnum::ADMIN->value) && $request->filled('org_id')
-    && (int) $request->query('org_id') !== (int) $user->org_id) {
+    && (int) $request->query('org_id') !== (int) OrgContext::current()->orgId()) {
     abort(403);
 }
 ```

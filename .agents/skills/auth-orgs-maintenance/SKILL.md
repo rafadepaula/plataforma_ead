@@ -1,12 +1,15 @@
 ---
 name: auth-orgs-maintenance
 description: >
-  Debug, test, edge-case guide for Aluno/Gestor CRUD and chunked CSV
-  import. Use when `MultiTenantStudentImportTest` or
-  `UserCrudTest` fails, imported student misses enrollment or duplicates a
-  User row, `UnresolvedOrgContextException` fires during import, or before
-  touching `UserImportService`, `UserController`, `UserPolicy`,
-  `CsvImporter.js`.
+  Debug, test, edge-case guide for host-scoped login/password flows
+  (HostScopedLoginTest, PasswordResetHostTest, PasswordUpdateTest),
+  Aluno/Gestor CRUD and chunked CSV import. Use when
+  `MultiTenantStudentImportTest` or `UserCrudTest` fails, a login fails
+  on the right host (or passes on the wrong one), remember-me or throttle
+  misbehaves per org, an imported student misses enrollment or duplicates
+  a User row, `UnresolvedOrgContextException` fires during import, or
+  before touching `UserImportService`, `UserController`, `UserPolicy`,
+  `OrgCredentialUserProvider`, `CsvImporter.js`.
 license: MIT
 metadata:
   feature: auth-orgs
@@ -19,16 +22,49 @@ metadata:
 
 Guard this module's contract. PHPUnit, no Pest. Keep green:
 
-- `tests/Feature/MultiTenantStudentImportTest.php` — the multi-org adaptive-enrollment rule: existing global e-mail gains only a new enrollment (no duplicate `User`, no password overwrite); new e-mail creates `User` bound to current `org_id`; chunk boundary at exactly 50 rows; malformed rows skipped without aborting batch; Admin with no `active_org_id` gets 422.
-- `tests/Feature/UserCrudTest.php` — Admin/Gestor CRUD scoping; Gestor-submitted `org_id` always ignored server-side; Aluno forbidden on every `/users*` route.
+- `tests/Feature/Auth/HostScopedLoginTest.php` — THE auth contract suite:
+  login succeeds on the host org where the credential lives; same person
+  without an account on host B fails with the generic error (like a wrong
+  password); wrong password generic; INACTIVE credential fails; login on
+  an inactive org fails even with a valid credential; state zero accepts
+  only the global Admin credential and rejects an org credential;
+  remember-me is owned by the credential of the portal where login
+  happened (token rotated there, other portal's token untouched, token
+  invalid cross-org, inactive account never reacquires by cookie); throttle
+  is per org.
+- `tests/Feature/Auth/PasswordResetHostTest.php` — reset changes ONLY the
+  host org's password and preserves the other org's; pre-existing token is
+  blocked on an inactive org; forgot without an account in the host org
+  fails generic; forgot on inactive org fails generic; state-zero Admin
+  can reset.
+- `tests/Feature/PasswordUpdateTest.php` — `current_password` validates
+  against the host credential (`User::getAuthPassword()`); wrong current
+  password leaves the credential unchanged; password change logs out
+  other sessions (`AuthenticateSession`); update rate-limited after six
+  attempts.
+- `tests/Feature/MultiTenantStudentImportTest.php` — the multi-org
+  adaptive-enrollment rule: existing global e-mail gains only a new
+  enrollment + credential provisioning (no duplicate `User`, no password
+  overwrite), inactive account reactivated in the importing org; new
+  e-mail creates `User` + org credential; chunk boundary at exactly 50
+  rows; malformed rows skipped without aborting batch.
+- `tests/Feature/UserCrudTest.php` — Admin/Gestor CRUD scoping; Admin
+  impersonating an org ignores any `org_id` sent in the request; Admin
+  creating a user with an e-mail from another org reuses the person
+  (`ProvisionOrgAccountAction`); Admin without active org context gets the
+  negotiated `UnresolvedOrgContextException` response; Aluno forbidden on
+  every `/users*` route.
 - `tests/Browser/MultiTenantStudentImportTest.php` — E2E: upload CSV, chunked progress bar, final course roster.
-- `tests/Feature/Admin/UserAdminManagementTest.php` — cross-org listing with all 4 roles; screen reachable without any Impersonate Org context; every filter (name/email/org_id/status/role/created_at range) individually and combined, still paginated; Gestor/Aluno 403 on every `admin.users.*` route (middleware, not just Policy); guest redirect; show/edit views; full-profile update including `org_id`/role across all 4 `RolesEnum` values; activate/deactivate + `user.status_changed` audit rows; self-deactivation/self-demotion/self-deletion guards; destroy + audit row + `certificates`/`invitation_links` RESTRICT guards; regression that `users.index` stays org-scoped to aluno/gestor only.
+- `tests/Feature/Admin/UserAdminManagementTest.php` — cross-org listing with all 4 roles; screen reachable without any Impersonate Org context; every filter (name/email/org_id/status/role/created_at range) individually and combined, still paginated; Gestor/Aluno 403 on every `admin.users.*` route (middleware, not just Policy); guest redirect; show/edit views; full-profile update across all 4 `RolesEnum` values; activate/deactivate + `user.status_changed` audit rows; self-deactivation/self-demotion/self-deletion guards; destroy + audit row + `certificates`/`invitation_links` RESTRICT guards; regression that `users.index` stays org-scoped to aluno/gestor only.
 - `tests/Unit/Policies/UserPolicyGlobalAbilitiesTest.php` — `viewAnyGlobal`/`viewGlobal`/`updateGlobal`/`deleteGlobal` (Admin-only, no org dependency, self-delete blocked) plus a regression guard that the original `sharesOrgContext()`-based abilities are unchanged.
 - `tests/Browser/AdminUserManagementTest.php` — full lifecycle as plain Admin with no impersonation: cross-org listing, filter by org, deactivate via confirm modal (`data-status` assertion, not badge text), delete via confirm modal, nav-item visibility restricted to Admin only.
 
 Run narrowest first:
 
 ```bash
+vendor/bin/sail artisan test --compact tests/Feature/Auth/HostScopedLoginTest.php
+vendor/bin/sail artisan test --compact tests/Feature/Auth/PasswordResetHostTest.php
+vendor/bin/sail artisan test --compact tests/Feature/PasswordUpdateTest.php
 vendor/bin/sail artisan test --filter=MultiTenantStudentImportTest
 vendor/bin/sail artisan test --filter=UserCrudTest
 vendor/bin/sail artisan test --filter=UserAdminManagementTest
@@ -39,16 +75,16 @@ vendor/bin/sail artisan test --filter=UserPolicyGlobalAbilitiesTest
 
 `UserImportService::importChunk()` = only place this rule lives. Per row:
 
-1. Look up student **globally by e-mail** (`User::where('email', ...)`), not scoped by `org_id` — a student active at another Organization must be found.
-2. Found: do **not** touch `password` or `org_id`. Only ensure `course_user` enrollment exists for the chunk's `course_id` (`firstOrCreate`-style existence check before `attach()`), so re-uploading the same CSV is idempotent and never hits a pivot unique-constraint violation.
-3. Not found: create `User` with resolved `org_id`, random (never client-supplied) password, `aluno` role, then enroll.
+1. Look up student **globally by e-mail** (`User::where('email', ...)`), not scoped by org — a student active at another Organization must be found.
+2. Found: do **not** touch the person's other-org credentials. Ensure the `credentials` row exists for the importing org (`firstOrCreate` on `(user_id, org_id)` with a random, never-client-supplied password) and reactivate it if `status = inactive`; only then ensure the `course_user` enrollment exists for the chunk's `course_id`, so re-uploading the same CSV is idempotent.
+3. Not found: create the `User` (person), provision the credential for the resolved org with a random password (`aluno` role), then enroll. The student regains access through the portal's forgot-password flow.
 
 Second import entry point (API import) reuses this service. Re-implementing the "exists globally / reuse vs create" branch is exactly how this rule regresses silently.
 
 ## Duplicate User or Overwritten Password
 
-- Step 1 lookup must be unscoped by `org_id`/`OrgScope` — query `User` directly (`User` never carries `OrgScope`, see `tenancy-maintenance`), not through an org-scoped relation that hides the other Org's row and produces false-negative "not found" then duplicate create.
-- No code path may call `User::updateOrCreate(['email' => ...], [...])` here — it silently overwrites `password`/`org_id` on the matched row. Service branches explicitly (`if (! $user) { create }`) by design.
+- Step 1 lookup must be unscoped by org/`OrgScope` — query `User` directly (`User` never carries `OrgScope`, see `tenancy-maintenance`), not through an org-scoped relation that hides the other Org's row and produces false-negative "not found" then duplicate create.
+- No code path may call `User::updateOrCreate(['email' => ...], [...])` here — `users` no longer even carries `password`/`org_id`; the danger is a silent credential rewrite. Service/action branches explicitly (`if (! $user) { create }`) by design (`ProvisionOrgAccountAction`, `UserImportService`).
 
 ## Chunk Boundary / Partial-Batch Bugs
 
@@ -63,11 +99,11 @@ the `File` with `FileReader`, splits into row objects with a small manual parser
 
 ## `UnresolvedOrgContextException` During Import/CRUD
 
-`UserController`, `UserImportController`, `GestorStudentController`, and `GestorProfessorController` share tenant-context resolution via the `ResolvesOrgContext::resolveOrgId()` trait (`App\Http\Controllers\Concerns\ResolvesOrgContext`), which mirrors `OrgScope::booted()` order (`$user->org_id ?? session('active_org_id')`) and throws `UnresolvedOrgContextException` on failure. `User` is not `OrgScope`d (see its docblock), so this is resolved at the controller boundary, not inherited. Keep the exact `??` order and exception message shape from `tenancy-conventions`, so `bootstrap/app.php`'s handler keeps producing the same negotiated response for all four flows (422 JSON for JSON/AJAX callers, redirect-back 302 + flash for web).
+`UserController`, `UserImportController`, `GestorStudentController`, and `GestorProfessorController` share tenant-context resolution via the `ResolvesOrgContext::resolveOrgId()` trait (`App\Http\Controllers\Concerns\ResolvesOrgContext`), which mirrors `OrgScope`'s creating hook order (Admin: `session('active_org_id')`; others: `OrgContext::current()->orgId()`) and throws `UnresolvedOrgContextException` on failure. `User` is not `OrgScope`d (see its docblock), so this is resolved at the controller boundary, not inherited. Keep the exact branch order and exception message shape from `tenancy-conventions`, so `bootstrap/app.php`'s handler keeps producing the same negotiated response for all four flows (422 JSON for JSON/AJAX callers, redirect-back 302 + flash for web).
 
-## `UserPolicy` — Compares `org_id`, Not Just Role
+## `UserPolicy` — Compares Credential Membership, Not Just Role
 
-Unlike `OrganizationPolicy` (plain role check), `UserPolicy` also compares target user's `org_id` against acting user's resolved context (Admin: `session('active_org_id')`; Gestor: `$user->org_id`). Gestor and Admin impersonating a *different* Org both get 403 on another Org's user, not 404 — row exists, route-model-binding finds it, authorization fails. Plugs into the `Gate::authorize()` pattern in `auth-orgs-conventions`. Professor coverage lives alongside: `viewAnyStudents`/`updateStudent`/`deleteStudent` gate the Gestor's Aluno-only directory (target must be `aluno` in the same `org_id`), and the Gestor's Professor directory (`GestorProfessorController`, `role:professor` accounts in the same `org_id`) reuses `viewAny`/`update`/`delete` plus an explicit target-is-Professor check in the controller.
+Unlike `OrganizationPolicy` (plain role check), `UserPolicy::sharesOrgContext()` asks whether the TARGET person holds a `credentials` account in the ACTING user's server-resolved org (`holdsAccountIn()`): Admin → impersonated `session('active_org_id')`; Gestor → `OrgContext::current()->orgId()`. Gestor and Admin impersonating a *different* Org both get 403 on another Org's person, not 404 — row exists, route-model-binding finds it, authorization fails. Plugs into the `Gate::authorize()` pattern in `auth-orgs-conventions`. Professor coverage lives alongside: `viewAnyStudents`/`updateStudent`/`deleteStudent` gate the Gestor's Aluno-only directory (target must be `aluno` holding an account in the same org), and the Gestor's Professor directory (`GestorProfessorController`, `role:professor` accounts in the same org) reuses `viewAny`/`update`/`delete` plus an explicit target-is-Professor check in the controller.
 
 ## Global Admin User-Management Screen Edge Cases
 
@@ -75,7 +111,8 @@ Unlike `OrganizationPolicy` (plain role check), `UserPolicy` also compares targe
 - **`admin.users.*` routes must live in the `role:admin`-only group**, never `role:admin|gestor` — putting them in the wrong group makes the "inacessível a Gestores" acceptance criterion pass by Policy alone, which regresses silently if the Policy is ever loosened. A Dusk/Feature test hitting the route as Gestor must assert a 403 that happens before the controller even runs.
 - **Self-action guards are 403s inside the controller, not validation errors** — `UserAdminController::update()`/`updateStatus()` `abort(403, ...)` when the acting Admin targets their own row for deactivation or a role-change away from `admin`; `UserPolicy::deleteGlobal()` blocks self-deletion at the Policy layer instead. Getting these two layers mixed up (e.g. moving the self-delete check into the controller only) means a test asserting `assertForbidden()` before any DB write would instead see a partial mutation.
 - **`destroy()` needs both RESTRICT-FK pre-checks or it 500s.** `certificates.user_id` and `invitation_links.created_by` are both `ON DELETE RESTRICT`; a User with either related row throws a dedicated exception (`UserHasIssuedCertificatesException`/`UserHasCreatedInvitationLinksException`) instead of letting `$user->delete()` crash raw. The `invitation_links` check must use `->withoutGlobalScope('org')` — `InvitationLink` is `OrgScope`d, so without the bypass an Admin with no active impersonation (the normal state on this screen) silently sees zero links and the delete proceeds straight into the DB-level crash.
-- **`UpdateUserAdminRequest` forces `org_id` to `null` when `role === admin`** in `prepareForValidation()` — a regression here (e.g. moving that logic into `rules()`, which runs after normalization) lets a stale `org_id` slip through validation on a role-change-to-admin submission and leaves the row `org_id`-set with an admin role, which nothing else in the app expects.
+- **`UpdateUserAdminRequest` no longer edits org membership or account status** — a regression reintroducing an `org_id`/`status` field there lets the global screen reach across portals and desync per-org accounts. The nullable `password` it accepts resets EVERY credential of the person and rotates each `remember_token`; a regression here (e.g. skipping `rotateRememberToken()`) leaves "remembered" devices alive on deactivated/rewritten accounts.
+- **Global status flip is all-credentials** (`admin.users.status` iterates `$user->credentials()->get()`): the coarse person-level signal is `User::hasActiveAccount()`, while any per-portal truth stays in that org's credential row.
 
 ## `UserHomeResolver` Sync on Role Change
 
@@ -98,14 +135,14 @@ Failing after a Blade edit? Rebuild first (`vendor/bin/sail npm run build`), and
 
 ## Auto-Update Protocol
 
-Any change to `UserController`, `Admin\UserAdminController`, `UserImportController`, `UserImportService`, `UserPolicy`, `UpdateUserAdminRequest`, `users*`/`admin.users.*` routes, `CsvImporter.js`, or the guest-shell auth views (`resources/views/auth/login.blade.php`, `resources/views/layouts/guest.blade.php`, `resources/views/components/layout/guest-panel.blade.php`) **must** update all three auth-orgs skills (`auth-orgs-architecture`, `auth-orgs-conventions`, `auth-orgs-maintenance`) in the same change before the task is done. Also:
+Any change to `UserController`, `Admin\UserAdminController`, `UserImportController`, `UserImportService`, `ProvisionOrgAccountAction`, `OrgCredentialUserProvider`, `UserPolicy`, `UpdateUserAdminRequest`, `LoginRequest`/auth controllers, `users*`/`admin.users.*` routes, `CsvImporter.js`, or the guest-shell auth views (`resources/views/auth/login.blade.php`, `resources/views/layouts/guest.blade.php`, `resources/views/components/layout/guest-panel.blade.php`) **must** update all three auth-orgs skills (`auth-orgs-architecture`, `auth-orgs-conventions`, `auth-orgs-maintenance`) in the same change before the task is done. Also:
 
 - `.agents/agents/code-reviewer.md` — if the change alters what a reviewer checks for this module.
 - `vendor/bin/sail artisan harness:check-skills` — fails the build if any `auth-orgs-*` skill is missing.
 
 ## Related
 
-- `tenancy-maintenance` — underlying `OrgScope`/`RolesEnum` contract.
+- `tenancy-maintenance` — underlying `OrgScope`/`RolesEnum`/host-resolution contract.
 
 ---
 

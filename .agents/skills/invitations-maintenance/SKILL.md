@@ -24,11 +24,19 @@ These tests guard this module's contract, must stay green (PHPUnit, no Pest):
 
 - `tests/Unit/Actions/ProcessSmartInvitationActionTest.php` —
   transaction-level coverage of `ProcessSmartInvitationAction`:
-  new/existing-account branches, wrong password,
+  new/existing-account branches (existing = password checked against the
+  host org's `credentials` row; person from another portal gets a new
+  credential here), inactive-credential block after the password check,
+  wrong password,
   expired/exhausted/revoked/unknown-token/unpublished/soft-deleted-course
-  link states, staff-account (gestor/admin) rejection, the
-  no-duplicate-account/no-`org_id`-overwrite guarantee, reactivating
+  link states, wrong-host token reads as not-found, staff-account
+  (gestor/admin) rejection, no second `users` row / no cross-org
+  credential overwrite, reactivating
   `cancelled` enrollment, `lockForUpdate` over-consumption guard.
+- `tests/Feature/Tenancy/PublicFlowsHostScopeTest.php` — host tenancy of
+  the public flows: `/convite/{token}` 200 on the link org's host and 404
+  (indistinguishable from unknown token) on another org's host,
+  `check-email` answering `exists` from the host org's credential only.
 - `tests/Feature/SmartInvitationTest.php` — HTTP-level coverage of public
   `/convite/{token}` + `/convite/check-email` routes: link-state guards
   surfacing as 404s (including unpublished/soft-deleted linked Course),
@@ -54,7 +62,9 @@ These tests guard this module's contract, must stay green (PHPUnit, no Pest):
 - `tests/Browser/MultiOrgEnrollmentTest.php` — E2E **tenancy** journey (kept
   deliberately distinct from the DOM-contract suite above): existing multi-org
   user e-mail collapses form to password-only, and after submit they land
-  enrolled in both Organizations' courses with single `users` row. Its
+  enrolled in both Organizations' courses with one `users` row and one
+  `credentials` row per org (`credentialFor($orgA)`/`credentialFor($orgB)`
+  both non-null). Its
   invalid-link assertions target the per-reason copy
   (`Este convite expirou.` / `Este convite foi cancelado.` /
   `Limite de vagas atingido.`), not one catch-all sentence.
@@ -63,6 +73,7 @@ Run narrowest of these first after touching this module:
 
 ```bash
 vendor/bin/sail artisan test --filter=ProcessSmartInvitationActionTest
+vendor/bin/sail artisan test --filter=PublicFlowsHostScopeTest
 vendor/bin/sail artisan test --filter=SmartInvitationTest
 vendor/bin/sail artisan test --filter=EnrollmentManagementTest
 vendor/bin/sail artisan test --filter=InvitationHttpTest
@@ -131,7 +142,7 @@ SmartInvitationForm: new SmartInvitationForm(httpClient, notifications),
 ## Diagnosing "Form Never Collapses to Password-Only"
 
 - Confirm `<form>` carries `data-check-email-url`. Set server-side in
-  `convite/show.blade.php` to `url('/convite/check-email')`. Missing/empty,
+  `convite/show.blade.php` to `route('invitation.check-email')`. Missing/empty,
   `checkEmail()` silently no-ops (`if (!url || !email) {
   this.toggleFields(form, false); return; }`).
 - Confirm e-mail `<input>` carries bare `data-invitation-email` attribute.
@@ -168,10 +179,13 @@ SmartInvitationForm: new SmartInvitationForm(httpClient, notifications),
   `->type('@invitation-email', ...)` matches seeded `User` `email`
   **exactly**. Trailing space or case mismatch makes `check-email`
   correctly report `exists: false`. Test not wrong, fixture data wrong.
-- `org_id` comes back overwritten instead of pinned to original Org? Bug is
-  in `ProcessSmartInvitationAction` existing-account branch — must never
-  assign `org_id` on that path (see `invitations-architecture`). New-account
-  branch legitimately does.
+- `credentialFor($orgA)` (original portal account) comes back `null`, or a
+  second row appeared in the *first* portal? Bug is in
+  `ProcessSmartInvitationAction` existing-account branch — it must only
+  ever touch the **link org's** `Credential` (`Credential::forOrg($invitationLink->org_id)`),
+  never other orgs' rows, and never a `users.org_id` (column no longer
+  exists). Creating the link org's credential for a person known only to
+  another portal is the legitimate branch.
 
 ## Diagnosing `EnrollmentController::destroy()` Not Revoking Anything
 

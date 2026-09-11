@@ -30,7 +30,7 @@ metadata:
 
 ## Contextual Routes
 
-URL depends on acting user (forum needs `{course}`): pass `routeResolver` closure returning URL string or `null` (null hides item). `route` field inert when resolver set — leave sensible name and document it.
+URL depends on acting user (forum needs `{course}`): pass `routeResolver` closure returning URL string or `null` (null hides item). `route` field inert when resolver set — leave sensible name and document it. The one existing resolver, `resolveUsersRoute`, resolves the tenant **server-side**: Admin reads `session('active_org_id')` (Impersonate Org), every other role reads `OrgContext::current()->orgId()` (request host) — mirror that chain in any new resolver instead of trusting request input or a `users.org_id` column (it no longer exists).
 
 ## Blade Contract
 

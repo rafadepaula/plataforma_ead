@@ -3,7 +3,9 @@ name: notifications-conventions
 description: >
   Code patterns, snippets, guardrails for Notifications & Alerts:
   try/catch around notify() call site for mail isolation, database-before-mail
-  via() ordering, NotificationController manual $request->user()->notifications()
+  via() ordering, OrgUrl::route() for every tenant action_url (queued
+  worker has no request host), NotificationController manual
+  $request->user()->notifications()
   scoping (no Policy/OrgScope for DatabaseNotification), role:gestor/role:aluno
   bell visibility gate, NotificationBell.js/HttpClient JS module contract. Use
   when writing Notification class, Event/Listener pair, controller, or JS
@@ -65,6 +67,38 @@ Ordering is load-bearing, not stylistic. Laravel sends channels in
 declaration order, so `database` row guaranteed persisted by time `mail`
 channel job runs and maybe throws. Never reorder to `['mail', 'database']`.
 
+## Every Tenant `action_url` Is `OrgUrl::route()`, Never Bare `route()`
+
+All 4 Notification classes are queued (`ShouldQueue`); `toMail()` and
+`toDatabase()` execute in the queue worker, with no request bound, so a
+bare `route()` silently resolves against `APP_URL` — the wrong portal
+for every Organization except the default one. Build every link to a
+tenant surface with `App\Services\OrgUrl::route()`, passing the org that
+owns the target surface:
+
+```php
+// CertificateIssuedNotification — org from the issuing Course
+$url = OrgUrl::route($this->certificate->course->org_id, 'certificates.verify', $this->certificate->validation_hash);
+
+// NewForumReplyNotification — org from the topic (fetched withoutGlobalScopes())
+$url = OrgUrl::route($topic->org_id, 'forum.show', [$topic->course_id, $topic->id]);
+
+// EnrollmentConfirmedNotification — org from the Course
+$url = OrgUrl::route($this->course->org_id, 'classroom.show', $this->course);
+
+// InvitationSentNotification — org straight off the link
+$url = OrgUrl::route($this->invitationLink->org_id, 'invitation.show', $this->invitationLink->token);
+```
+
+`OrgUrl::route(Organization|int|null $org, string $name, mixed
+...$parameters)` (app/Services/OrgUrl.php) renders the route **path**
+via `route($name, $parameters, false)`, resolves `$org->host`, and
+prefixes scheme/port parsed from `APP_URL`; a null/unknown org degrades
+to `url($path)`. New notification with a tenant link **must** use it —
+see `notifications-architecture`. `NotificationTriggersTest` asserts the
+org's `host` appears inside each `action_url`, so a regression to bare
+`route()` fails the suite, not just production.
+
 ## `toDatabase()` `data` Shape Is Bell's Entire Contract
 
 Every `toDatabase()` in module returns at minimum:
@@ -76,8 +110,8 @@ Every `toDatabase()` in module returns at minimum:
 public function toDatabase(object $notifiable): array
 {
     return [
-        'message' => '...',        // rendered as-is in the dropdown item
-        'action_url' => route(...), // where clicking the item redirects
+        'message' => '...',                          // rendered as-is in the dropdown item
+        'action_url' => OrgUrl::route($org, ...),    // where clicking the item redirects
         // + one type-specific id key (course_id / certificate_id / reply_id)
     ];
 }

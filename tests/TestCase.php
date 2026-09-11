@@ -90,6 +90,10 @@ abstract class TestCase extends BaseTestCase
             return self::ADMIN_HOST;
         }
 
+        // A person may hold several accounts (multi-org). The natural
+        // (user_id, org_id) index order decides here — tests that need a
+        // specific portal for a multi-credential person MUST call
+        // `onHost()` explicitly instead of relying on this fallback.
         return $user->credentials()
             ->whereNotNull('org_id')
             ->with('organization')

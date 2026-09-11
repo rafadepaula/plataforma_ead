@@ -176,7 +176,8 @@ Check, in order:
 
 ## `EnsureStudentIsEnrolled` Returning the Wrong Status
 
-- 403 for Gestor: confirm `$user->org_id` match resolved Course
+- 403 for Gestor: confirm `OrgContext::current()->orgId()` (the request
+  host's Organization) match resolved Course
   `org_id` — middleware compare ints (`(int)` cast on both sides), so
   string/int mismatch from stale cast elsewhere is not cause; check
   Course actually resolved `withoutGlobalScopes()` and not silently 404'd

@@ -59,11 +59,12 @@ matter to reader. Bare factory fine when test focus elsewhere and
 
 ## Creating Global Article While Acting as Admin: `withoutEvents()`
 
-`OrgScope` `creating` hook stamp `org_id` from
-`session('active_org_id')` (or throw `UnresolvedOrgContextException` if
-neither user nor session resolve one — see `tenancy-conventions`). Test
+`OrgScope` `creating` hook stamp `org_id` from the resolved tenant context —
+Admin: `session('active_org_id')`; every other role: the request host's
+`OrgContext::current()->orgId()` (or throw `UnresolvedOrgContextException` if
+neither resolves one — see `tenancy-conventions`). Test
 wanting **global** `HelpArticle` (`org_id = null`) seeded independent of
-whatever Admin session active must bypass that hook:
+whatever session/host context active must bypass that hook:
 
 ```php
 HelpArticle::withoutEvents(fn () => HelpArticle::factory()->global()->create([
@@ -74,9 +75,10 @@ HelpArticle::withoutEvents(fn () => HelpArticle::factory()->global()->create([
 ```
 
 Without `withoutEvents()`, `creating` hook silently overwrite factory
-`org_id => null` with acting Admin `session('active_org_id')`, turning
+`org_id => null` with the resolved tenant context (Admin impersonation
+session, or the host org for other roles), turning
 intended global article into org-specific one (or throwing, if no org
-impersonated). Same workaround documented for
+context resolves). Same workaround documented for
 `ForumTopic::withoutEvents()` in `forum-conventions`, applied here to
 `HelpArticle`.
 

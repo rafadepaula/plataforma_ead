@@ -1,6 +1,6 @@
 ---
 name: testing-maintenance
-description: Guia de manutenção, debug, flakiness, edge cases da infraestrutura de testes e CI/CD.
+description: Guia de manutenção, debug, flakiness, edge cases da infraestrutura de testes e CI/CD (grupo requires-network, pré-requisitos Dusk no container, snapshot dusk-selectors).
 ---
 
 # Testing Maintenance (`testing-maintenance`)
@@ -41,6 +41,31 @@ Documento dá instruções para diagnóstico de erro, manutenção contínua e s
 
 ---
 
+## Pré-requisitos do Ambiente Dusk (dentro do container Sail)
+
+1. **Assets de frontend compilados**: qualquer mudança em `resources/js/**` ou `resources/css/**` exige `vendor/bin/sail npm run build` antes de rodar Dusk — o servidor serve `public/build`; com bundle velho a suíte falha pelo motivo errado (pegadinha documentada no docblock de `tests/Browser/ForumPollingAndInteractionDuskTest.php`). Rode o build **dentro do container** (`vendor/bin/sail ...`), não no host: é o container do app que serve os assets.
+2. **Symlink `public/storage`**: telas que renderizam imagem de `storage/app/public` (ex.: logo de Organization) só carregam com `php artisan storage:link` executado **dentro do container**. Sem o symlink a imagem dá 404 — `tests/Browser/OrganizationCrudTest.php` captura exatamente esse modo de falha ao asserir `naturalWidth > 0` no preview. Em volume Sail novo o link precisa ser recriado.
+3. **Host do portal Dusk**: `DuskTestCase::duskTenant()` deriva a org do host de `APP_URL` (`.env.dusk.*`). Se trocar `APP_URL` no ambiente Dusk, a org é recriada no novo host, mas dados de testes antigos presos ao host anterior (credential/`inOrg`) deixam de resolver — resete a base `testing` ou recrie os fixtures na nova org.
+
+---
+
+## Suíte `requires-network` (excluída do CI)
+
+- `tests/Browser/LessonPlayerDuskTest.php` carrega `#[Group('requires-network')]`: reproduz streams reais de vídeo (YouTube/Vimeo embed) no Selenium, então depende de rede externa e pode quebrar por bloqueio do detentor do vídeo, não por regressão do produto.
+- O CI roda `php artisan dusk --exclude-group requires-network` (`.github/workflows/ci.yml`).
+- Rodar localmente: `vendor/bin/sail artisan dusk --filter=LessonPlayerDuskTest` (sem exclusão de grupo). Falha com vídeo não carregado? Verifique primeiro se o embed do vídeo específico ainda é permitido (foi o caso do `dQw4w9WgXcQ`) antes de caçar regressão.
+- Novo teste E2E que dependa de rede externa (iframe de terceiros, CDN, stream) **deve** carregar o mesmo atributo `#[Group('requires-network')]`, senão vira flake de pipeline.
+
+---
+
+## Snapshot `dusk-selectors` Falhou (`DuskSelectorContractTest`)
+
+- Sintoma: `test_dusk_selectors_match_the_versioned_snapshot` falha listando seletores missing/unexpected em `tests/fixtures/dusk-selectors-snapshot.json`.
+- Diagnóstico: alguém renomeou/movou/removeu um `dusk="..."` em `resources/views/**`. Como 25+ arquivos de `tests/Browser/` usam esses seletores, o impacto E2E vem primeiro.
+- Correção: se a mudança de Blade é deliberada, atualize os usos em `tests/Browser/` **e** regenere o snapshot (JSON com os pares `file::selector` + contagem) **no mesmo PR**; se não é, restaure o seletor no node original (component swap às vezes move o atributo para um wrapper).
+
+---
+
 ## Resolução de Problemas Comuns (Edge Cases)
 
 - **Instabilidade (Flakiness) em Testes Dusk**:
@@ -63,6 +88,12 @@ Correções, nesta ordem:
 1. Espere pelo **texto do flash** (`waitForText('... com sucesso.')`) em vez da URL — não depende do `load` completo da página.
 2. Se a etapa não precisa daquele recurso, mova-a para um registro equivalente sem dependência de rede (no caso: editar a lição de PDF em vez da de YouTube — mesmo caminho de `update`).
 3. Nunca "conserte" quebrando a cadeia em métodos atômicos: isso troca 1 flake por N× custo fixo.
+
+### Sessão Dusk expulsa ou login falha na org errada (tenancy por host)
+
+- Sintoma: usuário autenticado via `loginAs()` é redirecionado para `/` ou deslogado ao navegar; ou login por formulário falha com a mensagem genérica para uma senha que está correta.
+- Diagnóstico: o host navegado não resolve para uma org **ativa** com credential do usuário. `loginAs()` só navega com conta ativa na org do host (`EnsureTenantAccess`); login por formulário valida a credential do par `(user, org do host)`. Confirme que o fixture usa `$this->duskTenant()` (`User::factory()->...->inOrg($this->duskTenant())`, `Course::factory()->inOrg($this->duskTenant()->id)`) e que a org do `duskTenant()` está `active` (`firstOrCreate` em `DuskTestCase::duskTenant()`).
+- Em Feature tests o análogo é esquecer `onHost()`/`actingAsOrgUser()` — host errado = estado zero ou org alheia; helpers em `tests/TestCase.php` (ver `testing-architecture`).
 
 ### Edge Cases do `DatabaseTruncation`
 

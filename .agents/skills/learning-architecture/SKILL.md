@@ -144,7 +144,8 @@ classroom/lesson/progress route:
 
 - **Admin**: always allowed. Guard is about enrollment, not tenant
   management, so no active-impersonation requirement applies here.
-- **Gestor**: allowed only when own `org_id` matches resolved Course
+- **Gestor**: allowed only when the request host's Organization
+  (`OrgContext::current()->orgId()`) matches the resolved Course
   `org_id`.
 - **Aluno**: allowed only with `course_user` row in `active` **or**
   `completed` status (`User::hasActiveOrCompletedEnrollment()`).

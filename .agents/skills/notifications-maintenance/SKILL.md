@@ -25,7 +25,10 @@ These tests guard this module's contract, must stay green (PHPUnit, no Pest):
 - `tests/Feature/NotificationTriggersTest.php` — all 4 triggers via
   `Notification::fake()`/`Mail::fake()`, `database` row assertions,
   forum-reply recipient-set correctness (dedupe + self-exclusion),
-  mail-failure-does-not-roll-back-the-transaction case, org isolation.
+  mail-failure-does-not-roll-back-the-transaction case, org isolation,
+  and per-trigger host assertions inside each `action_url`
+  (`certificate->course->organization->host`, `topic->org_id` org host,
+  `course->organization->host`) — the `OrgUrl` contract.
 - `tests/Feature/NotificationBellTest.php` — `notifications.unread-count`
   accuracy, `notifications.read-all` marks all/only own rows,
   `notifications.read` + `action_url` passthrough, guest redirect,
@@ -79,6 +82,20 @@ never when pivot row already `active` and unchanged. Regression here means
 student who re-visits invite link they already used gets re-notified every
 time.
 
+## Notification Link Lands On The Wrong Portal
+
+Queued notification `toMail()`/`toDatabase()` runs with no request, so a
+bare `route()` falls back to `APP_URL` — the wrong host for every org
+except the default one. Symptom: mail/database `action_url` points at the
+admin/app domain instead of the student's own portal
+(`NotificationTriggersTest` catches this via its `host` assertions, so a
+regression fails the suite first). Fix: restore
+`OrgUrl::route($org, $name, ...)` with the trigger's owning org —
+certificate → `$certificate->course->org_id`, forum → `$topic->org_id`,
+enrollment → `$course->org_id`, invitation → `$invitationLink->org_id`
+(see `notifications-conventions` for exact call shapes and the
+`OrgUrl` rationale).
+
 ## Mail Transport Failure Aborted Whole Request
 
 Means `Send*Notification` Listener `try/catch (Throwable)` boundary around
@@ -128,7 +145,8 @@ plain `string` resolved through
 ## Auto-Update Protocol
 
 Any change
-to Notification class in `app/Notifications/`, Event/Listener pair in
+to Notification class in `app/Notifications/`, `App\Services\OrgUrl`,
+Event/Listener pair in
 `app/Events/`/`app/Listeners/` for one of 4 triggers,
 `NotificationController`, `notifications.*` routes,
 `resources/views/components/notifications-bell.blade.php`, or

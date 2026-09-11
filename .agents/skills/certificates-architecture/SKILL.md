@@ -21,12 +21,13 @@ metadata:
 ## Overview
 
 Gestor configures `course_completion_rules` on Course. The resulting
-certificate is a branded PDF with embedded QR code. A fully public,
-unauthenticated, cross-tenant
-`/validar-certificado/{hash?}` route exposes verification — one deliberate
-crack in this platform's otherwise strict per-Organization tenancy, because
-certificate must be verifiable by anyone (employer, another school) who was
-never user of issuing Organization. Gestor/Admin can revoke certificates.
+certificate is a branded PDF with embedded QR code. The public
+unauthenticated `/validar-certificado/{hash?}` route exposes verification —
+no login, no session, but **host-scoped**: a hash resolves only on the
+issuing Organization's own portal (wrong host reads as 404, never
+revealing the hash), so the audience is whoever visits the issuing
+Organization's site (employer, another school). Gestor/Admin can revoke
+certificates.
 None of
 this feature ever mutates `courses`/`modules`/`lessons`/`course_user` — it
 only *reads* them (plus `quiz_attempts` for `min_quiz_score` rules) and
@@ -73,6 +74,12 @@ satisfied** (treated as failing rule), never exception — `target_id` has
 no DB foreign key on purpose (see migration's own docblock), so dangling
 pointer is expected runtime condition, not bug.
 
+On a genuine insert the Action dispatches `CertificateIssuedNotification`
+(`ShouldQueue`): mail + database links are built with
+`OrgUrl::route($certificate->course->org_id, 'certificates.verify', ...)`
+so the queued worker, which has no request host, still points the
+student at the issuing org's portal — see `notifications-conventions`.
+
 ## Idempotency and the Terminal Revoked State
 
 `UNIQUE(user_id, course_id)` is idempotency mechanism: Action must
@@ -87,26 +94,30 @@ reopened attempt. Explicit, current-version limitation — do not "fix" it
 by adding new row or by un-revoking on re-completion without a deliberate,
 separately-approved migration.
 
-## The Public Verification Route Is the One Deliberately Unscoped Boundary
+## The Public Verification Route Is Public But Host-Scoped
 
 `GET /validar-certificado/{hash?}` (`certificates.verify`) carries **no**
 middleware at all — not `auth`, not `guest`, not `role:*` — because it
 must resolve identically for anonymous visitor and already-logged-in
-Admin/Gestor/Aluno of *different* Organization. The `{hash?}` segment is
+Admin/Gestor/Aluno. The `{hash?}` segment is
 optional so the same route doubles as the public **entry point** linked
 from the Landing Page footer: with no hash (or a blank `?hash=`) the
 controller renders the lookup form (`public/certificates/lookup.blade.php`),
 which submits the typed hash back as `?hash=…` and re-enters the same
 action. A visitor holding a printed certificate has the code, not a URL —
 so the hash-less state must never 404, and no route constraint may make
-it unreachable. Both
-`PublicCertificateController` and `CertificatePdfService` must resolve
-`$certificate->course->organization` with
-`Course::withoutGlobalScopes()`/explicit un-scoped query — normal
-`OrgScope` on `Course` would otherwise silently filter out Course
-belonging to Org current viewer (if any) isn't scoped to. See
-`tenancy-architecture` for general cascade-inherited-model rule this route
-is the one deliberate exception to.
+it unreachable.
+
+Host-based tenancy gates the hash itself: after loading the
+`Certificate` (and its `Course` via `withoutGlobalScopes()`,
+`Certificate` carrying no `OrgScope` of its own and `Course` cascade
+inheriting it), `PublicCertificateController` compares
+`(int) $certificate->course->org_id !== (int) OrgContext::current()->orgId()`
+and `abort(404)` on mismatch. A valid hash hit from another
+Organization's portal reads exactly like a hash that never existed —
+no redirect, no distinct copy. `CertificatePdfService` likewise resolves
+`$certificate->course->organization` unscoped. See
+`tenancy-architecture` for the cascade-inherited-model rule.
 
 Hash that never existed 404s. Hash resolving to **revoked** certificate
 must still return `200 OK` — public auditability of revocation is
@@ -123,5 +134,9 @@ Gestor/Admin certificate list and revoke action — `Certificate` and
 (cascade-inherited only), so `CertificateController::index()`/`revoke()`
 must authorize explicitly rather than rely on query scope to filter
 cross-org rows out. `role:admin` unrestricted; `role:gestor` only when
-`$certificate->course->org_id === $user->org_id` (course loaded
-`withoutGlobalScopes()` for comparison, same reasoning as above).
+`(int) OrgContext::current()->orgId() === (int) $course->org_id` (course
+loaded `withoutGlobalScopes()` for comparison — same reasoning as above;
+comparison is against the **request host's** org, never a `users.org_id`,
+which no longer exists). Revocation is audited by `RevokeCertificateAction`
+as `certificate.revoked` with `orgId` from the certificate's own
+`course.org_id`.

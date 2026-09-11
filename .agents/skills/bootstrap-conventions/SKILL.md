@@ -193,7 +193,7 @@ Uso na tela — gatilho declarativo, zero JS:
   default de `tenantName` lê `session('tenant_name')`/`config('app.name')`,
   então é `layout`, não `ui`),
   `public` (**Fase 7** — shell `<!doctype html>` standalone compartilhado por
-  `landing/show.blade.php` e `public/certificates/show.blade.php`, as duas
+  `tenants/{landing_view}/landing.blade.php` e `public/certificates/show.blade.php`, as duas
   telas que não usam `layouts.app` nem `layouts.guest`; props `title`
   obrigatória e `container` (default `true`, a landing passa `:container="false"`
   para seções full-bleed) e slots opcionais `head`/`footer`).

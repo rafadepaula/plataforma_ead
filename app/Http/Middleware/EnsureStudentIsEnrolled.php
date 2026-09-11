@@ -18,7 +18,7 @@ use Symfony\Component\HttpFoundation\Response;
  *
  * - Admin: always allowed (no impersonation requirement here — this guard
  *   is about enrollment, not tenant management).
- * - Gestor: allowed only when their own `org_id` matches the Course's.
+ * - Gestor: allowed only when the host Organization matches the Course's.
  * - Aluno: allowed only with a `course_user` row in `active`/`completed`
  *   status — a `cancelled` status or no row at all is denied. A denied
  *   page request is sent back to the course catalog with an explanatory

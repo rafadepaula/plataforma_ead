@@ -80,6 +80,19 @@ class LandingPageControllerTest extends TestCase
         $this->get(route('landing.show'))->assertRedirect(route('login'));
     }
 
+    public function test_an_authenticated_staff_cta_points_at_the_admin_dashboard(): void
+    {
+        // gestor e admin operacionais caem no dashboard administrativo
+        $manager = User::factory()->gestor()->inOrg($this->org)->create();
+        $managerContent = $this->actingAs($manager)->get(route('landing.show'))->getContent();
+        $this->assertStringContainsString('href="'.route('admin.dashboard').'"', $managerContent);
+
+        $admin = User::factory()->inOrg(null)->create();
+        $admin->assignRole(RolesEnum::ADMIN->value);
+        $adminContent = $this->actingAs($admin)->get(route('landing.show'))->getContent();
+        $this->assertStringContainsString('href="'.route('admin.dashboard').'"', $adminContent);
+    }
+
     public function test_state_zero_redirects_guests_to_login(): void
     {
         $this->onHost(null);

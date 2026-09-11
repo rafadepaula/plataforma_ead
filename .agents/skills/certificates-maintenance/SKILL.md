@@ -33,10 +33,14 @@ Tests guard this module's contract. Must stay green (PHPUnit, no Pest):
 - `tests/Feature/PublicVerificationTest.php` — valid
   certificate show student/course/org/workload/issued_at + "Válido",
   revoked certificate return `200` with revoked banner + reason (never
-  404), unknown hash 404, cross-org access work with zero auth/tenant
-  scoping required, plus the hash-less entry point: `/validar-certificado`
-  render the lookup form, `?hash=` (valid / revoked / unknown / blank)
-  behave exactly like the path segment.
+  404), unknown hash 404, guest verification on each issuing org's own
+  host with zero auth, plus the hash-less entry point:
+  `/validar-certificado` render the lookup form, `?hash=` (valid /
+  revoked / unknown / blank)
+  behave exactly like the path segment. Host scoping itself (wrong host
+  404s even though the hash is real) is asserted cross-module in
+  `tests/Feature/Tenancy/PublicFlowsHostScopeTest.php`
+  (`test_certificado_verifica_no_host_da_org_e_404_no_outro`).
 - `tests/Browser/CertificateVerificationTest.php` (this bucket, Dusk E2E)
   — visit `/validar-certificado/{hash}` for both valid and revoked
   certificate, assert visible banner/data; genuinely-unknown hash render
@@ -95,6 +99,19 @@ instead).
   hash at all (path segment omitted *or* blank `?hash=`) render
   `public.certificates.lookup`, never 404 — otherwise the Landing Page
   footer's only public-validation entry point dies.
+- **Valid hash 404s for the org that issued it (or verifies on the wrong
+  portal).** Host gate regressed: `(int) $certificate->course->org_id
+  !== (int) OrgContext::current()->orgId()` must `abort(404)` — but only
+  *after* the unscoped course load, and only for mismatched orgs. Removing
+  the check leaks hashes cross-host (bad); moving it before the unscoped
+  load makes `course` resolve `null` under viewer scope (worse). Guarded by
+  `PublicFlowsHostScopeTest` and `PublicVerificationTest` together.
+- **Certificate mail link lands on the wrong portal.** Queued
+  `CertificateIssuedNotification` has no request context; a `route()`
+  call in `toMail()`/`toDatabase()` silently falls back to `APP_URL`.
+  Both must build the action URL with
+  `OrgUrl::route($certificate->course->org_id, 'certificates.verify', ...)`
+  — see `notifications-conventions`.
 - **PDF/public page show wrong Organization (or throw) for Gestor viewing
   from different `active_org_id` session, or fully anonymous visitor.**
   `Course` have `OrgScope`; both `CertificatePdfService` and

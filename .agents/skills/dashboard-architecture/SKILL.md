@@ -28,7 +28,7 @@ The dashboard domain have 3 pieces sharing one screen and one settings screen:
    exactly `admin.dashboard` — sidebar (`components/layout/sidebar.blade.php:4-19`)
    renders `$navigationSections` from `NavigationRegistry` with no
    `Route::has` guard; the only `Route::has('admin.dashboard')` fallback left
-   lives in `landing/show.blade.php:11` and silently
+   lives in `tenants/{landing_view}/landing.blade.php` and (for non-Admin shells)
    degrade to `#` if name ever drift). Render 4 stat cards (`active_students`,
    `certificates_issued`, `completion_rate`, `courses_count`) and "Matrículas
    recentes" table, per the mockup's exact
@@ -62,12 +62,15 @@ org-specific-then-global fallback pattern (see `help-architecture`) but keyed by
 ## Why Metrics Service Cannot Just Rely on `OrgScope`
 
 `Course` and `InvitationLink` carry `OrgScope` and resolve
-admin-global-vs-gestor-own-org automatically from
-`session('active_org_id')`/`$user->org_id` (see `tenancy-architecture`).
-`Certificate`, `course_user` pivot, and `User` do **not** carry `OrgScope`.
-`Certificate`/`course_user` cascade-inherited through `courses.org_id` (mirror
-`certificates-architecture` note on `Certificate` never carrying `OrgScope`
-directly), and `User.org_id` plain nullable column with no scope at all.
+admin-global-vs-everyone-else automatically: the Admin branch filters by
+`session('active_org_id')` (Impersonate Org), every other role by the
+request-host Organization (`OrgContext::current()->orgId()`) — host-based
+tenancy (see `tenancy-architecture`). `Certificate`, `course_user` pivot, and
+`User` do **not** carry `OrgScope`; `Certificate`/`course_user`
+cascade-inherited through `courses.org_id` (mirror `certificates-architecture`
+note on `Certificate` never carrying `OrgScope` directly), and a `User` has no
+`org_id` at all — the per-Organization account is the `credentials` row
+(`credentials.org_id` + `credentials.status`).
 `DashboardMetricsService` must therefore:
 
 - Resolve `Course::query()` first (which **does** get `OrgScope` filtering "for
@@ -88,8 +91,9 @@ CSV builder (`CsvStreamExportService`, `CsvStreamExportService.php:25`) wrap
 memory O(1) regardless of dataset size. Parameterized by same
 org-filter branching described above (mirror `DashboardMetricsService` scoping,
 not second ad-hoc implementation) and by report `type` (`enrollments`,
-`certificates`, ...). Gestor `org_id` always resolved from `$user->org_id`
-server-side, never trusted from request input. Gestor passing
+`certificates`, ...). Non-Admin `org_id` always resolved from the request host
+via `OrgContext::current()->orgId()` server-side, never trusted from request
+input. Gestor passing
 `?org_id=<anotherOrg>` must 403, not silently scope to own org (see
 `dashboard-conventions` for exact guard).
 
@@ -111,13 +115,17 @@ is unconditionally "all Organizations", called only when the controller has
 already gated it) and returns one row per `Organization` via 3 correlated
 subqueries (N+1-free):
 
-- `students_count` — distinct `users` with role `aluno`, `status = active`,
-  owned directly by the Organization (`users.org_id`), independent of
-  enrollment (different shape than `getStats()`'s `active_students`, which is
-  enrollment-derived).
-- `courses_count` — raw `DB::table('courses')` filtered by `courses.org_id`,
-  deliberately bypassing `Course`'s `OrgScope` so an Admin sees every
-  Organization's courses regardless of the acting user's own tenant context.
+- `students_count` — distinct `users` with the spatie role `aluno` joined
+  through `credentials`: only rows with `credentials.status = 'active'` AND
+  `credentials.org_id = organizations.id` count (the per-org account, not
+  enrollment-derived — different shape than `getStats()`'s
+  `active_students`, which is enrollment-derived). A student whose
+  credential in the org was deactivated drops out of the count.
+- `courses_count` — raw `DB::table('courses')` filtered by
+  `courses.org_id = organizations.id` **plus `whereNull('courses.deleted_at')`**
+  (soft-deleted courses excluded), deliberately bypassing `Course`'s
+  `OrgScope` so an Admin sees every Organization's courses regardless of the
+  acting user's own tenant context.
 - `certificates_count` — certificates joined through `courses.org_id`,
   excluding revoked ones (mirrors `certificatesIssuedCount()`'s
   `whereNull('certificates.revoked_at')`).

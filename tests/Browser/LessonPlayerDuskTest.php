@@ -7,6 +7,7 @@ use App\Models\Lesson;
 use App\Models\Module;
 use App\Models\User;
 use Laravel\Dusk\Browser;
+use PHPUnit\Framework\Attributes\Group;
 use Tests\DuskTestCase;
 
 /**
@@ -20,6 +21,7 @@ use Tests\DuskTestCase;
  * for bloqueado pelo detentor, o teste quebra sem que o produto tenha
  * mudado nada (foi o que aconteceu com o dQw4w9WgXcQ).
  */
+#[Group('requires-network')]
 class LessonPlayerDuskTest extends DuskTestCase
 {
     private Course $course;

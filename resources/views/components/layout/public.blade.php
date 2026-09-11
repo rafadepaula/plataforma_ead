@@ -3,7 +3,7 @@
     usam `layouts.app` (exige sessão autenticada + topbar/sidebar) nem
     `layouts.guest` (painel esquerdo temático de login):
 
-      - `resources/views/landing/show.blade.php`            (`landing.show`)
+      - `resources/views/tenants/{landing_view}/landing.blade.php` (`landing.show`)
       - `resources/views/public/certificates/show.blade.php` (`certificates.verify`)
 
     Emite `<!doctype html>`, `<meta name="csrf-token">`, o `@vite` do projeto e

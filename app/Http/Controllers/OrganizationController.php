@@ -85,8 +85,8 @@ class OrganizationController extends Controller
     {
         Gate::authorize('delete', $organization);
 
-        // `users.org_id` is `ON DELETE RESTRICT`, so a
-        // hard delete with existing users would fail at the DB level.
+        // `credentials.org_id` is `ON DELETE RESTRICT`, so a
+        // hard delete with existing accounts would fail at the DB level.
         // Only ever soft-delete here.
         $organization->delete();
 

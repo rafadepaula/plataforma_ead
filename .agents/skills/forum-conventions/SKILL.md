@@ -87,9 +87,13 @@ missing`.
 
 `ForumTopicController::store()` is **only** place in this module creating
 `OrgScope`d model. `OrgScope` `creating` hook (see
-`tenancy-architecture`) resolve `org_id` from `$user->org_id ??
-session('active_org_id')`, which multi-org Aluno have neither of, even
-though target Course tenant well known from `$courseModel->org_id`:
+`tenancy-architecture`) overwrite `org_id` with the resolved tenant context —
+impersonated org for Admin (`session('active_org_id')`), request-host org
+(`OrgContext::current()->orgId()`) for everyone else. A multi-org Aluno
+writing from a host whose Organization differs from the target Course's would
+get the wrong tenant stamped, and an unresolvable context would throw
+`UnresolvedOrgContextException` — even though the target Course tenant is
+perfectly well known from `$courseModel->org_id`:
 
 ```php
 $topic = ForumTopic::withoutEvents(fn () => ForumTopic::query()->create([

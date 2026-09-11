@@ -1,6 +1,6 @@
 ---
 name: testing-conventions
-description: Padrões de código, snippets, guardrails para suítes de teste PHPUnit, Laravel Dusk, cobertura de código.
+description: Padrões de código, snippets, guardrails para suítes de teste PHPUnit, Laravel Dusk, tenancy por host em Dusk (duskTenant), snapshot dusk-selectors, cobertura de código.
 ---
 
 # Testing Conventions (`testing-conventions`)
@@ -26,6 +26,16 @@ Guia define padrões de código, convenções de escrita, guardrails para criar 
    - Teste Dusk E2E: **`Illuminate\Foundation\Testing\DatabaseTruncation` é padrão obrigatório**, declarado **uma única vez** na classe base `Tests\DuskTestCase` (com `$exceptTables = ['migrations', 'roles', 'permissions', 'role_has_permissions']` — os papéis do Spatie são semeados pela MIGRAÇÃO `create_permission_tables`, não por seeder, então truncá-los quebraria toda a suíte a partir do 2º teste com "There is no role named `admin` for guard `web`"). Classes em `tests/Browser/*` **não** declaram `DatabaseMigrations` nem repetem a trait. Migrações rodam uma vez por suíte; entre métodos só `TRUNCATE`.
    - `RefreshDatabase` segue **proibido** em Dusk: processo HTTP do Dusk e processo de teste rodam em conexões separadas, e transação do `RefreshDatabase` nunca é vista pelo servidor.
    - `DatabaseMigrations` em `tests/Browser/*` só aceitável com justificativa escrita no próprio arquivo (ex.: teste que altera schema em runtime). Sem justificativa, é regressão de desempenho.
+
+4. **Tenancy por Host em Dusk — tudo acontece na org do `duskTenant()`**:
+   - `Tests\DuskTestCase::duskTenant()` (chamado no `setUp` de toda classe Dusk) materializa, uma vez por teste, a Organization **ativa** cujo `host` é o host do `APP_URL` do ambiente Dusk (`.env.dusk.example`: `http://laravel.test`; no CI, `http://127.0.0.1:8000`). O Selenium só resolve esse host, então TODA navegação do navegador acontece nele — e o `ResolveOrgFromHost` nunca pode cair em estado zero, senão o `EnsureTenantAccess` expulsa quem já está autenticado.
+   - **Dados e credenciais dos testes vivem nessa org**: factory org-bound usa `$this->duskTenant()` como org (`User::factory()->aluno()->inOrg($this->duskTenant())->withPassword('...')`), e course/module/etc. usam `Course::factory()->inOrg($this->duskTenant()->id)`.
+   - **Login por FORMULÁRIO exige credential na org do portal**: o provider valida a credential do par `(user, org do host)` — conta de outra org falha com erro genérico exatamente como em produção. Sempre use `inOrg($this->duskTenant())` + `withPassword()` para quem vai logar digitando.
+   - **`loginAs($user)` navega com qualquer conta ativa**: a sessão Dusk não passa pelo provider; o que importa é o `EnsureTenantAccess` — precisa de credential **ativa** na org do host (ou ser admin). Para admin navegando telas de org, use impersonação (`active_org_id`) ou crie a account necessária.
+
+5. **Snapshot de seletores Dusk é contrato versionado**:
+   - `tests/Feature/Theme/DuskSelectorContractTest.php` compara os `dusk="..."` de `resources/views/**` contra o snapshot congelado `tests/fixtures/dusk-selectors-snapshot.json` (pares `file::selector` + contagem).
+   - Renomear, remover ou mover um seletor quebra o teste — e com razão: 25+ arquivos em `tests/Browser/` dependem deles. Quando uma mudança de Blade **exige** mexer em seletor, atualize o snapshot **deliberadamente no mesmo PR** (regenerar o JSON com os novos pares), nunca "para fazer o teste passar" sem revisão do impacto E2E.
 
 ---
 
@@ -67,7 +77,9 @@ class UserManagementTest extends DuskTestCase
 {
     public function test_gestor_user_management_full_lifecycle(): void
     {
-        $gestor = User::factory()->gestor()->create();
+        // Conta com credential na org do portal Dusk (duskTenant) e senha
+        // conhecida: pré-requisito para login por formulário.
+        $gestor = User::factory()->gestor()->inOrg($this->duskTenant())->withPassword('password')->create();
 
         $this->browse(function (Browser $browser) use ($gestor): void {
             // 1. Criação
@@ -80,7 +92,7 @@ class UserManagementTest extends DuskTestCase
                 ->assertSee('Usuário criado com sucesso.');
 
             $user = User::where('email', 'aluno.dusk@example.com')->firstOrFail();
-            $this->assertDatabaseHas('users', ['id' => $user->id, 'status' => 'active']);
+            $this->assertDatabaseHas('credentials', ['user_id' => $user->id, 'status' => 'active']);
 
             // 2. Edição (mesma sessão, sem novo login)
             $browser->visit(route('users.edit', $user))
@@ -99,13 +111,13 @@ class UserManagementTest extends DuskTestCase
                 ->type('@login-email', 'aluno.dusk@example.com')
                 ->type('@login-password', 'password')
                 ->press('@login-submit')
-                ->waitForText('These credentials do not match our records.')
+                ->waitForText('Essas credenciais não foram encontradas em nossos registros.')
                 ->assertGuest();
         });
 
-        $this->assertDatabaseHas('users', [
-            'email' => 'aluno.dusk@example.com',
-            'name' => 'Aluno Editado',
+        $user = User::where('email', 'aluno.dusk@example.com')->firstOrFail();
+        $this->assertDatabaseHas('credentials', [
+            'user_id' => $user->id,
             'status' => 'inactive',
         ]);
     }
@@ -119,10 +131,11 @@ class UserManagementTest extends DuskTestCase
 - Arquivo `tests/Browser/*` com > ~6 métodos é sinal de fragmentação: reavalie se há cadeia a unificar.
 - Ao criar teste E2E novo, primeiro procure a cadeia existente que já cobre a jornada e estenda-a. Criar arquivo novo por módulo é padrão antigo.
 
-4. **Banco de Dados Dedicado do Dusk (`testing`)**:
+6. **Banco de Dados Dedicado do Dusk (`testing`)**:
    - `tests/Browser/*.php` **jamais** roda contra `plataforma_ead`. Isolamento vem do par `.env.dusk.local` / `.env.dusk.example`, versionado na raiz do repositório com mesmo shape do `.env.example`:
      ```ini
      APP_ENV=dusk
+     APP_URL=http://laravel.test
      DUSK_DRIVER_URL=http://selenium:4444/wd/hub
      DB_CONNECTION=mysql
      DB_HOST=mysql
@@ -131,7 +144,7 @@ class UserManagementTest extends DuskTestCase
      ```
    - `.env.dusk.example` é template seguro para compartilhar (sem segredo real); `.env.dusk.local` é o arquivo consumido pelo `vendor/bin/sail dusk` (troca nativa de `.env` feita pelo `DuskCommand`, resolvendo `.env.dusk.{app.environment()}`).
    - Isolamento de dados vem de `DatabaseTruncation` declarado em `Tests\DuskTestCase` (herdado por toda classe em `tests/Browser/*`), que migra/limpa exclusivamente a conexão ativa, ou seja, base `testing`. Nunca assuma trait `RefreshDatabase` segura em Dusk: ela roda na conexão do processo de teste, não na do servidor HTTP.
-   - No CI, equivalente é `.env.dusk.ci` (mesmo shape, apontando para serviço `mysql`/`selenium` do GitHub Actions), trocado explícito antes do passo `php artisan dusk`. Nunca reutilize `.env.ci` (sqlite) para passo Dusk.
+   - No CI, equivalente é `.env.dusk.ci` (mesmo shape, `APP_URL=http://127.0.0.1:8000`, apontando para serviço `mysql`/`selenium` do GitHub Actions), trocado explícito antes do passo `php artisan dusk --exclude-group requires-network`. Nunca reutilize `.env.ci` (sqlite) para passo Dusk.
 
 ---
 
@@ -160,6 +173,8 @@ class DashboardTest extends TestCase
     }
 }
 ```
+
+`actingAs` fixa o host automaticamente (admin → `ADMIN_HOST`; org-bound → host da credential dele). Para outro host, chame `onHost()` depois — helpers em `tests/TestCase.php`, detalhes em `testing-architecture`.
 
 ### Teste de Navegador (Laravel Dusk)
 
