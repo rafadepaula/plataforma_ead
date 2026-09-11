@@ -34,7 +34,7 @@ and render on top of every other feature screens.
 
 | Table | Key columns | Tenancy |
 | --- | --- | --- |
-| `help_articles` | `org_id` (nullable, FK→organizations, cascadeOnDelete), `title`, `slug` (unique), `category` (nullable), `target_page_key` (nullable, indexed), `content` (longText) | **Directly org-scoped** (`OrgScope` on the model) but `org_id` is **nullable** — `null` means a *global* article, visible to every Organization; a non-null `org_id` means an org-specific override for the same `target_page_key` |
+| `help_articles` | `org_id` (nullable, FK→organizations, cascadeOnDelete), `title`, `slug` (unique), `category` (nullable), `target_page_key` (nullable, indexed), `audience` (indexed, default `aluno`), `content` (longText) | **Directly org-scoped** (`OrgScope` on the model) but `org_id` is **nullable** — `null` means a *global* article, visible to every Organization; a non-null `org_id` means an org-specific override for the same `target_page_key` |
 
 `target_page_key` have no uniqueness constraint by itself — same key can
 have both global row (`org_id = null`) and one org-specific row per
@@ -110,12 +110,26 @@ to add `<x-help-button key="...">` explicitly inside its own slot. No
 automatic enforcement for this bucket beyond code review and feature own
 test suite.
 
+## Wiki Audience Filter (`HelpAudienceEnum`)
+
+The public wiki (`help.index`/`help.show`) filters global articles by
+`audience` — the minimum role required to see the article. Visibility is
+hierarchical: guest/Aluno → `aluno` tier only (the public tier),
+Professor adds `professor`, Gestor adds `gestor`, Admin sees everything
+(see `HelpAudienceEnum::visibleValuesForRole()`). Contextual resolution
+(`resolve()`) is NOT audience-filtered — the `<x-help-button>` already
+keys off the route being viewed, which is role-gated itself. New global
+article must pick `audience` matching the screen's role: student/public
+screens → `aluno`, gestor screens → `gestor`, admin-only screens →
+`admin`, professor screens → `professor`.
+
 ## Why `HelpArticle` Has No `role_id`/Content-Per-Role Split
 
 Single `target_page_key` resolve to one article regardless of which role
-view it — `HelpArticleResolverService` never branch on `RolesEnum`.
-Per-role differentiation, if ever needed, would be new `target_page_key`
-per role-specific screen (e.g. Admin `organizations.index` vs Aluno
-`student.courses.index` already different keys because different routes),
-not new column on `help_articles`. Do not add role-based branching inside
-resolver.
+view it — the contextual resolver `resolve()` never branch on
+`RolesEnum`. Per-role differentiation uses the coarse `audience` column
+on the public wiki only (above), while per-screen differentiation uses
+new `target_page_key` per role-specific screen (e.g. Admin
+`organizations.index` vs Aluno `student.courses.index` already different
+keys because different routes). Do not add per-user role branching inside
+`resolve()`.

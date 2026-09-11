@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\Help\HelpAudienceEnum;
 use App\Models\Traits\OrgScope;
 use Database\Factories\HelpArticleFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -26,8 +27,19 @@ class HelpArticle extends Model
         'slug',
         'category',
         'target_page_key',
+        'audience',
         'content',
     ];
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'audience' => HelpAudienceEnum::class,
+        ];
+    }
 
     /**
      * @return BelongsTo<Organization, $this>

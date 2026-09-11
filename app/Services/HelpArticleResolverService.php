@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\Help\HelpAudienceEnum;
 use App\Enums\Permissions\RolesEnum;
 use App\Models\HelpArticle;
 use Illuminate\Database\Eloquent\Builder;
@@ -63,10 +64,19 @@ class HelpArticleResolverService
      * ONLY global (`org_id = null`) articles. Organization-specific articles
      * are contextual in-app help (`<x-help-button>` / management CRUD), never
      * public wiki content.
+     *
+     * On top of the org filter, each article's `audience` (minimum role
+     * required, see `HelpAudienceEnum`) is checked against the acting
+     * user's role: guests and Alunos share the public (`aluno`) tier,
+     * Professores/Gestores add their own tier, Admins see everything. This
+     * keeps staff-facing articles (admin/gestor screens) out of the wiki
+     * for users who cannot reach those screens.
      */
     public function queryGlobalArticles(): Builder
     {
-        return HelpArticle::withoutGlobalScopes()->whereNull('org_id');
+        return HelpArticle::withoutGlobalScopes()
+            ->whereNull('org_id')
+            ->whereIn('audience', HelpAudienceEnum::visibleValuesForRole($this->currentUserRole()));
     }
 
     public function findGlobalBySlug(string $slug): ?HelpArticle
@@ -74,8 +84,24 @@ class HelpArticleResolverService
         return $this->queryGlobalArticles()->where('slug', $slug)->first();
     }
 
-    public function findAccessibleBySlug(string $slug, ?int $orgId = null): ?HelpArticle
+    /**
+     * Mirrors the role branch of `resolveActiveOrgId`, but returns the role
+     * value itself; `null` for anonymous visitors (public wiki tier).
+     */
+    private function currentUserRole(): ?string
     {
-        return $this->queryAccessibleArticles($orgId)->where('slug', $slug)->first();
+        $user = Auth::user();
+
+        if ($user === null) {
+            return null;
+        }
+
+        foreach (RolesEnum::cases() as $role) {
+            if ($user->hasRole($role->value)) {
+                return $role->value;
+            }
+        }
+
+        return null;
     }
 }

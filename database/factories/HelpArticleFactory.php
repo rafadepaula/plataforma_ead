@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\Help\HelpAudienceEnum;
 use App\Models\HelpArticle;
 use App\Models\Organization;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -29,6 +30,7 @@ class HelpArticleFactory extends Factory
             'slug' => str(fake()->unique()->slug(3))->limit(220, ''),
             'category' => fake()->randomElement(['geral', 'cursos', 'certificados', 'forum', 'matriculas']),
             'target_page_key' => fake()->unique()->regexify('[a-z]+\.[a-z]+'),
+            'audience' => HelpAudienceEnum::ALUNO->value,
             'content' => fake()->paragraphs(3, true),
         ];
     }
@@ -49,5 +51,14 @@ class HelpArticleFactory extends Factory
     public function forOrg(Organization $org): static
     {
         return $this->state(fn (array $attributes): array => ['org_id' => $org->id]);
+    }
+
+    /**
+     * Restrict this article on the public wiki to a minimum role
+     * (`HelpAudienceEnum` value, e.g. `gestor` or `admin`).
+     */
+    public function forAudience(HelpAudienceEnum $audience): static
+    {
+        return $this->state(fn (array $attributes): array => ['audience' => $audience->value]);
     }
 }

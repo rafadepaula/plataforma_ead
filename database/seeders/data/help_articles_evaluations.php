@@ -3,6 +3,7 @@
 return [
     [
         'target_page_key' => 'quizzes.create',
+        'audience' => 'gestor',
         'title' => 'Criar Avaliação (Quiz)',
         'slug' => 'criar-avaliacao-quiz',
         'category' => 'Avaliações',
@@ -34,6 +35,7 @@ MARKDOWN
     ],
     [
         'target_page_key' => 'quizzes.edit',
+        'audience' => 'gestor',
         'title' => 'Editar Avaliação e Questões',
         'slug' => 'editar-avaliacao-e-questoes',
         'category' => 'Avaliações',
@@ -68,6 +70,7 @@ MARKDOWN
     ],
     [
         'target_page_key' => 'quiz-attempts.pending',
+        'audience' => 'gestor',
         'title' => 'Fila de Redações e Correções Manuais',
         'slug' => 'fila-de-redacoes-e-correcoes-manuais',
         'category' => 'Avaliações',
@@ -95,6 +98,7 @@ MARKDOWN
     ],
     [
         'target_page_key' => 'quiz-attempts.show',
+        'audience' => 'gestor',
         'title' => 'Correção de Tentativa Dissertativa',
         'slug' => 'correcao-de-tentativa-dissertativa',
         'category' => 'Avaliações',
@@ -124,6 +128,7 @@ MARKDOWN
     ],
     [
         'target_page_key' => 'courses.completion-rules.index',
+        'audience' => 'gestor',
         'title' => 'Regras de Conclusão do Curso',
         'slug' => 'regras-de-conclusao-do-curso',
         'category' => 'Certificados',
@@ -155,6 +160,7 @@ MARKDOWN
     ],
     [
         'target_page_key' => 'courses.certificates.index',
+        'audience' => 'gestor',
         'title' => 'Certificados Emitidos e Revogação',
         'slug' => 'certificados-emitidos-e-revogacao',
         'category' => 'Certificados',
@@ -182,6 +188,7 @@ MARKDOWN
     ],
     [
         'target_page_key' => 'forum-moderation.index',
+        'audience' => 'gestor',
         'title' => 'Moderação do Fórum de Discussão',
         'slug' => 'moderacao-do-forum-de-discussao',
         'category' => 'Fórum',

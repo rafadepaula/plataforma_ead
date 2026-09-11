@@ -112,6 +112,26 @@
                     @enderror
                 </div>
 
+                <div class="mb-3">
+                    <label for="audience" class="form-label fw-semibold">Público (Quem Pode Ver)</label>
+                    <select name="audience" id="audience" class="form-select @error('audience') is-invalid @enderror">
+                        @foreach(\App\Enums\Help\HelpAudienceEnum::cases() as $audienceOption)
+                            <option value="{{ $audienceOption->value }}" @selected(old('audience', $article->audience?->value ?? 'aluno') === $audienceOption->value)>
+                                {{ match($audienceOption) {
+                                    \App\Enums\Help\HelpAudienceEnum::ALUNO => 'Público (todos, incluindo alunos e visitantes)',
+                                    \App\Enums\Help\HelpAudienceEnum::PROFESSOR => 'Professores (e Admins)',
+                                    \App\Enums\Help\HelpAudienceEnum::GESTOR => 'Gestores (e Admins)',
+                                    \App\Enums\Help\HelpAudienceEnum::ADMIN => 'Somente Admins',
+                                } }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <small class="form-text text-body-secondary">Define quem vê este artigo na Central de Ajuda.</small>
+                    @error('audience')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+
                 @if($organizations->isNotEmpty())
                     <div class="mb-3">
                         <label for="org_id" class="form-label fw-semibold">Organização (Escopo)</label>

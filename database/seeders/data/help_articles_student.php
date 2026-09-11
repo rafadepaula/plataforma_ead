@@ -3,6 +3,7 @@
 return [
     [
         'target_page_key' => 'student.courses.index',
+        'audience' => 'aluno',
         'title' => 'Meus Cursos e Progresso',
         'slug' => 'meus-cursos-e-progresso',
         'category' => 'Para Alunos',
@@ -31,6 +32,7 @@ MARKDOWN
     ],
     [
         'target_page_key' => 'classroom.show',
+        'audience' => 'aluno',
         'title' => 'Sala de Aula e Trilha de Aprendizagem',
         'slug' => 'sala-de-aula-e-trilha-de-aprendizagem',
         'category' => 'Para Alunos',
@@ -58,6 +60,7 @@ MARKDOWN
     ],
     [
         'target_page_key' => 'classroom.lesson',
+        'audience' => 'aluno',
         'title' => 'Assistindo Aulas e Concluindo Lições',
         'slug' => 'assistindo-aulas-e-concluindo-licoes',
         'category' => 'Para Alunos',
@@ -86,6 +89,7 @@ MARKDOWN
     ],
     [
         'target_page_key' => 'student.quizzes.show',
+        'audience' => 'aluno',
         'title' => 'Como Fazer Avaliações e Provas',
         'slug' => 'como-fazer-avaliacoes-e-provas',
         'category' => 'Provas',
@@ -117,6 +121,7 @@ MARKDOWN
     ],
     [
         'target_page_key' => 'student.quizzes.result',
+        'audience' => 'aluno',
         'title' => 'Resultado da Avaliação e Gabarito',
         'slug' => 'resultado-da-avaliacao-e-gabarito',
         'category' => 'Provas',
@@ -145,6 +150,7 @@ MARKDOWN
     ],
     [
         'target_page_key' => 'forum.index',
+        'audience' => 'aluno',
         'title' => 'Fórum da Turma',
         'slug' => 'forum-da-turma',
         'category' => 'Fórum',
@@ -173,6 +179,7 @@ MARKDOWN
     ],
     [
         'target_page_key' => 'forum.create',
+        'audience' => 'aluno',
         'title' => 'Criar Novo Tópico no Fórum',
         'slug' => 'criar-novo-topico-no-forum',
         'category' => 'Fórum',
@@ -197,6 +204,7 @@ MARKDOWN
     ],
     [
         'target_page_key' => 'forum.show',
+        'audience' => 'aluno',
         'title' => 'Visualizando Tópicos e Respondendo',
         'slug' => 'visualizando-topicos-e-respondendo',
         'category' => 'Fórum',
@@ -222,6 +230,7 @@ MARKDOWN
     ],
     [
         'target_page_key' => 'forum.edit',
+        'audience' => 'aluno',
         'title' => 'Editar Mensagem no Fórum',
         'slug' => 'editar-mensagem-no-forum',
         'category' => 'Fórum',
@@ -246,6 +255,7 @@ MARKDOWN
     ],
     [
         'target_page_key' => 'forum-replies.edit',
+        'audience' => 'aluno',
         'title' => 'Editar Resposta no Fórum',
         'slug' => 'editar-resposta-no-forum',
         'category' => 'Fórum',
@@ -270,6 +280,7 @@ MARKDOWN
     ],
     [
         'target_page_key' => 'profile.edit',
+        'audience' => 'aluno',
         'title' => 'Meu Perfil e Segurança da Conta',
         'slug' => 'meu-perfil-e-seguranca-da-conta',
         'category' => 'Minha Conta',

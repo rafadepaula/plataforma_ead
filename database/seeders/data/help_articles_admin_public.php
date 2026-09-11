@@ -3,6 +3,7 @@
 return [
     [
         'target_page_key' => 'professor.dashboard',
+        'audience' => 'professor',
         'title' => 'Painel do Professor',
         'slug' => 'painel-do-professor',
         'category' => 'Professor',
@@ -30,6 +31,7 @@ MARKDOWN
     ],
     [
         'target_page_key' => 'professor.courses.index',
+        'audience' => 'professor',
         'title' => 'Cursos Atribuídos ao Professor',
         'slug' => 'cursos-atribuidos-ao-professor',
         'category' => 'Professor',
@@ -53,6 +55,7 @@ MARKDOWN
     ],
     [
         'target_page_key' => 'admin.dashboard',
+        'audience' => 'admin',
         'title' => 'Painel Geral do Administrador',
         'slug' => 'painel-geral-do-administrador',
         'category' => 'Administração',
@@ -77,6 +80,7 @@ MARKDOWN
     ],
     [
         'target_page_key' => 'organizations.index',
+        'audience' => 'admin',
         'title' => 'Gestão de Organizações (Tenants)',
         'slug' => 'gestao-de-organizacoes-tenants',
         'category' => 'Administração',
@@ -100,6 +104,7 @@ MARKDOWN
     ],
     [
         'target_page_key' => 'organizations.create',
+        'audience' => 'admin',
         'title' => 'Criar Nova Organização',
         'slug' => 'criar-nova-organizacao',
         'category' => 'Administração',
@@ -124,6 +129,7 @@ MARKDOWN
     ],
     [
         'target_page_key' => 'organizations.edit',
+        'audience' => 'admin',
         'title' => 'Editar Organização',
         'slug' => 'editar-organizacao',
         'category' => 'Administração',
@@ -146,6 +152,7 @@ MARKDOWN
     ],
     [
         'target_page_key' => 'admin.users.index',
+        'audience' => 'admin',
         'title' => 'Gestão Global de Usuários do Sistema',
         'slug' => 'gestao-global-de-usuarios-do-sistema',
         'category' => 'Administração',
@@ -170,6 +177,7 @@ MARKDOWN
     ],
     [
         'target_page_key' => 'admin.users.show',
+        'audience' => 'admin',
         'title' => 'Detalhes de Usuário do Sistema',
         'slug' => 'detalhes-de-usuario-do-sistema',
         'category' => 'Administração',
@@ -192,6 +200,7 @@ MARKDOWN
     ],
     [
         'target_page_key' => 'admin.users.edit',
+        'audience' => 'admin',
         'title' => 'Editar Usuário do Sistema',
         'slug' => 'editar-usuario-do-sistema',
         'category' => 'Administração',
@@ -217,6 +226,7 @@ MARKDOWN
     ],
     [
         'target_page_key' => 'admin.audit-logs.index',
+        'audience' => 'admin',
         'title' => 'Trilha de Auditoria do Sistema',
         'slug' => 'trilha-de-auditoria-do-sistema',
         'category' => 'Administração',
@@ -245,6 +255,7 @@ MARKDOWN
     ],
     [
         'target_page_key' => 'settings.edit',
+        'audience' => 'admin',
         'title' => 'Configurações Globais do Sistema',
         'slug' => 'configuracoes-globais-do-sistema',
         'category' => 'Administração',
@@ -269,6 +280,7 @@ MARKDOWN
     ],
     [
         'target_page_key' => 'org.help.artigos.index',
+        'audience' => 'gestor',
         'title' => 'Gestão de Artigos da Central de Ajuda',
         'slug' => 'gestao-de-artigos-da-central-de-ajuda',
         'category' => 'Central de Ajuda',
@@ -294,6 +306,7 @@ MARKDOWN
     ],
     [
         'target_page_key' => 'org.help.artigos.create',
+        'audience' => 'gestor',
         'title' => 'Criar Artigo de Ajuda',
         'slug' => 'criar-artigo-de-ajuda',
         'category' => 'Central de Ajuda',
@@ -321,6 +334,7 @@ MARKDOWN
     ],
     [
         'target_page_key' => 'org.help.artigos.edit',
+        'audience' => 'gestor',
         'title' => 'Editar Artigo de Ajuda',
         'slug' => 'editar-artigo-de-ajuda',
         'category' => 'Central de Ajuda',
@@ -345,6 +359,7 @@ MARKDOWN
     ],
     [
         'target_page_key' => 'help.index',
+        'audience' => 'aluno',
         'title' => 'Portal da Central de Ajuda',
         'slug' => 'portal-da-central-de-ajuda',
         'category' => 'Central de Ajuda',
@@ -368,6 +383,7 @@ MARKDOWN
     ],
     [
         'target_page_key' => 'help.show',
+        'audience' => 'aluno',
         'title' => 'Leitura de Artigo da Central de Ajuda',
         'slug' => 'leitura-de-artigo-da-central-de-ajuda',
         'category' => 'Central de Ajuda',
@@ -389,6 +405,7 @@ MARKDOWN
     ],
     [
         'target_page_key' => 'landing.show',
+        'audience' => 'aluno',
         'title' => 'Apresentação da Plataforma EAD',
         'slug' => 'apresentacao-da-plataforma-ead',
         'category' => 'Público',
@@ -411,6 +428,7 @@ MARKDOWN
     ],
     [
         'target_page_key' => 'login',
+        'audience' => 'aluno',
         'title' => 'Entrar na Plataforma (Login)',
         'slug' => 'entrar-na-plataforma-login',
         'category' => 'Acesso e Segurança',
@@ -437,6 +455,7 @@ MARKDOWN
     ],
     [
         'target_page_key' => 'password.request',
+        'audience' => 'aluno',
         'title' => 'Recuperação de Senha',
         'slug' => 'recuperacao-de-senha',
         'category' => 'Acesso e Segurança',
@@ -460,6 +479,7 @@ MARKDOWN
     ],
     [
         'target_page_key' => 'password.reset',
+        'audience' => 'aluno',
         'title' => 'Redefinir Nova Senha',
         'slug' => 'redefinir-nova-senha',
         'category' => 'Acesso e Segurança',
@@ -485,6 +505,7 @@ MARKDOWN
     ],
     [
         'target_page_key' => 'invitation.show',
+        'audience' => 'aluno',
         'title' => 'Aceite de Convite Inteligente',
         'slug' => 'aceite-de-convite-inteligente',
         'category' => 'Matrículas e Convites',
@@ -514,6 +535,7 @@ MARKDOWN
     ],
     [
         'target_page_key' => 'certificates.verify',
+        'audience' => 'aluno',
         'title' => 'Validação Pública de Certificados',
         'slug' => 'validacao-publica-de-certificados',
         'category' => 'Certificados',

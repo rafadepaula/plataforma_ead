@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\Help\HelpAudienceEnum;
 use App\Models\HelpArticle;
 use App\Models\Organization;
 use Tests\TestCase;
@@ -201,5 +202,125 @@ class HelpCenterWikiTest extends TestCase
         $response = $this->get(route('help.show', 'slug-inexistente-12345'));
 
         $response->assertNotFound();
+    }
+
+    public function test_wiki_hides_staff_audience_articles_from_guests(): void
+    {
+        HelpArticle::withoutEvents(function (): void {
+            HelpArticle::factory()->global()->create([
+                'title' => 'Como usar a plataforma',
+                'slug' => 'como-usar-a-plataforma',
+            ]);
+
+            HelpArticle::factory()->global()->forAudience(HelpAudienceEnum::GESTOR)->create([
+                'title' => 'Gerenciando matrículas',
+                'slug' => 'gerenciando-matriculas',
+            ]);
+
+            HelpArticle::factory()->global()->forAudience(HelpAudienceEnum::ADMIN)->create([
+                'title' => 'Administrando organizações',
+                'slug' => 'administrando-organizacoes',
+            ]);
+        });
+
+        $response = $this->get(route('help.index'));
+
+        $response->assertOk();
+        $response->assertSee('Como usar a plataforma');
+        $response->assertDontSee('Gerenciando matrículas');
+        $response->assertDontSee('Administrando organizações');
+
+        $this->get(route('help.show', 'gerenciando-matriculas'))->assertNotFound();
+        $this->get(route('help.show', 'administrando-organizacoes'))->assertNotFound();
+    }
+
+    public function test_aluno_sees_only_public_audience_articles(): void
+    {
+        $org = Organization::factory()->create();
+        $this->actingAsOrgUser($org, 'aluno');
+
+        $this->seedAudienceFixtures();
+
+        $response = $this->get(route('help.index'));
+
+        $response->assertOk();
+        $response->assertSee('Ajuda do Aluno');
+        $response->assertDontSee('Ajuda do Professor');
+        $response->assertDontSee('Ajuda do Gestor');
+        $response->assertDontSee('Ajuda do Admin');
+    }
+
+    public function test_professor_sees_public_and_professor_audience_articles(): void
+    {
+        $org = Organization::factory()->create();
+        $this->actingAsOrgUser($org, 'professor');
+
+        $this->seedAudienceFixtures();
+
+        $response = $this->get(route('help.index'));
+
+        $response->assertOk();
+        $response->assertSee('Ajuda do Aluno');
+        $response->assertSee('Ajuda do Professor');
+        $response->assertDontSee('Ajuda do Gestor');
+        $response->assertDontSee('Ajuda do Admin');
+    }
+
+    public function test_gestor_sees_public_and_gestor_but_not_admin_articles(): void
+    {
+        $org = Organization::factory()->create();
+        $this->actingAsOrgUser($org, 'gestor');
+
+        $this->seedAudienceFixtures();
+
+        $response = $this->get(route('help.index'));
+
+        $response->assertOk();
+        $response->assertSee('Ajuda do Aluno');
+        $response->assertSee('Ajuda do Gestor');
+        $response->assertDontSee('Ajuda do Admin');
+
+        $this->get(route('help.show', 'ajuda-do-admin'))->assertNotFound();
+        $this->get(route('help.show', 'ajuda-do-gestor'))->assertOk();
+    }
+
+    public function test_admin_sees_all_audience_articles(): void
+    {
+        $this->actingAsAdmin();
+
+        $this->seedAudienceFixtures();
+
+        $response = $this->get(route('help.index'));
+
+        $response->assertOk();
+        $response->assertSee('Ajuda do Aluno');
+        $response->assertSee('Ajuda do Professor');
+        $response->assertSee('Ajuda do Gestor');
+        $response->assertSee('Ajuda do Admin');
+    }
+
+    private function seedAudienceFixtures(): void
+    {
+        HelpArticle::withoutEvents(function (): void {
+            HelpArticle::factory()->global()->create([
+                'title' => 'Ajuda do Aluno',
+                'slug' => 'ajuda-do-aluno',
+            ]);
+
+            HelpArticle::factory()->global()->forAudience(HelpAudienceEnum::PROFESSOR)->create([
+                'title' => 'Ajuda do Professor',
+                'slug' => 'ajuda-do-professor',
+            ]);
+
+            HelpArticle::factory()->global()->forAudience(HelpAudienceEnum::GESTOR)->create([
+                'title' => 'Ajuda do Gestor',
+                'slug' => 'ajuda-do-gestor',
+            ]);
+
+            HelpArticle::factory()->global()->forAudience(HelpAudienceEnum::ADMIN)->create([
+                'title' => 'Ajuda do Admin',
+                'slug' => 'ajuda-do-admin',
+            ]);
+        });
     }
 }

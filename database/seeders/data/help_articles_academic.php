@@ -3,6 +3,7 @@
 return [
     [
         'target_page_key' => 'courses.index',
+        'audience' => 'gestor',
         'title' => 'Gestão de Cursos',
         'slug' => 'gestao-de-cursos',
         'category' => 'Cursos',
@@ -31,6 +32,7 @@ MARKDOWN
     ],
     [
         'target_page_key' => 'courses.create',
+        'audience' => 'gestor',
         'title' => 'Criar Novo Curso',
         'slug' => 'criar-novo-curso',
         'category' => 'Cursos',
@@ -60,6 +62,7 @@ MARKDOWN
     ],
     [
         'target_page_key' => 'courses.edit',
+        'audience' => 'gestor',
         'title' => 'Editar Curso',
         'slug' => 'editar-curso',
         'category' => 'Cursos',
@@ -87,6 +90,7 @@ MARKDOWN
     ],
     [
         'target_page_key' => 'courses.modules.index',
+        'audience' => 'gestor',
         'title' => 'Estrutura de Módulos do Curso',
         'slug' => 'estrutura-de-modulos-do-curso',
         'category' => 'Cursos',
@@ -115,6 +119,7 @@ MARKDOWN
     ],
     [
         'target_page_key' => 'courses.modules.create',
+        'audience' => 'gestor',
         'title' => 'Adicionar Módulo ao Curso',
         'slug' => 'adicionar-modulo-ao-curso',
         'category' => 'Cursos',
@@ -142,6 +147,7 @@ MARKDOWN
     ],
     [
         'target_page_key' => 'modules.edit',
+        'audience' => 'gestor',
         'title' => 'Editar Módulo',
         'slug' => 'editar-modulo',
         'category' => 'Cursos',
@@ -165,6 +171,7 @@ MARKDOWN
     ],
     [
         'target_page_key' => 'modules.lessons.index',
+        'audience' => 'gestor',
         'title' => 'Lições do Módulo',
         'slug' => 'licoes-do-modulo',
         'category' => 'Cursos',
@@ -193,6 +200,7 @@ MARKDOWN
     ],
     [
         'target_page_key' => 'modules.lessons.create',
+        'audience' => 'gestor',
         'title' => 'Criar Nova Lição',
         'slug' => 'criar-nova-licao',
         'category' => 'Cursos',
@@ -225,6 +233,7 @@ MARKDOWN
     ],
     [
         'target_page_key' => 'lessons.edit',
+        'audience' => 'gestor',
         'title' => 'Editar Lição',
         'slug' => 'editar-licao',
         'category' => 'Cursos',
@@ -249,6 +258,7 @@ MARKDOWN
     ],
     [
         'target_page_key' => 'courses.enrollments.index',
+        'audience' => 'gestor',
         'title' => 'Gestão de Matrículas do Curso',
         'slug' => 'gestao-de-matriculas-do-curso',
         'category' => 'Matrículas e Convites',
@@ -277,6 +287,7 @@ MARKDOWN
     ],
     [
         'target_page_key' => 'courses.enrollments.create',
+        'audience' => 'gestor',
         'title' => 'Matricular Aluno Manualmente',
         'slug' => 'matricular-aluno-manualmente',
         'category' => 'Matrículas e Convites',
@@ -302,6 +313,7 @@ MARKDOWN
     ],
     [
         'target_page_key' => 'courses.invitation-links.index',
+        'audience' => 'gestor',
         'title' => 'Links de Convite do Curso',
         'slug' => 'links-de-convite-do-curso',
         'category' => 'Matrículas e Convites',
@@ -330,6 +342,7 @@ MARKDOWN
     ],
     [
         'target_page_key' => 'courses.invitation-links.create',
+        'audience' => 'gestor',
         'title' => 'Criar Link de Convite Inteligente',
         'slug' => 'criar-link-de-convite-inteligente',
         'category' => 'Matrículas e Convites',
@@ -355,6 +368,7 @@ MARKDOWN
     ],
     [
         'target_page_key' => 'courses.professors.index',
+        'audience' => 'gestor',
         'title' => 'Docentes do Curso',
         'slug' => 'docentes-do-curso',
         'category' => 'Pessoas',
@@ -380,6 +394,7 @@ MARKDOWN
     ],
     [
         'target_page_key' => 'gestor.students.index',
+        'audience' => 'gestor',
         'title' => 'Diretório de Alunos',
         'slug' => 'diretorio-de-alunos',
         'category' => 'Pessoas',
@@ -405,6 +420,7 @@ MARKDOWN
     ],
     [
         'target_page_key' => 'gestor.students.edit',
+        'audience' => 'gestor',
         'title' => 'Editar Dados do Aluno',
         'slug' => 'editar-dados-do-aluno',
         'category' => 'Pessoas',
@@ -430,6 +446,7 @@ MARKDOWN
     ],
     [
         'target_page_key' => 'gestor.professors.index',
+        'audience' => 'gestor',
         'title' => 'Diretório de Professores',
         'slug' => 'diretorio-de-professores',
         'category' => 'Pessoas',
@@ -453,6 +470,7 @@ MARKDOWN
     ],
     [
         'target_page_key' => 'gestor.professors.create',
+        'audience' => 'gestor',
         'title' => 'Cadastrar Novo Professor',
         'slug' => 'cadastrar-novo-professor',
         'category' => 'Pessoas',
@@ -478,6 +496,7 @@ MARKDOWN
     ],
     [
         'target_page_key' => 'gestor.professors.edit',
+        'audience' => 'gestor',
         'title' => 'Editar Dados do Professor',
         'slug' => 'editar-dados-do-professor',
         'category' => 'Pessoas',
@@ -501,6 +520,7 @@ MARKDOWN
     ],
     [
         'target_page_key' => 'users.import.create',
+        'audience' => 'gestor',
         'title' => 'Importação de Alunos via CSV',
         'slug' => 'importacao-de-alunos-via-csv',
         'category' => 'Pessoas',
@@ -531,6 +551,7 @@ MARKDOWN
     ],
     [
         'target_page_key' => 'users.index',
+        'audience' => 'gestor',
         'title' => 'Gestão Operacional de Usuários',
         'slug' => 'gestao-operacional-de-usuarios',
         'category' => 'Pessoas',
@@ -555,6 +576,7 @@ MARKDOWN
     ],
     [
         'target_page_key' => 'users.create',
+        'audience' => 'gestor',
         'title' => 'Cadastrar Usuário Operacional',
         'slug' => 'cadastrar-usuario-operacional',
         'category' => 'Pessoas',
@@ -580,6 +602,7 @@ MARKDOWN
     ],
     [
         'target_page_key' => 'users.edit',
+        'audience' => 'gestor',
         'title' => 'Editar Usuário Operacional',
         'slug' => 'editar-usuario-operacional',
         'category' => 'Pessoas',

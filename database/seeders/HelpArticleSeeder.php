@@ -37,6 +37,7 @@ class HelpArticleSeeder extends Seeder
                         'title' => $article['title'],
                         'category' => $article['category'],
                         'target_page_key' => $article['target_page_key'],
+                        'audience' => $article['audience'] ?? 'aluno',
                         'content' => $article['content'],
                     ]
                 );

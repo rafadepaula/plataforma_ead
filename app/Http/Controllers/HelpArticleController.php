@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Help\HelpAudienceEnum;
 use App\Enums\Permissions\RolesEnum;
 use App\Http\Controllers\Concerns\ResolvesOrgContext;
 use App\Models\HelpArticle;
@@ -70,9 +71,12 @@ class HelpArticleController extends Controller
             'slug' => ['required', 'string', 'max:200', Rule::unique('help_articles', 'slug')],
             'category' => ['required', 'string', 'max:50'],
             'target_page_key' => ['nullable', 'string', 'max:100'],
+            'audience' => ['nullable', Rule::enum(HelpAudienceEnum::class)],
             'content' => ['required', 'string'],
             'org_id' => ['nullable', 'exists:organizations,id'],
         ]);
+
+        $validated['audience'] ??= HelpAudienceEnum::ALUNO->value;
 
         $user = $request->user();
 
@@ -113,9 +117,12 @@ class HelpArticleController extends Controller
             'slug' => ['required', 'string', 'max:200', Rule::unique('help_articles', 'slug')->ignore($article->id)],
             'category' => ['required', 'string', 'max:50'],
             'target_page_key' => ['nullable', 'string', 'max:100'],
+            'audience' => ['nullable', Rule::enum(HelpAudienceEnum::class)],
             'content' => ['required', 'string'],
             'org_id' => ['nullable', 'exists:organizations,id'],
         ]);
+
+        $validated['audience'] ??= HelpAudienceEnum::ALUNO->value;
 
         $user = $request->user();
 

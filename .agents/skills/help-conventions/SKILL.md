@@ -39,6 +39,12 @@ is what `Route::currentRouteName()` pass at runtime, so key used when
 seeding/authoring `HelpArticle` must match exactly, including full dotted
 route name.
 
+When authoring/seeding a **global** article, also set `audience`
+(`HelpAudienceEnum`): `aluno` (default, public wiki tier), `professor`,
+`gestor` or `admin` — matching the minimum role that reaches the screen.
+The public wiki hides articles whose audience exceeds the viewer's role;
+see `help-architecture` § Wiki Audience Filter.
+
 ## `HelpArticleFactory`: `global()` vs `forOrg()`
 
 ```php
@@ -49,6 +55,9 @@ HelpArticle::factory()->global()->create([...]); // same result, explicit
 // Org-specific override:
 $org = Organization::factory()->create();
 HelpArticle::factory()->forOrg($org)->create(['target_page_key' => 'courses.index']);
+
+// Admin-only article on the public wiki:
+HelpArticle::factory()->global()->forAudience(HelpAudienceEnum::ADMIN)->create([...]);
 ```
 
 `global()` and bare factory produce same row shape. Prefer `global()`
