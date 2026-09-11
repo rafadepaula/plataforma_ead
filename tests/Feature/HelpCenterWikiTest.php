@@ -125,7 +125,7 @@ class HelpCenterWikiTest extends TestCase
         $showResponse->assertNotFound();
     }
 
-    public function test_gestor_sees_global_articles_and_own_organization_articles(): void
+    public function test_wiki_is_org_independent_and_shows_only_global_articles(): void
     {
         $org = Organization::factory()->create();
         $otherOrg = Organization::factory()->create();
@@ -147,25 +147,26 @@ class HelpCenterWikiTest extends TestCase
             ]);
         });
 
+        // Mesmo autenticado como gestor da org dona de um artigo, a wiki
+        // pública é independente de org: só conteúdo global aparece.
         $this->actingAsOrgUser($org, 'gestor');
 
         $indexResponse = $this->get(route('help.index'));
         $indexResponse->assertOk();
         $indexResponse->assertSee('Artigo Global Visível a Todos');
-        $indexResponse->assertSee('Artigo da Minha Organização');
+        $indexResponse->assertDontSee('Artigo da Minha Organização');
         $indexResponse->assertDontSee('Artigo de Outra Organização');
 
-        // Acessa próprio artigo da org com sucesso
+        // Artigo da própria org não é conteúdo de wiki (404, nunca 403)
         $showOwnResponse = $this->get(route('help.show', 'artigo-minha-org'));
-        $showOwnResponse->assertOk();
-        $showOwnResponse->assertSee('Artigo da Minha Organização');
+        $showOwnResponse->assertNotFound();
 
-        // Tentar acessar artigo de outra org dá 404
+        // Artigo de outra org também dá 404
         $showOtherResponse = $this->get(route('help.show', 'artigo-outra-org'));
         $showOtherResponse->assertNotFound();
     }
 
-    public function test_admin_with_impersonation_sees_impersonated_org_articles(): void
+    public function test_admin_sees_only_global_articles_on_wiki_even_when_impersonating(): void
     {
         $org = Organization::factory()->create();
 
@@ -183,16 +184,16 @@ class HelpCenterWikiTest extends TestCase
 
         $this->actingAsAdmin();
 
-        // Sem impersonação: vê só global
-        $responseNoImpersonate = $this->get(route('help.index'));
-        $responseNoImpersonate->assertSee('Artigo Global');
-        $responseNoImpersonate->assertDontSee('Artigo Org Impersonada');
+        $response = $this->get(route('help.index'));
+        $response->assertOk();
+        $response->assertSee('Artigo Global');
+        $response->assertDontSee('Artigo Org Impersonada');
 
-        // Com impersonação ativa: vê global + org impersonada
+        // Nem a impersonação traz artigos de org para a wiki pública
         $this->withSession(['active_org_id' => $org->id]);
         $responseWithImpersonate = $this->get(route('help.index'));
         $responseWithImpersonate->assertSee('Artigo Global');
-        $responseWithImpersonate->assertSee('Artigo Org Impersonada');
+        $responseWithImpersonate->assertDontSee('Artigo Org Impersonada');
     }
 
     public function test_non_existent_slug_returns_404(): void

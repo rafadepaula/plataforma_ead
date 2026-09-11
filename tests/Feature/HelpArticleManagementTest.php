@@ -2,10 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Enums\Permissions\RolesEnum;
 use App\Models\HelpArticle;
 use App\Models\Organization;
-use App\Models\User;
 use App\Services\HelpArticleResolverService;
 use Tests\TestCase;
 
@@ -22,36 +20,31 @@ class HelpArticleManagementTest extends TestCase
     {
         $org = Organization::factory()->create();
 
-        $aluno = User::factory()->create(['org_id' => $org->id]);
-        $aluno->assignRole(RolesEnum::ALUNO->value);
+        foreach (['aluno', 'professor'] as $role) {
+            $this->actingAsOrgUser($org, $role);
 
-        $professor = User::factory()->create(['org_id' => $org->id]);
-        $professor->assignRole(RolesEnum::PROFESSOR->value);
-
-        foreach ([$aluno, $professor] as $user) {
-            $this->actingAs($user)->get(route('org.help.artigos.index'))->assertForbidden();
-            $this->actingAs($user)->get(route('org.help.artigos.create'))->assertForbidden();
-            $this->actingAs($user)->post(route('org.help.artigos.store'), [])->assertForbidden();
-            $this->actingAs($user)->post(route('org.help.preview'), [])->assertForbidden();
+            $this->get(route('org.help.artigos.index'))->assertForbidden();
+            $this->get(route('org.help.artigos.create'))->assertForbidden();
+            $this->post(route('org.help.artigos.store'), [])->assertForbidden();
+            $this->post(route('org.help.preview'), [])->assertForbidden();
         }
     }
 
     public function test_admin_can_view_index_and_create_global_article(): void
     {
-        $admin = User::factory()->create(['org_id' => null]);
-        $admin->assignRole(RolesEnum::ADMIN->value);
+        $this->actingAsAdmin();
 
-        $response = $this->actingAs($admin)->get(route('org.help.artigos.index'));
+        $response = $this->get(route('org.help.artigos.index'));
 
         $response->assertOk();
         $response->assertSee('Artigos de Ajuda');
         $response->assertSee('dusk="new-help-article"', false);
 
-        $createResponse = $this->actingAs($admin)->get(route('org.help.artigos.create'));
+        $createResponse = $this->get(route('org.help.artigos.create'));
         $createResponse->assertOk();
         $createResponse->assertSee('dusk="org-help-article-form"', false);
 
-        $storeResponse = $this->actingAs($admin)->post(route('org.help.artigos.store'), [
+        $storeResponse = $this->post(route('org.help.artigos.store'), [
             'title' => 'Painel Administrativo',
             'slug' => 'painel-administrativo',
             'category' => 'Administração',
@@ -73,10 +66,9 @@ class HelpArticleManagementTest extends TestCase
     public function test_gestor_can_create_article_for_own_organization(): void
     {
         $org = Organization::factory()->create();
-        $gestor = User::factory()->create(['org_id' => $org->id]);
-        $gestor->assignRole(RolesEnum::GESTOR->value);
+        $this->actingAsOrgUser($org);
 
-        $response = $this->actingAs($gestor)->post(route('org.help.artigos.store'), [
+        $response = $this->post(route('org.help.artigos.store'), [
             'title' => 'Regras da Organização',
             'slug' => 'regras-da-organizacao',
             'category' => 'Geral',
@@ -98,8 +90,7 @@ class HelpArticleManagementTest extends TestCase
         $org1 = Organization::factory()->create();
         $org2 = Organization::factory()->create();
 
-        $gestor = User::factory()->create(['org_id' => $org1->id]);
-        $gestor->assignRole(RolesEnum::GESTOR->value);
+        $this->actingAsOrgUser($org1);
 
         HelpArticle::withoutEvents(function () use ($org1, $org2): void {
             HelpArticle::factory()->global()->create([
@@ -118,7 +109,7 @@ class HelpArticleManagementTest extends TestCase
             ]);
         });
 
-        $response = $this->actingAs($gestor)->get(route('org.help.artigos.index'));
+        $response = $this->get(route('org.help.artigos.index'));
 
         $response->assertOk();
         $response->assertSee('Artigo Global de Ajuda');
@@ -131,66 +122,57 @@ class HelpArticleManagementTest extends TestCase
         $org1 = Organization::factory()->create();
         $org2 = Organization::factory()->create();
 
-        $gestor = User::factory()->create(['org_id' => $org1->id]);
-        $gestor->assignRole(RolesEnum::GESTOR->value);
+        $this->actingAsOrgUser($org1);
 
         $foreignArticle = HelpArticle::withoutEvents(fn () => HelpArticle::factory()->forOrg($org2)->create([
             'title' => 'Artigo Org 2',
             'slug' => 'artigo-org-2',
         ]));
 
-        $this->actingAs($gestor)
-            ->get(route('org.help.artigos.edit', $foreignArticle->id))
+        $this->get(route('org.help.artigos.edit', $foreignArticle->id))
             ->assertNotFound();
 
-        $this->actingAs($gestor)
-            ->put(route('org.help.artigos.update', $foreignArticle->id), [
-                'title' => 'Tentativa de Hack',
-                'slug' => 'artigo-org-2',
-                'category' => 'Geral',
-                'content' => 'Invasão',
-            ])
+        $this->put(route('org.help.artigos.update', $foreignArticle->id), [
+            'title' => 'Tentativa de Hack',
+            'slug' => 'artigo-org-2',
+            'category' => 'Geral',
+            'content' => 'Invasão',
+        ])
             ->assertNotFound();
 
-        $this->actingAs($gestor)
-            ->delete(route('org.help.artigos.destroy', $foreignArticle->id))
+        $this->delete(route('org.help.artigos.destroy', $foreignArticle->id))
             ->assertNotFound();
     }
 
     public function test_gestor_cannot_edit_update_or_delete_global_articles(): void
     {
         $org = Organization::factory()->create();
-        $gestor = User::factory()->create(['org_id' => $org->id]);
-        $gestor->assignRole(RolesEnum::GESTOR->value);
+        $this->actingAsOrgUser($org);
 
         $globalArticle = HelpArticle::withoutEvents(fn () => HelpArticle::factory()->global()->create([
             'title' => 'Artigo Global',
             'slug' => 'artigo-global-lock',
         ]));
 
-        $this->actingAs($gestor)
-            ->get(route('org.help.artigos.edit', $globalArticle->id))
+        $this->get(route('org.help.artigos.edit', $globalArticle->id))
             ->assertNotFound();
 
-        $this->actingAs($gestor)
-            ->put(route('org.help.artigos.update', $globalArticle->id), [
-                'title' => 'Tentativa de Editar Global',
-                'slug' => 'artigo-global-lock',
-                'category' => 'Geral',
-                'content' => 'Conteúdo adulterado',
-            ])
+        $this->put(route('org.help.artigos.update', $globalArticle->id), [
+            'title' => 'Tentativa de Editar Global',
+            'slug' => 'artigo-global-lock',
+            'category' => 'Geral',
+            'content' => 'Conteúdo adulterado',
+        ])
             ->assertNotFound();
 
-        $this->actingAs($gestor)
-            ->delete(route('org.help.artigos.destroy', $globalArticle->id))
+        $this->delete(route('org.help.artigos.destroy', $globalArticle->id))
             ->assertNotFound();
     }
 
     public function test_gestor_can_update_and_delete_own_article(): void
     {
         $org = Organization::factory()->create();
-        $gestor = User::factory()->create(['org_id' => $org->id]);
-        $gestor->assignRole(RolesEnum::GESTOR->value);
+        $this->actingAsOrgUser($org);
 
         $article = HelpArticle::withoutEvents(fn () => HelpArticle::factory()->forOrg($org)->create([
             'title' => 'Artigo Próprio',
@@ -199,11 +181,11 @@ class HelpArticleManagementTest extends TestCase
             'content' => 'Original',
         ]));
 
-        $editResponse = $this->actingAs($gestor)->get(route('org.help.artigos.edit', $article->id));
+        $editResponse = $this->get(route('org.help.artigos.edit', $article->id));
         $editResponse->assertOk();
         $editResponse->assertSee('dusk="save-help-article"', false);
 
-        $updateResponse = $this->actingAs($gestor)->put(route('org.help.artigos.update', $article->id), [
+        $updateResponse = $this->put(route('org.help.artigos.update', $article->id), [
             'title' => 'Artigo Próprio Atualizado',
             'slug' => 'artigo-proprio-atualizado',
             'category' => 'Cursos',
@@ -218,7 +200,7 @@ class HelpArticleManagementTest extends TestCase
             'slug' => 'artigo-proprio-atualizado',
         ]);
 
-        $deleteResponse = $this->actingAs($gestor)->delete(route('org.help.artigos.destroy', $article->id));
+        $deleteResponse = $this->delete(route('org.help.artigos.destroy', $article->id));
         $deleteResponse->assertRedirect(route('org.help.artigos.index'));
 
         $this->assertDatabaseMissing('help_articles', [
@@ -228,8 +210,7 @@ class HelpArticleManagementTest extends TestCase
 
     public function test_admin_can_update_and_delete_any_article(): void
     {
-        $admin = User::factory()->create(['org_id' => null]);
-        $admin->assignRole(RolesEnum::ADMIN->value);
+        $this->actingAsAdmin();
 
         $org = Organization::factory()->create();
         $article = HelpArticle::withoutEvents(fn () => HelpArticle::factory()->forOrg($org)->create([
@@ -237,7 +218,7 @@ class HelpArticleManagementTest extends TestCase
             'slug' => 'artigo-org-admin',
         ]));
 
-        $updateResponse = $this->actingAs($admin)->put(route('org.help.artigos.update', $article->id), [
+        $updateResponse = $this->put(route('org.help.artigos.update', $article->id), [
             'title' => 'Modificado pelo Admin',
             'slug' => 'artigo-org-admin',
             'category' => 'Ajuste',
@@ -252,7 +233,7 @@ class HelpArticleManagementTest extends TestCase
             'title' => 'Modificado pelo Admin',
         ]);
 
-        $deleteResponse = $this->actingAs($admin)->delete(route('org.help.artigos.destroy', $article->id));
+        $deleteResponse = $this->delete(route('org.help.artigos.destroy', $article->id));
         $deleteResponse->assertRedirect(route('org.help.artigos.index'));
 
         $this->assertDatabaseMissing('help_articles', [
@@ -263,14 +244,13 @@ class HelpArticleManagementTest extends TestCase
     public function test_slug_uniqueness_is_validated(): void
     {
         $org = Organization::factory()->create();
-        $gestor = User::factory()->create(['org_id' => $org->id]);
-        $gestor->assignRole(RolesEnum::GESTOR->value);
+        $this->actingAsOrgUser($org);
 
         HelpArticle::withoutEvents(fn () => HelpArticle::factory()->forOrg($org)->create([
             'slug' => 'slug-em-uso',
         ]));
 
-        $response = $this->actingAs($gestor)->post(route('org.help.artigos.store'), [
+        $response = $this->post(route('org.help.artigos.store'), [
             'title' => 'Outro Artigo',
             'slug' => 'slug-em-uso',
             'category' => 'Geral',
@@ -282,12 +262,11 @@ class HelpArticleManagementTest extends TestCase
 
     public function test_preview_endpoint_renders_sanitized_markdown(): void
     {
-        $admin = User::factory()->create(['org_id' => null]);
-        $admin->assignRole(RolesEnum::ADMIN->value);
+        $this->actingAsAdmin();
 
         $markdownContent = "# Título Principal\n\nEste é um **texto em negrito**.\n\n<script>alert('xss')</script>";
 
-        $response = $this->actingAs($admin)->postJson(route('org.help.preview'), [
+        $response = $this->postJson(route('org.help.preview'), [
             'content' => $markdownContent,
         ]);
 
@@ -303,8 +282,7 @@ class HelpArticleManagementTest extends TestCase
     public function test_org_article_overrides_global_article_in_resolver_when_created(): void
     {
         $org = Organization::factory()->create();
-        $gestor = User::factory()->create(['org_id' => $org->id]);
-        $gestor->assignRole(RolesEnum::GESTOR->value);
+        $this->actingAsOrgUser($org);
 
         HelpArticle::withoutEvents(fn () => HelpArticle::factory()->global()->create([
             'target_page_key' => 'courses.index',
@@ -316,7 +294,9 @@ class HelpArticleManagementTest extends TestCase
         $resolvedBefore = $resolver->resolve('courses.index', $org->id);
         $this->assertSame('Global Courses Help', $resolvedBefore->title);
 
-        $this->actingAs($gestor)->post(route('org.help.artigos.store'), [
+        $this->actingAsOrgUser($org);
+
+        $this->post(route('org.help.artigos.store'), [
             'title' => 'Org Custom Courses Help',
             'slug' => 'org-custom-courses-help',
             'category' => 'Cursos',

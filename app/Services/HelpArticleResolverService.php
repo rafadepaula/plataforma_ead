@@ -38,32 +38,40 @@ class HelpArticleResolverService
         return (clone $query)->whereNull('org_id')->first();
     }
 
+    /**
+     * Mirrors `ResolvesOrgContext`'s branching without the failure throw:
+     * an impersonating Admin resolves to `session('active_org_id')` (null
+     * when not impersonating — the Admin is global), everyone else (and
+     * anonymous visitors) to the host Organization from `OrgContext`.
+     * `null` there means state zero (unbound host), which callers treat as
+     * global-only visibility.
+     */
     public function resolveActiveOrgId(): ?int
     {
         $user = Auth::user();
 
-        if (! $user) {
-            return null;
-        }
-
-        if ($user->hasRole(RolesEnum::ADMIN->value)) {
+        if ($user && $user->hasRole(RolesEnum::ADMIN->value)) {
             return session('active_org_id');
         }
 
-        return $user->org_id;
+        return OrgContext::current()->orgId();
     }
 
-    public function queryAccessibleArticles(?int $orgId = null): Builder
+    /**
+     * The public wiki (`HelpCenterController`) is org-independent by design:
+     * always reachable (any host, any org state, guest or not) and serving
+     * ONLY global (`org_id = null`) articles. Organization-specific articles
+     * are contextual in-app help (`<x-help-button>` / management CRUD), never
+     * public wiki content.
+     */
+    public function queryGlobalArticles(): Builder
     {
-        $activeOrgId = $orgId ?? $this->resolveActiveOrgId();
+        return HelpArticle::withoutGlobalScopes()->whereNull('org_id');
+    }
 
-        return HelpArticle::withoutGlobalScopes()->where(function (Builder $query) use ($activeOrgId): void {
-            $query->whereNull('org_id');
-
-            if ($activeOrgId !== null) {
-                $query->orWhere('org_id', $activeOrgId);
-            }
-        });
+    public function findGlobalBySlug(string $slug): ?HelpArticle
+    {
+        return $this->queryGlobalArticles()->where('slug', $slug)->first();
     }
 
     public function findAccessibleBySlug(string $slug, ?int $orgId = null): ?HelpArticle

@@ -15,9 +15,10 @@ use Symfony\Component\HttpFoundation\Response;
  * matched, active Organization — passes straight through):
  *
  * - **State zero** (host matched nothing): a guest is bounced to the login
- *   (the only useful surface there — and only the global Admin account can
- *   pass it); an authenticated non-Admin is logged out; an authenticated
- *   Admin navigates freely (Organization CRUD lives in state zero).
+ *   (the only useful surfaces there — the global Admin account login and the
+ *   global-only public help wiki); an authenticated non-Admin is logged out;
+ *   an authenticated Admin navigates freely (Organization CRUD lives in
+ *   state zero).
  * - **Inactive Organization**: only public surfaces stay reachable — the
  *   landing and the certificate lookup (view-only); guests asking for
  *   anything else are bounced back to the landing; an authenticated
@@ -43,7 +44,7 @@ class EnsureTenantAccess
                     ->with('error', trans('auth.failed'));
             }
 
-            if ($user === null && ! $this->isAuthRoute($request)) {
+            if ($user === null && ! $this->isAuthRoute($request) && ! $request->is('ajuda', 'ajuda/*')) {
                 return redirect()->route('login');
             }
 
@@ -96,16 +97,17 @@ class EnsureTenantAccess
 
     /**
      * Surfaces an inactive tenant still serves to guests: the landing, the
-     * public certificate lookup, AND the auth routes — login/forgot POSTs
-     * must reach the provider so they fail with the generic auth error
-     * (the spec mandates "qualquer tentativa de login resulta em falha de
-     * autenticação", not a redirect). Everything else — including the
+     * public certificate lookup, the public help wiki, AND the auth routes —
+     * login/forgot POSTs must reach the provider so they fail with the generic
+     * auth error (the spec mandates "qualquer tentativa de login resulta em
+     * falha de autenticação", not a redirect). Everything else — including the
      * invite redemption flow — redirects to the landing.
      */
     private function isPublicOnInactiveOrg(Request $request): bool
     {
         return $request->is('/')
             || $this->isAuthRoute($request)
-            || $request->is('validar-certificado', 'validar-certificado/*');
+            || $request->is('validar-certificado', 'validar-certificado/*')
+            || $request->is('ajuda', 'ajuda/*');
     }
 }

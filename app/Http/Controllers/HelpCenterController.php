@@ -14,7 +14,7 @@ class HelpCenterController extends Controller
 
     public function index(Request $request): View
     {
-        $query = $this->resolver->queryAccessibleArticles();
+        $query = $this->resolver->queryGlobalArticles();
 
         if ($request->filled('q')) {
             $search = '%'.$request->input('q').'%';
@@ -35,7 +35,7 @@ class HelpCenterController extends Controller
 
     public function show(string $slug): View
     {
-        $article = $this->resolver->findAccessibleBySlug($slug);
+        $article = $this->resolver->findGlobalBySlug($slug);
 
         if (! $article) {
             abort(404);

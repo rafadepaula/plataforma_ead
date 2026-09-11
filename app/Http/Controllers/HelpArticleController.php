@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\Permissions\RolesEnum;
+use App\Http\Controllers\Concerns\ResolvesOrgContext;
 use App\Models\HelpArticle;
 use App\Models\Organization;
 use Illuminate\Http\JsonResponse;
@@ -16,6 +17,8 @@ use Illuminate\View\View;
 
 class HelpArticleController extends Controller
 {
+    use ResolvesOrgContext;
+
     public function index(Request $request): View
     {
         Gate::authorize('viewAny', HelpArticle::class);
@@ -24,9 +27,10 @@ class HelpArticleController extends Controller
         $query = HelpArticle::withoutGlobalScopes()->with('organization');
 
         if ($user->hasRole(RolesEnum::GESTOR->value)) {
-            $query->where(function ($q) use ($user): void {
+            $orgId = $this->resolveOrgId($request);
+            $query->where(function ($q) use ($orgId): void {
                 $q->whereNull('org_id')
-                    ->orWhere('org_id', $user->org_id);
+                    ->orWhere('org_id', $orgId);
             });
         } elseif ($user->hasRole(RolesEnum::ADMIN->value)) {
             $activeOrgId = session('active_org_id');
@@ -73,7 +77,7 @@ class HelpArticleController extends Controller
         $user = $request->user();
 
         if ($user->hasRole(RolesEnum::GESTOR->value)) {
-            $validated['org_id'] = $user->org_id;
+            $validated['org_id'] = $this->resolveOrgId($request);
             HelpArticle::create($validated);
         } else {
             if (empty($validated['org_id'])) {
@@ -116,7 +120,7 @@ class HelpArticleController extends Controller
         $user = $request->user();
 
         if ($user->hasRole(RolesEnum::GESTOR->value)) {
-            $validated['org_id'] = $user->org_id;
+            $validated['org_id'] = $this->resolveOrgId($request);
             $article->update($validated);
         } else {
             if (empty($validated['org_id'])) {
@@ -158,7 +162,7 @@ class HelpArticleController extends Controller
         $user = $request->user();
 
         if ($user->hasRole(RolesEnum::GESTOR->value)) {
-            if ($article->org_id !== $user->org_id) {
+            if ($article->org_id !== $this->resolveOrgId($request)) {
                 abort(404);
             }
         }
