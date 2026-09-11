@@ -99,9 +99,10 @@ class LessonPlayerDuskTest extends DuskTestCase
      */
     private function watchUntilPlaying(Browser $browser, Lesson $lesson): void
     {
+        // embed de terceiros: o boot do módulo + SDK sob carga passa de 5s
         $browser->loginAs($this->student)
             ->visit(route('classroom.lesson', $lesson))
-            ->waitFor('@video-player-'.$lesson->id)
+            ->waitFor('@video-player-'.$lesson->id, 15)
             ->assertVisible('@video-facade-'.$lesson->id)
             ->click('@video-facade-'.$lesson->id);
 
