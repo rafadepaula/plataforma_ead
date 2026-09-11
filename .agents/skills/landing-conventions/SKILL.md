@@ -133,8 +133,6 @@ separator. No marketing exclamation marks.
 `LandingPageDuskTest` visits `/` on the Dusk tenant host (ligacerto
 blade) and uses the `.landing-hero` class plus the raw `@`-selectors
 `@landing-login-link` / `@landing-hero-cta` (Dusk auto-expands `@name`
-to `[dusk="name"]`). `tests/Browser/Pages/HomePage.php` still declares
-legacy shortcuts (`@headline`, `@ctaLogin`, `@loginLink`, `@contact`)
-pointing at selectors the current tenant blades no longer render — do
-not build new tests on them; prefer the live selectors above, and treat
-a HomePage shortcut cleanup as its own deliberate change.
+to `[dusk="name"]`). The legacy `tests/Browser/Pages/HomePage.php` page
+object (old shortcuts `@headline`/`@ctaLogin`/`@contact`) was removed —
+build new tests on the live selectors above, never on the retired ones.
