@@ -106,6 +106,23 @@ class HostScopedLoginTest extends TestCase
         $this->assertGuest();
     }
 
+    public function test_credencial_global_de_admin_autentica_em_host_de_org(): void
+    {
+        // spec: "o admin faz login em qualquer portal" — a credencial global
+        // (org_id = null) vale no estado 0 E no host de qualquer organização
+        $org = Organization::factory()->create(['host' => 'portal.acme.test']);
+        $admin = User::factory()->inOrg(null)->withPassword('senha-admin')->create();
+        $admin->assignRole(RolesEnum::ADMIN->value);
+
+        $this->onHost('portal.acme.test')
+            ->post('/login', [
+                'email' => $admin->email,
+                'password' => 'senha-admin',
+            ])->assertRedirect(route('admin.dashboard'));
+
+        $this->assertAuthenticatedAs($admin);
+    }
+
     public function test_remember_me_pertence_a_credencial_do_portal(): void
     {
         $orgA = Organization::factory()->create();

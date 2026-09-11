@@ -46,6 +46,26 @@ final class OrgCredentialUserProvider extends EloquentUserProvider
         return $user;
     }
 
+    /**
+     * The credential that backs a session on the current portal: the
+     * host Organization's account, falling back to the global Admin
+     * account (`org_id = null`) — which validates on EVERY host per the
+     * platform contract ("o admin faz login em qualquer portal").
+     */
+    private function sessionCredential(int|string $userId): ?Credential
+    {
+        $context = OrgContext::current();
+
+        return Credential::query()
+            ->forOrg($context->orgId())
+            ->where('user_id', $userId)
+            ->first()
+            ?? Credential::query()
+                ->forOrg(null)
+                ->where('user_id', $userId)
+                ->first();
+    }
+
     public function validateCredentials(AuthenticatableContract $user, #[\SensitiveParameter] array $credentials): bool
     {
         $password = $credentials['password'] ?? null;
@@ -61,10 +81,7 @@ final class OrgCredentialUserProvider extends EloquentUserProvider
             return false;
         }
 
-        $credential = Credential::query()
-            ->forOrg($context->orgId())
-            ->where('user_id', $user->getAuthIdentifier())
-            ->first();
+        $credential = $this->sessionCredential($user->getAuthIdentifier());
 
         if ($credential === null || $credential->status !== 'active') {
             return false;
@@ -98,12 +115,11 @@ final class OrgCredentialUserProvider extends EloquentUserProvider
         }
 
         // a conta desativada nunca reacquire sessão pelo cookie
-        $hasValidToken = Credential::query()
-            ->forOrg($context->orgId())
-            ->where('user_id', $identifier)
-            ->where('status', 'active')
-            ->where('remember_token', $token)
-            ->exists();
+        $credential = $this->sessionCredential($identifier);
+
+        $hasValidToken = $credential !== null
+            && $credential->status === 'active'
+            && $credential->remember_token === $token;
 
         return $hasValidToken ? $user : null;
     }
@@ -115,8 +131,15 @@ final class OrgCredentialUserProvider extends EloquentUserProvider
      */
     public function updateRememberToken(AuthenticatableContract $user, #[\SensitiveParameter] $token): void
     {
+        // a sessão pode pertencer à credencial do host OU à global de admin:
+        // grava o token nas duas que existirem para a pessoa
         Credential::query()
             ->forOrg(OrgContext::current()->orgId())
+            ->where('user_id', $user->getAuthIdentifier())
+            ->update(['remember_token' => $token]);
+
+        Credential::query()
+            ->forOrg(null)
             ->where('user_id', $user->getAuthIdentifier())
             ->update(['remember_token' => $token]);
     }

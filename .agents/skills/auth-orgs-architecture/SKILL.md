@@ -66,7 +66,9 @@ remember tokens live in `credentials`, one account per (user, host org):
   `auth.failed` is the ONLY client-visible outcome (anti-enumeration for
   both "not your portal" and "deactivated"). Hash check runs against the
   credential, with rehash-on-login.
-- The global Admin credential (`org_id = null`) validates on every host,
+- The global Admin credential (`org_id = null`) validates on every host —
+  `sessionCredential()` falls back to it when the person holds no account
+  on the host Organization (never overriding an existing host account),
   including state zero, where it is the only account that can pass.
 - **Remember-me per credential**: `retrieveByToken()` requires the
   host-org credential to be `status = active` AND to hold the token (an

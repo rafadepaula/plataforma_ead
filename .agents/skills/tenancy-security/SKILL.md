@@ -33,7 +33,7 @@ Tenancy resolves from the request **host**: `ResolveOrgFromHost` (first `web` mi
 
 | Role (`RolesEnum`) | Account (`credentials`) | Scope of Access & Security Boundary |
 | ------------------ | ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `admin`            | Global credential (`org_id = null`); login only on state zero | Global access by default. Operates a single organization via Impersonate Org (`session('active_org_id')`), which overrides the host. |
+| `admin`            | Global credential (`org_id = null`), validates on EVERY host (state zero + any Organization portal) | Global access by default. Operates a single organization via Impersonate Org (`session('active_org_id')`), which overrides the host. |
 | `gestor`           | One credential per Organization held | Restricted **strictly** to data of the host Organization (`OrgContext::current()->orgId()`). Cannot read or write data from any other `org_id`. |
 | `aluno`            | One credential per Organization held | Enrolled across courses in multiple orgs via `course_user` pivot. Must **never** access org-scoped data directly; access is granted **only** through active course enrollment relations. |
 | `professor`        | One credential per Organization held | Bound to one Organization like `gestor`; course access granted **only** through the `course_professor` pivot (`User::teaches()`). Gated by `role:professor`, lands on `professor.dashboard`, managed by Gestor via `GestorProfessorController`. |

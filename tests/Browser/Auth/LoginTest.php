@@ -65,7 +65,8 @@ class LoginTest extends DuskTestCase
 
         // em host mapeado a credencial global não valida: o admin entra
         // aqui com conta no próprio portal do Dusk
-        $admin = User::factory()->inOrg($tenant)->withPassword('correct-password')->create([
+        // credencial GLOBAL de admin autentica em qualquer portal (spec)
+        $admin = User::factory()->inOrg(null)->withPassword('correct-password')->create([
             'email' => 'admin@example.com',
         ]);
         $admin->assignRole(RolesEnum::ADMIN->value);

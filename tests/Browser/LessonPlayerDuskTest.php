@@ -96,6 +96,12 @@ class LessonPlayerDuskTest extends DuskTestCase
      * Abre a aula, clica na fachada e insiste como um usuário real até o
      * vídeo entrar em reprodução (o boot baixa o SDK e o autoplay pode
      * perder a corrida).
+     *
+     * KNOWN FLAKE (rede/terceiros): a perna do YouTube depende do embed
+     * externo aceitar reprodução no Chrome headless (política de autoplay,
+     * CDN, disponibilidade do vídeo). O grupo `requires-network` exclui
+     * esta suíte no CI; localmente, um timeout na perna do YouTube indica
+     * dependência externa, não regressão do player.
      */
     private function watchUntilPlaying(Browser $browser, Lesson $lesson): void
     {

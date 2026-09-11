@@ -89,7 +89,9 @@ is the per-Organization account behind a person:
 - `user_id` FK → `users` `cascadeOnDelete()`;
 - `org_id` FK → `organizations` **nullable** `restrictOnDelete()`;
   `org_id = null` is the **global Admin credential** — the only account
-  valid in state zero, and the only one that logs in on an unmapped host;
+  valid in state zero (the only one that logs in on an unmapped host), and
+  it ALSO validates on every Organization portal (fallback after the host
+  account in `OrgCredentialUserProvider::sessionCredential()`);
 - `password` (hashed cast), `status` enum `active`/`inactive`,
   `remember_token`;
 - `unique(user_id, org_id)` — one account per (person, org) pair. MySQL
