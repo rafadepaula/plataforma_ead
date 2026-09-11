@@ -189,8 +189,12 @@ second check too — `student.enrolled` alone will let staff through.
 ## "Meus Cursos" Catalog Helpers on `Course`
 
 The "Meus Cursos" catalog (`StudentCourseController` +
-`student.courses.index`) was rebuilt as a tabbed grid of
-rich cards. That work added no new table — only read helpers on `Course`
+`student.courses.index`) is **host-scoped** (host-based tenancy spec:
+"o que define quais cursos ele acessa é o host"): `Course`'s `org`
+global scope stays ON in the listing, so the Aluno sees only the
+enrollments of the portal they are in — `EnsureStudentIsEnrolled` adds
+the same host-org check to classroom access for Alunos. It renders as a
+tabbed grid of rich cards. That work added no new table — only read helpers on `Course`
 (owned here, alongside `publishedLessonsCountFor()`/`completedLessonsCountFor()`,
 because they serve this module's student-facing read path, not the
 courses domain's Gestor CRUD) and a `course_user.expires_at` column

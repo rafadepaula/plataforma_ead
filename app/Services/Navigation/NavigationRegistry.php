@@ -369,11 +369,11 @@ final class NavigationRegistry
      * `student.courses.index` (the "Em andamento"/"Concluídos" tabs and
      * the empty state), including for a zero-enrollment Aluno.
      *
-     * `withoutGlobalScope('org')` mirrors
-     * `StudentCourseController::index()`: the pivot row is the
-     * enrollment boundary (each `classroom.*` route re-checks it via
-     * `student.enrolled`), so the menu must not depend on `Auth::user()`
-     * being resolvable by the `OrgScope` global scope.
+     * Host-scoped, mirroring `StudentCourseController::index()`: the
+     * sidebar lists only the enrollments of the portal the Aluno is in
+     * (`Course`'s `org` scope ON — the host defines what the Aluno sees),
+     * with the pivot row as the enrollment boundary (each `classroom.*`
+     * route re-checks it via `student.enrolled`).
      *
      *  the query budget is CONSTANT, never per course: the
      * enrollment fetch plus three companion queries — one grouped COUNT
@@ -386,8 +386,10 @@ final class NavigationRegistry
      */
     private function resolveStudentCourseChildren(User $user): array
     {
+        // host-scoped like the catalog: the sidebar lists the enrollments
+        // of the portal the Aluno is in (spec: "o que define quais cursos
+        // ele acessa é o host")
         $courses = $user->courses()
-            ->withoutGlobalScope('org')
             ->wherePivotIn('status', ['active', 'completed'])
             ->orderBy('courses.title')
             ->limit(self::CHILDREN_LIMIT + 1)

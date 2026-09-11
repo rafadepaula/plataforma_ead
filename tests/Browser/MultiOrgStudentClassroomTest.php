@@ -6,7 +6,6 @@ use App\Enums\Permissions\RolesEnum;
 use App\Models\Course;
 use App\Models\Lesson;
 use App\Models\Module;
-use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Laravel\Dusk\Browser;
@@ -27,11 +26,12 @@ class MultiOrgStudentClassroomTest extends DuskTestCase
 {
     public function test_student_classroom_and_lesson_completion_lifecycle(): void
     {
-        $orgA = Organization::factory()->create(['name' => 'Organização A']);
-        $orgB = Organization::factory()->create(['name' => 'Organização B']);
+        // os cursos vivem no portal do navegador: o host define o que o
+        // aluno vê e acessa (spec do prompt original)
+        $tenant = $this->duskTenant();
 
-        $courseA = Course::factory()->inOrg($orgA->id)->create(['is_published' => true]);
-        $courseB = Course::factory()->inOrg($orgB->id)->create(['is_published' => true]);
+        $courseA = Course::factory()->inOrg($tenant->id)->create(['is_published' => true]);
+        $courseB = Course::factory()->inOrg($tenant->id)->create(['is_published' => true]);
 
         $module = Module::factory()->create(['course_id' => $courseA->id]);
         $lesson = Lesson::factory()->richText()->create([
@@ -39,8 +39,7 @@ class MultiOrgStudentClassroomTest extends DuskTestCase
             'is_published' => true,
         ]);
 
-        // aluno multi-org: conta no portal do navegador + nos DOIS tenants
-        $student = User::factory()->aluno()->inOrg($this->duskTenant())->inOrg($orgA)->inOrg($orgB)->create();
+        $student = User::factory()->aluno()->inOrg($tenant)->create();
 
         $courseA->students()->attach($student->id, ['enrolled_at' => now(), 'status' => 'active']);
         $courseB->students()->attach($student->id, ['enrolled_at' => now(), 'status' => 'active']);
@@ -56,8 +55,7 @@ class MultiOrgStudentClassroomTest extends DuskTestCase
                 // `.kicker` (the card's org overline) is `text-transform:
                 // uppercase`, so the rendered text is not a literal-case
                 // match — see the laravel-dusk skill's `assertSeeIn` note.
-                ->assertSeeIgnoringCase('Organização A')
-                ->assertSeeIgnoringCase('Organização B')
+                ->assertSeeIgnoringCase('Portal Dusk')
                 ->click('@course-continue-'.$courseA->id)
                 ->waitFor('@mark-complete-button');
 
@@ -131,14 +129,11 @@ class MultiOrgStudentClassroomTest extends DuskTestCase
 
     public function test_a_student_who_is_not_enrolled_cannot_access_the_classroom(): void
     {
-        $orgA = Organization::factory()->create(['name' => 'Organização A']);
+        $courseA = Course::factory()->inOrg($this->duskTenant()->id)->create(['is_published' => true]);
 
-        $courseA = Course::factory()->inOrg($orgA->id)->create(['is_published' => true]);
+        $notEnrolledStudent = User::factory()->aluno()->inOrg($this->duskTenant())->create();
 
-        // ambos precisam de conta no portal do navegador (duskTenant)
-        $notEnrolledStudent = User::factory()->aluno()->inOrg($this->duskTenant())->inOrg($orgA)->create();
-
-        $cancelledStudent = User::factory()->aluno()->inOrg($this->duskTenant())->inOrg($orgA)->create();
+        $cancelledStudent = User::factory()->aluno()->inOrg($this->duskTenant())->create();
         $cancelledStudent->assignRole(RolesEnum::ALUNO->value);
         $courseA->students()->attach($cancelledStudent->id, ['enrolled_at' => now(), 'status' => 'cancelled']);
 

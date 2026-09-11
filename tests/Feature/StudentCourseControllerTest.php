@@ -20,10 +20,12 @@ use Tests\TestCase;
  */
 class StudentCourseControllerTest extends TestCase
 {
-    private function makeAluno(): User
+    private function makeAluno(?Organization $organization = null): User
     {
+        $org = $organization ?? Organization::factory()->create();
+
         /** @var User $aluno */
-        $aluno = User::factory()->inOrg(Organization::factory()->create())->create();
+        $aluno = User::factory()->inOrg($org)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
 
         return $aluno;
@@ -38,11 +40,13 @@ class StudentCourseControllerTest extends TestCase
         return $course;
     }
 
-    public function test_index_aggregates_enrollments_across_multiple_organizations(): void
+    public function test_index_shows_only_enrollments_of_the_host_organization(): void
     {
-        $aluno = $this->makeAluno();
+        // spec: "o que define quais cursos ele acessa é o host" — matrícula
+        // em portal estrangeiro não aparece no catálogo deste portal
         $orgA = Organization::factory()->create();
         $orgB = Organization::factory()->create();
+        $aluno = $this->makeAluno($orgA);
 
         $courseA = $this->publishedCourseWithLesson($orgA);
         $courseB = $this->publishedCourseWithLesson($orgB);
@@ -53,23 +57,28 @@ class StudentCourseControllerTest extends TestCase
         $response = $this->actingAs($aluno)->get(route('student.courses.index'));
 
         $response->assertOk();
+        $response->assertViewHas('rows', function ($rows) use ($courseB, $response) {
+            $pos = mb_strpos($response->getContent(), $courseB->title);
+            dump('ctx: '.mb_substr($response->getContent(), max(0, $pos - 250), 400));
+
+            return true;
+        });
         $response->assertSee($courseA->title);
-        $response->assertSee($courseB->title);
+        $response->assertDontSee($courseB->title);
         $response->assertSee($orgA->name);
-        $response->assertSee($orgB->name);
+        $response->assertDontSee($orgB->name);
     }
 
-    public function test_duplicate_course_titles_across_organizations_show_the_correct_org_per_card_without_n_plus_1(): void
+    public function test_duplicate_course_titles_render_the_org_overline_per_card_without_n_plus_1(): void
     {
-        $aluno = $this->makeAluno();
         $orgA = Organization::factory()->create(['name' => 'Organização A']);
-        $orgB = Organization::factory()->create(['name' => 'Organização B']);
+        $aluno = $this->makeAluno($orgA);
 
         $courseA = Course::factory()->inOrg($orgA->id)->create(['title' => 'Curso Duplicado']);
         $moduleA = Module::factory()->for($courseA)->create(['order_index' => 0]);
         Lesson::factory()->for($moduleA)->richText()->create(['is_published' => true, 'order_index' => 0]);
 
-        $courseB = Course::factory()->inOrg($orgB->id)->create(['title' => 'Curso Duplicado']);
+        $courseB = Course::factory()->inOrg($orgA->id)->create(['title' => 'Curso Duplicado']);
         $moduleB = Module::factory()->for($courseB)->create(['order_index' => 0]);
         Lesson::factory()->for($moduleB)->richText()->create(['is_published' => true, 'order_index' => 0]);
 
@@ -82,10 +91,10 @@ class StudentCourseControllerTest extends TestCase
         \DB::disableQueryLog();
 
         $response->assertOk();
-        $response->assertViewHas('rows', function ($rows) use ($orgA, $orgB) {
-            $orgNames = $rows->pluck('organization.name')->sort()->values()->all();
+        $response->assertViewHas('rows', function ($rows) use ($orgA) {
+            $orgNames = $rows->pluck('organization.name')->unique()->values()->all();
 
-            return $orgNames === [$orgA->name, $orgB->name];
+            return $orgNames === [$orgA->name] && $rows->count() === 2;
         });
 
         // One query for the aggregate rows plus a handful of fixed-cost
@@ -96,8 +105,8 @@ class StudentCourseControllerTest extends TestCase
 
     public function test_em_andamento_tab_is_the_default_and_shows_only_active_enrollments(): void
     {
-        $aluno = $this->makeAluno();
         $org = Organization::factory()->create();
+        $aluno = $this->makeAluno($org);
 
         $activeCourse = $this->publishedCourseWithLesson($org);
         $completedCourse = $this->publishedCourseWithLesson($org);
@@ -119,8 +128,8 @@ class StudentCourseControllerTest extends TestCase
 
     public function test_concluidos_tab_filters_to_completed_enrollments_only(): void
     {
-        $aluno = $this->makeAluno();
         $org = Organization::factory()->create();
+        $aluno = $this->makeAluno($org);
 
         $activeCourse = $this->publishedCourseWithLesson($org);
         $completedCourse = $this->publishedCourseWithLesson($org);
@@ -141,8 +150,8 @@ class StudentCourseControllerTest extends TestCase
 
     public function test_todos_tab_shows_both_active_and_completed_but_never_cancelled(): void
     {
-        $aluno = $this->makeAluno();
         $org = Organization::factory()->create();
+        $aluno = $this->makeAluno($org);
 
         $activeCourse = $this->publishedCourseWithLesson($org);
         $completedCourse = $this->publishedCourseWithLesson($org);
@@ -162,8 +171,8 @@ class StudentCourseControllerTest extends TestCase
 
     public function test_an_unknown_status_value_falls_back_to_em_andamento(): void
     {
-        $aluno = $this->makeAluno();
         $org = Organization::factory()->create();
+        $aluno = $this->makeAluno($org);
         $activeCourse = $this->publishedCourseWithLesson($org);
 
         $aluno->courses()->attach($activeCourse->id, ['status' => 'active', 'enrolled_at' => now()]);
@@ -176,8 +185,8 @@ class StudentCourseControllerTest extends TestCase
 
     public function test_em_andamento_tab_badge_counts_only_active_enrollments(): void
     {
-        $aluno = $this->makeAluno();
         $org = Organization::factory()->create();
+        $aluno = $this->makeAluno($org);
 
         $activeOne = $this->publishedCourseWithLesson($org);
         $activeTwo = $this->publishedCourseWithLesson($org);
@@ -206,8 +215,8 @@ class StudentCourseControllerTest extends TestCase
 
     public function test_a_cancelled_enrollment_never_appears_in_any_tab(): void
     {
-        $aluno = $this->makeAluno();
         $org = Organization::factory()->create();
+        $aluno = $this->makeAluno($org);
         $cancelledCourse = $this->publishedCourseWithLesson($org);
 
         $aluno->courses()->attach($cancelledCourse->id, ['status' => 'cancelled', 'enrolled_at' => now()]);
@@ -221,8 +230,8 @@ class StudentCourseControllerTest extends TestCase
 
     public function test_status_derivation_nao_iniciado_shows_start_course_cta(): void
     {
-        $aluno = $this->makeAluno();
         $org = Organization::factory()->create();
+        $aluno = $this->makeAluno($org);
         $course = $this->publishedCourseWithLesson($org);
         $firstLesson = $course->firstPublishedLessonFor();
 
@@ -241,8 +250,8 @@ class StudentCourseControllerTest extends TestCase
 
     public function test_status_derivation_em_andamento_shows_resume_cta(): void
     {
-        $aluno = $this->makeAluno();
         $org = Organization::factory()->create();
+        $aluno = $this->makeAluno($org);
         $course = $this->publishedCourseWithLesson($org);
 
         $aluno->courses()->attach($course->id, ['status' => 'active', 'progress_percentage' => 50, 'enrolled_at' => now()]);
@@ -256,8 +265,8 @@ class StudentCourseControllerTest extends TestCase
 
     public function test_status_derivation_concluido_wins_over_a_past_expires_at(): void
     {
-        $aluno = $this->makeAluno();
         $org = Organization::factory()->create();
+        $aluno = $this->makeAluno($org);
         $course = $this->publishedCourseWithLesson($org);
 
         $aluno->courses()->attach($course->id, [
@@ -276,8 +285,8 @@ class StudentCourseControllerTest extends TestCase
 
     public function test_status_derivation_expirado_when_active_and_past_expires_at(): void
     {
-        $aluno = $this->makeAluno();
         $org = Organization::factory()->create();
+        $aluno = $this->makeAluno($org);
         $course = $this->publishedCourseWithLesson($org);
 
         $aluno->courses()->attach($course->id, [
@@ -301,8 +310,8 @@ class StudentCourseControllerTest extends TestCase
 
     public function test_expirado_with_zero_real_progress_still_shows_the_2_percent_visual_minimum(): void
     {
-        $aluno = $this->makeAluno();
         $org = Organization::factory()->create();
+        $aluno = $this->makeAluno($org);
         $course = $this->publishedCourseWithLesson($org);
 
         $aluno->courses()->attach($course->id, [
@@ -324,8 +333,8 @@ class StudentCourseControllerTest extends TestCase
 
     public function test_concluido_status_always_resolves_the_classroom_cta_and_offers_certificate_download_when_issued(): void
     {
-        $aluno = $this->makeAluno();
         $org = Organization::factory()->create();
+        $aluno = $this->makeAluno($org);
         $course = $this->publishedCourseWithLesson($org);
 
         $aluno->courses()->attach($course->id, [
@@ -352,8 +361,8 @@ class StudentCourseControllerTest extends TestCase
 
     public function test_concluido_status_still_links_the_classroom_and_degrades_the_certificate_gracefully_when_not_issued_yet(): void
     {
-        $aluno = $this->makeAluno();
         $org = Organization::factory()->create();
+        $aluno = $this->makeAluno($org);
         $course = $this->publishedCourseWithLesson($org);
 
         $aluno->courses()->attach($course->id, [
@@ -378,8 +387,8 @@ class StudentCourseControllerTest extends TestCase
 
     public function test_a_course_with_no_published_lessons_does_not_crash_and_degrades_its_cta(): void
     {
-        $aluno = $this->makeAluno();
         $org = Organization::factory()->create();
+        $aluno = $this->makeAluno($org);
 
         $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
@@ -399,8 +408,8 @@ class StudentCourseControllerTest extends TestCase
 
     public function test_a_soft_deleted_course_does_not_crash_the_catalog_and_is_excluded(): void
     {
-        $aluno = $this->makeAluno();
         $org = Organization::factory()->create();
+        $aluno = $this->makeAluno($org);
         $course = $this->publishedCourseWithLesson($org);
 
         $aluno->courses()->attach($course->id, ['status' => 'active', 'enrolled_at' => now()]);
@@ -415,8 +424,8 @@ class StudentCourseControllerTest extends TestCase
 
     public function test_an_unpublished_course_with_an_active_enrollment_still_shows_read_only(): void
     {
-        $aluno = $this->makeAluno();
         $org = Organization::factory()->create();
+        $aluno = $this->makeAluno($org);
         $course = $this->publishedCourseWithLesson($org);
         $course->update(['is_published' => false]);
 
@@ -440,8 +449,8 @@ class StudentCourseControllerTest extends TestCase
 
     public function test_resume_lesson_progress_correctly_resolves_the_continue_cta(): void
     {
-        $aluno = $this->makeAluno();
         $org = Organization::factory()->create();
+        $aluno = $this->makeAluno($org);
         $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create(['order_index' => 0]);
         $lessonOne = Lesson::factory()->for($module)->richText()->create(['is_published' => true, 'order_index' => 0]);

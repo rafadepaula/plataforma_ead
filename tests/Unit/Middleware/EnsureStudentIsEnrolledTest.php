@@ -34,6 +34,10 @@ class EnsureStudentIsEnrolledTest extends TestCase
         $student->assignRole(RolesEnum::ALUNO->value);
         $course->students()->attach($student->id, ['enrolled_at' => now(), 'status' => 'active']);
 
+        // o middleware lê OrgContext: o teste Unit não passa pelo
+        // ResolveOrgFromHost, então vincula o contexto da org do curso
+        $this->withOrgContext($org);
+
         $route = new Route('GET', '_test/probe/{course}', []);
         $route->bind($request = Request::create('/_test/probe'));
         $route->setParameter('course', $course);

@@ -20,21 +20,22 @@ use Tests\TestCase;
  */
 class MultiOrgStudentClassroomTest extends TestCase
 {
-    private function makeAluno(): User
+    private function makeAluno(?Organization $organization = null): User
     {
+        $org = $organization ?? Organization::factory()->create();
+
         /** @var User $aluno */
-        $aluno = User::factory()->inOrg(Organization::factory()->create())->create();
+        $aluno = User::factory()->inOrg($org)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
 
         return $aluno;
     }
 
-    public function test_student_courses_index_groups_enrollments_by_organization(): void
+    public function test_student_courses_index_scopes_the_catalog_to_the_host_organization(): void
     {
-        $aluno = $this->makeAluno();
-
         $orgA = Organization::factory()->create();
         $orgB = Organization::factory()->create();
+        $aluno = $this->makeAluno($orgA);
 
         $courseA = Course::factory()->inOrg($orgA->id)->create();
         $courseB = Course::factory()->inOrg($orgB->id)->create();
@@ -42,18 +43,18 @@ class MultiOrgStudentClassroomTest extends TestCase
         $aluno->courses()->attach($courseA->id, ['status' => 'active', 'enrolled_at' => now()]);
         $aluno->courses()->attach($courseB->id, ['status' => 'active', 'enrolled_at' => now()]);
 
+        // host define o que o aluno vê: matrícula em portal estrangeiro fica fora
         $response = $this->actingAs($aluno)->get(route('student.courses.index'));
 
         $response->assertOk();
         $response->assertSee($courseA->title);
-        $response->assertSee($courseB->title);
+        $response->assertDontSee($courseB->title);
     }
 
     public function test_student_courses_index_excludes_cancelled_enrollments(): void
     {
-        $aluno = $this->makeAluno();
-
         $org = Organization::factory()->create();
+        $aluno = $this->makeAluno($org);
         $activeCourse = Course::factory()->inOrg($org->id)->create();
         $cancelledCourse = Course::factory()->inOrg($org->id)->create();
 
@@ -79,8 +80,8 @@ class MultiOrgStudentClassroomTest extends TestCase
 
     public function test_enrolled_active_student_can_view_the_classroom(): void
     {
-        $aluno = $this->makeAluno();
         $org = Organization::factory()->create();
+        $aluno = $this->makeAluno($org);
         $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
         $lesson = Lesson::factory()->for($module)->richText()->create(['is_published' => true]);
@@ -97,8 +98,8 @@ class MultiOrgStudentClassroomTest extends TestCase
 
     public function test_enrolled_completed_student_can_view_the_classroom(): void
     {
-        $aluno = $this->makeAluno();
         $org = Organization::factory()->create();
+        $aluno = $this->makeAluno($org);
         $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
         $lesson = Lesson::factory()->for($module)->richText()->create(['is_published' => true]);
@@ -119,8 +120,8 @@ class MultiOrgStudentClassroomTest extends TestCase
 
     public function test_student_without_enrollment_is_sent_back_to_the_catalog(): void
     {
-        $aluno = $this->makeAluno();
         $org = Organization::factory()->create();
+        $aluno = $this->makeAluno($org);
         $course = Course::factory()->inOrg($org->id)->create();
         Module::factory()->for($course)->create();
 
@@ -132,8 +133,8 @@ class MultiOrgStudentClassroomTest extends TestCase
 
     public function test_student_with_cancelled_enrollment_is_sent_back_to_the_catalog(): void
     {
-        $aluno = $this->makeAluno();
         $org = Organization::factory()->create();
+        $aluno = $this->makeAluno($org);
         $course = Course::factory()->inOrg($org->id)->create();
         Module::factory()->for($course)->create();
 
@@ -147,8 +148,8 @@ class MultiOrgStudentClassroomTest extends TestCase
 
     public function test_classroom_view_only_receives_published_lessons_and_modules(): void
     {
-        $aluno = $this->makeAluno();
         $org = Organization::factory()->create();
+        $aluno = $this->makeAluno($org);
         $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
 
@@ -179,10 +180,9 @@ class MultiOrgStudentClassroomTest extends TestCase
 
     public function test_classroom_view_calculates_progress_and_flags_completed_lessons_for_the_authenticated_student(): void
     {
-        $alunoA = $this->makeAluno();
-        $alunoB = $this->makeAluno();
-
         $org = Organization::factory()->create();
+        $alunoA = $this->makeAluno($org);
+        $alunoB = $this->makeAluno($org);
         $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
 
@@ -223,8 +223,8 @@ class MultiOrgStudentClassroomTest extends TestCase
 
     public function test_classroom_view_resolves_next_lesson_in_order_sequence_and_suppresses_when_all_completed(): void
     {
-        $aluno = $this->makeAluno();
         $org = Organization::factory()->create();
+        $aluno = $this->makeAluno($org);
         $course = Course::factory()->inOrg($org->id)->create();
 
         $module1 = Module::factory()->for($course)->create(['order_index' => 0]);
@@ -271,8 +271,8 @@ class MultiOrgStudentClassroomTest extends TestCase
 
     public function test_classroom_view_passes_issued_certificate_or_null_when_unavailable(): void
     {
-        $aluno = $this->makeAluno();
         $org = Organization::factory()->create();
+        $aluno = $this->makeAluno($org);
         $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
         Lesson::factory()->for($module)->richText()->create(['is_published' => true]);
@@ -342,8 +342,8 @@ class MultiOrgStudentClassroomTest extends TestCase
 
     public function test_enrolled_student_can_view_a_lesson_with_its_progress_state(): void
     {
-        $aluno = $this->makeAluno();
         $org = Organization::factory()->create();
+        $aluno = $this->makeAluno($org);
         $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
         $lesson = Lesson::factory()->for($module)->richText()->create(['is_published' => true]);
@@ -367,8 +367,8 @@ class MultiOrgStudentClassroomTest extends TestCase
 
     public function test_enrolled_student_cannot_view_an_unpublished_lesson_directly(): void
     {
-        $aluno = $this->makeAluno();
         $org = Organization::factory()->create();
+        $aluno = $this->makeAluno($org);
         $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
         $lesson = Lesson::factory()->for($module)->richText()->create(['is_published' => false]);
@@ -403,8 +403,8 @@ class MultiOrgStudentClassroomTest extends TestCase
 
     public function test_classroom_view_exposes_the_normalized_contract_and_drops_the_legacy_aliases(): void
     {
-        $aluno = $this->makeAluno();
         $org = Organization::factory()->create();
+        $aluno = $this->makeAluno($org);
         $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
 
@@ -442,8 +442,8 @@ class MultiOrgStudentClassroomTest extends TestCase
 
     public function test_classroom_view_resolves_lesson_glyphs_from_type_and_attached_media(): void
     {
-        $aluno = $this->makeAluno();
         $org = Organization::factory()->create();
+        $aluno = $this->makeAluno($org);
         $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
 
@@ -472,8 +472,8 @@ class MultiOrgStudentClassroomTest extends TestCase
 
     public function test_classroom_view_receives_a_revoked_certificate_without_offering_the_download(): void
     {
-        $aluno = $this->makeAluno();
         $org = Organization::factory()->create();
+        $aluno = $this->makeAluno($org);
         $course = Course::factory()->inOrg($org->id)->create();
         $module = Module::factory()->for($course)->create();
         Lesson::factory()->for($module)->richText()->create(['is_published' => true]);
@@ -497,8 +497,8 @@ class MultiOrgStudentClassroomTest extends TestCase
 
     public function test_classroom_view_does_not_run_extra_queries_per_module_or_lesson(): void
     {
-        $aluno = $this->makeAluno();
         $org = Organization::factory()->create();
+        $aluno = $this->makeAluno($org);
 
         $smallCourse = $this->makeCourseWithTrack($org, modules: 1, lessonsPerModule: 1);
         $largeCourse = $this->makeCourseWithTrack($org, modules: 4, lessonsPerModule: 5);

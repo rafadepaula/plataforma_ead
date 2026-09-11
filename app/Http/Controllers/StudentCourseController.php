@@ -13,17 +13,16 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 
 /**
- * "Meus Cursos": an Aluno's own enrollments across every
- * Organization they belong to. Restricted to `role:aluno` (see
- * `routes/web.php`) — not `student.enrolled`, since this listing IS the
- * enrollment data itself, with no single `{course}`/`{lesson}` route
- * parameter to gate. Reads across every Organization the student is
- * enrolled in, intentionally bypassing `Course`'s `org` global scope (a
- * student may hold enrollments in Courses from more than one
- * Organization) — `withoutGlobalScope('org')` is required here since an
- * Aluno carries no `org_id` of their own, which would otherwise make
- * `Course`'s `OrgScope` filter every enrollment out (mirrors
- * `User::hasActiveOrCompletedEnrollment()`'s same convention).
+ * "Meus Cursos": the Aluno's enrollments in the courses of the
+ * request host's Organization — the host defines what the Aluno sees
+ * (spec: "o que define quais cursos ele acessa é o host"). Restricted to
+ * `role:aluno` (see `routes/web.php`) — not `student.enrolled`, since
+ * this listing IS the enrollment data itself, with no single
+ * `{course}`/`{lesson}` route parameter to gate. `Course`'s `org` global
+ * scope stays ON: with the credential model the acting Aluno resolves to
+ * the host Organization via `OrgContext`, so the listing naturally shows
+ * only the enrollments of the portal they are in — the same person logged
+ * into another portal sees that portal's enrollments instead.
  *
  * Only `org` is bypassed, never the whole global-scope set: a
  * soft-deleted Course must stay excluded (its `course_user` row is not
@@ -54,7 +53,6 @@ class StudentCourseController extends Controller
         $user = Auth::user();
 
         $enrollments = $user->courses()
-            ->withoutGlobalScope('org')
             ->wherePivotIn('status', ['active', 'completed'])
             ->with([
                 'organization',

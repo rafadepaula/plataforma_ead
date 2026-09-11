@@ -70,7 +70,7 @@ class EnsureStudentIsEnrolledTest extends TestCase
     {
         $org = Organization::factory()->create();
         [$course] = $this->courseWithLesson($org);
-        $student = User::factory()->inOrg(Organization::factory()->create())->create();
+        $student = User::factory()->inOrg($org)->create();
         $student->assignRole(RolesEnum::ALUNO->value);
         $course->students()->attach($student->id, ['enrolled_at' => now(), 'status' => 'active']);
         $this->actingAs($student);
@@ -82,7 +82,7 @@ class EnsureStudentIsEnrolledTest extends TestCase
     {
         $org = Organization::factory()->create();
         [$course] = $this->courseWithLesson($org);
-        $student = User::factory()->inOrg(Organization::factory()->create())->create();
+        $student = User::factory()->inOrg($org)->create();
         $student->assignRole(RolesEnum::ALUNO->value);
         $course->students()->attach($student->id, ['enrolled_at' => now(), 'status' => 'completed']);
         $this->actingAs($student);
@@ -90,11 +90,29 @@ class EnsureStudentIsEnrolledTest extends TestCase
         $this->get("_test/courses/{$course->id}/probe")->assertOk();
     }
 
+    public function test_aluno_enrolled_in_a_foreign_orgs_course_is_denied_on_this_portal(): void
+    {
+        // spec: "o que define quais cursos ele acessa é o host" — a
+        // matrícula existe, mas o curso pertence a outro portal
+        $orgA = Organization::factory()->create();
+        $orgB = Organization::factory()->create();
+        [$foreignCourse] = $this->courseWithLesson($orgB);
+        $student = User::factory()->inOrg($orgA)->create();
+        $student->assignRole(RolesEnum::ALUNO->value);
+        $foreignCourse->students()->attach($student->id, ['enrolled_at' => now(), 'status' => 'active']);
+        $this->actingAs($student);
+        $this->onHost($orgA->host);
+
+        $this->get("_test/courses/{$foreignCourse->id}/probe")
+            ->assertRedirect(route('student.courses.index'))
+            ->assertSessionHas('error', 'Acesso negado. Você não possui matrícula ativa neste curso.');
+    }
+
     public function test_aluno_with_cancelled_enrollment_is_sent_back_to_the_catalog(): void
     {
         $org = Organization::factory()->create();
         [$course] = $this->courseWithLesson($org);
-        $student = User::factory()->inOrg(Organization::factory()->create())->create();
+        $student = User::factory()->inOrg($org)->create();
         $student->assignRole(RolesEnum::ALUNO->value);
         $course->students()->attach($student->id, ['enrolled_at' => now(), 'status' => 'cancelled']);
         $this->actingAs($student);
@@ -109,7 +127,7 @@ class EnsureStudentIsEnrolledTest extends TestCase
     {
         $org = Organization::factory()->create();
         [$course] = $this->courseWithLesson($org);
-        $student = User::factory()->inOrg(Organization::factory()->create())->create();
+        $student = User::factory()->inOrg($org)->create();
         $student->assignRole(RolesEnum::ALUNO->value);
         $this->actingAs($student);
 
@@ -123,7 +141,7 @@ class EnsureStudentIsEnrolledTest extends TestCase
     {
         $org = Organization::factory()->create();
         [$course] = $this->courseWithLesson($org);
-        $student = User::factory()->inOrg(Organization::factory()->create())->create();
+        $student = User::factory()->inOrg($org)->create();
         $student->assignRole(RolesEnum::ALUNO->value);
         $this->actingAs($student);
 
@@ -138,7 +156,7 @@ class EnsureStudentIsEnrolledTest extends TestCase
     {
         $org = Organization::factory()->create();
         [$course] = $this->courseWithLesson($org);
-        $student = User::factory()->inOrg(Organization::factory()->create())->create();
+        $student = User::factory()->inOrg($org)->create();
         $student->assignRole(RolesEnum::ALUNO->value);
         $this->actingAs($student);
 
@@ -149,7 +167,7 @@ class EnsureStudentIsEnrolledTest extends TestCase
     {
         $org = Organization::factory()->create();
         [$course, $lesson] = $this->courseWithLesson($org);
-        $student = User::factory()->inOrg(Organization::factory()->create())->create();
+        $student = User::factory()->inOrg($org)->create();
         $student->assignRole(RolesEnum::ALUNO->value);
         $course->students()->attach($student->id, ['enrolled_at' => now(), 'status' => 'active']);
         $this->actingAs($student);

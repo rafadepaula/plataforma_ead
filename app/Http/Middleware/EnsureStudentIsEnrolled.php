@@ -52,6 +52,14 @@ class EnsureStudentIsEnrolled
             return $next($request);
         }
 
+        // The host defines what the Aluno can access (spec: "o que define
+        // quais cursos ele acessa é o host"): an enrollment row in a
+        // foreign Organization's Course grants nothing on this portal.
+        if ($user->hasRole(RolesEnum::ALUNO->value)
+            && (int) OrgContext::current()->orgId() !== (int) $course->org_id) {
+            return $this->denyEnrollment($request);
+        }
+
         //  o middleware passa a significar "matrícula OU
         // docência": um Professor atribuído ao Course (`User::teaches()`)
         // navega pelo conteúdo (fórum incluso) sem linha em `course_user`.

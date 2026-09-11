@@ -35,10 +35,12 @@ class CourseCoverManagementTest extends TestCase
         ], $overrides);
     }
 
-    private function makeAluno(): User
+    private function makeAluno(?Organization $organization = null): User
     {
+        $org = $organization ?? Organization::factory()->create();
+
         /** @var User $aluno */
-        $aluno = User::factory()->inOrg(Organization::factory()->create())->create();
+        $aluno = User::factory()->inOrg($org)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
 
         return $aluno;
@@ -231,7 +233,7 @@ class CourseCoverManagementTest extends TestCase
             'cover_path' => "orgs/{$org->id}/courses/{$course->id}/cover/capa.png",
         ])->save();
 
-        $aluno = $this->makeAluno();
+        $aluno = $this->makeAluno($org);
         $aluno->courses()->attach($course->id, ['status' => 'active', 'enrolled_at' => now()]);
 
         $response = $this->actingAs($aluno)->get(route('student.courses.index'));
@@ -251,7 +253,7 @@ class CourseCoverManagementTest extends TestCase
         $org = Organization::factory()->create();
         $course = Course::factory()->inOrg($org->id)->create();
 
-        $aluno = $this->makeAluno();
+        $aluno = $this->makeAluno($org);
         $aluno->courses()->attach($course->id, ['status' => 'active', 'enrolled_at' => now()]);
 
         $response = $this->actingAs($aluno)->get(route('student.courses.index'));

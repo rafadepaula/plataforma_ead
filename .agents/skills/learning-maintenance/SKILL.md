@@ -44,9 +44,10 @@ Tests guard this module's contract. Must stay green (PHPUnit, no Pest):
   request keeps the bare 403.
 - `tests/Feature/CourseProgressCalculationTest.php` — end-to-end through
   real event/listener pipeline (`QUEUE_CONNECTION=sync`).
-- `tests/Feature/MultiOrgStudentClassroomTest.php` — 21 tests. Aluno "Meus
-  Cursos" list enrollments across multiple Organizations; classroom access
-  resolve org from Course, not from (org-less) Aluno. It also
+- `tests/Feature/MultiOrgStudentClassroomTest.php` — Aluno "Meus Cursos"
+  catalog is HOST-scoped (only the portal's own enrollments; foreign-org
+  enrollments never leak, `EnsureStudentIsEnrolled` denies foreign-org
+  classrooms for Alunos with the catalog redirect). It also
   owns the classroom **view DATA** contract (the rendered markup lives in
   `ClassroomOverviewRenderingTest`): the 7 frozen keys plus
   `assertArrayNotHasKey` on the three dropped aliases

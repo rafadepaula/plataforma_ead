@@ -23,10 +23,12 @@ use Tests\TestCase;
  */
 class ClassroomOverviewRenderingTest extends TestCase
 {
-    private function makeAluno(): User
+    private function makeAluno(?Organization $organization = null): User
     {
+        $org = $organization ?? Organization::factory()->create();
+
         /** @var User $aluno */
-        $aluno = User::factory()->inOrg(Organization::factory()->create())->create();
+        $aluno = User::factory()->inOrg($org)->create();
         $aluno->assignRole(RolesEnum::ALUNO->value);
 
         return $aluno;
@@ -46,7 +48,7 @@ class ClassroomOverviewRenderingTest extends TestCase
             'order_index' => 0,
         ]);
 
-        $aluno = $this->makeAluno();
+        $aluno = $this->makeAluno($org);
         $course->students()->attach($aluno->id, [
             'enrolled_at' => now(),
             'status' => 'active',
@@ -186,7 +188,7 @@ class ClassroomOverviewRenderingTest extends TestCase
         $org = Organization::factory()->create();
         $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
 
-        $aluno = $this->makeAluno();
+        $aluno = $this->makeAluno($org);
         $course->students()->attach($aluno->id, [
             'enrolled_at' => now(),
             'status' => 'active',
@@ -212,7 +214,7 @@ class ClassroomOverviewRenderingTest extends TestCase
             'order_index' => 0,
         ]);
 
-        $aluno = $this->makeAluno();
+        $aluno = $this->makeAluno($org);
         $course->students()->attach($aluno->id, [
             'enrolled_at' => now(),
             'status' => 'active',
@@ -497,7 +499,7 @@ class ClassroomOverviewRenderingTest extends TestCase
             ]);
         }
 
-        $aluno = $this->makeAluno();
+        $aluno = $this->makeAluno($org);
         $course->students()->attach($aluno->id, [
             'enrolled_at' => now(),
             'status' => 'active',
