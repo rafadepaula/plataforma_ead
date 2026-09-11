@@ -51,12 +51,12 @@
 
 Clean slate: editar as migrations existentes in-place (banco dev é re-seedável, decisão Q6=B). `users` final: `id, name, email (unique), email_verified_at, cpf (nullable unique), timestamps`. `organizations` final: `id, name, host (nullable unique), landing_view (nullable), cnpj (nullable unique), logo_path, status, softDeletes, timestamps`. `credentials`: `id, user_id FK cascade, org_id FK restrict nullable, password, status enum active/inactive default active, rememberToken, timestamps, unique(user_id, org_id)`.
 
-- [ ] Editar `0001_01_01_000000_create_users_table.php`: remover `password` e `rememberToken()` do `Schema::create('users')`.
-- [ ] Editar `2026_08_01_000002_add_org_id_to_users_table.php`: vira migration que só adiciona `cpf` (sem org_id/status; docblock atualizado).
-- [ ] Editar `2026_08_01_000001_create_organizations_table.php`: trocar `slug` por `host` (nullable unique) + `landing_view` (nullable).
-- [ ] Criar `2026_08_01_000003_create_credentials_table.php` com a tabela descrita (unique composto).
-- [ ] `vendor/bin/sail artisan migrate:fresh` — deve passar.
-- [ ] Commit `feat(schema): credentials table + org host/landing_view, users vira pessoa`
+- [x] Editar `0001_01_01_000000_create_users_table.php`: remover `password` e `rememberToken()` do `Schema::create('users')`.
+- [x] Editar `2026_08_01_000002_add_org_id_to_users_table.php`: vira migration que só adiciona `cpf` (sem org_id/status; docblock atualizado).
+- [x] Editar `2026_08_01_000001_create_organizations_table.php`: trocar `slug` por `host` (nullable unique) + `landing_view` (nullable).
+- [x] Criar `2026_08_01_000003_create_credentials_table.php` com a tabela descrita (unique composto).
+- [x] `vendor/bin/sail artisan migrate:fresh` — deve passar.
+- [x] Commit `feat(schema): credentials table + org host/landing_view, users vira pessoa`
 
 ### Task 2: Models + factories
 
@@ -77,9 +77,9 @@ Clean slate: editar as migrations existentes in-place (banco dev é re-seedável
 
 `User::organization()` (belongsTo org_id) removida; `org_id`/`password`/`status` saem de fillable/casts; `sendPasswordResetNotification` fica. `gestor()`/`professor()` states criam org + credential.
 
-- [ ] Escrever `Credential` + ajustar `User`/`Organization` + factories.
-- [ ] Teste rápido: `vendor/bin/sail artisan tinker --execute 'App\Models\User::factory()->gestor()->create();'` — sem erro de coluna.
-- [ ] Commit `feat(models): User vira pessoa, Credential vira conta por org`
+- [x] Escrever `Credential` + ajustar `User`/`Organization` + factories.
+- [x] Teste rápido: `vendor/bin/sail artisan tinker --execute 'App\Models\User::factory()->gestor()->create();'` — sem erro de coluna.
+- [x] Commit `feat(models): User vira pessoa, Credential vira conta por org`
 
 ### Task 3: OrgContext + middleware de resolução por host
 
@@ -147,10 +147,10 @@ $middleware->prependToGroup('web', ResolveOrgFromHost::class);
 $middleware->appendToGroup('web', EnsureTenantAccess::class);
 ```
 
-- [ ] Criar os 3 arquivos + registro.
-- [ ] Teste: `tests/Feature/Tenancy/HostResolutionTest.php` (criar com `make:test --phpunit`): host mapeado resolve org; host desconhecido = state0; porta é ignorada; `GET /` em state0 redireciona login; não-admin logado em state0 é deslogado.
-- [ ] Rodar o teste novo; ver falhar antes, passar depois.
-- [ ] Commit `feat(tenancy): resolve org por HTTP_HOST com OrgContext por request`
+- [x] Criar os 3 arquivos + registro.
+- [x] Teste: `tests/Feature/Tenancy/HostResolutionTest.php` (criar com `make:test --phpunit`): host mapeado resolve org; host desconhecido = state0; porta é ignorada; `GET /` em state0 redireciona login; não-admin logado em state0 é deslogado.
+- [x] Rodar o teste novo; ver falhar antes, passar depois.
+- [x] Commit `feat(tenancy): resolve org por HTTP_HOST com OrgContext por request`
 
 ### Task 4: OrgScope + ResolvesOrgContext — nova cadeia
 
@@ -189,9 +189,9 @@ if (! $resolvedOrgId) {
 
 `where org_id = 0` substitui `whereRaw('1 = 0')` (org 0 nunca existe; índice usa o valor). Not-admin sem host (state0) → filtrado pra vazio, e o gating do Task 3 já deslogou — caminho defensivo.
 
-- [ ] Editar os dois arquivos.
-- [ ] Atualizar `tests/Feature/OrgScopeUnresolvedContextTest.php` (admin sem impersonação criando → exception continua; gestor cria na org do host).
-- [ ] Commit `refactor(tenancy): contexto de org vem do host, impersonação só pro admin`
+- [x] Editar os dois arquivos.
+- [x] Atualizar `tests/Feature/OrgScopeUnresolvedContextTest.php` (admin sem impersonação criando → exception continua; gestor cria na org do host).
+- [x] Commit `refactor(tenancy): contexto de org vem do host, impersonação só pro admin`
 
 ### Task 5: OrgCredentialUserProvider + auth config
 
@@ -283,9 +283,9 @@ Auth::provider('org-credential', function (Application $app, array $config): Org
 });
 ```
 
-- [ ] Criar provider + registro + config.
-- [ ] Teste `tests/Feature/Auth/HostScopedLoginTest.php`: aluno da org A loga no host A ✓; mesma senha no host B falha `auth.failed`; gestor da org B tentando host A falha genérico; credential inactive falha; state0 só credential org null (admin) loga.
-- [ ] Commit `feat(auth): senha por org via OrgCredentialUserProvider`
+- [x] Criar provider + registro + config.
+- [x] Teste `tests/Feature/Auth/HostScopedLoginTest.php`: aluno da org A loga no host A ✓; mesma senha no host B falha `auth.failed`; gestor da org B tentando host A falha genérico; credential inactive falha; state0 só credential org null (admin) loga.
+- [x] Commit `feat(auth): senha por org via OrgCredentialUserProvider`
 
 ### Task 6: LoginRequest + logout org-aware
 
@@ -295,8 +295,8 @@ Auth::provider('org-credential', function (Application $app, array $config): Org
 
 `authenticate()`: `Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))` (status tratado no provider). `throttleKey()`: `Str::lower(email).'|'.(app(OrgContext::class)->orgId() ?? 'global').'|'.$this->ip()`. `destroy()`: redirect passa a `redirect('/')` mantido (landing da org, ou login em state0 via gating) — intocado exceto comentário.
 
-- [ ] Ajustar + rodar teste do Task 5 de novo (rate limit por org: 5 tentativas host A não bloqueiam host B — adicionar teste).
-- [ ] Commit `feat(auth): throttle de login por org`
+- [x] Ajustar + rodar teste do Task 5 de novo (rate limit por org: 5 tentativas host A não bloqueiam host B — adicionar teste).
+- [x] Commit `feat(auth): throttle de login por org`
 
 ### Task 7: Reset de senha host-aware
 
@@ -343,8 +343,8 @@ function (User $user) use ($request): void {
 
 Link do email: `resetUrl()` do parent resolve `password.reset` com o host do request no envio (mail síncrono) — host da org. Teste: senha trocada vale só na org do host; org B mantém senha antiga.
 
-- [ ] Implementar + testes (reset da org A não vaza pra org B).
-- [ ] Commit `feat(auth): reset de senha por credential da org do host`
+- [x] Implementar + testes (reset da org A não vaza pra org B).
+- [x] Commit `feat(auth): reset de senha por credential da org do host`
 
 ### Task 8: Landing por org + fallback
 
@@ -378,9 +378,9 @@ public function show(): View|RedirectResponse
 
 Blades demo: estrutura leve (header com `organization.name` + `logo_path`, hero com CTA `route('login')`, footer com `route('certificates.verify')`), 1 por org. `EnsureTenantAccess` já deixa landing passar em org inativa (path `/`).
 
-- [ ] Controller + 2 blades demo.
-- [ ] Teste `tests/Feature/Tenancy/LandingTest.php`: host com `landing_view` renderiza blade certo; sem `landing_view` → redirect login; state0 → redirect login; org inativa → landing 200.
-- [ ] Commit `feat(landing): landing por org via landing_view, fallback login`
+- [x] Controller + 2 blades demo.
+- [x] Teste `tests/Feature/Tenancy/LandingTest.php`: host com `landing_view` renderiza blade certo; sem `landing_view` → redirect login; state0 → redirect login; org inativa → landing 200.
+- [x] Commit `feat(landing): landing por org via landing_view, fallback login`
 
 ### Task 9: Shell — identidade da org no layout
 
@@ -390,9 +390,9 @@ Blades demo: estrutura leve (header com `organization.name` + `logo_path`, hero 
 
 Produz: `$orgIdentity = ['name' => ..., 'logoPath' => ...]` — não-admin: `app(OrgContext::class)->organization` (name + logo_path); admin: `system_name` (SettingService global, fallback `config('app.name')`) + logo global setting `logo_path`. Blindar: state0/console → `config('app.name')`.
 
-- [ ] Composer + ajuste do layout (texto do brand + `<img>` condicional).
-- [ ] Dusk check manual: brand muda entre hosts.
-- [ ] Commit `feat(shell): header/sidebar usa nome+logo da org do host`
+- [x] Composer + ajuste do layout (texto do brand + `<img>` condicional).
+- [x] Dusk check manual: brand muda entre hosts.
+- [x] Commit `feat(shell): header/sidebar usa nome+logo da org do host`
 
 ### Task 10: Org CRUD — host + landing_view
 
@@ -405,9 +405,9 @@ Produz: `$orgIdentity = ['name' => ..., 'logoPath' => ...]` — não-admin: `app
 
 Regras: `host` → `nullable|string|max:253|regex:/^[a-z0-9.-]+$/|unique:organizations,host` (+`ignore` no update); `landing_view` → `nullable|string|max:100`; sem slug. Controller: remover `resolveSlug()` e `$data['slug']`.
 
-- [ ] Requests + controller + views (campo Host com hint "ex.: plataforma.suaorg.com" e campo Blade da Landing com hint "nome da view em resources/views/tenants/{view}/landing.blade.php").
-- [ ] Rodar `OrganizationCrudTest` ajustado.
-- [ ] Commit `feat(orgs): host + landing_view no CRUD admin`
+- [x] Requests + controller + views (campo Host com hint "ex.: plataforma.suaorg.com" e campo Blade da Landing com hint "nome da view em resources/views/tenants/{view}/landing.blade.php").
+- [x] Rodar `OrganizationCrudTest` ajustado.
+- [x] Commit `feat(orgs): host + landing_view no CRUD admin`
 
 ### Task 11: Fluxos públicos host-scoped (convite + certificado + CSV)
 
@@ -426,8 +426,8 @@ Regras: `host` → `nullable|string|max:253|regex:/^[a-z0-9.-]+$/|unique:organiz
 
 **CSV:** em `UserImportService::importChunk` — user existente: garantir credential da org (`firstOrCreate(['user_id' => …, 'org_id' => $orgId], ['password' => Hash::make(Str::random(32)), 'status' => 'active'])`); user novo: criar `User` (sem password) + `Credential` random + role aluno.
 
-- [ ] Implementar os três + testes: convite no host errado 404; CSV em 2 orgs cria 2 credentials mesma pessoa; certificado do host certo 200, host errado 404.
-- [ ] Commit `feat(public): convite/certificado/csv host-scoped com credentials`
+- [x] Implementar os três + testes: convite no host errado 404; CSV em 2 orgs cria 2 credentials mesma pessoa; certificado do host certo 200, host errado 404.
+- [x] Commit `feat(public): convite/certificado/csv host-scoped com credentials`
 
 ### Task 12: CRUDs de usuário com credentials
 
@@ -443,9 +443,9 @@ Contratos:
 - `status=inactive` de user (CSV import states, factories) → credential.
 - `Auth::logoutOtherDevices` (PasswordController) usa senha do user — reimplementar para credential do host (ou remover o chamada se depender de `users.password`; decidir na execução com teste).
 
-- [ ] Ajustar controllers/requests/views mínimos para o app funcionar completo.
-- [ ] Rodar suítes `UserCrudTest`, `MultiTenantStudentImportTest`, `GestorProfessor*`.
-- [ ] Commit `feat(users): contas por org (credentials) em todos os CRUDs`
+- [x] Ajustar controllers/requests/views mínimos para o app funcionar completo.
+- [x] Rodar suítes `UserCrudTest`, `MultiTenantStudentImportTest`, `GestorProfessor*`.
+- [x] Commit `feat(users): contas por org (credentials) em todos os CRUDs`
 
 ### Task 13: Impersonate Org — precedência + telas admin globais
 
@@ -455,8 +455,8 @@ Contratos:
 
 Regra: telas `admin.*` NUNCA leem a org do host — só `session('active_org_id')` (já garantido pela Task 4 nos traits). Verificar `ImpersonationContext::activeOrganization()` não cai no host. Banner de "você está impersonando X" mantido.
 
-- [ ] Conferir/ajustar + teste: admin logado no host A sem impersonação cria curso → `UnresolvedOrgContextException` (302 com erro); com impersonação da org B via host A → curso criado na org B.
-- [ ] Commit `test(admin): impersonação prevalece sobre host`
+- [x] Conferir/ajustar + teste: admin logado no host A sem impersonação cria curso → `UnresolvedOrgContextException` (302 com erro); com impersonação da org B via host A → curso criado na org B.
+- [x] Commit `test(admin): impersonação prevalece sobre host`
 
 ### Task 14: Infra — hosts, env, CI
 
@@ -489,8 +489,8 @@ done
 
 CI Dusk (antes do `php artisan serve`): `sudo echo "127.0.0.1 localhost.ligacerto" | sudo tee -a /etc/hosts && sudo echo "127.0.0.1 localhost.informatica" | sudo tee -a /etc/hosts`.
 
-- [ ] Script + env + CI + README.
-- [ ] Commit `chore(infra): hosts de tenancy para dev e CI`
+- [x] Script + env + CI + README.
+- [x] Commit `chore(infra): hosts de tenancy para dev e CI`
 
 ### Task 15: Seeders + blades demo
 
@@ -501,8 +501,8 @@ CI Dusk (antes do `php artisan serve`): `sudo echo "127.0.0.1 localhost.ligacert
 
 Seed final: 1 admin (`admin@plataforma.test` + credential org null + role admin), orgs **LigaCerto** (`host=localhost.ligacerto`, `landing_view=ligacerto`) e **Informática+** (`host=localhost.informatica`, `landing_view=informatica`), 1 gestor + alunos + cursos por org, settings globais (`system_name`, smtp log, etc.). Tudo idempotente (`firstOrCreate`).
 
-- [ ] Seeders + `migrate:fresh --seed` limpo.
-- [ ] Commit `feat(seeders): estado 0 + 2 orgs demo com hosts e landings`
+- [x] Seeders + `migrate:fresh --seed` limpo.
+- [x] Commit `feat(seeders): estado 0 + 2 orgs demo com hosts e landings`
 
 ### Task 16: Helpers de teste + fallout + suítes novas
 
