@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\ProvisionOrgAccountAction;
 use App\Enums\Permissions\RolesEnum;
 use App\Exceptions\UserHasCreatedInvitationLinksException;
 use App\Exceptions\UserHasIssuedCertificatesException;
 use App\Http\Controllers\Concerns\ResolvesOrgContext;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
-use App\Models\Credential;
+use App\Models\Organization;
 use App\Models\User;
 use App\Services\AuditService;
 use Illuminate\Contracts\View\View;
@@ -56,22 +57,23 @@ class UserController extends Controller
         return view('users.create');
     }
 
-    public function store(StoreUserRequest $request): RedirectResponse
+    public function store(StoreUserRequest $request, ProvisionOrgAccountAction $provision): RedirectResponse
     {
-        $orgId = $this->resolveOrgId($request);
         $data = $request->validated();
         $role = $data['role'];
         unset($data['role']);
 
-        $user = User::create(collect($data)->only(['name', 'email', 'cpf'])->all());
-        $user->assignRole($role);
+        $organization = Organization::findOrFail($this->resolveOrgId($request));
 
-        Credential::create([
-            'user_id' => $user->id,
-            'org_id' => $orgId,
-            'password' => Hash::make($data['password']),
-            'status' => 'active',
-        ]);
+        // e-mail global já existente reusa a pessoa e cria a conta desta org
+        $provision->execute(
+            organization: $organization,
+            name: $data['name'],
+            email: $data['email'],
+            cpf: $data['cpf'] ?? null,
+            password: $data['password'],
+            role: $role,
+        );
 
         return redirect()->route('users.index')->with('success', 'Usuário criado com sucesso.');
     }
@@ -103,6 +105,8 @@ class UserController extends Controller
 
         if (! empty($data['password'])) {
             $credential->forceFill(['password' => Hash::make($data['password'])])->save();
+            // senha imposta invalida o "lembrar-me" desta conta
+            $credential->rotateRememberToken();
         }
 
         // `user.status_changed` is a critical-action event distinct from
@@ -110,6 +114,10 @@ class UserController extends Controller
         // account status actually changed.
         if (array_key_exists('status', $data) && $data['status'] !== $oldStatus) {
             $credential->forceFill(['status' => $data['status']])->save();
+
+            if ($data['status'] === 'inactive') {
+                $credential->rotateRememberToken();
+            }
 
             try {
                 AuditService::log(

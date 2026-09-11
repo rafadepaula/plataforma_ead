@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\Course;
+use App\Services\OrgUrl;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -33,7 +34,7 @@ class EnrollmentConfirmedNotification extends Notification implements ShouldQueu
 
     public function toMail(object $notifiable): MailMessage
     {
-        $url = route('classroom.show', $this->course);
+        $url = OrgUrl::route($this->course->org_id, 'classroom.show', $this->course);
 
         return (new MailMessage)
             ->subject('Matrícula confirmada - '.config('app.name'))
@@ -50,7 +51,7 @@ class EnrollmentConfirmedNotification extends Notification implements ShouldQueu
     {
         return [
             'message' => 'Sua matrícula no curso "'.$this->course->title.'" foi confirmada.',
-            'action_url' => route('classroom.show', $this->course),
+            'action_url' => OrgUrl::route($this->course->org_id, 'classroom.show', $this->course),
             'course_id' => $this->course->id,
         ];
     }

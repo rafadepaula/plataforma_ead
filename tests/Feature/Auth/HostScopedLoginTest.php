@@ -6,6 +6,7 @@ use App\Enums\Permissions\RolesEnum;
 use App\Models\Credential;
 use App\Models\Organization;
 use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 use Tests\TestCase;
 
 class HostScopedLoginTest extends TestCase
@@ -103,6 +104,46 @@ class HostScopedLoginTest extends TestCase
             ->assertSessionHasErrors('email');
 
         $this->assertGuest();
+    }
+
+    public function test_remember_me_pertence_a_credencial_do_portal(): void
+    {
+        $orgA = Organization::factory()->create();
+        $orgB = Organization::factory()->create();
+        $user = User::factory()->aluno()->inOrg($orgA)->inOrg($orgB)->withPassword('senha')->create();
+
+        $tokenABefore = $user->credentialFor($orgA)->remember_token;
+        $tokenBBefore = $user->credentialFor($orgB)->remember_token;
+
+        $this->onHost($orgA->host);
+        $this->post('/login', [
+            'email' => $user->email,
+            'password' => 'senha',
+            'remember' => true,
+        ])->assertRedirect();
+
+        $credentialA = $user->fresh()->credentialFor($orgA);
+        $credentialB = $user->fresh()->credentialFor($orgB);
+
+        // o login ROTACIONA o token na credential do portal onde aconteceu…
+        $this->assertNotSame($tokenABefore, $credentialA->remember_token);
+        // …e nunca toca o token do outro portal
+        $this->assertSame($tokenBBefore, $credentialB->remember_token);
+
+        $provider = Auth::createUserProvider('users');
+
+        // o token autentica no portal de origem…
+        $this->withOrgContext($orgA);
+        $this->assertTrue($provider->retrieveByToken($user->id, $credentialA->remember_token)?->is($user));
+
+        // …e é inválido no outro portal (a credencial de B nunca recebeu este token)
+        $this->withOrgContext($orgB);
+        $this->assertNull($provider->retrieveByToken($user->id, $credentialA->remember_token));
+
+        // conta desativada não reacquire sessão pelo cookie
+        $this->withOrgContext($orgA);
+        $credentialA->forceFill(['status' => 'inactive'])->save();
+        $this->assertNull($provider->retrieveByToken($user->id, $credentialA->remember_token));
     }
 
     public function test_throttle_e_por_org(): void

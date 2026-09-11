@@ -59,7 +59,7 @@
                         </div>
                     </td>
                     <td data-label="Status">
-                        @if($student->status === 'active')
+                        @if($student->account_status === 'active')
                             <x-ui.badge variant="success" dusk="student-status-{{ $student->id }}">Ativo</x-ui.badge>
                         @else
                             <x-ui.badge variant="neutral" dusk="student-status-{{ $student->id }}">Inativo</x-ui.badge>

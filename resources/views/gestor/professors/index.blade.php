@@ -51,7 +51,7 @@
                     <td data-label="CPF" class="ds-tabular-nums">{{ $professor->cpf ?? '—' }}</td>
                     <td data-label="Cursos atribuídos" class="ds-tabular-nums">{{ $professor->taught_courses_count }}</td>
                     <td data-label="Status">
-                        @if($professor->status === 'active')
+                        @if($professor->account_status === 'active')
                             <x-ui.badge variant="success" dusk="professor-status-{{ $professor->id }}">Ativo</x-ui.badge>
                         @else
                             <x-ui.badge variant="neutral" dusk="professor-status-{{ $professor->id }}">Inativo</x-ui.badge>

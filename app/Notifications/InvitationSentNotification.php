@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\InvitationLink;
+use App\Services\OrgUrl;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -34,7 +35,7 @@ class InvitationSentNotification extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable): MailMessage
     {
-        $url = route('invitation.show', $this->invitationLink->token);
+        $url = OrgUrl::route($this->invitationLink->org_id, 'invitation.show', $this->invitationLink->token);
 
         return (new MailMessage)
             ->subject('Link de convite criado - '.config('app.name'))

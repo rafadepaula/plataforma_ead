@@ -109,6 +109,8 @@ class GestorStudentController extends Controller
 
         if (! empty($data['password'])) {
             $credential->forceFill(['password' => Hash::make($data['password'])])->save();
+            // senha imposta invalida o "lembrar-me" desta conta
+            $credential->rotateRememberToken();
         }
 
         // `user.status_changed` is a critical-action event
@@ -117,6 +119,10 @@ class GestorStudentController extends Controller
         // `UserController::update()`'s audit block.
         if (array_key_exists('status', $data) && $data['status'] !== $oldStatus) {
             $credential->forceFill(['status' => $data['status']])->save();
+
+            if ($data['status'] === 'inactive') {
+                $credential->rotateRememberToken();
+            }
 
             try {
                 AuditService::log(

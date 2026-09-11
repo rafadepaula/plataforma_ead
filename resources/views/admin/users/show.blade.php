@@ -50,8 +50,21 @@
                         <dt class="col-sm-4">CPF</dt>
                         <dd class="col-sm-8" dusk="admin-user-show-cpf">{{ $user->cpf ?? '—' }}</dd>
 
-                        <dt class="col-sm-4">Organização</dt>
-                        <dd class="col-sm-8" dusk="admin-user-show-organization">{{ $user->organization->name ?? 'Nenhuma — Admin do Sistema' }}</dd>
+                        <dt class="col-sm-4">Contas por organização</dt>
+                        <dd class="col-sm-8" dusk="admin-user-show-organization">
+                            @if ($user->credentials->isEmpty())
+                                <span class="text-body-secondary">Nenhuma — Admin do Sistema</span>
+                            @else
+                                <ul class="list-unstyled mb-0">
+                                    @foreach ($user->credentials as $membership)
+                                        <li class="small">
+                                            {{ $membership->organization?->name ?? 'Admin do Sistema (global)' }}
+                                            · {{ $membership->status === 'active' ? 'Ativo' : 'Inativo' }}
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            @endif
+                        </dd>
 
                         <dt class="col-sm-4">Papel</dt>
                         <dd class="col-sm-8">

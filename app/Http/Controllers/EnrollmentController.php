@@ -61,7 +61,9 @@ class EnrollmentController extends Controller
         $cpfDigits = Cpf::digits($term);
 
         $students = User::query()
-            ->whereHas('credentials', fn ($query) => $query->where('credentials.org_id', $course->org_id))
+            ->whereHas('credentials', fn ($query) => $query
+                ->where('credentials.org_id', $course->org_id)
+                ->where('credentials.status', 'active'))
             ->whereHas('roles', fn ($query) => $query->where('name', RolesEnum::ALUNO->value))
             ->where(fn (Builder $query) => $query
                 ->where('name', 'like', "%{$term}%")

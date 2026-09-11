@@ -106,6 +106,27 @@ class HostResolutionTest extends TestCase
         $this->assertGuest();
     }
 
+    public function test_nao_admin_sem_conta_ativa_no_portal_e_deslogado(): void
+    {
+        $org = Organization::factory()->create();
+        $intruso = User::factory()->create();
+        $intruso->assignRole('gestor');
+        $this->actingAs($intruso);
+        $this->onHost($org->host);
+
+        // autenticado em outro portal, sem conta (credential) nesta org:
+        // o portal o desloga em vez de deixá-lo operar como staff
+        $this->get(route('admin.dashboard'))->assertRedirect('http://'.$org->host);
+        $this->assertGuest();
+
+        // o mesmo vale para a conta INATIVA nesta org
+        $inativo = User::factory()->aluno()->inOrg($org)->inactive()->create();
+        $this->actingAs($inativo);
+
+        $this->get(route('student.courses.index'))->assertRedirect('http://'.$org->host);
+        $this->assertGuest();
+    }
+
     public function test_admin_navega_livre_em_estado_zero(): void
     {
         $this->actingAsAdmin();

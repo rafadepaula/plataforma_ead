@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Str;
 
 /**
  * The per-organization account behind a `User` (the person). The login
@@ -42,6 +43,17 @@ class Credential extends Model
             'password' => 'hashed',
             'status' => 'string',
         ];
+    }
+
+    /**
+     * Kills the account's remember-me cookie: every password change and
+     * every deactivation must rotate `remember_token`, otherwise a
+     * "remembered" device survives the credential's security change (the
+     * cookie is only validated against the stored value).
+     */
+    public function rotateRememberToken(): void
+    {
+        $this->forceFill(['remember_token' => Str::random(60)])->save();
     }
 
     /**

@@ -7,7 +7,6 @@ use App\Models\Certificate;
 use App\Models\Course;
 use App\Models\Lesson;
 use App\Models\Module;
-use App\Models\Organization;
 use App\Models\User;
 use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
@@ -120,7 +119,7 @@ class StudentCoursesCatalogUiTest extends DuskTestCase
     public function test_student_courses_catalog_shows_contextual_empty_state_per_tab(): void
     {
         /** @var User $student */
-        $student = User::factory()->inOrg(Organization::factory()->create()->id)->create();
+        $student = User::factory()->inOrg($this->duskTenant())->create();
         $student->assignRole(RolesEnum::ALUNO->value);
 
         $this->browse(function (Browser $browser) use ($student): void {

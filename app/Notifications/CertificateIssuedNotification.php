@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\Certificate;
+use App\Services\OrgUrl;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -32,7 +33,7 @@ class CertificateIssuedNotification extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable): MailMessage
     {
-        $url = route('certificates.verify', $this->certificate->validation_hash);
+        $url = OrgUrl::route($this->certificate->course->org_id, 'certificates.verify', $this->certificate->validation_hash);
 
         return (new MailMessage)
             ->subject('Certificado emitido - '.config('app.name'))
@@ -49,7 +50,7 @@ class CertificateIssuedNotification extends Notification implements ShouldQueue
     {
         return [
             'message' => 'Seu certificado do curso "'.$this->certificate->course->title.'" foi emitido.',
-            'action_url' => route('certificates.verify', $this->certificate->validation_hash),
+            'action_url' => OrgUrl::route($this->certificate->course->org_id, 'certificates.verify', $this->certificate->validation_hash),
             'certificate_id' => $this->certificate->id,
         ];
     }

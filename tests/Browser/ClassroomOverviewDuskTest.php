@@ -21,7 +21,7 @@ class ClassroomOverviewDuskTest extends DuskTestCase
 {
     public function test_student_classroom_overview_progression_and_certification_lifecycle(): void
     {
-        $org = Organization::factory()->create(['name' => 'Acme Treinamentos']);
+        $org = $this->duskTenant();
         $course = Course::factory()->create([
             'org_id' => $org->id,
             'title' => 'Formação de Desenvolvedores',
@@ -59,8 +59,7 @@ class ClassroomOverviewDuskTest extends DuskTestCase
             'order_index' => 0,
         ]);
 
-        $student = User::factory()->create();
-        $student->assignRole(RolesEnum::ALUNO->value);
+        $student = User::factory()->aluno()->inOrg($course->org_id)->create();
 
         $course->students()->attach($student->id, [
             'enrolled_at' => now(),
@@ -216,8 +215,7 @@ class ClassroomOverviewDuskTest extends DuskTestCase
             'is_published' => true,
         ]);
 
-        $student = User::factory()->create();
-        $student->assignRole(RolesEnum::ALUNO->value);
+        $student = User::factory()->aluno()->inOrg($course->org_id)->create();
         $course->students()->attach($student->id, ['enrolled_at' => now(), 'status' => 'active', 'progress_percentage' => 0]);
 
         $this->browse(function (Browser $browser) use ($student, $course): void {
@@ -248,8 +246,7 @@ class ClassroomOverviewDuskTest extends DuskTestCase
             'order_index' => 0,
         ]);
 
-        $student = User::factory()->inOrg($course->org_id)->create();
-        $student->assignRole(RolesEnum::ALUNO->value);
+        $student = User::factory()->aluno()->inOrg($course->org_id)->create();
         $course->students()->attach($student->id, [
             'enrolled_at' => now(),
             'status' => 'active',

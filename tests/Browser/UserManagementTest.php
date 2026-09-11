@@ -201,9 +201,9 @@ class UserManagementTest extends DuskTestCase
                 ->type('password', 'password')
                 ->type('password_confirmation', 'password')
                 ->press('Criar Usuário')
-                ->waitForText('O valor informado para o campo e-mail já está em uso.')
+                ->waitForText('Este e-mail já possui conta nesta organização.')
                 ->assertPathIs('/users/create')
-                ->assertSee('O valor informado para o campo e-mail já está em uso.');
+                ->assertSee('Este e-mail já possui conta nesta organização.');
 
             $this->assertDatabaseCount('users', 2);
 

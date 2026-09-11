@@ -49,7 +49,9 @@ class CourseProfessorController extends Controller
         // base-level guard; `whereDoesntHave` keeps them out of the pool
         // so the button never offers a doomed insert.
         $available = User::query()
-            ->whereHas('credentials', fn (Builder $query) => $query->where('credentials.org_id', $course->org_id))
+            ->whereHas('credentials', fn (Builder $query) => $query
+                ->where('credentials.org_id', $course->org_id)
+                ->where('credentials.status', 'active'))
             ->whereHas('roles', fn (Builder $query) => $query->where('name', RolesEnum::PROFESSOR->value))
             ->whereDoesntHave('taughtCourses', fn (Builder $query) => $query->where('course_professor.course_id', $course->id))
             ->when($search !== '', fn (Builder $query): Builder => $query

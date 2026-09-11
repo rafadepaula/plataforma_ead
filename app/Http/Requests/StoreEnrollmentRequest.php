@@ -41,6 +41,7 @@ class StoreEnrollmentRequest extends FormRequest
                     $holdsAccount = Credential::query()
                         ->where('user_id', $value)
                         ->where('org_id', $course?->org_id)
+                        ->where('status', 'active')
                         ->exists();
 
                     if (! $holdsAccount) {

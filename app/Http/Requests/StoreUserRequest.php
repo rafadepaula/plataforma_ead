@@ -37,7 +37,9 @@ class StoreUserRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')],
+            // e-mail global já existente NÃO falha: a criação reusa a pessoa
+            // (ProvisionOrgAccountAction) e provisiona a conta desta org
+            'email' => ['required', 'string', 'email', 'max:255'],
             'cpf' => ['nullable', 'string', 'max:14', new Cpf, Rule::unique('users', 'cpf')],
             'role' => ['required', Rule::in([RolesEnum::ALUNO->value, RolesEnum::GESTOR->value])],
             'password' => ['required', 'string', 'min:8', 'confirmed'],

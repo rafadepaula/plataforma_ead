@@ -142,7 +142,17 @@
                             </div>
                         </div>
                     </td>
-                    <td data-label="Organização">{{ $user->organization->name ?? 'Nenhuma — Admin do Sistema' }}</td>
+                    <td data-label="Organização">
+                        @if ($user->credentials->isEmpty())
+                            <span class="text-body-secondary">Nenhuma — Admin do Sistema</span>
+                        @else
+                            <div class="d-flex flex-column gap-1">
+                                @foreach ($user->credentials as $membership)
+                                    <span class="small">{{ $membership->organization?->name ?? 'Admin do Sistema (global)' }}</span>
+                                @endforeach
+                            </div>
+                        @endif
+                    </td>
                     <td data-label="Papel">
                         <x-ui.badge variant="accent"
                                     data-role="{{ $userRole }}"

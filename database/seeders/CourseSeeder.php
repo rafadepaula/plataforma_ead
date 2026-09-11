@@ -89,6 +89,54 @@ class CourseSeeder extends Seeder
         if ($professor) {
             $course->professors()->syncWithoutDetaching([$professor->id => ['assigned_by' => null]]);
         }
+
+        $this->seedInformaticaCourse();
+    }
+
+    /**
+     * Portais Informática Mais também nascem com conteúdo operacional
+     * (spec T15 — "cursos por org"): um curso publicado simples com uma
+     * aula, e a Aluna demo matriculada.
+     */
+    private function seedInformaticaCourse(): void
+    {
+        $informatica = Organization::where('host', 'localhost.informatica')->first();
+
+        if (! $informatica) {
+            return;
+        }
+
+        $course = Course::withoutGlobalScopes()->firstOrCreate(
+            ['org_id' => $informatica->id, 'title' => 'Introdução à Informática Básica'],
+            [
+                'description' => 'Primeiros passos no computador: sistema operacional, navegação, e-mail e segurança digital.',
+                'workload_hours' => 12,
+                'is_published' => true,
+            ]
+        );
+
+        $module = Module::withoutGlobalScopes()->firstOrCreate(
+            ['course_id' => $course->id, 'title' => 'Fundamentos'],
+            ['description' => 'Noções essenciais para começar.', 'order_index' => 0],
+        );
+
+        Lesson::withoutGlobalScopes()->firstOrCreate(
+            ['module_id' => $module->id, 'title' => 'Conhecendo o computador'],
+            [
+                'type' => 'content',
+                'content_text' => '<p>Ligue o computador, conheça a área de trabalho e pratique o uso do mouse e do teclado.</p>',
+                'is_published' => true,
+                'order_index' => 0,
+            ],
+        );
+
+        $aluna = User::where('email', 'aluno.informatica@plataforma.com')->first();
+
+        if ($aluna) {
+            $course->students()->syncWithoutDetaching([
+                $aluna->id => ['enrolled_at' => now(), 'status' => 'active', 'progress_percentage' => 0],
+            ]);
+        }
     }
 
     /**

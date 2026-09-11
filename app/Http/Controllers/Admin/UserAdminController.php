@@ -98,7 +98,9 @@ class UserAdminController extends Controller
             // organização) da pessoa — superfície global do admin.
             $user->credentials()->get()
                 ->each(fn (Credential $credential) => $credential
-                    ->forceFill(['password' => Hash::make($data['password'])])->save());
+                    ->forceFill(['password' => Hash::make($data['password'])])
+                    ->save())
+                ->each(fn (Credential $credential) => $credential->rotateRememberToken());
         }
 
         if ($role !== 'admin' && $user->id === Auth::id()) {
@@ -133,7 +135,13 @@ class UserAdminController extends Controller
         $oldStatus = $user->hasActiveAccount() ? 'active' : 'inactive';
 
         $user->credentials()->get()
-            ->each(fn (Credential $credential) => $credential->forceFill(['status' => $data['status']])->save());
+            ->each(function (Credential $credential) use ($data): void {
+                $credential->forceFill(['status' => $data['status']])->save();
+
+                if ($data['status'] === 'inactive') {
+                    $credential->rotateRememberToken();
+                }
+            });
 
         $this->auditStatusChangeIfNeeded($request, $user, $oldStatus, $data['status']);
 

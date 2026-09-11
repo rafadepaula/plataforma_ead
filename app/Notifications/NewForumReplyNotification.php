@@ -4,6 +4,7 @@ namespace App\Notifications;
 
 use App\Models\ForumReply;
 use App\Models\ForumTopic;
+use App\Services\OrgUrl;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -33,7 +34,7 @@ class NewForumReplyNotification extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         $topic = $this->topic();
-        $url = route('forum.show', [$topic->course_id, $topic->id]);
+        $url = OrgUrl::route($topic->org_id, 'forum.show', [$topic->course_id, $topic->id]);
 
         return (new MailMessage)
             ->subject('Nova resposta no fórum - '.config('app.name'))
@@ -52,7 +53,7 @@ class NewForumReplyNotification extends Notification implements ShouldQueue
 
         return [
             'message' => $this->reply->user->name.' respondeu ao tópico "'.$topic->title.'".',
-            'action_url' => route('forum.show', [$topic->course_id, $topic->id]),
+            'action_url' => OrgUrl::route($topic->org_id, 'forum.show', [$topic->course_id, $topic->id]),
             'reply_id' => $this->reply->id,
         ];
     }

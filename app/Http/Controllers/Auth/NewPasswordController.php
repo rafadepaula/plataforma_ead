@@ -42,6 +42,17 @@ class NewPasswordController extends Controller
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
+        // Spec: an inactive Organization's reset flow is dead on BOTH
+        // ends — no new token is issued and a token issued before the
+        // deactivation must NOT complete here. Same generic failure the
+        // framework uses (no oracle about the Organization's state).
+        $context = OrgContext::current();
+
+        if ($context->organization !== null && ! $context->orgIsActive) {
+            return back()->withInput($request->only('email'))
+                ->withErrors(['email' => trans(Password::INVALID_TOKEN)]);
+        }
+
         // `Password::reset` validates the token is unexpired and matches
         // the stored hash, then deletes it from `password_reset_tokens`
         // (single-use) before invoking the callback below.

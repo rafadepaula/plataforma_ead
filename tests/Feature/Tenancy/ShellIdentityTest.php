@@ -25,6 +25,19 @@ class ShellIdentityTest extends TestCase
             ->assertSee(config('app.name', 'Plataforma EAD'));
     }
 
+    public function test_admin_no_host_de_uma_org_ve_o_system_name(): void
+    {
+        // spec 9: o Admin global não é "de" nenhum portal — o shell dele
+        // é a plataforma, mesmo navegando no host de uma org
+        Organization::factory()->create(['host' => 'portal.acme.test', 'name' => 'Acme Capacitações']);
+        $this->actingAsAdmin();
+
+        $this->onHost('portal.acme.test')
+            ->get(route('admin.dashboard'))
+            ->assertOk()
+            ->assertSee(config('app.name', 'Plataforma EAD'));
+    }
+
     public function test_tela_logada_mostra_a_marca_da_org_do_host(): void
     {
         Organization::factory()->create(['host' => 'portal.acme.test', 'name' => 'Acme Capacitações']);

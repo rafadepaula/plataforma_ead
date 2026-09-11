@@ -54,12 +54,23 @@ class DatabaseSeederDevelopmentTest extends TestCase
         $this->assertSame(1, User::query()->where('email', 'gestor.informatica@plataforma.com')->count());
         $this->assertSame(1, User::query()->where('email', 'aluno.informatica@plataforma.com')->count());
 
-        // 2. One course with exactly three modules.
-        $course = Course::query()->withoutGlobalScopes()->sole();
+        // 2. One course per org: Liga Certo (3 módulos) e Informática Mais (1).
+        $ligaCerto = Organization::query()->where('host', 'localhost.ligacerto')->firstOrFail();
+        $informatica = Organization::query()->where('host', 'localhost.informatica')->firstOrFail();
+
+        $course = Course::query()->withoutGlobalScopes()
+            ->where('org_id', $ligaCerto->id)
+            ->sole();
         $this->assertSame('Curso de Eletricista', $course->title);
         $this->assertSame(3, Module::query()->where('course_id', $course->id)->count());
 
-        // 3. Three quizzes, one per module.
+        $informaticaCourse = Course::query()->withoutGlobalScopes()
+            ->where('org_id', $informatica->id)
+            ->sole();
+        $this->assertSame('Introdução à Informática Básica', $informaticaCourse->title);
+        $this->assertSame(1, Module::query()->where('course_id', $informaticaCourse->id)->count());
+
+        // 3. Three quizzes, one per Liga Certo module.
         $this->assertSame(3, Quiz::query()->count());
 
         // 4. The first module's quiz carries the essay question.
@@ -78,7 +89,9 @@ class DatabaseSeederDevelopmentTest extends TestCase
         $this->seed(DatabaseSeeder::class);
 
         $aluno = User::query()->where('email', 'aluno.ligacerto@plataforma.com')->first();
-        $course = Course::query()->withoutGlobalScopes()->sole();
+        $course = Course::query()->withoutGlobalScopes()
+            ->where('org_id', Organization::query()->where('host', 'localhost.ligacerto')->value('id'))
+            ->sole();
 
         // The student holds a single active enrollment on the course.
         $enrollment = $course->students()->where('users.id', $aluno->id)->first();

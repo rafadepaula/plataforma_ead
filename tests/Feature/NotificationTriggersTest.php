@@ -76,7 +76,8 @@ class NotificationTriggersTest extends TestCase
                 $data = $notification->toDatabase($notifiable);
 
                 return $data['message'] === 'Seu certificado do curso "'.$certificate->course->title.'" foi emitido.'
-                    && $data['action_url'] === route('certificates.verify', $certificate->validation_hash)
+                    && str_contains($data['action_url'], $certificate->validation_hash)
+                    && str_contains($data['action_url'], (string) $certificate->course->organization->host)
                     && $data['certificate_id'] === $certificate->id;
             }
         );
@@ -110,7 +111,8 @@ class NotificationTriggersTest extends TestCase
                 $data = $notification->toDatabase($notifiable);
 
                 return $data['message'] === $newReply->user->name.' respondeu ao tópico "'.$topic->title.'".'
-                    && $data['action_url'] === route('forum.show', [$topic->course_id, $topic->id])
+                    && str_contains($data['action_url'], (string) Organization::find($topic->org_id)?->host)
+                    && str_contains($data['action_url'], (string) $topic->id)
                     && $data['reply_id'] === $newReply->id;
             }
         );
@@ -167,7 +169,8 @@ class NotificationTriggersTest extends TestCase
                 $data = $notification->toDatabase($notifiable);
 
                 return $data['message'] === 'Sua matrícula no curso "'.$course->title.'" foi confirmada.'
-                    && $data['action_url'] === route('classroom.show', $course)
+                    && str_contains($data['action_url'], (string) $course->organization->host)
+                    && str_ends_with($data['action_url'], route('classroom.show', $course, absolute: false))
                     && $data['course_id'] === $course->id;
             }
         );

@@ -21,6 +21,20 @@ class CompiledCssTokenRegressionTest extends TestCase
      *
      * @var array<int, string>
      */
+    /**
+     * Literal values of the `--critical*` token family declared in
+     * `resources/css/tokens/colors.css` — the sanctioned red hues of the
+     * design system.
+     *
+     * @var array<int, string>
+     */
+    private const CRITICAL_TOKEN_HEX_VALUES = [
+        '#f87171', // --critical
+        '#ef4444', // --critical-hover
+        '#451a1a', // --critical-container
+        '#fecaca', // --on-critical-container
+    ];
+
     private const BORDER_RADIUS_ZERO_EXCEPTIONS = [
         'accordion',
         'modal-fullscreen',
@@ -32,6 +46,14 @@ class CompiledCssTokenRegressionTest extends TestCase
     public function test_compiled_css_contains_no_forbidden_hue_colors(): void
     {
         $css = $this->compiledCss();
+
+        // The `--critical*` token family (destructive states: chip, alert,
+        // progress, public pages) is a deliberate part of the design
+        // system since the dark-mode tokens; their literal values are the
+        // ONLY red hues allowed to ship in the compiled bundle.
+        foreach (self::CRITICAL_TOKEN_HEX_VALUES as $hex) {
+            $css = str_replace($hex, '', $css);
+        }
 
         $offenders = $this->forbiddenHueHexColors($css);
 

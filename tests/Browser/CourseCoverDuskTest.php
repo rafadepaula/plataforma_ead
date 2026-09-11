@@ -53,7 +53,7 @@ class CourseCoverDuskTest extends DuskTestCase
     {
         $org = $this->duskTenant();
         $gestor = User::factory()->gestor()->inOrg($org->id)->create();
-        $aluno = User::factory()->aluno()->create();
+        $aluno = User::factory()->aluno()->inOrg($org)->create();
         $course = Course::factory()->published()->create([
             'org_id' => $org->id,
             'title' => 'Curso Capa Dusk',
@@ -104,7 +104,7 @@ class CourseCoverDuskTest extends DuskTestCase
     {
         $org = $this->duskTenant();
         $gestor = User::factory()->gestor()->inOrg($org->id)->create();
-        $aluno = User::factory()->aluno()->create();
+        $aluno = User::factory()->aluno()->inOrg($org)->create();
         $course = Course::factory()->published()->create([
             'org_id' => $org->id,
             'title' => 'Curso Remove Capa Dusk',

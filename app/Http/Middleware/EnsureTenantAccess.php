@@ -65,6 +65,22 @@ class EnsureTenantAccess
             return $next($request);
         }
 
+        // Active Organization: the authenticated non-Admin must hold an
+        // ACTIVE account on THIS portal. This is the per-request kill
+        // switch for deactivation (the session/remember cookie would
+        // otherwise survive it) and the wall that keeps a session issued
+        // by another portal from operating here.
+        if ($user !== null && ! $isAdmin) {
+            $credential = $user->credentialFor($context->organization);
+
+            if ($credential === null || $credential->status !== 'active') {
+                Auth::guard('web')->logout();
+                $request->session()->invalidate();
+
+                return redirect('/')->with('error', trans('auth.failed'));
+            }
+        }
+
         return $next($request);
     }
 

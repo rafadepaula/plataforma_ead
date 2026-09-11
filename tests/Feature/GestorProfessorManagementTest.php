@@ -150,7 +150,7 @@ class GestorProfessorManagementTest extends TestCase
 
     // ── Validation ───────────────────────────────────────────────────
 
-    public function test_creating_a_professor_with_an_already_used_email_is_rejected(): void
+    public function test_creating_a_professor_with_an_email_that_already_has_an_account_here_is_rejected(): void
     {
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
@@ -164,8 +164,40 @@ class GestorProfessorManagementTest extends TestCase
             'password_confirmation' => 'password123',
         ]);
 
+        // pessoa JÁ tem conta nesta org: erro de formulário, nunca reescrita de senha
         $response->assertSessionHasErrors('email');
         $this->assertSame(1, User::where('email', $existing->email)->count());
+        $this->assertSame(1, $existing->credentials()->count());
+    }
+
+    public function test_creating_a_professor_with_an_email_from_another_org_reuses_the_person(): void
+    {
+        $foreignOrg = Organization::factory()->create();
+        $foreignProfessor = User::factory()->inOrg($foreignOrg)->withPassword('senha-de-la')->create([
+            'email' => 'professor.multitenant@example.com',
+        ]);
+
+        $org = Organization::factory()->create();
+        $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
+
+        $response = $this->post(route('gestor.professors.store'), [
+            'name' => 'Nome Diferente Aqui',
+            'email' => 'professor.multitenant@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+        ]);
+
+        // spec T12: reusar a pessoa, criar a credential desta org — e nunca
+        // tocar a credential da outra org
+        $response->assertRedirect(route('gestor.professors.index'));
+        $this->assertSame(1, User::where('email', 'professor.multitenant@example.com')->count());
+
+        $fresh = $foreignProfessor->fresh();
+        $this->assertSame('professor.multitenant@example.com', $fresh->email);
+        $this->assertSame(2, $fresh->credentials()->count());
+        $this->assertTrue(Hash::check('senha-de-la', $fresh->credentialFor($foreignOrg)->password));
+        $this->assertTrue(Hash::check('password123', $fresh->credentialFor($org)->password));
+        $this->assertTrue($fresh->hasRole(RolesEnum::PROFESSOR->value));
     }
 
     public function test_creating_a_professor_with_a_short_password_is_rejected(): void

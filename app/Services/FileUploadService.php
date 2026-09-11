@@ -85,7 +85,7 @@ class FileUploadService
 
     protected function resolveOrgId(Course $course): int
     {
-        $orgId = $course->org_id ?? auth()->user()?->org_id ?? session('active_org_id');
+        $orgId = $course->org_id ?? OrgContext::current()->orgId();
 
         if (! $orgId) {
             throw new UnresolvedOrgContextException(

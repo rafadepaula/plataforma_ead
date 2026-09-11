@@ -3,7 +3,6 @@
 namespace Tests\Browser\Theme;
 
 use App\Enums\Permissions\RolesEnum;
-use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Str;
@@ -29,7 +28,7 @@ class ResponsiveShellTest extends DuskTestCase
 
     public function test_desktop_shell_lifecycle(): void
     {
-        $org = Organization::factory()->create(['name' => 'Conselho Alpha']);
+        $org = $this->duskTenant();
         $gestor = User::factory()->inOrg($org->id)->create(['name' => 'Gestor Alpha']);
         $gestor->assignRole(RolesEnum::GESTOR->value);
 
@@ -48,7 +47,7 @@ class ResponsiveShellTest extends DuskTestCase
 
     public function test_mobile_shell_and_drawer_lifecycle(): void
     {
-        $org = Organization::factory()->create(['name' => 'Conselho Mobile']);
+        $org = $this->duskTenant();
         $gestor = User::factory()->inOrg($org->id)->create(['name' => 'Gestor Mobile']);
         $gestor->assignRole(RolesEnum::GESTOR->value);
 

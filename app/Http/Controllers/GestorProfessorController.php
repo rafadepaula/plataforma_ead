@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\ProvisionOrgAccountAction;
 use App\Enums\Permissions\RolesEnum;
 use App\Exceptions\UserHasCreatedInvitationLinksException;
 use App\Exceptions\UserHasIssuedCertificatesException;
 use App\Http\Controllers\Concerns\ResolvesOrgContext;
 use App\Http\Requests\StoreGestorProfessorRequest;
 use App\Http\Requests\UpdateGestorProfessorRequest;
-use App\Models\Credential;
+use App\Models\Organization;
 use App\Models\User;
 use App\Rules\Cpf;
 use App\Services\AuditService;
@@ -77,22 +78,22 @@ class GestorProfessorController extends Controller
         return view('gestor.professors.create');
     }
 
-    public function store(StoreGestorProfessorRequest $request): RedirectResponse
+    public function store(StoreGestorProfessorRequest $request, ProvisionOrgAccountAction $provision): RedirectResponse
     {
         Gate::authorize('create', User::class);
 
         $data = $request->validated();
-        $orgId = $this->resolveOrgId($request);
+        $organization = Organization::findOrFail($this->resolveOrgId($request));
 
-        $professor = User::create(collect($data)->only(['name', 'email', 'cpf'])->all());
-        $professor->assignRole(RolesEnum::PROFESSOR->value);
-
-        Credential::create([
-            'user_id' => $professor->id,
-            'org_id' => $orgId,
-            'password' => Hash::make($data['password']),
-            'status' => 'active',
-        ]);
+        // e-mail global já existente reusa a pessoa e cria a conta desta org
+        $provision->execute(
+            organization: $organization,
+            name: $data['name'],
+            email: $data['email'],
+            cpf: $data['cpf'] ?? null,
+            password: $data['password'],
+            role: RolesEnum::PROFESSOR->value,
+        );
 
         return redirect()->route('gestor.professors.index')
             ->with('success', 'Professor cadastrado com sucesso.');
@@ -133,12 +134,18 @@ class GestorProfessorController extends Controller
 
         if (! empty($data['password'])) {
             $credential->forceFill(['password' => Hash::make($data['password'])])->save();
+            // senha imposta invalida o "lembrar-me" desta conta
+            $credential->rotateRememberToken();
         }
 
         // `user.status_changed` mirrors `GestorStudentController::update()`'s
         // critical-action audit row.
         if (array_key_exists('status', $data) && $data['status'] !== $oldStatus) {
             $credential->forceFill(['status' => $data['status']])->save();
+
+            if ($data['status'] === 'inactive') {
+                $credential->rotateRememberToken();
+            }
 
             try {
                 AuditService::log(

@@ -5,6 +5,7 @@ namespace App\Actions;
 use App\Models\QuizAttempt;
 use App\Models\User;
 use App\Services\AuditService;
+use App\Services\OrgContext;
 use Throwable;
 
 /**
@@ -45,7 +46,7 @@ class GradeEssayAnswerAction
             try {
                 AuditService::log(
                     event: 'essay.graded',
-                    orgId: $gestor->org_id ? (int) $gestor->org_id : null,
+                    orgId: OrgContext::current()->orgId(),
                     userId: $gestor->id,
                     payload: [
                         'quiz_attempt_id' => $attempt->id,

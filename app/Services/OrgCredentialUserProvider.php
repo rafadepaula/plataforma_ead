@@ -97,9 +97,11 @@ final class OrgCredentialUserProvider extends EloquentUserProvider
             return null;
         }
 
+        // a conta desativada nunca reacquire sessão pelo cookie
         $hasValidToken = Credential::query()
             ->forOrg($context->orgId())
             ->where('user_id', $identifier)
+            ->where('status', 'active')
             ->where('remember_token', $token)
             ->exists();
 

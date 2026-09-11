@@ -39,8 +39,8 @@ class MultiOrgStudentClassroomTest extends DuskTestCase
             'is_published' => true,
         ]);
 
-        $student = User::factory()->create();
-        $student->assignRole(RolesEnum::ALUNO->value);
+        // aluno multi-org: conta no portal do navegador + nos DOIS tenants
+        $student = User::factory()->aluno()->inOrg($this->duskTenant())->inOrg($orgA)->inOrg($orgB)->create();
 
         $courseA->students()->attach($student->id, ['enrolled_at' => now(), 'status' => 'active']);
         $courseB->students()->attach($student->id, ['enrolled_at' => now(), 'status' => 'active']);
@@ -135,10 +135,10 @@ class MultiOrgStudentClassroomTest extends DuskTestCase
 
         $courseA = Course::factory()->inOrg($orgA->id)->create(['is_published' => true]);
 
-        $notEnrolledStudent = User::factory()->inOrg($orgA->id)->create();
-        $notEnrolledStudent->assignRole(RolesEnum::ALUNO->value);
+        // ambos precisam de conta no portal do navegador (duskTenant)
+        $notEnrolledStudent = User::factory()->aluno()->inOrg($this->duskTenant())->inOrg($orgA)->create();
 
-        $cancelledStudent = User::factory()->inOrg($orgA->id)->create();
+        $cancelledStudent = User::factory()->aluno()->inOrg($this->duskTenant())->inOrg($orgA)->create();
         $cancelledStudent->assignRole(RolesEnum::ALUNO->value);
         $courseA->students()->attach($cancelledStudent->id, ['enrolled_at' => now(), 'status' => 'cancelled']);
 

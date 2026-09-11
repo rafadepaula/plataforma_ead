@@ -2,7 +2,6 @@
 
 namespace Tests\Browser;
 
-use App\Enums\Permissions\RolesEnum;
 use App\Models\Course;
 use App\Models\Lesson;
 use App\Models\Module;
@@ -37,8 +36,7 @@ class LessonPlayerDuskTest extends DuskTestCase
         $this->course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $this->module = Module::factory()->create(['course_id' => $this->course->id]);
 
-        $this->student = User::factory()->create();
-        $this->student->assignRole(RolesEnum::ALUNO->value);
+        $this->student = User::factory()->aluno()->inOrg($org)->create();
         $this->course->students()->attach($this->student->id, ['enrolled_at' => now(), 'status' => 'active']);
     }
 

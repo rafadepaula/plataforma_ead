@@ -33,6 +33,29 @@ class PasswordResetHostTest extends TestCase
         $this->assertTrue(Hash::check('password', $credentialB->fresh()->password));
     }
 
+    public function test_reset_com_token_pre_existente_e_bloqueado_em_org_inativa(): void
+    {
+        $org = Organization::factory()->create(['host' => 'portal.acme.test']);
+        $user = User::factory()->aluno()->create(['email' => 'ana@acme.test']);
+        Credential::factory()->create(['user_id' => $user->id, 'org_id' => $org->id]);
+
+        $this->onHost('portal.acme.test');
+
+        // token emitido QUANDO a org ainda era ativa
+        $token = Password::createToken($user);
+        $org->forceFill(['status' => 'inactive'])->save();
+
+        $this->post('/reset-password', [
+            'token' => $token,
+            'email' => 'ana@acme.test',
+            'password' => 'nova-senha-forte-1',
+            'password_confirmation' => 'nova-senha-forte-1',
+        ])->assertSessionHasErrors('email');
+
+        // falha genérica: a senha da conta permanece
+        $this->assertTrue(Hash::check('password', Credential::find($user->credentialFor($org)->id)->password));
+    }
+
     public function test_forgot_sem_conta_na_org_do_host_falha_generico(): void
     {
         $orgA = Organization::factory()->create(['host' => 'portal.acme.test']);

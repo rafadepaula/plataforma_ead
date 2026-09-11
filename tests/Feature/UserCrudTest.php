@@ -62,6 +62,34 @@ class UserCrudTest extends TestCase
         $this->assertNull($user->credentialFor($otherOrg));
     }
 
+    public function test_admin_creating_a_user_with_an_email_from_another_org_reuses_the_person(): void
+    {
+        $org = Organization::factory()->create();
+        $this->actingAsAdmin($org);
+
+        $foreignOrg = Organization::factory()->create();
+        $foreignAluno = User::factory()->aluno()->inOrg($foreignOrg)->withPassword('senha-de-la')->create([
+            'email' => 'reaproveitado@example.com',
+        ]);
+
+        $this->post('/users', [
+            'name' => 'Nome Diferente Aqui',
+            'email' => 'reaproveitado@example.com',
+            'role' => RolesEnum::ALUNO->value,
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+        ]);
+
+        // spec T12: reusar a pessoa global e provisionar a conta desta org
+        $this->assertSame(1, User::where('email', 'reaproveitado@example.com')->count());
+
+        $fresh = $foreignAluno->fresh();
+        $this->assertSame(2, $fresh->credentials()->count());
+        $this->assertTrue(Hash::check('senha-de-la', $fresh->credentialFor($foreignOrg)->password));
+        $this->assertTrue(Hash::check('password123', $fresh->credentialFor($org)->password));
+        $this->assertTrue($fresh->hasRole(RolesEnum::ALUNO->value));
+    }
+
     public function test_gestor_can_view_their_own_orgs_enrolled_students_directory(): void
     {
         $org = Organization::factory()->create();

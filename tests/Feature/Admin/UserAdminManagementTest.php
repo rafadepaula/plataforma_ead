@@ -6,6 +6,7 @@ use App\Enums\Permissions\RolesEnum;
 use App\Models\AuditLog;
 use App\Models\Certificate;
 use App\Models\Course;
+use App\Models\Credential;
 use App\Models\InvitationLink;
 use App\Models\Organization;
 use App\Models\User;
@@ -368,6 +369,53 @@ class UserAdminManagementTest extends TestCase
         // o painel global não move membership: a conta continua na org de origem
         $this->assertNotNull($target->credentialFor($originOrg));
         $this->assertNull($target->credentialFor($destinationOrg));
+    }
+
+    public function test_admin_users_listing_shows_every_org_membership_of_the_person(): void
+    {
+        $this->actingAsAdmin();
+
+        $orgA = Organization::factory()->create(['name' => 'Organização Alfa memberships']);
+        $orgB = Organization::factory()->create(['name' => 'Organização Beta memberships']);
+        $target = User::factory()->inOrg($orgA)->create();
+        $target->assignRole(RolesEnum::ALUNO->value);
+        Credential::factory()->create(['user_id' => $target->id, 'org_id' => $orgB->id]);
+
+        $response = $this->get(route('admin.users.index'));
+
+        $response->assertOk();
+        $response->assertSee('Organização Alfa memberships');
+        $response->assertSee('Organização Beta memberships');
+        $response->assertDontSee('Nenhuma — Admin do Sistema', false);
+    }
+
+    public function test_admin_password_reset_and_deactivation_reach_every_org_account(): void
+    {
+        $this->actingAsAdmin();
+
+        $orgA = Organization::factory()->create();
+        $orgB = Organization::factory()->create();
+        $target = User::factory()->inOrg($orgA)->inOrg($orgB)->create();
+        $target->assignRole(RolesEnum::ALUNO->value);
+
+        // 1. a senha nova aplica-se a TODAS as contas da pessoa
+        $this->put(route('admin.users.update', $target), [
+            'name' => $target->name,
+            'email' => $target->email,
+            'role' => RolesEnum::ALUNO->value,
+            'password' => 'nova-senha-123',
+            'password_confirmation' => 'nova-senha-123',
+        ])->assertRedirect(route('admin.users.index'));
+
+        $fresh = $target->fresh();
+        $this->assertTrue(Hash::check('nova-senha-123', $fresh->credentialFor($orgA)->password));
+        $this->assertTrue(Hash::check('nova-senha-123', $fresh->credentialFor($orgB)->password));
+
+        // 2. a desativação global também desliga as contas de ambas as orgs
+        $this->patch(route('admin.users.status', $target), ['status' => 'inactive']);
+
+        $this->assertSame('inactive', $target->fresh()->credentialFor($orgA)->status);
+        $this->assertSame('inactive', $target->fresh()->credentialFor($orgB)->status);
     }
 
     public function test_admin_can_set_a_new_password_for_a_user(): void
