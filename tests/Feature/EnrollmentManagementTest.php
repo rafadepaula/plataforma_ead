@@ -346,9 +346,10 @@ class EnrollmentManagementTest extends TestCase
 
         $byName = User::factory()->inOrg($org->id)->create(['name' => 'Mariana Souza']);
         $byName->assignRole(RolesEnum::ALUNO->value);
-        $byEmail = User::factory()->inOrg($org->id)->create(['email' => 'carlos.mendes@example.com']);
+        // nomes fixos: faker pt-BR pode gerar "Mariana ..." e colidir com a busca
+        $byEmail = User::factory()->inOrg($org->id)->create(['name' => 'Carlos Mendes', 'email' => 'carlos.mendes@example.com']);
         $byEmail->assignRole(RolesEnum::ALUNO->value);
-        $byCpf = User::factory()->inOrg($org->id)->create(['cpf' => '52998224725']);
+        $byCpf = User::factory()->inOrg($org->id)->create(['name' => 'Carla Nunes', 'cpf' => '52998224725']);
         $byCpf->assignRole(RolesEnum::ALUNO->value);
 
         // Nome parcial

@@ -163,7 +163,7 @@ Credenciais de desenvolvimento (senha `password` em todos):
 
 | E-mail | Papel | Portal |
 |---|---|---|
-| `admin@plataforma.com` | Admin (senha `admin`) | qualquer host + estado 0 |
+| `admin@plataforma.com` | Admin (senha `admin`) | estado 0 (`127.0.0.1:8080`) — a credencial global de admin só autentica fora de portal de org; em portal de org o admin opera via impersonação |
 | `gestor.ligacerto@plataforma.com` | Gestor | localhost.ligacerto |
 | `aluno.ligacerto@plataforma.com` | Aluno | localhost.ligacerto |
 | `professor.ligacerto@plataforma.com` | Professor | localhost.ligacerto |
@@ -174,7 +174,7 @@ Credenciais de desenvolvimento (senha `password` em todos):
 
 - **Resolução**: o middleware `ResolveOrgFromHost` (primeiro do grupo `web`) casa o header `Host` com `organizations.host` e vincula o `OrgContext` da requisição. Host sem organização = **estado 0**.
 - **Estado 0**: visitantes vão ao login; usuários logados de organizações são desconectados; **apenas o admin** navega (para criar orgs e atribuir hosts).
-- **Identidade do aluno**: par `(e-mail, organização)`. A pessoa tem uma linha em `users` (e-mail global único) e uma linha em `credentials` **por organização** — senha, status e remember-me são por portal. O admin tem uma credencial com `org_id = null`, válida em qualquer host.
+- **Identidade do aluno**: par `(e-mail, organização)`. A pessoa tem uma linha em `users` (e-mail global único) e uma linha em `credentials` **por organização** — senha, status e remember-me são por portal. O admin tem uma credencial com `org_id = null`, válida **apenas no estado 0** — em portal de organização, quem autentica é a credential daquela org.
 - **Organização inativa**: a landing permanece visível, mas login, "esqueci a senha" e convites falham; sessões abertas são encerradas.
 - **Landing page**: campo `landing_view` (editável pelo admin) aponta para o Blade `resources/views/tenants/{landing_view}/landing.blade.php`. Sem Blade configurado/existente → redireciona ao login.
 - **Impersonação**: quando o admin impersona uma organização, a sessão (`active_org_id`) **prevalece sobre o host** — tratamento especial, exclusivo do admin.
