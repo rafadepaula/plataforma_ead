@@ -9,15 +9,15 @@ return [
         'category' => 'Avaliações',
         'content' => <<<'MARKDOWN'
 ## Para que serve
-Configurar uma nova avaliação vinculada a uma lição do curso. Permite definir regras pedagógicas estritas, como limite de tempo, quantidade máxima de tentativas, nota mínima de aprovação e exibição de gabarito.
+Configurar a avaliação vinculada a uma lição do curso. Permite definir regras pedagógicas estritas, como limite de tempo, quantidade máxima de tentativas, nota mínima de aprovação e exibição de gabarito. O quiz é gerenciado 100% pela tela da lição: ao selecionar o tipo "Quiz", a própria lição exibe as regras e as questões, salvas juntas em um único envio.
 
 ## Passo a passo
-1. Preencha o "Título da Avaliação" e as instruções gerais que o estudante lerá antes de iniciar a prova.
-2. Defina a "Nota Mínima para Aprovação (%)" exigida (por exemplo, 70%).
-3. Configure o campo "Tempo Limite (minutos)" caso a prova seja cronometrada (deixe zerado para tempo livre).
-4. Estabeleça o número de "Tentativas Permitidas" (deixe em branco ou zero para tentativas ilimitadas).
-5. Marque a opção "Exibir Gabarito" se desejar que o aluno veja as alternativas corretas após finalizar a tentativa.
-6. Clique em "Salvar Avaliação" para ser direcionado ao cadastro das questões.
+1. Na lição, selecione o tipo "Quiz" — a tela da lição passa a exibir a configuração completa da avaliação (instruções, nota mínima, tentativas, limite de tempo e questões).
+2. Defina a "Nota mínima para aprovação (%)" exigida (por exemplo, 70%).
+3. Configure o campo "Limite de tempo (minutos)" caso a prova seja cronometrada (deixe em branco para tempo livre).
+4. Estabeleça o "Máximo de tentativas" (deixe em branco para tentativas ilimitadas).
+5. Marque a opção "Exibir gabarito ao aluno após envio" se desejar que o aluno veja as alternativas corretas após finalizar a tentativa.
+6. Adicione as questões (enunciado, tipo e opções) na mesma tela e salve a lição — lição e quiz são persistidos em um único envio.
 
 ## Regras e limites
 - Cada lição do tipo quiz suporta exatamente uma avaliação vinculada (`lesson_id` único).
@@ -41,19 +41,19 @@ MARKDOWN
         'category' => 'Avaliações',
         'content' => <<<'MARKDOWN'
 ## Para que serve
-Atualizar as configurações da avaliação e gerenciar o banco de questões associadas: adicionar perguntas, definir alternativas corretas, configurar pontuação e reordenar a sequência de perguntas.
+Atualizar as configurações da avaliação e gerenciar suas questões. Tudo isso é feito na própria tela da lição (tipo "Quiz"): adicionar perguntas, definir alternativas corretas, configurar pontuação e reordenar a sequência de perguntas.
 
 ## Passo a passo
-1. Altere os parâmetros gerais da avaliação (tempo limite, nota de corte, tentativas) no formulário principal.
-2. Na seção de questões, utilize o botão "Nova Questão" para adicionar um item.
+1. Abra a lição do tipo "Quiz" em "Editar Lição" — as regras da avaliação (tempo limite, nota de corte, tentativas) ficam na mesma tela.
+2. Na seção de questões, utilize o botão "+ Adicionar Questão" para adicionar um item.
 3. Escolha o tipo de questão:
-   - **Múltipla Escolha**: múltiplas alternativas com uma única resposta correta.
-   - **Múltipla Seleção**: múltiplas alternativas onde mais de uma opção correta deve ser assinalada.
+   - **Única escolha**: múltiplas alternativas com uma única resposta correta.
+   - **Múltipla escolha**: múltiplas alternativas onde mais de uma opção correta deve ser assinalada.
    - **Verdadeiro ou Falso**: afirmações binárias simples.
-   - **Dissertativa (Redação)**: resposta em texto livre que exige correção manual do gestor ou professor.
+   - **Dissertativa (correção manual)**: resposta em texto livre que exige correção manual do gestor ou professor.
 4. Adicione as alternativas e marque claramente as opções corretas.
-5. Reordene as questões utilizando a alça de arrastar e soltar (drag-and-drop).
-6. Clique em "Salvar Alterações".
+5. Reordene as questões com as setas ↑ e ↓ — a ordem definida na tela é a ordem aplicada ao salvar.
+6. Clique em "Salvar Alterações" para persistir a lição e o quiz em um único envio.
 
 ## Regras e limites
 - Questões de múltipla escolha simples exigem exatamente uma alternativa marcada como correta.

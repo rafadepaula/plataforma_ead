@@ -54,8 +54,9 @@ Route::prefix('ajuda')->name('help.')->group(function (): void {
     Route::get('/artigo/{slug}', [HelpCenterController::class, 'show'])->name('show');
 });
 
-// Gestão de Artigos de Ajuda (CRUD Admin/Gestor + preview)
-Route::middleware(['auth', 'role:admin|gestor'])->prefix('gestao/ajuda')->name('org.help.')->group(function (): void {
+// Gestão de Artigos de Ajuda (CRUD Admin + preview) — o Gestor consome
+// a wiki pública, mas não edita artigos.
+Route::middleware(['auth', 'role:admin'])->prefix('gestao/ajuda')->name('org.help.')->group(function (): void {
     Route::post('preview', [HelpArticleController::class, 'preview'])->name('preview');
     Route::resource('artigos', HelpArticleController::class)->except(['show']);
 });
@@ -187,8 +188,11 @@ Route::middleware(['auth', 'role:admin|gestor|professor'])->group(function (): v
 });
 
 // Quiz (1:1 with a Lesson) + nested QuizQuestion/QuizOption
-// CRUD + reorder, restricted to Admin/Gestor (see the
-// `quizzes-conventions` skill). `quizzes.{create,store}` are reached via
+// CRUD + reorder, in the same `role:admin|gestor|professor` group as
+// `modules.lessons`: an assigned Professor authors the Lesson and its
+// Quiz on the same screens (see the `quizzes-conventions` skill), the
+// policies keep non-assigned professors (and everyone else) out.
+// `quizzes.{create,store}` are reached via
 // `{lesson}` (mirroring `modules.lessons`' shallow nesting one level
 // further down); `{quiz}` alone resolves `edit`/`update`/`destroy`. There
 // is no `quiz-questions/create|edit` full-page screen — per
@@ -196,7 +200,7 @@ Route::middleware(['auth', 'role:admin|gestor|professor'])->group(function (): v
 // on the parent Quiz's single edit screen, so `quiz-questions` is routed
 // explicitly (store/update/destroy/reorder only) rather than as a full
 // `Route::resource()`.
-Route::middleware(['auth', 'role:admin|gestor'])->group(function (): void {
+Route::middleware(['auth', 'role:admin|gestor|professor'])->group(function (): void {
     Route::get('lessons/{lesson}/quiz/create', [QuizController::class, 'create'])->name('quizzes.create');
     Route::post('lessons/{lesson}/quiz', [QuizController::class, 'store'])->name('quizzes.store');
     Route::get('quizzes/{quiz}/edit', [QuizController::class, 'edit'])->name('quizzes.edit');
@@ -225,16 +229,18 @@ Route::middleware(['auth', 'role:admin|gestor|professor'])->group(function (): v
 });
 
 // Gestor/Admin per-course certificate list +
-// revocation + PDF download, restricted to Admin/Gestor (see the
-// `certificates-conventions` skill). Not a `Route::resource()` —
+// revocation/restoration + PDF download, restricted to Admin/Gestor (see
+// the `certificates-conventions` skill). Not a `Route::resource()` —
 // `certificates` has no `create`/`store`/`edit`/`update` staff-facing
 // screens (issuance is fully automatic via `IssueCertificateAction`), so
-// only `index`/`revoke`/`download` are routed explicitly.
+// only `index`/`revoke`/`restore`/`download` are routed explicitly.
 Route::middleware(['auth', 'role:admin|gestor'])->group(function (): void {
     Route::get('courses/{course}/certificates', [CertificateController::class, 'index'])
         ->name('courses.certificates.index');
-    Route::put('certificates/{certificate}/revoke', [CertificateController::class, 'revoke'])
+    Route::post('certificates/{certificate}/revoke', [CertificateController::class, 'revoke'])
         ->name('certificates.revoke');
+    Route::post('certificates/{certificate}/restore', [CertificateController::class, 'restore'])
+        ->name('certificates.restore');
 
     //  the Gestor/Admin's Course-level completion-rule CRUD
     // (`index`/`store`/`destroy` only, see `CourseCompletionRuleController`'s
@@ -371,6 +377,13 @@ Route::middleware(['auth', 'student.enrolled'])->group(function (): void {
     // above — Laravel's route collection keys routes by method+URI, so an
     // identical pair would silently overwrite one of the two named routes.
     Route::get('lessons/{lesson}/quiz', [StudentQuizController::class, 'show'])->name('student.quizzes.show');
+    // Histórico de tentativas do próprio Aluno e o resultado por tentativa,
+    // também gated por `student.enrolled`. A posse do attempt (`quizAttempt`
+    // é binding padrão por id) é checada no controller (user_id + quiz da
+    // lesson), nunca via `QuizAttemptPolicy` — que é exclusiva do staff de
+    // correção (ver `quizzes-architecture`).
+    Route::get('lessons/{lesson}/quiz/tentativas', [StudentQuizController::class, 'history'])->name('student.quizzes.history');
+    Route::get('lessons/{lesson}/quiz/tentativas/{quizAttempt}', [StudentQuizController::class, 'attemptResult'])->name('student.quizzes.attempt-result');
     Route::post('lessons/{lesson}/quiz/start', [StudentQuizController::class, 'start'])->name('student.quizzes.start');
     Route::get('lessons/{lesson}/quiz/result', [StudentQuizController::class, 'result'])->name('student.quizzes.result');
     Route::post('lessons/{lesson}/quiz/submit', [StudentQuizController::class, 'submit'])->name('student.quizzes.submit');
