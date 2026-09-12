@@ -37,6 +37,13 @@ $body-bg: #f6f8fc; // --surface-body
 $body-color: #1b2437; // --text-primary
 $border-color: #dce3ee; // --border-color
 
+// Superfícies secundárias/terciárias do Bootstrap: sem este mapeamento o
+// `bg-body-secondary` caía no $gray-200 padrão (#e9ecef) — um cinza chato
+// fora da paleta. Agora consome os tokens de superfície (o tema escuro já
+// remapeia as mesmas variáveis em _dark.scss).
+$body-secondary-bg: #eef1f7; // --surface-alt (grey-100)
+$body-tertiary-bg: #fbfcfe; // --surface-sunken (grey-25)
+
 // Tipografia
 $font-family-base: "Nunito Sans", system-ui, -apple-system, "Segoe UI", sans-serif; // --font-sans
 $font-size-base: 1rem; // --font-size-base

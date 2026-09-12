@@ -27,7 +27,10 @@
 }
 
 // AnswerSurface — resposta do aluno, sempre escapada pelo Blade (`{{ }}`),
-// nunca `{!! !!}`. Sem sombra: é conteúdo recebido, não elemento ativo. Sem
+// nunca `{!! !!}`. Como a superfície usa `pre-wrap`, o `{{ }}` precisa ficar
+// colado às tags do elemento (sem quebras/indentação no template), senão o
+// whitespace do Blade é renderizado como espaço visível antes da resposta.
+// Sem sombra: é conteúdo recebido, não elemento ativo. Sem
 // `max-height`/rolagem interna — a página rola, o bloco não.
 .ds-answer-surface {
     background: var(--surface-sunken);

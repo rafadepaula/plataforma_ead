@@ -247,7 +247,7 @@ Cada item = motivo de **rejeição** em review. Não é questão de gosto.
 | `style="display:flex; gap:12px"` | `d-flex gap-3` |
 | `style="margin-bottom:16px"` | `mb-4` (spacer 4 = `1rem`) |
 | `style="color: var(--color-accent)"` | `text-primary` |
-| `style="background: var(--color-surface)"` | `bg-body-secondary` |
+| `style="background: var(--color-surface)"` | `bg-body-secondary` (resolve `--surface-alt` #eef1f7 via `$body-secondary-bg` em `_bridge.scss`; superfície de card é `ds-surface`/`--surface` branco, nunca cinza) |
 | `style="text-align:left"` | `text-start` |
 | `style="filter: grayscale(1)"` / `class="grayscale w-100 overflow-hidden"` | `.ds-pastel-wash` (**Fase 2**: `.grayscale` foi removida do projeto inteiro — última sobrevivente era a faixa de mídia de `components/ui/card.blade.php`) |
 

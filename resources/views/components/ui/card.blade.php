@@ -19,9 +19,9 @@
     $borderClass = $border ? '' : 'border-0';
 
     $surfaceClass = match($surface) {
-        'white' => 'ds-surface',
+        'secondary' => 'bg-body-secondary',
         'body' => 'bg-body',
-        default => 'bg-body-secondary',
+        default => 'ds-surface',
     };
 @endphp
 
