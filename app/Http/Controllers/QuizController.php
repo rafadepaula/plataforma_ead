@@ -11,11 +11,14 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
 
 /**
- * Gestor CRUD of the 1:1 Lesson<->Quiz, reserved to
- * `role:admin|gestor` (see `routes/web.php` and `QuizPolicy`).
- * `quizzes.lesson_id` is UNIQUE at the schema level — `create()`/`store()`
- * both guard against a Lesson that already has a Quiz with a redirect
- * -with-error rather than letting the DB throw a constraint violation.
+ * Gestor CRUD of the 1:1 Lesson<->Quiz — same reach as `LessonPolicy`
+ * (`role:admin|gestor|professor` middleware; `QuizPolicy` additionally
+ * lets an assigned Professor author their Courses' Quizzes, see
+ * `routes/web.php` and `QuizPolicy`). `quizzes.lesson_id` is UNIQUE at
+ * the schema level — `create()`/`store()` both guard against a Lesson
+ * that already has a Quiz with a redirect-with-error rather than letting
+ * the DB throw a constraint violation. Reached from the lesson authoring
+ * flow: storing a `type = quiz` lesson redirects here (`LessonController`).
  */
 class QuizController extends Controller
 {

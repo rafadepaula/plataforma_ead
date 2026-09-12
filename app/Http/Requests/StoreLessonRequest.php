@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Exceptions\InvalidVideoUrlException;
+use App\Http\Requests\Concerns\ValidatesQuizQuestionPayload;
 use App\Models\Lesson;
 use App\Services\VideoUrlSanitizerManager;
 use Illuminate\Contracts\Validation\Validator;
@@ -15,15 +16,25 @@ use Illuminate\Validation\Rule;
  * `{module}` segment by `LessonController::store()`, never trusted from
  * request input.
  *
- *  owns quiz question authoring; this form only exposes
- * `type = content` fields (Rich Text / Imagem / PDF / Vídeo —
- * four supported content kinds), all optional/nullable so a Gestor can
- * fill in exactly one of them. The video kind is provider-agnostic:
- * `video_provider` (`youtube`|`vimeo`) selects the sanitizer that
- * `video_url` is validated against.
+ *  owns quiz question authoring; this form exposes the `type = content`
+ * fields (Rich Text / Imagem / PDF / Vídeo — four supported content
+ * kinds), all optional/nullable so a Gestor can fill in exactly one of
+ * them. The video kind is provider-agnostic: `video_provider`
+ * (`youtube`|`vimeo`) selects the sanitizer that `video_url` is validated
+ * against.
+ *
+ * When `type = quiz` the lesson form itself embeds the full quiz
+ * authoring payload: a `quiz[...]` meta array (instructions, min score,
+ * retries, time limit, gabarito) and the `questions[...]` builder array
+ * (validated via {@see ValidatesQuizQuestionPayload}, persisted by
+ * `SaveQuizForLessonAction`). The quiz `title` is NOT part of the
+ * payload — it is kept synced to the Lesson `title` server-side (the
+ * lesson form has a single title field).
  */
 class StoreLessonRequest extends FormRequest
 {
+    use ValidatesQuizQuestionPayload;
+
     public function authorize(): bool
     {
         return (bool) $this->user()?->can('create', [Lesson::class, $this->route('module')]);
@@ -46,6 +57,19 @@ class StoreLessonRequest extends FormRequest
             'video_provider' => ['nullable', Rule::in(VideoUrlSanitizerManager::PROVIDERS)],
             'video_url' => ['nullable', 'url'],
             'is_published' => ['sometimes', 'boolean'],
+
+            // Quiz authoring payload (only meaningful when `type = quiz`).
+            // Absent `quiz`/`questions` keys simply mean "no quiz meta /
+            // question sync in this request" — `LessonController` skips
+            // the quiz persistence entirely.
+            'quiz' => ['nullable', 'array'],
+            'quiz.instructions' => ['nullable', 'string'],
+            'quiz.allow_retries' => ['boolean'],
+            'quiz.max_attempts' => ['nullable', 'integer', 'min:1', 'max:255'],
+            'quiz.time_limit_minutes' => ['nullable', 'integer', 'min:1', 'max:65535'],
+            'quiz.show_correct_answers' => ['boolean'],
+            'quiz.min_score_percentage' => ['required_with:quiz', 'integer', 'min:0', 'max:100'],
+            ...$this->quizQuestionRules(),
         ];
     }
 
@@ -55,10 +79,13 @@ class StoreLessonRequest extends FormRequest
      * select is empty), so a malformed/foreign link (including
      * XSS/embed-injection attempts) surfaces as a normal validation
      * failure on the `video_url` field rather than an uncaught
-     * `InvalidVideoUrlException` bubbling out of the controller.
+     * `InvalidVideoUrlException` bubbling out of the controller — and
+     * applies the quiz builder's per-question correctness rules.
      */
     public function withValidator(Validator $validator): void
     {
+        $this->validateQuestionCorrectness($validator);
+
         $validator->after(function (Validator $validator): void {
             $url = $this->input('video_url');
 

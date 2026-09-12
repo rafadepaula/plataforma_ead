@@ -45,6 +45,13 @@ These tests guard this module's contract, must stay green (PHPUnit, no Pest):
   and post-submission result screen (`GET student.quizzes.result`): clock stamped only on confirm,
   redirect after submit, score/pass display, answer key gated behind `show_correct_answers`, and
   retry flow hiding answer key while retry is available.
+- `tests/Feature/StudentQuizAttemptHistoryTest.php` — history page
+  (`GET student.quizzes.history`: newest-first ordering with chronological
+  "Tentativa N" numbers, status badges, empty state, enrollment gating) and
+  per-attempt result (`GET student.quizzes.attempt-result`: answer key of
+  THAT attempt, 404 for another student's / cross-quiz / `in_progress`
+  attempts, and the unparameterized `student.quizzes.result` still showing
+  the latest finished attempt).
 - `tests/Feature/EssayManualGradingTest.php` — `GradeEssayAnswerAction`
   grading one answer at a time, `finalizeGrading()` firing only once
   every essay answer on attempt graded, using exact same score formula as

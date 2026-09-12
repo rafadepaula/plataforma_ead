@@ -146,6 +146,34 @@ which `resources/js/app.js` imports wholesale — `app.js` itself only exposes
 `window.bootstrap` (app.js:17) for the Dusk suite's programmatic modal/toast
 driving.
 
+## Inline Lesson Sub-Items on the Modules Screen
+
+`courses/modules/_list.blade.php` renders each module's lessons INLINE as
+STATIC sub-items (always expanded — the former Bootstrap Collapse chevron
+`module-lessons-toggle-{id}` was removed, so do not reintroduce it), ordered
+by `order_index` and eager-loaded by `ModuleController::index()`
+(`with(['lessons' => ... orderBy('order_index')])`) — no second navigation
+step needed to see or edit a lesson. The row header keeps the "N lições"
+chip; actions are "Cadastrar lição" (`create-lesson-{id}`, straight to
+`modules.lessons.create` — the module is preselected by the route itself),
+Editar, delete. The full lessons screen stays reachable via the "Gerenciar
+lições" link (`manage-lessons-{id}` — the historical dusk selector migrated
+onto it).
+
+**The nested lesson sub-items must NOT carry `data-id`** (or `draggable`):
+`persistOrder()` reads `[data-id]` over the WHOLE `[data-reorder-url]` list,
+so a `data-id` inside a module's sub-item block would silently corrupt the
+module reorder payload. The sub-list lives inside the module `<li>` (rendered
+through `<x-ui.sortable-row>`'s default slot; the row is `flex-wrap` with a
+`w-100` slot wrapper) precisely so dragging/moving the module row carries its
+lessons along.
+
+The reorder ↑/↓ buttons in `<x-ui.sortable-row>` carry Bootstrap tooltips
+(`data-bs-toggle="tooltip"` + `title` + `data-bs-title` "Mover para cima" /
+"Mover para baixo" plus `aria-label`). Tooltips are opt-in: they are
+initialized globally for every `[data-bs-toggle="tooltip"]` in
+`resources/js/app.js` (`initOptIns()`), so no per-page JS is needed.
+
 ## Diagnosing "Reorder Doesn't Persist" / "Toast Never Shows"
 
 - Confirm list element actually carry `data-reorder-url`. Set server-side from
@@ -175,14 +203,18 @@ reorder Dusk test, keep this pattern rather than trying to fire synthetic
 `dragstart`/`drop` events; latter common source of flaky, unreproducible Dusk
 failures in this codebase.
 
-## Lesson Form: `type=quiz` Is Disabled Placeholder Only
+## Lesson Form: `type=quiz` Saves a Shell, Quizzes Module Owns the Rest
 
-`modules/lessons/_form.blade.php` `type` select offer `quiz` as option (the
-`lessons.type` column is `content|quiz`), but this feature's form only ever
-expose four `content`-kind fields (Rich Text/Imagem/PDF/Vídeo YouTube/Vimeo). The quizzes
-module own quiz question authoring. If asked to "wire up quiz creation", that
-out of scope here; extend the quizzes module's own controller/views instead of
-adding fields to this form.
+`modules/lessons/_form.blade.php` `type` select offers `quiz` as an enabled
+option (the `lessons.type` column is `content|quiz`). The `content`-kind fields
+(Rich Text/Imagem/PDF/Vídeo YouTube/Vimeo) are hidden client-side when `quiz` is
+selected (`LessonForm.js`) and stay nullable server-side. The quiz is managed 100%
+by this same form: selecting `quiz` reveals the embedded quiz section (meta +
+`LessonQuizBuilder.js` questions builder), and `LessonController` persists
+lesson + quiz + questions + options in ONE transactional submit via
+`SaveQuizForLessonAction` — there is NO redirect to `quizzes.create` anymore
+(see `quizzes-architecture` — Lesson Form Wiring). Switching back to `content`
+deletes the 1:1 `quizzes` row (cascade).
 
 ## Client-Side Video Preview Best-Effort Only
 

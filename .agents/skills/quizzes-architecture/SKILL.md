@@ -22,10 +22,14 @@ metadata:
 
 ## Overview
 
-Gestor (`role:gestor`) get CRUD over single Quiz attached to one of
-their Lessons (`type = quiz`) plus its Questions/Options. Professor
-(`role:professor`) authors nothing here but grades: an assigned Professor
-(`User::teaches()`) grades essay attempts on their Courses through the same
+Admin/Gestor get CRUD over the single Quiz attached to one of
+their Lessons (`type = quiz`) plus its Questions/Options. An assigned
+Professor (`User::teaches()`) authors AND grades: the
+`quizzes.{create,store,edit,update,destroy}` routes share the
+`role:admin|gestor|professor` middleware group with `modules.lessons`, and
+`QuizPolicy::authorizeForCourse()` mirrors `LessonPolicy` (assigned
+Professor = full Quiz authoring on their Courses). Professor
+also grades essay attempts on their Courses through the same
 queue (`role:admin|gestor|professor` group in `routes/web.php`, per-attempt
 scope in `QuizAttemptPolicy::authorizeForCourse()`,
 `EssayGradingController::pending()` narrowing the queue to assigned
@@ -37,6 +41,23 @@ beyond
 reading `lessons.type` and writing `lesson_progress` on passed attempt
 (reuses `MarkLessonCompleteAction` — never re-implemented
 here).
+
+## Attempt History Surface (Student)
+
+Aluno also has a per-quiz attempt history, nested under `{lesson}` inside the
+same `auth` + `student.enrolled` group as the rest of `student.quizzes.*`:
+`GET lessons/{lesson}/quiz/tentativas` (`student.quizzes.history`, list of ALL
+the student's attempts for that quiz, newest first, numbered chronologically —
+oldest = "Tentativa 1") and
+`GET lessons/{lesson}/quiz/tentativas/{quizAttempt}`
+(`student.quizzes.attempt-result`, one attempt's result/answer key). The
+unparameterized `student.quizzes.result` is kept and still shows the latest
+finished attempt. Authorization for both is **student ownership in the
+controller** (`firstOrFail` on `user_id = auth()->id()` AND `quiz_id` of the
+lesson's quiz) — `QuizAttemptPolicy` is staff-only and must never be used for
+these student routes. Attempts with `status = in_progress` are NOT viewable as
+result: 404 on `attempt-result`, status-only row in the history;
+`awaiting_manual_grading` and `graded` are viewable.
 
 ## Schema
 
@@ -169,6 +190,30 @@ recomputation), which recomputes whole attempt
 `score_percentage` **using exact same formula as auto-grading** (correct
 answers ÷ total questions × 100, any unanswered question still counted in
 denominator as wrong) and re-enters step 5 above.
+
+## Lesson Form Wiring (Authoring Entry Point)
+
+The lesson form is THE surface for quiz authoring: with `type = quiz`
+selected, the SAME form embeds the full quiz payload — quiz meta
+(instructions, `min_score_percentage`, retries, time limit, gabarito) and
+a repeatable questions/options builder (`LessonQuizBuilder.js`,
+`modules/lessons/partials/_quiz-question.blade.php`). One single submit:
+`LessonController::store()`/`update()` persist lesson + quiz +
+questions + options transactionally via `SaveQuizForLessonAction`
+(upsert-by-`id`, delete-what-is-no-longer-present, payload order becomes
+`order_index`; an absent `questions` key syncs quiz meta only, an absent
+`quiz` key skips quiz persistence entirely). The quiz `title` is NOT an
+input — it is always re-synced to the lesson title. The old
+redirect-to-`quizzes.create` handoff is gone; the standalone
+`quizzes.create`/`quizzes.edit` screens remain routed and functional but
+are no longer linked from the authoring flow. Switching an existing
+lesson's type from `quiz` back to `content` deletes the 1:1 `quizzes` row
+(`questions`/`options`/`attempts`/`answers` follow via `ON DELETE
+CASCADE` FKs) — media attachments, by contrast, are preserved on any
+type switch. The `modules/lessons/index` list shows a `Quiz não
+configurado` warning chip linking to `lessons.edit` for quiz-typed
+lessons without a quiz row. Reachability coverage:
+`tests/Feature/QuizLessonAuthoringTest.php`.
 
 ## Related
 

@@ -538,7 +538,7 @@ class LessonMultimediaTest extends TestCase
         $this->put(route('lessons.update', $lesson), [
             'title' => $lesson->title,
             'type' => 'quiz',
-        ]);
+        ])->assertRedirect(route('modules.lessons.index', $module));
 
         $lesson->refresh();
         $this->assertSame('quiz', $lesson->type);

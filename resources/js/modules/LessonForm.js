@@ -56,15 +56,20 @@ export class LessonForm {
     }
 
     /**
-     * Selecionar "Quiz" oculta os campos de conteúdo multimídia.
+     * Selecionar "Quiz" oculta os campos de conteúdo multimídia e mostra a
+     * seção de autoria do quiz (regras + questões) — tudo no MESMO form e
+     * no MESMO submit; selecionar "Conteúdo" faz o inverso.
      */
     bindTypeToggle() {
         const typeSelect = document.querySelector('[data-lesson-type-select]');
         const contentFields = document.querySelector('[data-lesson-content-fields]');
-        if (!typeSelect || !contentFields) return;
+        const quizFields = document.querySelector('[data-lesson-quiz-fields]');
+        if (!typeSelect || (!contentFields && !quizFields)) return;
 
         const toggle = () => {
-            contentFields.classList.toggle('d-none', typeSelect.value === 'quiz');
+            const isQuiz = typeSelect.value === 'quiz';
+            if (contentFields) contentFields.classList.toggle('d-none', isQuiz);
+            if (quizFields) quizFields.classList.toggle('d-none', !isQuiz);
         };
 
         typeSelect.addEventListener('change', toggle);

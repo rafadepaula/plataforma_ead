@@ -18,7 +18,7 @@
 
 <li data-id="{{ $id }}"
     draggable="true"
-    {{ $attributes->merge(['class' => 'ds-sortable-row list-group-item sortable-item d-flex align-items-center justify-content-between gap-3']) }}>
+    {{ $attributes->merge(['class' => 'ds-sortable-row list-group-item sortable-item d-flex flex-wrap align-items-center justify-content-between gap-3']) }}>
     <span class="d-flex align-items-center gap-2 min-w-0 flex-grow-1">
         <x-ui.icon name="grip-vertical" size="20" aria-hidden="true" class="drag-handle" />
 
@@ -36,12 +36,18 @@
             <button type="button"
                     class="btn btn-ghost btn-sm"
                     data-move-up
+                    data-bs-toggle="tooltip"
+                    data-bs-title="Mover para cima"
+                    title="Mover para cima"
                     aria-label="Mover {{ $title }} para cima">
                 <x-ui.icon name="chevron-up" size="16" aria-hidden="true" />
             </button>
             <button type="button"
                     class="btn btn-ghost btn-sm"
                     data-move-down
+                    data-bs-toggle="tooltip"
+                    data-bs-title="Mover para baixo"
+                    title="Mover para baixo"
                     aria-label="Mover {{ $title }} para baixo">
                 <x-ui.icon name="chevron-down" size="16" aria-hidden="true" />
             </button>
@@ -51,4 +57,11 @@
             {{ $actions }}
         @endisset
     </span>
+
+    @isset($slot)
+        {{-- Conteúdo ancorado abaixo da linha (ex.: sub-itens de lições do módulo). `flex-wrap` no `<li>` + `w-100` mantém o cabeçalho na primeira linha e o bloco colado embaixo — o drag do `<li data-id>` continua carregando tudo junto. O sub-conteúdo NÃO pode carregar `data-id` próprio: o payload de reordenação lê `[data-id]` da lista inteira. --}}
+        <div class="w-100">
+            {{ $slot }}
+        </div>
+    @endisset
 </li>

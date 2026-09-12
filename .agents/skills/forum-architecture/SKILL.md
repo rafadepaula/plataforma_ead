@@ -26,7 +26,12 @@ enrollment and same-org Gestores/Admins create `forum_topics` and
 `forum_replies`. jQuery-free `since_id` AJAX polling stand in for
 websockets. Any viewer with topic access — not only
 author — can open the public "ver histórico" edit history for a post.
-A "Denunciar" report queue reviewed by Gestor also exists. That queue is
+A "Denunciar" report queue reviewed by Gestor also exists, gated by
+`ForumTopicPolicy::report`/`ForumReplyPolicy::report`: a user can NEVER
+report their own post, and staff-authored posts (Admin/Gestor/Professor)
+are outside the report flow entirely — the "Denunciar" button does not
+even render for those (`$canReportTopic`/`$canReportReply` in the views,
+`can_report` in the polling payload). That queue is
 *second* moderation channel, not only one — Gestor/Admin also pin/edit/
 delete any post directly, report or no report.
 
@@ -191,6 +196,22 @@ action). Pin/moderation routes use `role:admin|gestor|professor`
 assigned Professor reads/moderates via the `teaches()` branch
 (`ForumTopicPolicy:106-113`) but does NOT create: `canCreateInCourse()`
 covers only Gestor/Admin/enrolled-Aluno (`Policy:91-98`).
+
+## Staff Discoverability Entry Points (Management UI)
+
+The forum is backend-authorized to all staff (see middleware above), so
+management screens only add discoverable shortcuts, each following the
+same staff perimeter as the screen hosting it:
+
+- Course catalog row actions: `<x-course.row-actions>` "Fórum" ghost
+  button, `dusk="course-forum-{id}"`, rendered for Admin/Gestor (the
+  catalog itself is `CoursePolicy`-gated).
+- Modules page header: `courses/modules/index.blade.php` "Fórum de
+  dúvidas" ghost button, `dusk="course-forum-link"`, guarded inline by
+  the same condition `ModulePolicy::authorizeForCourse()` already used
+  to authorize that screen — Admin always, Gestor same-org, assigned
+  Professor via `User::teaches()`. Non-staff never even load the page
+  (403), so the button can never leak to Aluno/unassigned-Professor.
 
 ## Related
 

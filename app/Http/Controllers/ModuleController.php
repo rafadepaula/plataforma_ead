@@ -29,7 +29,14 @@ class ModuleController extends Controller
     {
         Gate::authorize('viewAny', [Module::class, $course]);
 
-        $modules = $course->modules()->withCount('lessons')->orderBy('order_index')->get();
+        // Lições eager-loadadas na ordem de exibição: a tela de módulos
+        // renderiza cada lição como sub-item do módulo — sem isso o loop
+        // das sub-listas seria N+1.
+        $modules = $course->modules()
+            ->withCount('lessons')
+            ->with(['lessons' => fn ($query) => $query->orderBy('order_index')])
+            ->orderBy('order_index')
+            ->get();
 
         return view('courses.modules.index', ['course' => $course, 'modules' => $modules]);
     }

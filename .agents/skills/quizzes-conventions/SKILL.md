@@ -6,7 +6,9 @@ description: >
   `started_at` via `OpenQuizAttemptAction`, submit-confirmation modal and
   `QuizTaking.js` selector contract,
   `QuizPolicy`/`QuizAttemptPolicy` cascade-authorize conventions,
-  create-then-manage-questions redirect flow, `QuizBuilder.js`
+  quiz authoring embedded in the lesson form (single submit via
+  `SaveQuizForLessonAction`), standalone `quizzes.*` screens kept functional,
+  `QuizBuilder.js`
   essay-type/single-correct-option behavior, reused `[data-reorder-url]`
   reorder contract. Use when writing controller, Policy, Form Request,
   Blade view, or JS module managing `Quiz`/`QuizQuestion`/`QuizOption`
@@ -111,12 +113,45 @@ student out of attempts, since they still need to see best score/history.
 Clock is stamped on `POST student.quizzes.start` via `OpenQuizAttemptAction::openOrResume()` (PRG redirect back to `show`), never on `GET show`.
 On submission, `submit()` redirects to `student.quizzes.result`, rendering `quiz-result` with `quiz-result-score`, pass/fail feedback, answer key (when `show_correct_answers` is on), and a `back-to-course` link.
 
+## Attempt History & Per-Attempt Result
+
+`GET student.quizzes.history` renders `student/quizzes/history.blade.php`
+(`attempt-history`): one row per attempt (`attempt-row-{id}`), newest
+(`started_at desc`, `id` tiebreak) first, each labeled "Tentativa N" where N
+is the chronological position by `started_at asc` (no numbering column — the
+controller fetches ordered asc, numbers `index + 1`, then reverses). Status
+badges (`attempt-status-{id}`): graded + `is_passed` → "Aprovada"/"Reprovada",
+`awaiting_manual_grading` → "Aguardando correção", `in_progress` → "Em
+andamento". Score (`attempt-score-{id}`) is "—" unless `graded`, then the raw
+`score_percentage` + `%` (same unformatted rendering as `result.blade.php`).
+Graded rows link "Ver resultado" to `student.quizzes.attempt-result`
+(`attempt-result-link-{id}`); `in_progress` rows render status only. Empty
+state: "Você ainda não tentou este quiz." (`attempt-history-empty`). Back
+links (`back-to-quiz`) go to `student.quizzes.show`.
+
+`attemptResult()` shares one rendering path with `result()` via
+`StudentQuizController::renderResult()`. Authorization is a single
+`firstOrFail` scoped to `id` + lesson's `quiz_id` + `auth()->id()` +
+finished status (`graded`/`awaiting_manual_grading`) — foreign attempts,
+cross-quiz attempts and `in_progress` attempts 404. `result.blade.php` and
+`show.blade.php` carry the "Minhas tentativas" entry link
+(`attempt-history-link`), shown only when the student has ≥ 1 attempt
+(`$hasAttempts` flag from `show()`).
+
 Real enforcement is `SubmitQuizAttemptAction::guardAttemptLimits()` on
 `submit()` POST — view-level gate is UX only. Student who POSTs anyway
 (stale tab, replayed request) still rejected server-side with
 `ValidationException` controller turns into `back()->withErrors()`.
 
 ## `QuizController@store` Redirect Target Always `quizzes.edit`
+
+The PRIMARY quiz authoring surface is the lesson form itself: with
+`type = quiz` selected, the lesson form embeds quiz meta + questions +
+options in the lesson request and persists everything in ONE
+transactional submit via `SaveQuizForLessonAction` (see
+`quizzes-architecture` — Lesson Form Wiring). The standalone
+`quizzes.create`/`quizzes.edit` screens below stay routed and functional
+(no route/view removal), just no longer linked from the authoring flow.
 
 Creating Quiz redirects straight to question-authoring screen, never back
 to Lesson — Quiz with zero Questions not yet useful:

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\SaveQuizForLessonAction;
 use App\Http\Requests\ReorderLessonsRequest;
 use App\Http\Requests\StoreLessonRequest;
 use App\Http\Requests\UpdateLessonRequest;
@@ -15,6 +16,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Throwable;
@@ -28,12 +30,19 @@ use Throwable;
  * `FileUploadService`/`VideoUrlSanitizerManager` rather than handled
  * inline, keeping isolated-storage-path and embed-sanitization rules in
  * one place.
+ *
+ * A `type = quiz` lesson embeds its FULL quiz authoring payload in this
+ * form (quiz meta + questions + options), persisted in the same request
+ * — transactionally — by `SaveQuizForLessonAction`. The old
+ * redirect-to-`quizzes.create` handoff is gone: saving a quiz lesson
+ * behaves exactly like saving a content lesson.
  */
 class LessonController extends Controller
 {
     public function __construct(
         protected FileUploadService $fileUploadService,
         protected VideoUrlSanitizerManager $videoUrlSanitizers,
+        protected SaveQuizForLessonAction $saveQuizForLesson,
     ) {}
 
     public function index(Module $module): View
@@ -54,7 +63,13 @@ class LessonController extends Controller
 
     public function store(StoreLessonRequest $request, Module $module): RedirectResponse
     {
-        $lesson = $module->lessons()->create($this->validatedAttributes($request));
+        $lesson = DB::transaction(function () use ($request, $module): Lesson {
+            $lesson = $module->lessons()->create($this->validatedAttributes($request));
+
+            $this->syncQuizPayload($request, $lesson);
+
+            return $lesson;
+        });
         $this->syncMedia($request, $lesson);
 
         return redirect()->route('modules.lessons.index', $module)
@@ -65,12 +80,29 @@ class LessonController extends Controller
     {
         Gate::authorize('update', $lesson);
 
+        // The embedded quiz builder needs the full authoring state.
+        $lesson->load('quiz.questions.options');
+
         return view('modules.lessons.edit', ['module' => $lesson->module, 'lesson' => $lesson]);
     }
 
     public function update(UpdateLessonRequest $request, Lesson $lesson): RedirectResponse
     {
-        $lesson->update($this->validatedAttributes($request));
+        $previousType = $lesson->type;
+
+        DB::transaction(function () use ($request, $lesson, $previousType): void {
+            $lesson->update($this->validatedAttributes($request));
+
+            $this->syncQuizPayload($request, $lesson);
+
+            // Ao abandonar o tipo Quiz a linha `quizzes` 1:1 ficaria órfã da
+            // autoria (inacessível e sem dono na UI). Removê-la limpa
+            // perguntas/opções/tentativas pelas FKs `ON DELETE CASCADE` —
+            // diferente da mídia, que é preservada em qualquer troca de tipo.
+            if ($previousType === 'quiz' && $lesson->type === 'content') {
+                $lesson->quiz()->first()?->delete();
+            }
+        });
         $this->syncMedia($request, $lesson);
 
         return redirect()->route('modules.lessons.index', $lesson->module)
@@ -134,6 +166,32 @@ class LessonController extends Controller
         }
 
         return response()->json(['message' => 'Ordem das lições atualizada com sucesso.']);
+    }
+
+    /**
+     * Persists the embedded quiz authoring payload (quiz meta +
+     * questions + options) for a `type = quiz` lesson, in the same
+     * transaction as the lesson row itself. An absent `quiz` input (or a
+     * non-quiz lesson) means "no quiz persistence in this request" —
+     * e.g. a quiz lesson can exist without a quiz row yet (the lessons
+     * list flags it as "Quiz não configurado" and links here), and a
+     * payload without `questions` still syncs quiz meta while leaving
+     * persisted questions untouched.
+     */
+    private function syncQuizPayload(StoreLessonRequest|UpdateLessonRequest $request, Lesson $lesson): void
+    {
+        if ($lesson->type !== 'quiz' || ! $request->input('quiz')) {
+            return;
+        }
+
+        $quizData = $request->input('quiz');
+        unset($quizData['title']);
+
+        $this->saveQuizForLesson->handle(
+            $lesson,
+            $quizData,
+            $request->has('questions') ? (array) $request->input('questions') : null,
+        );
     }
 
     /**

@@ -154,13 +154,14 @@ feature only expose toggle in Gestor-facing CRUD form. It not filter any query
 by `is_published` itself, since every read here already authenticated
 Gestor/Admin managing own content, not student consuming it.
 
-## `lessons.type = 'quiz'` Is Placeholder Here
+## `lessons.type = 'quiz'` Is a Shell Delegated to the Quizzes Domain
 
-The quizzes domain own quiz question authoring. This feature's Lesson form only populate
-`type = content` rows (Rich Text / Imagem / PDF / Vídeo YouTube/Vimeo — the four content
-kinds).
-`quiz` exist as schema value and disabled/placeholder option in UI, never fully
-wired content path in this feature. Do not add
+The lesson form is the authoring surface for BOTH kinds. `content` populates
+Rich Text / Imagem / PDF / Vídeo YouTube/Vimeo rows; `quiz` embeds the full quiz
+authoring payload in the same form (quiz meta + questions + options, one
+transactional submit via `SaveQuizForLessonAction` — see `quizzes-architecture`
+— Lesson Form Wiring). Switching type away from `quiz` deletes the 1:1
+`quizzes` row. Do not add
 `content_text`/`video_provider`/`video_url`/`pdf_path`/`image_path` population logic for
 `type = quiz` rows.
 

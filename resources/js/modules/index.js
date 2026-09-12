@@ -14,6 +14,7 @@ import ForumReportModal    from './ForumReportModal';
 import HttpClient          from './HttpClient';
 import LessonForm          from './LessonForm';
 import LessonPlayer        from './LessonPlayer';
+import LessonQuizBuilder   from './LessonQuizBuilder';
 import ModuleReorder       from './ModuleReorder';
 import NotificationBell    from './NotificationBell';
 import NotificationService from './NotificationService';
@@ -44,6 +45,7 @@ export default {
     ForumReportModal:    new ForumReportModal(httpClient, notifications),
     LessonForm:          new LessonForm(),
     LessonPlayer:        new LessonPlayer(httpClient, notifications),
+    LessonQuizBuilder:   new LessonQuizBuilder(),
     ModuleReorder:       new ModuleReorder(httpClient, notifications),
     NotificationBell:    new NotificationBell(httpClient),
     PasswordToggle:      new PasswordToggle(),

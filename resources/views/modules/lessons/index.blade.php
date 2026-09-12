@@ -27,6 +27,13 @@
                 <x-slot:chips>
                     @if($lesson->type === 'quiz')
                         <span class="ds-chip ds-chip-primary ds-chip-plain">Quiz</span>
+                        @unless($lesson->quiz()->exists())
+                            {{-- O quiz é gerenciado 100% pela tela da lição — o chip leva ao form de edição. --}}
+                            <a href="{{ route('lessons.edit', $lesson) }}"
+                               class="ds-chip ds-chip-plain ds-tone-warning text-decoration-none"
+                               dusk="configure-quiz-{{ $lesson->id }}"
+                               title="Configurar o questionário desta lição">Quiz não configurado</a>
+                        @endunless
                     @else
                         <span class="ds-chip ds-chip-outline ds-chip-plain">Conteúdo</span>
                     @endif
