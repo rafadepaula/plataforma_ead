@@ -91,7 +91,7 @@ Both shipped blades share one skeleton, full-bleed under
 
 | # | Band | Ground | Content |
 | --- | --- | --- | --- |
-| 1 | Header público | `--surface` | org logo (`landing-org-logo`) or `.brand-mark` fallback, `.landing-brand-name`, `<x-help-button key="landing" />`, theme toggle, `Entrar`/`Acessar plataforma` (`landing-login-link`) |
+| 1 | Header público | `--surface` | org logo (`landing-org-logo`) or `.brand-mark` fallback, `.landing-brand-name`, theme toggle, `Entrar`/`Acessar plataforma` (`landing-login-link`) |
 | 2 | Hero | `--blue-50` (`.ds-band-blue`) | `.tag`, `landing-title` `<h1>`, `.landing-lead`, guest CTA (`landing-hero-cta`) |
 | 3 | Como funciona | `--surface` | `landing-section-title` `<h2>`, 3 `.ds-card` cards in Bootstrap `col-md-4` columns |
 | 4 | Rodapé público | `--surface` | `© {ano} {org}`, `Validar certificado` → `route('certificates.verify')`, guest `Entrar` |

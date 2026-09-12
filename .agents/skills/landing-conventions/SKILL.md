@@ -6,8 +6,8 @@ description: >
   contract (`landing-org-logo`, `landing-login-link`, `landing-hero-cta`;
   `organization-landing-view` on the org admin form), footer link to the
   middleware-free host-scoped `certificates.verify` route, pt-BR copy
-  pinned verbatim by Feature tests, `<x-help-button key="landing" />`
-  wiring, band/ground conventions from `_public-pages.scss`. Use when
+  pinned verbatim by Feature tests, band/ground conventions from
+  `_public-pages.scss`. Use when
   writing or editing a tenant landing blade, adding a new tenant, or
   touching any `dusk=` attribute on a public screen.
 license: MIT
@@ -108,8 +108,8 @@ separator. No marketing exclamation marks.
 - Brand: org logo `<img class="brand-logo" dusk="landing-org-logo">`
   when `logo_path` set, `.brand-mark` fallback otherwise;
   `.landing-brand-name` carries the org name.
-- Every tenant blade mounts `<x-help-button key="landing" />` in the
-  header band (standalone-document bucket — see `help-conventions`).
+- No tenant blade mounts a `<x-help-button>` — the landing page
+  deliberately has no contextual help mapping (see `help-conventions`).
 
 ## Layout Files
 

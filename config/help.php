@@ -37,7 +37,6 @@ return [
     |
     */
     'standalone_keys' => [
-        'landing.show',
         'invitation.show',
         'certificates.verify',
     ],
@@ -53,6 +52,13 @@ return [
     |
     */
     'ignored_routes' => [
+        // Página institucional sem ajuda contextual por design.
+        'landing.show',
+        // Superfícies secundárias da tela de prova do aluno (histórico e
+        // detalhe de tentativa); o contexto de ajuda já é coberto pelos
+        // artigos de student.quizzes.show e student.quizzes.result.
+        'student.quizzes.history',
+        'student.quizzes.attempt-result',
         'dusk.login',
         'dusk.logout',
         'dusk.user',
@@ -142,7 +148,6 @@ return [
             'org.help.artigos.edit',
             'help.index',
             'help.show',
-            'landing.show',
             'login',
             'password.request',
             'password.reset',
@@ -193,7 +198,6 @@ return [
         'help.index',
         'help.show',
         'invitation.show',
-        'landing.show',
         'lessons.edit',
         'login',
         'modules.edit',

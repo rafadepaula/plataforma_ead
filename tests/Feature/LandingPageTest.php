@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Models\HelpArticle;
 use App\Models\Organization;
 use App\Models\User;
 use Tests\TestCase;
@@ -72,32 +71,12 @@ class LandingPageTest extends TestCase
         $this->assertMatchesRegularExpression('/href="[^"]*login[^"]*"[^>]*dusk="landing-hero-cta"|dusk="landing-hero-cta"[^>]*href="[^"]*login[^"]*"/', $content);
     }
 
-    public function test_landing_page_renders_help_button_with_placeholder_when_no_article_exists(): void
+    public function test_landing_page_does_not_render_a_contextual_help_button(): void
     {
         $response = $this->get(route('landing.show'));
 
         $response->assertOk();
-        $response->assertSee('help-button-landing', false);
-        $response->assertSee('help-modal-landing', false);
-        $response->assertSee('help-placeholder-content-landing', false);
-        $response->assertSee('Estamos preparando o conteúdo de ajuda desta tela.');
-    }
-
-    public function test_landing_page_renders_help_button_with_resolved_article_content(): void
-    {
-        $article = HelpArticle::withoutEvents(fn () => HelpArticle::factory()->global()->create([
-            'target_page_key' => 'landing',
-            'title' => 'Ajuda da Página Inicial',
-            'content' => 'Conheça nossa plataforma de capacitação técnica.',
-        ]));
-
-        $response = $this->get(route('landing.show'));
-
-        $response->assertOk();
-        $response->assertSee('help-button-landing', false);
-        $response->assertSee('help-modal-landing', false);
-        $response->assertSee('help-article-content-landing', false);
-        $response->assertSee('Ajuda da Página Inicial');
-        $response->assertSee('Conheça nossa plataforma de capacitação técnica.');
+        $response->assertDontSee('help-button-landing', false);
+        $response->assertDontSee('help-modal-landing', false);
     }
 }

@@ -404,29 +404,6 @@ Sim! A URL do artigo é amigável e pode ser compartilhada diretamente por e-mai
 MARKDOWN
     ],
     [
-        'target_page_key' => 'landing.show',
-        'audience' => 'aluno',
-        'title' => 'Apresentação da Plataforma EAD',
-        'slug' => 'apresentacao-da-plataforma-ead',
-        'category' => 'Público',
-        'content' => <<<'MARKDOWN'
-## Para que serve
-Página institucional de apresentação da plataforma educacional. Demonstra os principais recursos do sistema para novos visitantes, instrutores e instituições interessadas em capacitação online.
-
-## Passo a passo
-1. Conheça os diferenciais da plataforma: salas de aula modernas, reprodutor de vídeo inteligente, suporte a provas avaliativas e emissão segura de certificados.
-2. Caso já possua conta, clique no botão "Acessar Plataforma" no cabeçalho para fazer seu login.
-3. Se recebeu um link de convite (um link único, pessoal), acesse-o diretamente para finalizar seu cadastro com a senha que você escolher.
-
-## Regras e limites
-- Página pública e estática, projetada para carregamento ultrarrápido sem dependência de autenticação prévia.
-
-## Dúvidas comuns
-**Como me cadastro para fazer um curso?**
-O cadastro na plataforma é realizado através do link de convite único enviado pela sua organização: ele abre com seu e-mail já preenchido e você define a própria senha.
-MARKDOWN
-    ],
-    [
         'target_page_key' => 'login',
         'audience' => 'aluno',
         'title' => 'Entrar na Plataforma (Login)',

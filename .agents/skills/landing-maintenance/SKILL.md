@@ -45,14 +45,13 @@ no Pest):
   the org brand (`topbar-org-name`).
 - `tests/Feature/LandingPageTest.php` — tenant brand + key copy of the
   ligacerto blade (header brand, hero headline, "Como funciona", footer
-  `Validar certificado`), guest CTA `href`s, and the
-  `<x-help-button key="landing" />` inert (placeholder) vs resolved
-  article branches. Shared territory with `help-maintenance`, which
-  cites this file by name — keep the help-button cases here.
+  `Validar certificado`), guest CTA `href`s, and the absence of any
+  contextual help button (shared territory with `help-maintenance`, which
+  cites this file by name).
 - `tests/Browser/LandingPageDuskTest.php` (Dusk E2E, ligacerto blade on
   the Dusk tenant host) — four methods:
   1. `test_landing_page_visitor_lifecycle` — hero copy, header link and
-     hero CTA both navigate to `/login`, help modal opens.
+     hero CTA both navigate to `/login`.
   2. `test_authenticated_aluna_cta_points_at_the_course_catalog` —
      header link `href` becomes `student.courses.index`.
   3. `test_landing_page_responsive_contract_at_every_breakpoint` —

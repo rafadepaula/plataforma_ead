@@ -59,13 +59,6 @@ class LandingPageDuskTest extends DuskTestCase
                 ->click('@landing-login-link')
                 ->waitForLocation('/login')
                 ->assertPathIs('/login');
-
-            // Ajuda contextual da landing.
-            $browser->visit('/')
-                ->waitFor('@help-button-landing')
-                ->click('@help-button-landing')
-                ->waitFor('@help-modal-landing')
-                ->assertSeeIn('@help-modal-landing .modal-title', 'Ajuda');
         });
     }
 
