@@ -447,7 +447,7 @@ Regras:
 - `dusk="error-{campo}"` = contrato de teste para asserção de erro.
 - `<select>`: mesma lógica com `.form-select is-invalid`.
 - checkbox/radio: `.form-check-input is-invalid` + `.invalid-feedback` dentro do `.form-check`.
-- Erro vindo de JSON (AJAX: `CsvImporter`, `SmartInvitationForm`) aplica `.is-invalid` via JS no campo e escreve o texto no `.invalid-feedback` existente. Nunca cria markup de erro novo.
+- Erro vindo de JSON (AJAX: `CsvImporter`) aplica `.is-invalid` via JS no campo e escreve o texto no `.invalid-feedback` existente. Nunca cria markup de erro novo.
 - Nunca `<x-ui.alert>` para erro de campo. Alert é para erro de formulário inteiro ou flash de sessão.
 
 ---

@@ -1,8 +1,10 @@
 @php
-    $invitation = $invitation ?? $invitationLink ?? null;
-    $course = $course ?? $invitation?->course ?? null;
-    $courseTitle = $course?->title ?? '';
-    $token = $invitation?->token ?? '';
+    /** @var \App\Models\StudentInvitation $invitation */
+    /** @var \Illuminate\Support\Collection<int, string> $courseTitles */
+    $student = $invitation->student;
+    $firstName = \Illuminate\Support\Str::before($student?->name ?? '', ' ');
+    $orgName = $invitation->organization?->name;
+    $token = $invitation->token;
 @endphp
 
 @extends('layouts.guest')
@@ -10,97 +12,94 @@
 @section('content')
     {{-- `level="h2"`: o `h1` da página é o do painel institucional do shell. --}}
     <x-layout.page-header
-        kicker="Convite"
-        :title="'Matrícula em '.$courseTitle"
+        kicker="Boas-vindas"
+        :title="'Olá, '.$firstName.'!'"
         level="h2"
-        subtitle="Informe seu e-mail para continuar. Se você já tem conta na plataforma, basta confirmar sua senha."
+        subtitle="Tudo pronto para o seu começo — só falta escolher a sua senha."
     />
 
+    @if($orgName)
+        <p class="guest-hint mb-4">
+            A <strong>{{ $orgName }}</strong> criou uma conta para você nesta
+            plataforma. Nada de cadastro demorado: confirme quem você é,
+            escolha uma senha e pronto — seus cursos já te esperam.
+        </p>
+    @endif
+
+    @if($courseTitles->isNotEmpty())
+        <div class="mb-4">
+            <p class="fw-semibold mb-2">Você já tem acesso a:</p>
+            <div class="d-flex flex-wrap gap-2">
+                @foreach($courseTitles as $courseTitle)
+                    <x-ui.badge variant="success">{{ $courseTitle }}</x-ui.badge>
+                @endforeach
+            </div>
+        </div>
+    @endif
+
+    {{-- Identidade somente leitura: vem do token (único por aluno), nunca do
+         POST — o campo desabilitado é visual; o backend sequer lê `email`. --}}
     <form method="POST"
           action="{{ route('invitation.store', $token) }}"
-          data-check-email-url="{{ route('invitation.check-email') }}"
-          data-smart-invitation
           dusk="invitation-form">
         @csrf
 
+        <p class="fw-semibold mb-3">Confirme seus dados</p>
+
         <x-ui.input
             type="email"
-            name="email"
-            label="E-mail"
-            :value="old('email')"
-            required
-            autofocus
-            data-invitation-email
+            name="email_display"
+            label="Seu e-mail de acesso"
+            :value="$student?->email"
+            readonly
             dusk="invitation-email"
         />
+        <x-ui.input
+            name="name_display"
+            label="Seu nome"
+            :value="$student?->name"
+            readonly
+            class="mt-3"
+            dusk="invitation-name"
+        />
 
-        {{-- Informação neutra, não alerta: bloco em `--blue-50`. O estado
-             escondido é a classe `d-none`, alternada pelo
-             `SmartInvitationForm.toggleFields()` — nunca o atributo `hidden`. --}}
-        <p class="guest-hint mb-3 d-none"
-           data-invitation-existing-hint
-           data-invitation-field="existing-account-hint"
-           dusk="invitation-existing-account-hint">
-            Já encontramos uma conta com este e-mail. Confirme sua senha para se matricular.
-        </p>
+        <p class="fw-semibold mt-4 mb-3">Agora escolha sua senha</p>
 
-        <div data-invitation-field="new-account">
-            <x-ui.input
-                name="name"
-                label="Nome completo"
-                :value="old('name')"
-                required
-                data-invitation-name
-                dusk="invitation-name"
-            />
-        </div>
-
-        <div data-invitation-field="new-account">
-            <x-ui.input
-                name="cpf"
-                label="CPF"
-                :value="old('cpf')"
-                required
-                data-invitation-cpf
-                dusk="invitation-cpf"
-            />
-        </div>
-
-        {{-- A senha aparece nos dois estados: cadastro novo e vínculo de conta. --}}
         <x-ui.input
             type="password"
             name="password"
-            label="Senha"
+            label="Sua nova senha"
+            hint="Pelo menos 8 caracteres. Anote em um lugar seguro!"
             required
-            data-invitation-password
+            autofocus
             dusk="invitation-password"
         />
 
-        <div data-invitation-field="new-account">
-            <x-ui.input
-                type="password"
-                name="password_confirmation"
-                label="Confirmar senha"
-                required
-                data-invitation-password-confirmation
-                dusk="invitation-password-confirmation"
-            />
-        </div>
+        <x-ui.input
+            type="password"
+            name="password_confirmation"
+            label="Digite a senha novamente"
+            required
+            class="mt-3"
+            dusk="invitation-password-confirmation"
+        />
 
         {{-- Interruptor obrigatório: o erro vem em contorno `.is-invalid` mais
              mensagem, nunca só a bolha nativa do navegador. --}}
-        <div class="mb-4">
+        <div class="mb-4 mt-3">
             <x-ui.switch
                 name="consent"
                 value="1"
                 required
-                label="Concordo em compartilhar meus dados com a organização responsável por este curso."
+                :label="$orgName
+                    ? 'Concordo que a '.$orgName.' organize meus cursos e meus dados de estudo nesta plataforma.'
+                    : 'Concordo que a organização responsável organize meus cursos e meus dados de estudo nesta plataforma.'"
                 dusk="invitation-consent"
             />
         </div>
 
         <x-ui.button type="submit" variant="primary" size="lg" class="w-100" dusk="invitation-submit">
-            Matricular-me
+            Salvar senha e começar
         </x-ui.button>
     </form>
 @endsection

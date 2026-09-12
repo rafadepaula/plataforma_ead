@@ -20,7 +20,6 @@ use App\Http\Controllers\HelpArticleController;
 use App\Http\Controllers\HelpCenterController;
 use App\Http\Controllers\ImpersonateOrgController;
 use App\Http\Controllers\InvitationController;
-use App\Http\Controllers\InvitationLinkController;
 use App\Http\Controllers\LandingPageController;
 use App\Http\Controllers\LessonController;
 use App\Http\Controllers\LessonPdfController;
@@ -37,6 +36,7 @@ use App\Http\Controllers\QuizController;
 use App\Http\Controllers\QuizQuestionController;
 use App\Http\Controllers\ReportExportController;
 use App\Http\Controllers\StudentCourseController;
+use App\Http\Controllers\StudentInvitationController;
 use App\Http\Controllers\StudentQuizController;
 use App\Http\Controllers\SystemSettingController;
 use App\Http\Controllers\UserController;
@@ -125,9 +125,26 @@ Route::middleware(['auth', 'role:admin|gestor'])->group(function (): void {
 // enforced by middleware first and Policy second.
 Route::middleware(['auth', 'role:gestor'])->group(function (): void {
     Route::get('gestor/students', [GestorStudentController::class, 'index'])->name('gestor.students.index');
+    // directory-level create: one form creates the Aluno AND enrolls them
+    // in the picked Course (see `GestorStudentController::create/store`).
+    Route::get('gestor/students/create', [GestorStudentController::class, 'create'])->name('gestor.students.create');
+    Route::post('gestor/students', [GestorStudentController::class, 'store'])->name('gestor.students.store');
     Route::get('gestor/students/{user}/edit', [GestorStudentController::class, 'edit'])->name('gestor.students.edit');
     Route::put('gestor/students/{user}', [GestorStudentController::class, 'update'])->name('gestor.students.update');
     Route::delete('gestor/students/{user}', [GestorStudentController::class, 'destroy'])->name('gestor.students.destroy');
+
+    // the per-student unique invitation link (`gestor.students.invitations.*`,
+    // see `StudentInvitationController`): `issue` is get-or-create so the
+    // "Copiar convite" button is idempotent, `regenerate` rotates the token
+    // (revokes the live link, issues another), `destroy` revokes without
+    // replacing. Authorization is `UserPolicy::managesSameOrgAluno` — the
+    // same boundary as the directory above.
+    Route::post('gestor/students/{user}/convite', [StudentInvitationController::class, 'issue'])
+        ->name('gestor.students.invitations.issue');
+    Route::post('gestor/students/{user}/convite/renovar', [StudentInvitationController::class, 'regenerate'])
+        ->name('gestor.students.invitations.regenerate');
+    Route::delete('gestor/students/{user}/convite', [StudentInvitationController::class, 'destroy'])
+        ->name('gestor.students.invitations.destroy');
 
     //  the Gestor's exclusive Professor directory:
     // creates/edits/deletes the `professor` accounts of their own
@@ -256,14 +273,10 @@ Route::middleware('auth')->group(function (): void {
         ->name('password.update');
 });
 
-// Invitation Link management + manual enrollment
-// panels, restricted to Admin/Gestor (see the `invitations-conventions`
-// skill).
+// Manual enrollment panel, restricted to Admin/Gestor (see the
+// `courses-conventions` skill). The per-student unique invitation lives
+// under `role:gestor` below (`gestor.students.invitations.*`).
 Route::middleware(['auth', 'role:admin|gestor'])->group(function (): void {
-    Route::resource('courses.invitation-links', InvitationLinkController::class)
-        ->shallow()
-        ->only(['index', 'create', 'store', 'destroy']);
-
     // Not a `Route::resource()` — `course_user` is a pivot with no
     // `Enrollment` Eloquent model to route-bind (see `courses-architecture`),
     // so `destroy` takes both `{course}` and `{user}` explicitly rather than
@@ -299,21 +312,17 @@ Route::middleware(['auth', 'role:admin|gestor'])->group(function (): void {
         ->name('courses.professors.destroy');
 });
 
-// public, unauthenticated Smart Invitation flow: a
-// student joins the platform (or authenticates into an already-existing
-// account, per the multi-org adaptive flow) purely from a
+// public, unauthenticated invitation redemption flow: a
+// pre-registered Aluno finalizes their own account purely from a
 // `/convite/{token}` link, with no prior session (see the
-// `invitations-architecture` skill).
+// `invitations-architecture` skill). The token IS the identity — the
+// e-mail/name shown come from the invitation's `user_id` and are
+// immutable; the visitor only sets a password and consents.
 Route::middleware('guest')->group(function (): void {
     Route::get('convite/{token}', [InvitationController::class, 'show'])->name('invitation.show');
-    // Both POST endpoints are throttled per IP: they are public,
-    // unauthenticated and answer questions about personal data (whether an
-    // e-mail has an account, whether a CPF is already registered), so the
-    // rate limit is what keeps them from being usable as enumeration
-    // oracles over LGPD-sensitive data.
-    Route::post('convite/check-email', [InvitationController::class, 'checkEmail'])
-        ->middleware('throttle:20,1')
-        ->name('invitation.check-email');
+    // Throttled per IP: it is public, unauthenticated and consumes a
+    // single-use credential-setting token, so the rate limit is what
+    // keeps it from being probed as a password-setting oracle.
     Route::post('convite/{token}', [InvitationController::class, 'store'])
         ->middleware('throttle:10,1')
         ->name('invitation.store');

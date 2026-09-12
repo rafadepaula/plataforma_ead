@@ -2,95 +2,93 @@
 
 namespace App\Http\Controllers;
 
-use App\Actions\ProcessSmartInvitationAction;
-use App\Exceptions\InvitationLinkInvalidException;
-use App\Http\Requests\CheckInvitationEmailRequest;
-use App\Http\Requests\ProcessInvitationRequest;
-use App\Models\Credential;
-use App\Models\InvitationLink;
-use App\Models\User;
+use App\Actions\RedeemStudentInvitationAction;
+use App\Exceptions\InvitationInvalidException;
+use App\Http\Requests\FinalizeStudentInvitationRequest;
+use App\Models\StudentInvitation;
 use App\Services\OrgContext;
 use Illuminate\Contracts\View\View;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Route;
 
 /**
- * the public, unauthenticated Smart Invitation flow:
- * `/convite/{token}` (show + submit) and the `/convite/check-email` AJAX
- * lookup that drives the adaptive form. Host-based tenancy: a link is only
- * redeemable on its own Organization's host — a valid token hit from
- * another portal reads as "not found", never revealing the link. The
- * adaptive form keys on the person holding an account
- * (`credentials` row) in THIS portal's Organization.
+ * the public, unauthenticated invitation redemption flow:
+ * `/convite/{token}` (show + submit). The token IS the identity — each
+ * `StudentInvitation` row is bound to one pre-registered Aluno, so the
+ * e-mail/name on the form come from the invitation and are immutable; the
+ * visitor only chooses a password and consents. Host-based tenancy: a
+ * link is only redeemable on its own Organization's host — a valid token
+ * hit from another portal reads as "not found", never revealing the link.
  */
 class InvitationController extends Controller
 {
-    public function __construct(private readonly ProcessSmartInvitationAction $processSmartInvitationAction) {}
+    public function __construct(private readonly RedeemStudentInvitationAction $redeemStudentInvitationAction) {}
 
     /**
-     * @throws InvitationLinkInvalidException
+     * @throws InvitationInvalidException
      */
     public function show(string $token): View
     {
-        $invitationLink = $this->resolveUsableLink($token);
+        $invitation = $this->resolveUsableInvitation($token);
+
+        // Welcome screen, not a bureaucratic form: the visitor sees the
+        // courses the Gestor already enrolled them in — the account comes
+        // ready-made, only the password is missing.
+        $courseTitles = $invitation->student
+            ->courses()
+            ->withoutGlobalScopes()
+            ->where('courses.org_id', $invitation->org_id)
+            ->wherePivotIn('status', ['active', 'completed'])
+            ->orderBy('courses.title')
+            ->pluck('courses.title');
 
         return view('convite.show', [
-            'invitationLink' => $invitationLink,
+            'invitation' => $invitation,
+            'courseTitles' => $courseTitles,
             // A visitor arriving from an invitation has no tenant session, so
             // the guest panel gets the inviting organization explicitly.
-            'tenantName' => $invitationLink->organization?->name,
+            'tenantName' => $invitation->organization?->name,
         ]);
     }
 
-    public function checkEmail(CheckInvitationEmailRequest $request): JsonResponse
-    {
-        $context = OrgContext::current();
-        $user = User::query()->where('email', $request->validated('email'))->first();
-
-        $exists = $user !== null
-            && Credential::query()->forOrg($context->orgId())->where('user_id', $user->id)->exists();
-
-        return response()->json(['exists' => $exists]);
-    }
-
     /**
-     * @throws InvitationLinkInvalidException
+     * @throws InvitationInvalidException
      */
-    public function store(ProcessInvitationRequest $request, string $token): RedirectResponse
+    public function store(FinalizeStudentInvitationRequest $request, string $token): RedirectResponse
     {
-        $this->processSmartInvitationAction->execute($token, $request->validated());
+        $this->redeemStudentInvitationAction->execute($token, $request->validated());
 
         return redirect(
             Route::has('student.courses.index') ? route('student.courses.index') : '/'
-        )->with('success', 'Matrícula realizada com sucesso.');
+        )->with('success', 'Cadastro finalizado com sucesso. Bem-vindo!');
     }
 
     /**
-     * Token → usable link, restricted to the request host's Organization:
-     * wrong-portal and unknown tokens are indistinguishable 404s.
+     * Token → usable invitation, restricted to the request host's
+     * Organization: wrong-portal and unknown tokens are indistinguishable
+     * 404s.
      *
-     * @throws InvitationLinkInvalidException
+     * @throws InvitationInvalidException
      */
-    private function resolveUsableLink(string $token): InvitationLink
+    private function resolveUsableInvitation(string $token): StudentInvitation
     {
-        $invitationLink = InvitationLink::query()
+        $invitation = StudentInvitation::query()
             ->withoutGlobalScopes()
             ->where('token', $token)
             ->first();
 
-        if (! $invitationLink) {
-            throw InvitationLinkInvalidException::notFound($token);
+        if (! $invitation) {
+            throw InvitationInvalidException::notFound($token);
         }
 
-        if ((int) $invitationLink->org_id !== (int) OrgContext::current()->orgId()) {
-            throw InvitationLinkInvalidException::notFound($token);
+        if ((int) $invitation->org_id !== (int) OrgContext::current()->orgId()) {
+            throw InvitationInvalidException::notFound($token);
         }
 
-        if ($reason = $invitationLink->unusableReason()) {
-            throw InvitationLinkInvalidException::forReason($reason, $token);
+        if ($reason = $invitation->unusableReason()) {
+            throw InvitationInvalidException::forReason($reason, $token);
         }
 
-        return $invitationLink;
+        return $invitation;
     }
 }

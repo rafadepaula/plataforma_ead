@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Actions\ProvisionOrgAccountAction;
 use App\Enums\Permissions\RolesEnum;
-use App\Exceptions\UserHasCreatedInvitationLinksException;
 use App\Exceptions\UserHasIssuedCertificatesException;
 use App\Http\Controllers\Concerns\ResolvesOrgContext;
 use App\Http\Requests\StoreUserRequest;
@@ -164,12 +163,6 @@ class UserController extends Controller
         if ($user->certificates()->exists()) {
             throw new UserHasIssuedCertificatesException(
                 "Usuário #{$user->id} possui certificados emitidos e não pode ser excluído."
-            );
-        }
-
-        if ($user->createdInvitationLinks()->withoutGlobalScope('org')->exists()) {
-            throw new UserHasCreatedInvitationLinksException(
-                "Usuário #{$user->id} criou links de convite e não pode ser excluído."
             );
         }
 

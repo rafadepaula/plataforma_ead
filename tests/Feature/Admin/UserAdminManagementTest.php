@@ -7,7 +7,6 @@ use App\Models\AuditLog;
 use App\Models\Certificate;
 use App\Models\Course;
 use App\Models\Credential;
-use App\Models\InvitationLink;
 use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
@@ -633,50 +632,6 @@ class UserAdminManagementTest extends TestCase
         Certificate::factory()->create(['user_id' => $target->id, 'course_id' => $course->id]);
 
         $this->actingAsAdmin();
-
-        $response = $this->delete(route('admin.users.destroy', $target));
-
-        $response->assertRedirect();
-        $response->assertSessionHas('error');
-        $this->assertDatabaseHas('users', ['id' => $target->id]);
-    }
-
-    public function test_admin_cannot_delete_a_user_who_has_created_invitation_links(): void
-    {
-        $org = Organization::factory()->create();
-        $target = User::factory()->inOrg($org->id)->create();
-        $target->assignRole(RolesEnum::GESTOR->value);
-        $course = Course::factory()->inOrg($org->id)->create();
-        InvitationLink::factory()->create([
-            'org_id' => $org->id,
-            'course_id' => $course->id,
-            'created_by' => $target->id,
-        ]);
-
-        $this->actingAsAdmin();
-
-        $response = $this->delete(route('admin.users.destroy', $target));
-
-        $response->assertRedirect();
-        $response->assertSessionHas('error');
-        $this->assertDatabaseHas('users', ['id' => $target->id]);
-    }
-
-    public function test_admin_cannot_delete_a_user_who_created_invitation_links_in_another_org_while_impersonating_a_different_org(): void
-    {
-        $orgA = Organization::factory()->create();
-        $orgB = Organization::factory()->create();
-        $target = User::factory()->inOrg($orgA->id)->create();
-        $target->assignRole(RolesEnum::GESTOR->value);
-        $course = Course::factory()->inOrg($orgA->id)->create();
-        InvitationLink::factory()->create([
-            'org_id' => $orgA->id,
-            'course_id' => $course->id,
-            'created_by' => $target->id,
-        ]);
-
-        $this->actingAsAdmin();
-        session(['active_org_id' => $orgB->id]);
 
         $response = $this->delete(route('admin.users.destroy', $target));
 

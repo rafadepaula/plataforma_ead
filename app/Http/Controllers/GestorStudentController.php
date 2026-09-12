@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\CreateOrgStudentAction;
 use App\Enums\Permissions\RolesEnum;
-use App\Exceptions\UserHasCreatedInvitationLinksException;
+use App\Events\EnrollmentConfirmed;
 use App\Exceptions\UserHasIssuedCertificatesException;
 use App\Http\Controllers\Concerns\ResolvesOrgContext;
+use App\Http\Requests\StoreGestorStudentRequest;
 use App\Http\Requests\UpdateGestorStudentRequest;
+use App\Models\Course;
 use App\Models\User;
 use App\Rules\Cpf;
 use App\Services\AuditService;
@@ -31,14 +34,18 @@ use Throwable;
  *
  * Deliberately a separate controller from the Admin-only
  * `UserController`/`UserAdminController` stack (see `auth-orgs-conventions`):
- * there is no create/role-change surface here. New Alunos enter the
- * Organization through invitation links, the shared CSV import
- * (`users.import.*`, `role:admin|gestor`) or per-Course manual enrollment,
- * and staff accounts are an Admin matter on `users.*`.
+ * there is no role-change surface here. New Alunos enter the Organization
+ * through this controller's own one-step create form (`create`/`store`,
+ * with the course picker and the unique invitation link), the shared CSV
+ * import (`users.import.*`, `role:admin|gestor`), the course-nested
+ * enrollment panel or per-Course manual enrollment — and staff accounts
+ * are an Admin matter on `users.*`.
  */
 class GestorStudentController extends Controller
 {
     use ResolvesOrgContext;
+
+    public function __construct(private readonly CreateOrgStudentAction $createOrgStudentAction) {}
 
     public function index(Request $request): View
     {
@@ -77,6 +84,73 @@ class GestorStudentController extends Controller
             ->withQueryString();
 
         return view('gestor.students.index', ['students' => $students, 'search' => $search]);
+    }
+
+    /**
+     * the directory-level "Cadastrar aluno" screen: same identity fields
+     * as the course-nested form, but with the Course picker right on the
+     * form — the Gestor creates AND enrolls without leaving the
+     * directory. `course_id` is REQUIRED because this listing only shows
+     * enrolled Alunos; creating without one would make the person
+     * invisible in the Gestor's own UI.
+     */
+    public function create(): View
+    {
+        Gate::authorize('viewAnyStudents', User::class);
+
+        $courses = Course::query()
+            ->orderBy('title')
+            ->get(['id', 'title']);
+
+        return view('gestor.students.create', ['courses' => $courses]);
+    }
+
+    /**
+     * creates the Aluno (pending credential + unique invitation via
+     * {@see CreateOrgStudentAction}) already enrolled in the picked
+     * Course, then hands the invitation link back through the
+     * `invitation_url` flash — the same handoff the enrollment panel
+     * uses. `EnrollmentConfirmed` dispatches only after the Action's
+     * transaction commits.
+     */
+    public function store(StoreGestorStudentRequest $request): RedirectResponse
+    {
+        Gate::authorize('viewAnyStudents', User::class);
+
+        $orgId = $this->resolveOrgId($request);
+        $data = $request->validated();
+
+        $course = Course::query()->findOrFail($data['course_id']);
+
+        $result = $this->createOrgStudentAction->execute(
+            $course->organization,
+            $data['name'],
+            $data['email'],
+            $data['cpf'],
+            $course,
+            auth()->id(),
+        );
+
+        if ($result['enrolled']) {
+            EnrollmentConfirmed::dispatch($course, $result['student']);
+        }
+
+        return redirect()->route('gestor.students.index')
+            ->with('success', $this->creationMessage($result['existed'], $result['enrolled']))
+            ->with('invitation_url', url('/convite/'.$result['invitation']->token));
+    }
+
+    /**
+     * Success copy reflects what actually happened — linking an existing
+     * multi-org person reads differently from a brand-new registration.
+     */
+    private function creationMessage(bool $existed, bool $enrolled): string
+    {
+        return match (true) {
+            ! $existed => 'Aluno cadastrado e matriculado com sucesso. Envie o link de convite para ele criar a senha.',
+            $enrolled => 'Aluno já existente na plataforma: conta vinculada e matriculada com sucesso.',
+            default => 'Aluno já pertence à sua organização. O link de convite serve para ele acessar ou redefinir a senha.',
+        };
     }
 
     public function edit(Request $request, User $user): View
@@ -168,12 +242,6 @@ class GestorStudentController extends Controller
         if ($user->certificates()->exists()) {
             throw new UserHasIssuedCertificatesException(
                 "Aluno #{$user->id} possui certificados emitidos e não pode ser excluído."
-            );
-        }
-
-        if ($user->createdInvitationLinks()->withoutGlobalScope('org')->exists()) {
-            throw new UserHasCreatedInvitationLinksException(
-                "Aluno #{$user->id} criou links de convite e não pode ser excluído."
             );
         }
 

@@ -41,6 +41,19 @@
         </x-slot:actions>
     </x-layout.page-header>
 
+    {{-- Link de convite único do aluno recém-criado (flash de
+         `storeStudent`): o momento exato de copiar e enviar. Aparece só
+         após o cadastro — é o token de finalização de conta do aluno. --}}
+    @if(session('invitation_url'))
+        <div class="alert alert-success d-flex flex-wrap align-items-center gap-2" dusk="invitation-flash">
+            <span class="flex-1 min-w-0 text-truncate" dusk="invitation-flash-link">{{ session('invitation_url') }}</span>
+            <button type="button"
+                    class="btn btn-sm btn-primary flex-shrink-0"
+                    data-copy-link="{{ session('invitation_url') }}"
+                    dusk="copy-invitation-flash">Copiar link de convite</button>
+        </div>
+    @endif
+
     {{--
         Busca client-side ainda não filtra no servidor: `EnrollmentController`
         fica fora do escopo deste bucket (não está na lista de arquivos
@@ -236,6 +249,46 @@
 @endsection
 
 @push('scripts')
+    <script>
+        // Copiar o link de convite em flash — inline, sem novo módulo em
+        // resources/js/, mesmo padrão do botão "Copiar convite" do
+        // diretório de alunos.
+        document.addEventListener('DOMContentLoaded', function () {
+            // `navigator.clipboard` só existe em contexto seguro (HTTPS ou
+            // localhost); em hosts HTTP puros (ex.: `laravel.test` interno
+            // do Docker) cai no fallback legado `execCommand('copy')`.
+            function copyInvitationText(value) {
+                if (navigator.clipboard && window.isSecureContext) {
+                    return navigator.clipboard.writeText(value);
+                }
+
+                var textarea = document.createElement('textarea');
+                textarea.value = value;
+                textarea.setAttribute('readonly', '');
+                textarea.style.position = 'fixed';
+                textarea.style.opacity = '0';
+                document.body.appendChild(textarea);
+                textarea.select();
+
+                try {
+                    document.execCommand('copy');
+                } finally {
+                    textarea.remove();
+                }
+
+                return Promise.resolve();
+            }
+            document.querySelectorAll('[data-copy-link]').forEach(function (button) {
+                button.addEventListener('click', function () {
+                    copyInvitationText(button.getAttribute('data-copy-link')).then(function () {
+                        if (window.NotificationService) {
+                            window.NotificationService.success('Link de convite copiado. Envie ao aluno para ele finalizar o cadastro.');
+                        }
+                    });
+                });
+            });
+        });
+    </script>
     @if ($errors->any())
         <script>
             // Reabre a modal de matrícula quando o POST volta com erro de

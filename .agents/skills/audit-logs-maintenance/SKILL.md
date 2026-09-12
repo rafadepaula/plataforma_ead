@@ -56,7 +56,7 @@ Not yet resolved:
 
 1. **`csv.import` granularity.** `UserImportService::importChunk()` runs once per 50-row browser chunk. The documented payload (`total_processed`, `file_name`) implies one event per logical import — needs an import-session/finalization step not yet designed.
 2. **`password.reset` scope.** Only completed reset (`NewPasswordController`'s `PasswordReset` event), or also request stage (`PasswordResetLinkController::store()`, which fires no stock Illuminate event today)?
-3. **Exact "Mutação Geral" model list.** The documented list names 7 models plus "etc.". Confirm whether `InvitationLink`, `ForumTopic`, `SystemSetting`, `HelpArticle` are in scope before treating list as closed.
+3. **Exact "Mutação Geral" model list.** The documented list names 7 models plus "etc.". Confirm whether `StudentInvitation`, `ForumTopic`, `SystemSetting`, `HelpArticle` are in scope before treating list as closed.
 4. **Event-category to event-name mapping for the filter dropdown.** 3 labels named, no per-category enum given. The 3-key array in `audit-logs-conventions` is a working assumption, not settled.
 
 ---

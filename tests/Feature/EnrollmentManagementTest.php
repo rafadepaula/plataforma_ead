@@ -4,7 +4,9 @@ namespace Tests\Feature;
 
 use App\Enums\Permissions\RolesEnum;
 use App\Models\Course;
+use App\Models\Credential;
 use App\Models\Organization;
+use App\Models\StudentInvitation;
 use App\Models\User;
 use App\Notifications\EnrollmentConfirmedNotification;
 use Illuminate\Support\Carbon;
@@ -446,16 +448,26 @@ class EnrollmentManagementTest extends TestCase
             'email' => 'nova.aluna@example.com',
             'cpf' => '111.444.777-35',
         ])->assertRedirect(route('courses.enrollments.index', $course))
-            ->assertSessionHas('success');
+            ->assertSessionHas('success')
+            // O link de convite único do aluno vai no flash para o gestor
+            // copiar imediatamente.
+            ->assertSessionHas('invitation_url');
 
         $student = User::query()->where('email', 'nova.aluna@example.com')->firstOrFail();
         $this->assertSame('11144477735', $student->cpf);
         $credential = $student->credentialFor($org);
         $this->assertNotNull($credential);
-        $this->assertSame('active', $credential->status);
+        // A conta nasce pendente: o aluno define a própria senha ao abrir
+        // o link de convite — ninguém (nem o gestor) conhece a inicial.
+        $this->assertSame('pending', $credential->status);
+        $this->assertFalse(Hash::check('11144477735', $credential->password));
         $this->assertTrue($student->hasRole(RolesEnum::ALUNO->value));
-        // A senha inicial é o CPF normalizado em dígitos.
-        $this->assertTrue(Hash::check('11144477735', $credential->password));
+
+        $invitation = StudentInvitation::query()->where('user_id', $student->id)->firstOrFail();
+        $this->assertSame($org->id, $invitation->org_id);
+        $this->assertSame(64, mb_strlen($invitation->token));
+        $this->assertNull($invitation->used_at);
+        $this->assertStringContainsString($invitation->token, session('invitation_url'));
 
         $this->assertDatabaseHas('course_user', [
             'course_id' => $course->id,
@@ -466,27 +478,71 @@ class EnrollmentManagementTest extends TestCase
         Notification::assertSentTo($student, EnrollmentConfirmedNotification::class);
     }
 
-    public function test_create_student_rejects_duplicate_email_and_cpf_variants(): void
+    public function test_create_student_links_an_existing_person_from_another_org(): void
+    {
+        Notification::fake();
+
+        $orgA = Organization::factory()->create();
+        $otherCourse = Course::factory()->inOrg($orgA->id)->create();
+        $person = User::factory()->aluno()->create([
+            'name' => 'Pessoa Multi-Org',
+            'email' => 'multi.org@example.com',
+            'cpf' => '52998224725',
+        ]);
+        Credential::factory()->pending()->create(['user_id' => $person->id, 'org_id' => $orgA->id]);
+        $person->courses()->attach($otherCourse->id, ['status' => 'active', 'enrolled_at' => now()]);
+
+        // Mesma pessoa, portal B: o Gestor de B cadastra pelo mesmo
+        // formulário — nada de "e-mail em uso": 1 user, 2 credentials.
+        $orgB = Organization::factory()->create();
+        $this->actingAsOrgUser($orgB, RolesEnum::GESTOR->value);
+        $courseB = Course::factory()->inOrg($orgB->id)->create();
+
+        $this->post(route('courses.enrollments.store-student', $courseB), [
+            'name' => 'Pessoa Multi-Org',
+            'email' => 'multi.org@example.com',
+            'cpf' => '529.982.247-25',
+        ])->assertRedirect(route('courses.enrollments.index', $courseB))
+            ->assertSessionHas('success', 'Aluno já existente na plataforma: conta vinculada e matriculada com sucesso.')
+            ->assertSessionHas('invitation_url');
+
+        $this->assertSame(1, User::query()->where('email', 'multi.org@example.com')->count());
+        $this->assertSame(1, Credential::query()->forOrg($orgA->id)->where('user_id', $person->id)->count());
+        $this->assertSame(1, Credential::query()->forOrg($orgB->id)->where('user_id', $person->id)->count());
+        $this->assertSame('pending', $person->fresh()->credentialFor($orgB)->status);
+        $this->assertDatabaseHas('course_user', [
+            'course_id' => $courseB->id,
+            'user_id' => $person->id,
+            'status' => 'active',
+        ]);
+        // a conta original (portal A) permanece intacta.
+        $this->assertSame('pending', $person->fresh()->credentialFor($orgA)->status);
+
+        Notification::assertSentTo($person, EnrollmentConfirmedNotification::class);
+    }
+
+    public function test_create_student_rejects_conflicting_identity_and_cpf_variants(): void
     {
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
         $course = Course::factory()->inOrg($org->id)->create();
 
-        $existing = User::factory()->inOrg($org)->create([
+        $existing = User::factory()->aluno()->create([
             'email' => 'existente@example.com',
             'cpf' => '52998224725',
         ]);
-        $existing->assignRole(RolesEnum::ALUNO->value);
 
-        // Mesmo e-mail: rejeitado.
+        // Mesmo e-mail, CPF diferente: não é a mesma pessoa — rejeitado
+        // com orientação, não com o genérico "já está em uso".
         $this->post(route('courses.enrollments.store-student', $course), [
             'name' => 'Duplicado E-mail',
             'email' => 'existente@example.com',
             'cpf' => '11144477735',
         ])->assertRedirect()->assertSessionHasErrors('email');
 
-        // Mesmo CPF digitado com máscara: `Cpf::digits()` normaliza antes
-        // do `unique`, então a variante mascarada não escapa da checagem.
+        // Mesmo CPF digitado com máscara pertencendo a outro e-mail:
+        // `Cpf::digits()` normaliza antes da checagem, a variante
+        // mascarada não escapa.
         $this->post(route('courses.enrollments.store-student', $course), [
             'name' => 'Duplicado CPF',
             'email' => 'outro@example.com',
@@ -500,8 +556,18 @@ class EnrollmentManagementTest extends TestCase
             'cpf' => '52998224724',
         ])->assertRedirect()->assertSessionHasErrors('cpf');
 
+        // Conta da equipe (gestão): nunca vira aluno.
+        $gestor = User::factory()->create(['email' => 'chefe@example.com', 'cpf' => '39053344705']);
+        $gestor->assignRole(RolesEnum::GESTOR->value);
+        $this->post(route('courses.enrollments.store-student', $course), [
+            'name' => 'Conta de Equipe',
+            'email' => 'chefe@example.com',
+            'cpf' => '39053344705',
+        ])->assertRedirect()->assertSessionHasErrors('email');
+
         $this->assertDatabaseMissing('users', ['email' => 'outro@example.com']);
         $this->assertDatabaseMissing('users', ['email' => 'invalido@example.com']);
         $this->assertDatabaseMissing('course_user', ['course_id' => $course->id]);
+        $this->assertNull($gestor->fresh()->credentialFor($org), 'a conta de equipe não pode ganhar credencial de aluno.');
     }
 }

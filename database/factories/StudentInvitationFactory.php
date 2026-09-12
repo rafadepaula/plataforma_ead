@@ -2,18 +2,18 @@
 
 namespace Database\Factories;
 
-use App\Models\InvitationLink;
+use App\Models\StudentInvitation;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
 /**
- * @extends Factory<InvitationLink>
+ * @extends Factory<StudentInvitation>
  *
- * `org_id`/`course_id`/`created_by` are intentionally left out of the
+ * `org_id`/`user_id`/`created_by` are intentionally left out of the
  * default definition (mirrors `CourseFactory`'s convention): callers set
  * them explicitly via `->for(...)` or `->create([...])`.
  */
-class InvitationLinkFactory extends Factory
+class StudentInvitationFactory extends Factory
 {
     /**
      * @return array<string, mixed>
@@ -22,15 +22,14 @@ class InvitationLinkFactory extends Factory
     {
         return [
             'token' => Str::random(64),
-            'max_uses' => null,
-            'current_uses' => 0,
             'expires_at' => null,
+            'used_at' => null,
             'revoked_at' => null,
         ];
     }
 
     /**
-     * Indicate that the link's `expires_at` is in the past.
+     * Indicate that the invitation's `expires_at` is in the past.
      */
     public function expired(): static
     {
@@ -40,18 +39,17 @@ class InvitationLinkFactory extends Factory
     }
 
     /**
-     * Indicate that the link has already reached its `max_uses` cap.
+     * Indicate that the invitation has already been redeemed by the Aluno.
      */
-    public function exhausted(): static
+    public function used(): static
     {
         return $this->state(fn (array $attributes) => [
-            'max_uses' => 1,
-            'current_uses' => 1,
+            'used_at' => now()->subDay(),
         ]);
     }
 
     /**
-     * Indicate that the link has been revoked by a Gestor/Admin.
+     * Indicate that the invitation has been revoked by a Gestor/Admin.
      */
     public function revoked(): static
     {

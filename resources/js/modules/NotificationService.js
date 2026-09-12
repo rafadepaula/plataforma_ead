@@ -4,9 +4,9 @@
  *
  * A ASSINATURA PÚBLICA É CONTRATO e não muda: `show(message, type, options)`,
  * `success/error/warning/info(message, options)`, `dismiss(element)` e
- * `getOrCreateContainer()`. Seis módulos recebem este singleton por injeção
+ * `getOrCreateContainer()`. Cinco módulos recebem este singleton por injeção
  * (`ForumReportModal`, `LessonPlayer`, `ModuleReorder`, `QuizBuilder`,
- * `SmartInvitationForm`, e o registry em `modules/index.js`), e a suíte Dusk
+ * e o registry em `modules/index.js`), e a suíte Dusk
  * chama `window.NotificationService.success(...)`.
  *
  * Zero `style=` gerado por JS: o tom vem das classes tonais `.ds-tone-*` do

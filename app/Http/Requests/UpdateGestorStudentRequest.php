@@ -50,8 +50,11 @@ class UpdateGestorStudentRequest extends FormRequest
             'password' => ['nullable', 'string', 'min:8', 'confirmed'],
             // optional status toggle; when present and different from the
             // current value, `GestorStudentController::update()` records a
-            // `user.status_changed` audit event.
-            'status' => ['sometimes', Rule::in(['active', 'inactive'])],
+            // `user.status_changed` audit event. `pending` is a legal
+            // *stored* value (account created by the Gestor, awaiting the
+            // Aluno's unique-invite finalization) and must round-trip the
+            // edit form without silently activating the account.
+            'status' => ['sometimes', Rule::in(['active', 'inactive', 'pending'])],
             'reason' => ['nullable', 'string', 'max:500'],
         ];
     }

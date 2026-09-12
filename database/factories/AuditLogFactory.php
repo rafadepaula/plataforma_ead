@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  * @extends Factory<AuditLog>
  *
  * `org_id`/`user_id` are intentionally left out of the default definition
- * (mirrors `InvitationLinkFactory`'s convention): callers set them
+ * (mirrors `StudentInvitationFactory`'s convention): callers set them
  * explicitly via `->for(...)` or `->create([...])`. Rows created through
  * this factory bypass `AuditService`/`OrgScope`'s `creating` hook
  * entirely — the factory's `AuditLog::create()` call never invokes

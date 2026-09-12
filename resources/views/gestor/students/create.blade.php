@@ -1,5 +1,5 @@
 @php
-    /** @var \App\Models\Course $course */
+    /** @var \Illuminate\Support\Collection<int, \App\Models\Course> $courses */
 @endphp
 
 @extends('layouts.app')
@@ -7,17 +7,16 @@
 @section('content')
     <x-layout.page-header
         :breadcrumb="[
-            ['label' => 'Cursos', 'url' => route('courses.index')],
-            ['label' => $course->title, 'url' => route('courses.enrollments.index', $course)],
-            ['label' => 'Matrículas', 'url' => route('courses.enrollments.index', $course)],
-            ['label' => 'Novo Aluno'],
+            ['label' => 'Organização'],
+            ['label' => 'Alunos Matriculados', 'url' => route('gestor.students.index')],
+            ['label' => 'Cadastrar aluno'],
         ]"
-        :kicker="$course->title"
-        title="Cadastrar novo aluno"
-        subtitle="Crie a conta do aluno e matricule-a neste curso em uma única etapa. Depois, envie a ela o link de convite único para definir a própria senha."
+        kicker="Organização"
+        title="Cadastrar aluno"
+        subtitle="Crie a conta do aluno, matricule-a no curso escolhido e receba o link de convite único para ela definir a própria senha."
     >
         <x-slot:actions>
-            <x-ui.button variant="secondary" :href="route('courses.enrollments.index', $course)">Voltar às Matrículas</x-ui.button>
+            <x-ui.button variant="secondary" href="{{ route('gestor.students.index') }}">Voltar aos Alunos</x-ui.button>
         </x-slot:actions>
     </x-layout.page-header>
 
@@ -25,7 +24,7 @@
         <div class="col-12 col-lg-6">
             <x-ui.card>
                 <form method="POST"
-                      action="{{ route('courses.enrollments.store-student', $course) }}"
+                      action="{{ route('gestor.students.store') }}"
                       dusk="create-student-form">
                     @csrf
 
@@ -41,10 +40,21 @@
                             value="{{ old('cpf') }}"
                             hint="Com ou sem máscara (000.000.000-00)."
                         />
+
+                        <x-ui.select
+                            name="course_id"
+                            label="Curso"
+                            required
+                            :options="$courses->pluck('title', 'id')->all()"
+                            :selected="old('course_id')"
+                            placeholder="Selecione o curso"
+                            hint="O aluno já será matriculado neste curso."
+                            dusk="create-student-course"
+                        />
                     </x-ui.field-stack>
 
                     <x-ui.form-actions align="end">
-                        <x-ui.button variant="secondary" :href="route('courses.enrollments.index', $course)">Cancelar</x-ui.button>
+                        <x-ui.button variant="secondary" href="{{ route('gestor.students.index') }}">Cancelar</x-ui.button>
                         <x-ui.button type="submit" dusk="create-student-submit">Cadastrar e Matricular</x-ui.button>
                     </x-ui.form-actions>
                 </form>

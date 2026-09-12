@@ -33,15 +33,16 @@ class StoreEnrollmentRequest extends FormRequest
                 'required',
                 'integer',
                 //  a Gestor may only manually enroll a User who
-                // already holds an account (credential) in their own org,
-                // closing the same gap `ProcessSmartInvitationAction`
-                // guards for the self-service flow: no cross-org
-                // "guess the ID" force enrollment.
+                // already holds an account (credential) in their own org:
+                // no cross-org "guess the ID" force enrollment. `pending`
+                // accounts (awaiting the Aluno's unique-invite
+                // finalization) count — only a Gestor-imposed `inactive`
+                // deactivation is unenrollable.
                 function (string $attribute, mixed $value, \Closure $fail) use ($course): void {
                     $holdsAccount = Credential::query()
                         ->where('user_id', $value)
                         ->where('org_id', $course?->org_id)
-                        ->where('status', 'active')
+                        ->whereIn('status', ['active', 'pending'])
                         ->exists();
 
                     if (! $holdsAccount) {
@@ -49,9 +50,8 @@ class StoreEnrollmentRequest extends FormRequest
                     }
                 },
                 // The target must actually hold the `aluno` role — never a
-                // `gestor`/`admin` account, mirroring
-                // `ProcessSmartInvitationAction`'s rejection of staff
-                // emails from the self-service invitation flow.
+                // `gestor`/`admin` account, the same staff-exclusion rule
+                // the invitation redemption enforces.
                 function (string $attribute, mixed $value, \Closure $fail): void {
                     $user = User::find($value);
 

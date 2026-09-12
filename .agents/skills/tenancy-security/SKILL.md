@@ -41,7 +41,7 @@ Tenancy resolves from the request **host**: `ResolveOrgFromHost` (first `web` mi
 ### Model Classifications & Scoping Guardrails
 
 1. **Directly Org-Scoped Models** (has `org_id` column + `OrgScope` trait):
-    - Examples: `Course`, `InvitationLink`, `ForumTopic`, `HelpArticle` (nullable), `AuditLog` (nullable).
+    - Examples: `Course`, `StudentInvitation`, `ForumTopic`, `HelpArticle` (nullable), `AuditLog` (nullable).
     - `SystemSetting` is org-scoped by column but does **NOT** use the `OrgScope` trait: non-nullable `org_id` with `default(0)` sentinel (`SystemSetting::GLOBAL_ORG_ID`), composite PK `(setting_key, org_id)` — lookups go through `forOrg()`.
     - _Security Guardrail_: Queries auto-append `where org_id = ?` from the resolved context. Bypassing `OrgScope` is a critical security vulnerability.
 

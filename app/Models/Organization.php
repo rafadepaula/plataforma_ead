@@ -57,11 +57,11 @@ class Organization extends Model
     }
 
     /**
-     * @return HasMany<InvitationLink, $this>
+     * @return HasMany<StudentInvitation, $this>
      */
-    public function invitationLinks(): HasMany
+    public function studentInvitations(): HasMany
     {
-        return $this->hasMany(InvitationLink::class, 'org_id');
+        return $this->hasMany(StudentInvitation::class, 'org_id');
     }
 
     /**

@@ -216,11 +216,23 @@ class User extends Authenticatable
     }
 
     /**
-     * @return HasMany<InvitationLink, $this>
+     * Invitations this person issued as a Gestor/Admin (`created_by`), and
+     * — for an Aluno — the unique per-person invitations that finalize
+     * their own account (`user_id`).
+     *
+     * @return HasMany<StudentInvitation, $this>
      */
-    public function createdInvitationLinks(): HasMany
+    public function studentInvitations(): HasMany
     {
-        return $this->hasMany(InvitationLink::class, 'created_by');
+        return $this->hasMany(StudentInvitation::class, 'user_id');
+    }
+
+    /**
+     * @return HasMany<StudentInvitation, $this>
+     */
+    public function issuedStudentInvitations(): HasMany
+    {
+        return $this->hasMany(StudentInvitation::class, 'created_by');
     }
 
     /**

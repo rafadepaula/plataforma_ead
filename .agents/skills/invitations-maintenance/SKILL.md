@@ -1,15 +1,14 @@
 ---
 name: invitations-maintenance
 description: >
-  Debug, test, edge-case guide for Smart Invitation & Enrollment feature:
-  convite/show.blade.php adaptive form, SmartInvitationForm.js
-  module (blur+debounced input, checkedEmail/sequence state, .d-none-only
-  visibility), mandatory PHPUnit/Dusk test files. Use when SmartInvitationTest,
-  EnrollmentManagementTest, ProcessSmartInvitationActionTest,
-  SmartInvitationAdaptiveDuskTest, InvitationHttpTest or
-  MultiOrgEnrollmentTest fails; adaptive form does not collapse to
-  password-only; or multi-org Dusk assertion cannot see "other"
-  Organization data.
+  Debug, test, edge-case guide for the per-student unique Invitation
+  feature: convite/show.blade.php finalize form, RedeemStudentInvitationAction
+  lockForUpdate transaction, pending credential lifecycle, clipboard
+  fallback, mandatory PHPUnit/Dusk test files. Use when
+  StudentInvitationHttpTest, EnrollmentManagementTest,
+  RedeemStudentInvitationActionTest, StudentInvitationFinalizeDuskTest or
+  PublicFlowsHostScopeTest fails; finalize form rejects a valid password;
+  copy/renew button does nothing; or a redemption unexpectedly 404s.
 license: MIT
 metadata:
   feature: invitations
@@ -22,219 +21,147 @@ metadata:
 
 These tests guard this module's contract, must stay green (PHPUnit, no Pest):
 
-- `tests/Unit/Actions/ProcessSmartInvitationActionTest.php` —
-  transaction-level coverage of `ProcessSmartInvitationAction`:
-  new/existing-account branches (existing = password checked against the
-  host org's `credentials` row; person from another portal gets a new
-  credential here), inactive-credential block after the password check,
-  wrong password,
-  expired/exhausted/revoked/unknown-token/unpublished/soft-deleted-course
-  link states, wrong-host token reads as not-found, staff-account
-  (gestor/admin) rejection, no second `users` row / no cross-org
-  credential overwrite, reactivating
-  `cancelled` enrollment, `lockForUpdate` over-consumption guard.
+- `tests/Unit/Actions/RedeemStudentInvitationActionTest.php` —
+  transaction-level coverage of `RedeemStudentInvitationAction`:
+  `pending` account activation with the chosen password, single-use
+  enforcement (second redemption reads as `REASON_USED`), unknown token,
+  wrong-host token reads as not-found, revoked/expired invitations,
+  Gestor-deactivated (`inactive`) credential rejection without touching
+  the row, missing credential recreated, `active` account password
+  replacement (re-issued invite = password reset), staff-promoted person
+  rejected as not-found.
+- `tests/Feature/StudentInvitationHttpTest.php` — HTTP-level coverage of
+  the public `/convite/{token}` routes (show renders identity readonly
+  from the token, per-reason 404 copy, finalize logs in + activates +
+  marks `used_at`, forged `email` field ignored, password/consent
+  validation, inactive account rejected) **and** the Gestor endpoints
+  (issue get-or-create idempotency, regenerate rotation, destroy,
+  cross-org 403, ALUNO 403, user deletion cascades invitations).
 - `tests/Feature/Tenancy/PublicFlowsHostScopeTest.php` — host tenancy of
-  the public flows: `/convite/{token}` 200 on the link org's host and 404
-  (indistinguishable from unknown token) on another org's host,
-  `check-email` answering `exists` from the host org's credential only.
-- `tests/Feature/SmartInvitationTest.php` — HTTP-level coverage of public
-  `/convite/{token}` + `/convite/check-email` routes: link-state guards
-  surfacing as 404s (including unpublished/soft-deleted linked Course),
-  check-email JSON contract, `store()` validation branching (new e-mail
-  requires name/CPF/password-confirmation, existing e-mail requires only
-  matching password; staff e-mail rejected on `errors.email` regardless of
-  password).
-- `tests/Feature/EnrollmentManagementTest.php` — Gestor enrollment panel: manual
-  enroll, revoke (`status = 'cancelled'`), reactivating cancelled
-  enrollment, double-active-enrollment 422, org-scoped 404/403 for Gestor
-  outside Course Organization.
-- `tests/Feature/InvitationHttpTest.php` — HTTP-level guards on the public
-  routes not covered above, including the consent rejection wording
-  (`É necessário concordar para concluir a matrícula.`).
-- `tests/Browser/SmartInvitationAdaptiveDuskTest.php` — **DOM contract** of the
-  adaptive form: new-account flow (a partial e-mail never toggles anything),
-  existing-account collapse (verbatim hint text, `.d-none` on
-  `[data-invitation-field="new-account"]`, `required` dropped from
-  name/CPF/confirmation, no second `users` row), incremental typing flipping
-  existing → new with `required` restored, consent blocked on both client
-  (native `required`) and server (attribute stripped via `script()`), and the
-  unusable-link screen with no `@invitation-form`.
-- `tests/Browser/MultiOrgEnrollmentTest.php` — E2E **tenancy** journey (kept
-  deliberately distinct from the DOM-contract suite above): existing multi-org
-  user e-mail collapses form to password-only, and after submit they land
-  enrolled in both Organizations' courses with one `users` row and one
-  `credentials` row per org (`credentialFor($orgA)`/`credentialFor($orgB)`
-  both non-null). Its
-  invalid-link assertions target the per-reason copy
-  (`Este convite expirou.` / `Este convite foi cancelado.` /
-  `Limite de vagas atingido.`), not one catch-all sentence.
+  the public flow: `/convite/{token}` 200 on the invitation org's host
+  and 404 (indistinguishable from unknown token) on another org's host.
+- `tests/Feature/EnrollmentManagementTest.php` — Gestor enrollment panel:
+  manual enroll, revoke (`status = 'cancelled'`), reactivating cancelled
+  enrollment, double-active-enrollment 422, org-scoped 404/403; plus
+  `storeStudent` issuing the pending credential + the flashed
+  `invitation_url`.
+- `tests/Browser/StudentInvitationFinalizeDuskTest.php` — E2E journeys,
+  **one browser session per method** (an idle Selenium session is killed
+  by inactivity timeout, so never hold two `Browser` arguments where one
+  is used much later): Gestor sees "Convite pendente" + copy toast,
+  Aluno finalize (identity readonly → password → lands on `/meus-cursos`
+  with credential `active`), used-link screen with no
+  `@invitation-form`, renew modal rotating the token with the flash
+  banner pointing at the new one.
 
 Run narrowest of these first after touching this module:
 
 ```bash
-vendor/bin/sail artisan test --filter=ProcessSmartInvitationActionTest
+vendor/bin/sail artisan test --filter=RedeemStudentInvitationActionTest
+vendor/bin/sail artisan test --filter=StudentInvitationHttpTest
 vendor/bin/sail artisan test --filter=PublicFlowsHostScopeTest
-vendor/bin/sail artisan test --filter=SmartInvitationTest
 vendor/bin/sail artisan test --filter=EnrollmentManagementTest
-vendor/bin/sail artisan test --filter=InvitationHttpTest
-vendor/bin/sail dusk --filter=SmartInvitationAdaptiveDuskTest
-vendor/bin/sail dusk --filter=MultiOrgEnrollmentTest
+vendor/bin/sail dusk --filter=StudentInvitationFinalizeDuskTest
 ```
 
-Every Dusk run in this module needs a fresh `vendor/bin/sail npm run build`
-first: `SmartInvitationForm.js` is bundled, and a stale `public/build` makes the
-form look broken while the source is already correct.
+Every Dusk run in this module needs a fresh `vendor/bin/sail npm run
+build` first if any `resources/js/` file changed: a stale `public/build`
+makes screens look broken while the source is already correct.
 
-## `SmartInvitationForm.js` — Contract With `convite/show.blade.php`
+## Diagnosing "Redemption Unexpectedly 404s"
 
-Module binds any `[data-check-email-url]` `<form>`, listens for
-`blur`/debounced `input` on `[data-invitation-email]` field inside it,
-POSTs `{ email }` to that URL via shared `HttpClient`, then toggles every
-`[data-invitation-field="new-account"]` wrapper visibility (and inner input
-`required`-ness) from `{ exists }` JSON response:
+The typed reason is in the rendered page (or the JSON `message`); work
+backwards from it:
 
-```js
-// per-form state, kept in a WeakMap: { checkedEmail, sequence }
-if (state.checkedEmail === email) return;   // same address is never re-queried
-state.checkedEmail = email;
-const sequence = ++state.sequence;
-const response = await this.httpClient.post(url, { email });
-if (sequence !== state.sequence) return;    // stale response, discarded
-this.toggleFields(form, Boolean(response.data && response.data.exists));
-```
+- `Este convite não foi encontrado.` on a token you KNOW exists → host
+  mismatch (`org_id` vs `OrgContext`) reads as not-found by design, or
+  the fixture's `org_id` doesn't match the host the request hit. Feature
+  tests hitting the public routes must `$this->onHost($org->host)` — on
+  the default `localhost` state-zero host `EnsureTenantAccess` redirects
+  (302) before the controller ever runs.
+- `Este convite já foi utilizado.` when you expected a fresh form → the
+  fixture (or a previous test in the same file) already redeemed it;
+  factory states `used()`/`revoked()`/`expired()` exist for a reason.
+- `Esta conta está inativa...` → the credential was deactivated by a
+  Gestor, not pending. `pending` redeems, `inactive` does not — that
+  distinction is the feature, do not "fix" it by treating them equal.
+- 404 on a link whose person has a staff role → correct; the Action
+  refuses to reset staff passwords through tokens.
 
-Three invariants of that state machine, each closing a bug that was real:
+## Diagnosing "Copy/Renew Button Does Nothing"
 
-- **Both triggers stay.** `blur` fires immediately, `input` is debounced 400ms.
-  The original design sketch said "blur only"; the shipped contract requires
-  both — the
-  `input` trigger is what makes the verdict follow incremental typing.
-- **`checkedEmail` short-circuit.** Without it a pending debounced `input` could
-  re-run `toggleFields` *after* the `blur` check had already collapsed the form,
-  restoring `required` on a now-hidden field and silently blocking submit. This
-  is the race the old `MultiOrgEnrollmentTest` papered over with `pause(700)`;
-  both pauses are gone — do not reintroduce a pause instead of fixing state.
-- **`sequence` guard.** Out-of-order responses are discarded, so the last
-  address typed always wins.
+- The copy handlers bind on `DOMContentLoaded` via
+  `[data-issue-invitation]` (fetch + clipboard) and `[data-copy-link]`
+  (flash banners). If a toast never appears, check `browser-logs` first:
+  a 403 there is almost always the `{user}` implicit-binding trap (see
+  `invitations-conventions` — the controller parameter MUST be named
+  `$user` to match the `{user}` placeholder, otherwise the Policy gets an
+  empty `User` and 403s).
+- Clipboard uses `navigator.clipboard` only in secure contexts; on HTTP
+  hosts the `copyInvitationText()` fallback (`execCommand('copy')`) runs
+  instead. If the success toast shows but the clipboard is empty on
+  HTTP, that is the browser refusing programmatic copy without user
+  gesture/permission — not a code bug.
+- "Renovar" is a declarative `x-ui.confirm-modal` (not `window.confirm`
+  — this Dusk version has no dialog API); the modal form POSTs
+  `gestor.students.invitations.regenerate` and redirects back, so the
+  new link arrives in the `invitation_url` flash banner
+  (`@invitation-flash`), never as JSON.
 
-An empty, partial or malformed e-mail (regex `/^[^\s@]+@[^\s@]+\.[^\s@]+$/`)
-never reaches the server and never collapses anything: the form stays in the
-new-account state. A network failure degrades to that same state **and** resets
-`checkedEmail`, so the next `blur` can retry.
+## Diagnosing a Failing `StudentInvitationFinalizeDuskTest`
 
-Add new registration-only field to `convite/show.blade.php`? Wrap it in
-`<div data-invitation-field="new-account">` exactly like
-`name`/`cpf`/`password_confirmation` already are. `toggleFields()` finds
-inner `<input>`/`<select>`/`<textarea>` via `field.querySelector(...)`, it
-does not target specific `name=` attributes. `password` field itself sits
-intentionally **outside** any `new-account` wrapper: always visible, both
-branches (new and existing account) need it.
+- Inherits `DatabaseTruncation` from `Tests\DuskTestCase`, declares no
+  DB trait of its own. `RefreshDatabase` forbidden (Dusk runs a browser
+  session against a **separate HTTP process** — see
+  `laravel-dusk`/`testing-architecture`).
+- `@student-row-{id}` never appears on the students index → the fixture
+  Aluno has no live `course_user` row: `GestorStudentController::index`
+  lists only Alunos enrolled in an own-org course. Attach them to a
+  course in the fixture.
+- `assertAttribute('@invitation-email', 'readonly', 'true')` — this Dusk
+  has no `assertReadonly()`; assert the raw attribute (W3C returns
+  `'true'` for boolean attributes).
+- The finalize `press('Finalizar cadastro')` → `waitForLocation('/meus-cursos')`
+  assumes redemption succeeded; if it times out, POST the token via a
+  Feature test first to surface the validation error (consent unchecked
+  and password mismatch are the usual suspects).
 
-Registered in the central module registry `resources/js/modules/index.js:53`
-(no per-module `window.*` assignment, no per-module `DOMContentLoaded`
-listener — `app.js` exposes each registry key as `window.<key>` and calls
-`.init()` itself):
+## `Course::factory()` Defaults To `is_published: false` — Still Relevant For Enrollment Fixtures
 
-```js
-SmartInvitationForm: new SmartInvitationForm(httpClient, notifications),
-```
-
-## Diagnosing "Form Never Collapses to Password-Only"
-
-- Confirm `<form>` carries `data-check-email-url`. Set server-side in
-  `convite/show.blade.php` to `route('invitation.check-email')`. Missing/empty,
-  `checkEmail()` silently no-ops (`if (!url || !email) {
-  this.toggleFields(form, false); return; }`).
-- Confirm e-mail `<input>` carries bare `data-invitation-email` attribute.
-  `bindForm()` looks it up with `form.querySelector(
-  '[data-invitation-email], input[name="email"]')` (`SmartInvitationForm.js:49`)
-  and does nothing at all if absent.
-- `toggleFields()` toggles **only the `.d-none` class** (through
-  `applyVisibility()`); it never writes `style.display` and never sets the
-  `hidden` attribute — showing an element even clears a stray one left by other
-  code. Inspecting via devtools, check the class list, not the inline `style`.
-- The field never collapses for the *same* address twice: if you are manually
-  re-triggering a check on an unchanged e-mail, nothing will happen by design
-  (`checkedEmail` short-circuit). Change the value, or re-bind the form.
-- Dusk `waitFor('@invitation-existing-account-hint')` (see
-  `MultiOrgEnrollmentTest`) waits for hint element to become *displayed*,
-  not merely present. If AJAX request 422s or 500s (example:
-  `CheckInvitationEmailRequest` validation failing on malformed e-mail),
-  hint never appears and test times out on this line, not on later
-  `press()`. Check request in `browser-logs`/network tab first, not JS
-  toggle logic, when this specific wait times out.
-
-## Diagnosing a Failing `MultiOrgEnrollmentTest`
-
-- Inherits `DatabaseTruncation` from `Tests\DuskTestCase`, declares no DB
-  trait of its own. `RefreshDatabase` forbidden here (Dusk runs browser
-  session against **separate HTTP process** — see
-  `laravel-dusk`/`testing-architecture`), so cross-Org assertions after
-  browser block closes query real shared test database directly. No
-  `withoutGlobalScopes()` trick needed there: PHPUnit assertion code has no
-  authenticated-user session of its own applying `OrgScope` at all (only
-  app request handling inside browser does).
-- "Single `users` row" assertion fails (duplicate account created instead
-  of authenticating into existing one)? Check e-mail typed via
-  `->type('@invitation-email', ...)` matches seeded `User` `email`
-  **exactly**. Trailing space or case mismatch makes `check-email`
-  correctly report `exists: false`. Test not wrong, fixture data wrong.
-- `credentialFor($orgA)` (original portal account) comes back `null`, or a
-  second row appeared in the *first* portal? Bug is in
-  `ProcessSmartInvitationAction` existing-account branch — it must only
-  ever touch the **link org's** `Credential` (`Credential::forOrg($invitationLink->org_id)`),
-  never other orgs' rows, and never a `users.org_id` (column no longer
-  exists). Creating the link org's credential for a person known only to
-  another portal is the legitimate branch.
-
-## Diagnosing `EnrollmentController::destroy()` Not Revoking Anything
-
-Revoke request 200s/redirects but `course_user` row `status` never changes
-to `cancelled`? Check route: `courses.enrollments.destroy` **must** be
-explicit two-segment `courses/{course}/enrollments/{user}` route (see
-`invitations-conventions`), not `shallow()`-resource single-segment
-`{enrollment}` route. Latter silently fails to bind either `Course $course`
-or `User $user` by name (no route parameter literally named `course` or
-`user`), so controller mutates query built from empty unsaved model instead
-of throwing, and `update`-existing-pivot call quietly matches zero rows.
-
-## `Course::factory()` Defaults To `is_published: false` — Invitation Test Fixtures Must Override It
-
-`CourseFactory::definition()` sets `is_published => false` by default (see
-`courses-conventions`). `InvitationLink::isUsable()` `courseIsAvailable()`
-check now rejects link whose Course is not published, so any test building
-`InvitationLink` off plain `Course::factory()->create(['org_id' =>
-$org->id])` must add `'is_published' => true` or link 404s as if expired.
-This bit every pre-existing invitations test fixture day guard was added,
-not just new ones. Not bug in guard. It is `CourseFactory` deliberate "admin
-must explicitly publish" default surfacing in new place.
+`CourseFactory::definition()` sets `is_published => false` by default
+(see `courses-conventions`). Course availability no longer gates
+invitation redemption (the token finalizes an account, it does not
+enroll), but classroom access is still enrollment-gated, so any Dusk
+journey that ends on `/meus-cursos` and asserts the course title must
+create the course `published()`.
 
 ## Auto-Update Protocol
 
-Any change
-to `InvitationController`/`InvitationLinkController`/`EnrollmentController`,
-`ProcessSmartInvitationAction`, `InvitationLink::unusableReason()`/`isUsable()`,
-`App\Exceptions\InvitationLinkInvalidException` (or its `bootstrap/app.php`
-render hook), `ProcessInvitationRequest`, the
-`convite*`/`courses.invitation-links*`/
-`courses.enrollments*` routes, Blade views under
-`resources/views/convite/`+`resources/views/courses/invitation-links/`+
-`resources/views/courses/enrollments/`, or `SmartInvitationForm.js` **must**
-update all three invitations skills (`invitations-architecture`,
-`invitations-conventions`, `invitations-maintenance`) in same change, before
-task counts as done. Also re-check:
+Any change to `InvitationController`/`StudentInvitationController`/
+`EnrollmentController`, `RedeemStudentInvitationAction`,
+`StudentInvitation::unusableReason()`/`isUsable()`,
+`App\Exceptions\InvitationInvalidException` (or its `bootstrap/app.php`
+render hook), `FinalizeStudentInvitationRequest`, the `convite*`/
+`gestor.students.invitations*`/`courses.enrollments*` routes, Blade views
+under `resources/views/convite/`+
+`resources/views/gestor/students/`+
+`resources/views/courses/enrollments/`, or the clipboard/copy scripts in
+those views **must** update all three invitations skills
+(`invitations-architecture`, `invitations-conventions`,
+`invitations-maintenance`) in same change, before task counts as done.
+Also re-check:
 
-- `.agents/agents/code-reviewer.md` — if change affects what reviewer must
-  check for this module.
-- Run `vendor/bin/sail artisan harness:check-skills` — fails build if any of
-  three `invitations-*` skills is missing.
+- `.agents/agents/code-reviewer.md` — if change affects what reviewer
+  must check for this module.
+- Run `vendor/bin/sail artisan harness:check-skills` — fails build if any
+  of three `invitations-*` skills is missing.
 
 ## Related
 
-- `courses-maintenance` — analogous module this one mirrors (AJAX reorder
-  vs this module AJAX check-email).
-- `tenancy-maintenance` — underlying `OrgScope` contract this module builds
-  on.
+- `courses-maintenance` — analogous module this one mirrors (enrollment
+  panel + pivot revocation semantics).
+- `tenancy-maintenance` — underlying `OrgScope` contract this module
+  builds on.
 
 ---
 

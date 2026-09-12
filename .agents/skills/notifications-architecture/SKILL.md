@@ -26,12 +26,15 @@ triggers:
 
 | # | Trigger | Channels | Recipient | Link target (`OrgUrl` org) |
 | --- | --- | --- | --- | --- |
-| 1 | `InvitationLink` created | `mail` only | link creator (a `User`, addressed by e-mail, not `->notify()`) | `invitation_link->org_id` → `invitation.show` |
-| 2 | `Certificate` issued (genuine issuance only) | `database` + `mail` | student certificate belongs to | `certificate->course->org_id` → `certificates.verify` |
-| 3 | New `ForumReply` posted | `database` + `mail` | topic author + prior distinct repliers, minus whoever just posted | `topic->org_id` → `forum.show` |
-| 4 | `course_user` created or transitions into `active` | `database` + `mail` | enrolled student | `course->org_id` → `classroom.show` |
+| 1 | `Certificate` issued (genuine issuance only) | `database` + `mail` | student certificate belongs to | `certificate->course->org_id` → `certificates.verify` |
+| 2 | New `ForumReply` posted | `database` + `mail` | topic author + prior distinct repliers, minus whoever just posted | `topic->org_id` → `forum.show` |
+| 3 | `course_user` created or transitions into `active` | `database` + `mail` | enrolled student | `course->org_id` → `classroom.show` |
 
-Admin never gets any of 4. Topbar bell role-gated
+(The old "InvitationLink created, mail-only to creator" trigger died with
+the shareable-link table: the per-student unique invitation is handed to
+the Gestor in the UI — no e-mail is sent on issuance.)
+
+Admin never gets any of 3. Topbar bell role-gated
 (`role:gestor`/`role:aluno`, see `notifications-conventions`). No
 Notification class in module ever dispatched to Admin.
 
@@ -70,18 +73,16 @@ or Policy.
 
 ## Event, Listener, Notification. Not Direct `->notify()` Call Site
 
-3 of 4 triggers (invitation, forum reply, enrollment) go through dedicated
+2 of 3 triggers (forum reply, enrollment) go through dedicated
 `Event`/auto-discovered `Listener` pair. No `->notify()` straight from
 controller/action creating underlying row:
 
 ```
-InvitationLinkController::store()  → InvitationLinkCreated  → SendInvitationSentNotification
 ForumReplyController::store()      → ForumReplyPosted        → SendNewForumReplyNotifications
-EnrollmentController::storeStudent() / ::store() / ::restore() /
-ProcessSmartInvitationAction (2 dispatches) → EnrollmentConfirmed     → SendEnrollmentConfirmedNotification
+EnrollmentController::storeStudent() / ::store() / ::restore() → EnrollmentConfirmed → SendEnrollmentConfirmedNotification
 ```
 
-4th trigger (certificate issued) is exception. Reuses **existing**
+3rd trigger (certificate issued) is exception. Reuses **existing**
 certificates pipeline (`CourseCompletedByStudent`,
 `IssueCertificateOnCourseCompletion`,
 `IssueCertificateAction`) instead of parallel event. Dispatches
@@ -156,8 +157,9 @@ recipient event to record, and `database` row here would have no meaningful
   eligibility/idempotency engine trigger 2 hooks into.
 - `forum-architecture` — topic/reply schema trigger 3 recipient resolution
   walks, and why it deliberately excludes "new report" from trigger list.
-- `invitations-architecture` — `InvitationLink` shape trigger 1 hooks into,
-  and the no-per-invitee-email rationale.
+- `invitations-architecture` — why the per-student unique invitation
+  dispatches nothing on issuance (the link is handed to the Gestor in the
+  UI, not e-mailed).
 - `tenancy-architecture` — why `ForumTopic` `OrgScope` requires
   `withoutGlobalScopes()` when Listener/queued Notification resolves it
   outside original request tenant context.

@@ -166,8 +166,8 @@ otherwise.
   trigger 2 dispatch site sits inside of.
 - `forum-maintenance` — `withoutGlobalScopes()`/`OrgScope` gotcha trigger 3
   recipient resolution shares.
-- `invitations-maintenance` — `InvitationLink` creation flow trigger 1 hooks
-  into.
+- `invitations-maintenance` — why invitation issuance is notification-free
+  under the per-student unique-link paradigm.
 
 ---
 

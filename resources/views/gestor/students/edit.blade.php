@@ -26,7 +26,7 @@
                             name="status"
                             label="Status"
                             required
-                            :options="['active' => 'Ativo', 'inactive' => 'Inativo']"
+                            :options="['active' => 'Ativo', 'pending' => 'Convite pendente', 'inactive' => 'Inativo']"
                             :selected="old('status', $user->account_status)"
                             dusk="student-status-select"
                         />

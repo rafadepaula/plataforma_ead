@@ -12,11 +12,10 @@ use Illuminate\Notifications\Notification;
 /**
  * dispatched by `SendEnrollmentConfirmedNotification`
  * whenever a `course_user` row is created or transitions into `active`
- * (brand-new enrollment or a reactivated one), from both
- * `EnrollmentController::store()` (Gestor-driven, ) and
- * `ProcessSmartInvitationAction` (self-service invite flow, ). `database`
- * is listed before `mail` in {@see self::via()} so the in-app row is
- * guaranteed to persist even if the `mail` channel's queued job throws.
+ * (brand-new enrollment or a reactivated one), from the Gestor-driven
+ * enrollment panel. `database` is listed before `mail` in
+ * {@see self::via()} so the in-app row is guaranteed to persist even if
+ * the `mail` channel's queued job throws.
  */
 class EnrollmentConfirmedNotification extends Notification implements ShouldQueue
 {
@@ -40,6 +39,7 @@ class EnrollmentConfirmedNotification extends Notification implements ShouldQueu
             ->subject('Matrícula confirmada - '.config('app.name'))
             ->greeting('Olá, '.$notifiable->name.'!')
             ->line('Sua matrícula no curso "'.$this->course->title.'" foi confirmada.')
+            ->line('Se você ainda não definiu sua senha, utilize o link de convite enviado pela sua organização para finalizar seu cadastro.')
             ->action('Acessar curso', $url)
             ->line('Bons estudos!');
     }

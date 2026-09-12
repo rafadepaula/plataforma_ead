@@ -38,7 +38,7 @@ Reason = "duplo armazenamento" guarantee: **DB outage or failed `audit_logs` INS
 
 ## `AuditLog` and `OrgScope`: Creating-Hook Bypass
 
-`AuditLog` uses `OrgScope` for its **read side** like `Course`/`InvitationLink` (see `tenancy-architecture`) — Admin sees everything (or one Org while impersonating).
+`AuditLog` uses `OrgScope` for its **read side** like `Course`/`StudentInvitation` (see `tenancy-architecture`) — Admin sees everything (or one Org while impersonating).
 
 But `OrgScope::booted()` also registers a `creating` hook that auto-assigns `org_id` from `auth()->user()`/`session('active_org_id')` and **throws `UnresolvedOrgContextException`** when it cannot resolve. Right for `Course`, wrong for `AuditLog`:
 

@@ -61,7 +61,7 @@ org-specific-then-global fallback pattern (see `help-architecture`) but keyed by
 
 ## Why Metrics Service Cannot Just Rely on `OrgScope`
 
-`Course` and `InvitationLink` carry `OrgScope` and resolve
+`Course` and `StudentInvitation` carry `OrgScope` and resolve
 admin-global-vs-everyone-else automatically: the Admin branch filters by
 `session('active_org_id')` (Impersonate Org), every other role by the
 request-host Organization (`OrgContext::current()->orgId()`) — host-based

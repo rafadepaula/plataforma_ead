@@ -4,8 +4,12 @@ namespace Tests\Feature;
 
 use App\Enums\Permissions\RolesEnum;
 use App\Models\Course;
+use App\Models\Credential;
 use App\Models\Organization;
+use App\Models\StudentInvitation;
 use App\Models\User;
+use App\Notifications\EnrollmentConfirmedNotification;
+use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 /**
@@ -207,5 +211,138 @@ class GestorStudentManagementTest extends TestCase
             ->assertOk()
             ->assertViewIs('gestor.students.edit')
             ->assertSee($aluno->name);
+    }
+
+    // ── Directory-level create (Cadastrar aluno) ─────────────────────
+
+    public function test_create_screen_lists_only_own_org_courses(): void
+    {
+        $org = Organization::factory()->create();
+        $otherOrg = Organization::factory()->create();
+        $ownCourse = Course::factory()->for($org)->create(['title' => 'Curso Próprio']);
+        Course::factory()->for($otherOrg)->create(['title' => 'Curso Alheio']);
+        $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
+
+        $this->get(route('gestor.students.create'))
+            ->assertOk()
+            ->assertViewIs('gestor.students.create')
+            ->assertSee('Curso Próprio')
+            ->assertDontSee('Curso Alheio');
+    }
+
+    public function test_gestor_can_create_a_student_already_enrolled_in_a_course(): void
+    {
+        Notification::fake();
+
+        $org = Organization::factory()->create();
+        $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
+        $course = Course::factory()->for($org)->create();
+
+        $this->post(route('gestor.students.store'), [
+            'name' => 'Aluna Direta',
+            'email' => 'aluna.direta@example.com',
+            'cpf' => '111.444.777-35',
+            'course_id' => $course->id,
+        ])->assertRedirect(route('gestor.students.index'))
+            ->assertSessionHas('success')
+            ->assertSessionHas('invitation_url');
+
+        $student = User::query()->where('email', 'aluna.direta@example.com')->firstOrFail();
+        $this->assertSame('11144477735', $student->cpf);
+        $this->assertTrue($student->hasRole(RolesEnum::ALUNO->value));
+
+        $credential = $student->credentialFor($org);
+        $this->assertNotNull($credential);
+        $this->assertSame('pending', $credential->status);
+
+        $this->assertDatabaseHas('course_user', [
+            'course_id' => $course->id,
+            'user_id' => $student->id,
+            'status' => 'active',
+        ]);
+
+        $invitation = StudentInvitation::query()->where('user_id', $student->id)->firstOrFail();
+        $this->assertSame($org->id, $invitation->org_id);
+        $this->assertStringContainsString($invitation->token, session('invitation_url'));
+
+        Notification::assertSentTo($student, EnrollmentConfirmedNotification::class);
+    }
+
+    public function test_create_links_a_multi_org_person_instead_of_rejecting(): void
+    {
+        $orgA = Organization::factory()->create();
+        $person = User::factory()->aluno()->create([
+            'email' => 'multi@example.com',
+            'cpf' => '52998224725',
+        ]);
+        Credential::factory()->pending()->create(['user_id' => $person->id, 'org_id' => $orgA->id]);
+
+        $orgB = Organization::factory()->create();
+        $this->actingAsOrgUser($orgB, RolesEnum::GESTOR->value);
+        $courseB = Course::factory()->for($orgB)->create();
+
+        // Mesma pessoa (e-mail + CPF conferem), portal diferente: vincula,
+        // não rejeita — 1 registro em `users`, 2 em `credentials`.
+        $this->post(route('gestor.students.store'), [
+            'name' => 'Pessoa Multi',
+            'email' => 'multi@example.com',
+            'cpf' => '529.982.247-25',
+            'course_id' => $courseB->id,
+        ])->assertRedirect(route('gestor.students.index'))
+            ->assertSessionHas('success', 'Aluno já existente na plataforma: conta vinculada e matriculada com sucesso.')
+            ->assertSessionHas('invitation_url');
+
+        $this->assertSame(1, User::query()->where('email', 'multi@example.com')->count());
+        $this->assertSame(1, Credential::query()->forOrg($orgA->id)->where('user_id', $person->id)->count());
+        $this->assertSame(1, Credential::query()->forOrg($orgB->id)->where('user_id', $person->id)->count());
+        $this->assertSame('pending', $person->fresh()->credentialFor($orgB)->status);
+    }
+
+    public function test_create_rejects_conflicting_identity_and_foreign_course(): void
+    {
+        $org = Organization::factory()->create();
+        $otherOrg = Organization::factory()->create();
+        $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
+        $foreignCourse = Course::factory()->for($otherOrg)->create();
+
+        User::factory()->aluno()->create(['email' => 'tomada@example.com', 'cpf' => '52998224725']);
+
+        // E-mail já registrado com CPF diferente: não é a mesma pessoa.
+        $this->post(route('gestor.students.store'), [
+            'name' => 'Duplicado E-mail',
+            'email' => 'tomada@example.com',
+            'cpf' => '11144477735',
+            'course_id' => Course::factory()->for($org)->create()->id,
+        ])->assertRedirect()->assertSessionHasErrors('email');
+
+        // CPF de outra pessoa: rejeitado.
+        $this->post(route('gestor.students.store'), [
+            'name' => 'Duplicado CPF',
+            'email' => 'outro@example.com',
+            'cpf' => '529.982.247-25',
+            'course_id' => Course::factory()->for($org)->create()->id,
+        ])->assertRedirect()->assertSessionHasErrors('cpf');
+
+        // Curso de outra organização: rejeitado (nem dica de que existe).
+        $this->post(route('gestor.students.store'), [
+            'name' => 'Curso Alheio',
+            'email' => 'alheio@example.com',
+            'cpf' => '11144477735',
+            'course_id' => $foreignCourse->id,
+        ])->assertRedirect()->assertSessionHasErrors('course_id');
+
+        $this->assertDatabaseMissing('users', ['email' => 'outro@example.com']);
+        $this->assertDatabaseMissing('users', ['email' => 'alheio@example.com']);
+        $this->assertSame(0, StudentInvitation::query()->count());
+        $this->assertNull(User::where('email', 'tomada@example.com')->first()->credentialFor($org));
+    }
+
+    public function test_aluno_cannot_reach_the_directory_create_screen(): void
+    {
+        $org = Organization::factory()->create();
+        $this->actingAsOrgUser($org, RolesEnum::ALUNO->value);
+
+        $this->get(route('gestor.students.create'))->assertForbidden();
+        $this->post(route('gestor.students.store'), [])->assertForbidden();
     }
 }

@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\CreateOrgStudentAction;
 use App\Enums\Permissions\RolesEnum;
 use App\Events\EnrollmentConfirmed;
 use App\Http\Requests\StoreEnrollmentRequest;
 use App\Http\Requests\StoreStudentEnrollmentRequest;
 use App\Models\Course;
+use App\Models\StudentInvitation;
 use App\Models\User;
 use App\Rules\Cpf;
 use Illuminate\Contracts\View\View;
@@ -14,9 +16,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Hash;
 
 /**
  * Gestor/Admin panel for manually enrolling/revoking/restoring a
@@ -31,6 +31,8 @@ use Illuminate\Support\Facades\Hash;
  */
 class EnrollmentController extends Controller
 {
+    public function __construct(private readonly CreateOrgStudentAction $createOrgStudentAction) {}
+
     public function index(Course $course): View
     {
         Gate::authorize('update', $course);
@@ -63,7 +65,10 @@ class EnrollmentController extends Controller
         $students = User::query()
             ->whereHas('credentials', fn ($query) => $query
                 ->where('credentials.org_id', $course->org_id)
-                ->where('credentials.status', 'active'))
+                // `pending` accounts (created by the Gestor, awaiting the
+                // Aluno's unique-invite finalization) are enrollable —
+                // enrollment and account activation are independent.
+                ->whereIn('credentials.status', ['active', 'pending']))
             ->whereHas('roles', fn ($query) => $query->where('name', RolesEnum::ALUNO->value))
             ->where(fn (Builder $query) => $query
                 ->where('name', 'like', "%{$term}%")
@@ -109,44 +114,53 @@ class EnrollmentController extends Controller
     /**
      * creates the Aluno account in `$course`'s org AND enrolls it in
      * `$course`, in one transaction. There is no password input on this
-     * flow: the CPF is the initial credential, hashed server-side from its
-     * digits-normalized value. `EnrollmentConfirmed` dispatches only after
-     * the transaction commits, so a notification can never go out for a
-     * rolled-back enrollment.
+     * flow: the credential is born `pending` with an unknowable random
+     * password, and the student finalizes their own registration by
+     * redeeming the unique `StudentInvitation` issued here — the one-time
+     * link is flashed back so the Gestor can copy it right away. A person
+     * already on the platform (another org) is LINKED, not duplicated
+     * (see `CreateOrgStudentAction`).
+     * `EnrollmentConfirmed` dispatches only after the transaction
+     * commits AND only on an actual enrollment transition, so a
+     * notification can never go out for a rolled-back or no-op run.
      */
     public function storeStudent(StoreStudentEnrollmentRequest $request, Course $course): RedirectResponse
     {
         Gate::authorize('update', $course);
 
         $data = $request->validated();
-        $cpf = Cpf::digits($data['cpf']);
 
-        $student = DB::transaction(function () use ($data, $course, $cpf): User {
-            $student = User::create([
-                'name' => $data['name'],
-                'email' => $data['email'],
-                'cpf' => $cpf,
-            ]);
-            // the CPF is the initial credential in the Course's org
-            $student->credentials()->create([
-                'org_id' => $course->org_id,
-                'password' => Hash::make($cpf),
-                'status' => 'active',
-            ]);
-            $student->assignRole(RolesEnum::ALUNO->value);
+        $result = $this->createOrgStudentAction->execute(
+            $course->organization,
+            $data['name'],
+            $data['email'],
+            Cpf::digits($data['cpf']),
+            $course,
+            auth()->id(),
+        );
 
-            $course->students()->attach($student->id, [
-                'enrolled_at' => now(),
-                'status' => 'active',
-            ]);
-
-            return $student;
-        });
-
-        EnrollmentConfirmed::dispatch($course, $student);
+        if ($result['enrolled']) {
+            EnrollmentConfirmed::dispatch($course, $result['student']);
+        }
 
         return redirect()->route('courses.enrollments.index', $course)
-            ->with('success', 'Aluno cadastrado e matriculado com sucesso.');
+            ->with('success', $this->creationMessage($result['existed'], $result['enrolled']))
+            ->with('invitation_url', url('/convite/'.$result['invitation']->token));
+    }
+
+    /**
+     * Success copy reflects what actually happened — linking an existing
+     * multi-org person reads differently from a brand-new registration.
+     *
+     * @param  array{existed: bool, enrolled: bool}  ...$flags
+     */
+    private function creationMessage(bool $existed, bool $enrolled): string
+    {
+        return match (true) {
+            ! $existed => 'Aluno cadastrado e matriculado com sucesso. Envie o link de convite para ele criar a senha.',
+            $enrolled => 'Aluno já existente na plataforma: conta vinculada e matriculada com sucesso.',
+            default => 'Aluno já pertence à sua organização. O link de convite serve para ele acessar ou redefinir a senha.',
+        };
     }
 
     /**

@@ -5,8 +5,8 @@ namespace Tests\Feature\Tenancy;
 use App\Models\Certificate;
 use App\Models\Course;
 use App\Models\Credential;
-use App\Models\InvitationLink;
 use App\Models\Organization;
+use App\Models\StudentInvitation;
 use App\Models\User;
 use App\Services\UserImportService;
 use Tests\TestCase;
@@ -17,38 +17,20 @@ class PublicFlowsHostScopeTest extends TestCase
     {
         $orgA = Organization::factory()->create(['host' => 'portal.acme.test']);
         $orgB = Organization::factory()->create(['host' => 'portal.bsb.test']);
-        $course = Course::factory()->for($orgA)->published()->create();
-        $link = InvitationLink::factory()->create([
+        $student = User::factory()->aluno()->create();
+        Credential::factory()->pending()->create(['user_id' => $student->id, 'org_id' => $orgA->id]);
+        $invitation = StudentInvitation::factory()->create([
             'org_id' => $orgA->id,
-            'course_id' => $course->id,
-            'created_by' => User::factory()->create()->id,
+            'user_id' => $student->id,
         ]);
 
         $this->onHost('portal.acme.test')
-            ->get("/convite/{$link->token}")
+            ->get("/convite/{$invitation->token}")
             ->assertOk();
 
         $this->onHost('portal.bsb.test')
-            ->get("/convite/{$link->token}")
+            ->get("/convite/{$invitation->token}")
             ->assertNotFound();
-    }
-
-    public function test_check_email_considera_credential_da_org_do_host(): void
-    {
-        $orgA = Organization::factory()->create(['host' => 'portal.acme.test']);
-        $orgB = Organization::factory()->create(['host' => 'portal.bsb.test']);
-        $user = User::factory()->aluno()->create(['email' => 'ana@acme.test']);
-        Credential::factory()->create(['user_id' => $user->id, 'org_id' => $orgA->id]);
-
-        $this->onHost('portal.acme.test')
-            ->postJson('/convite/check-email', ['email' => 'ana@acme.test'])
-            ->assertOk()
-            ->assertJson(['exists' => true]);
-
-        $this->onHost('portal.bsb.test')
-            ->postJson('/convite/check-email', ['email' => 'ana@acme.test'])
-            ->assertOk()
-            ->assertJson(['exists' => false]);
     }
 
     public function test_csv_import_provisiona_credential_por_org(): void

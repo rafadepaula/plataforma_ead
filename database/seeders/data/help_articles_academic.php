@@ -308,62 +308,7 @@ Inscrever diretamente um estudante já cadastrado na organização em um curso e
 
 ## Dúvidas comuns
 **E se o aluno ainda não tiver cadastro na plataforma?**
-Você pode cadastrá-lo previamente no menu de Alunos, importá-lo via CSV ou enviar um Link de Convite Inteligente do curso.
-MARKDOWN
-    ],
-    [
-        'target_page_key' => 'courses.invitation-links.index',
-        'audience' => 'gestor',
-        'title' => 'Links de Convite do Curso',
-        'slug' => 'links-de-convite-do-curso',
-        'category' => 'Matrículas e Convites',
-        'content' => <<<'MARKDOWN'
-## Para que serve
-Gerenciar os links públicos de auto-inscrição do curso (`/convite/{token}`). Permite que novos ou existentes alunos ingressem no treinamento de forma autônoma.
-
-## Passo a passo
-1. Visualize os links gerados, com informações de token, limite de utilizações, contagem de usos atuais e data de expiração.
-2. Clique no botão de cópia rápida para transferir a URL pública do convite para a área de transferência.
-3. Utilize o botão "Novo Link de Convite" para gerar um novo token com regras específicas.
-4. Desative ou exclua links que não devem mais receber novas inscrições.
-
-## Regras e limites
-- Links de convite que atingem o limite máximo de utilizações são automaticamente invalidados para novos acessos.
-- Links com data de validade expirada retornam mensagem explicativa amigável ao usuário.
-- O link realiza a matrícula imediata do estudante assim que o formulário de cadastro adaptativo é concluído.
-
-## Dúvidas comuns
-**O mesmo link pode ser enviado para várias pessoas?**
-Sim, desde que você configure o link com múltiplos usos ou deixe o campo de limite em branco (ilimitado).
-
-**Um usuário já cadastrado em outra organização pode usar o link?**
-Sim. A plataforma possui arquitetura multi-org unificada: o estudante reaproveita seu e-mail e senha globais, ingressando na nova organização sem criar conta duplicada.
-MARKDOWN
-    ],
-    [
-        'target_page_key' => 'courses.invitation-links.create',
-        'audience' => 'gestor',
-        'title' => 'Criar Link de Convite Inteligente',
-        'slug' => 'criar-link-de-convite-inteligente',
-        'category' => 'Matrículas e Convites',
-        'content' => <<<'MARKDOWN'
-## Para que serve
-Gerar um novo token de convite com parâmetros personalizados de validade temporal e limite de inscrições para ingresso simplificado de estudantes.
-
-## Passo a passo
-1. No campo "Limite de Usos", informe a quantidade máxima de matrículas permitidas por este link (deixe vazio para usos ilimitados).
-2. No campo "Data de Expiração", selecione a data e horário limite para aceitar inscrições.
-3. Clique em "Gerar Link de Convite".
-4. Copie a URL gerada e compartilhe-a com os participantes ou em canais de comunicação.
-
-## Regras e limites
-- O token gerado é único, criptograficamente seguro e não previsível.
-- Toda inscrição realizada via link é registrada com auditoria de origem.
-- O formulário público no destino (`/convite/{token}`) detecta automaticamente se o e-mail informado já possui conta na plataforma.
-
-## Dúvidas comuns
-**Posso cancelar um convite após ter enviado o link?**
-Sim. Basta excluir o convite na listagem de links que qualquer tentativa de acesso posterior será bloqueada imediatamente.
+Você pode cadastrá-lo previamente em "Cadastrar novo aluno" (dentro das Matrículas do curso), importá-lo via CSV ou, se ele já tiver conta, matriculá-lo pela busca do painel de Matrículas.
 MARKDOWN
     ],
     [
@@ -393,6 +338,32 @@ Não. O painel do professor restringe a visualização estritamente aos cursos a
 MARKDOWN
     ],
     [
+        'target_page_key' => 'gestor.students.create',
+        'audience' => 'gestor',
+        'title' => 'Cadastrar Aluno no Diretório',
+        'slug' => 'cadastrar-aluno-no-diretorio',
+        'category' => 'Pessoas',
+        'content' => <<<'MARKDOWN'
+## Para que serve
+Criar a conta de um aluno novo já matriculada no curso escolhido, em um único formulário, sem precisar passar antes pela tela do curso. Ao final, o link de convite único do aluno é exibido para cópia imediata.
+
+## Passo a passo
+1. Na listagem "Alunos Matriculados", clique no botão "Cadastrar aluno" (ao lado de "Importar CSV").
+2. Preencha Nome, E-mail e CPF do aluno.
+3. Selecione o curso em que o aluno será matriculado — o campo é obrigatório e lista apenas os cursos da sua organização.
+4. Clique em "Cadastrar e Matricular": a conta nasce pendente e o link de convite único aparece no topo da listagem para você copiar e enviar ao aluno.
+
+## Regras e limites
+- O aluno pode já ter conta em outra organização: nesse caso a conta é vinculada à sua (uma pessoa, vários portais), sem cadastro duplicado.
+- O aluno define a própria senha ao abrir o link de convite — ninguém (nem você) conhece a senha inicial.
+- Somente cursos da sua organização aparecem no seletor.
+
+## Dúvidas comuns
+**Preciso cadastrar o aluno em mais de um curso?**
+Matricule-o nos demais cursos pelo painel "Matrículas" de cada curso, buscando pelo e-mail dele.
+MARKDOWN
+    ],
+    [
         'target_page_key' => 'gestor.students.index',
         'audience' => 'gestor',
         'title' => 'Diretório de Alunos',
@@ -403,19 +374,27 @@ MARKDOWN
 Consultar e administrar todos os estudantes cadastrados na sua organização. Fornece visão consolidada de status cadastral, e-mails e histórico de matrículas.
 
 ## Passo a passo
-1. Navegue pela listagem com nome, e-mail, status de ativação e quantidade de cursos do aluno.
+1. Navegue pela listagem com nome, e-mail, status de ativação ("Ativo", "Convite pendente" ou "Inativo") e quantidade de cursos do aluno.
 2. Utilize o campo de busca no topo para localizar rapidamente estudantes por nome ou e-mail.
-3. Clique em "Editar" para atualizar informações cadastrais ou desativar temporariamente o acesso do estudante.
-4. Para cadastros em massa, utilize o botão de atalho "Importar CSV".
+3. Clique em "Copiar convite" para copiar o link de convite único do aluno — ele define a própria senha ao abrir o link.
+4. Clique em "Renovar" para revogar o link atual e gerar outro (o anterior deixa de funcionar).
+5. Clique em "Editar" para atualizar informações cadastrais ou desativar temporariamente o acesso do estudante.
+6. Clique em "Cadastrar aluno" para criar uma conta nova já matriculada no curso escolhido em um único formulário.
+7. Para cadastros em massa, utilize o botão de atalho "Importar CSV".
 
 ## Regras e limites
 - O Gestor visualiza exclusivamente os alunos que possuem vínculo com a sua própria organização.
+- O link de convite é único por aluno e de uso único: finalizado o cadastro, ele deixa de funcionar.
+- Alunos com status "Convite pendente" têm conta criada, porém sem senha conhecível até finalizarem o cadastro pelo link.
 - Alunos com status inativo não conseguem efetuar login na plataforma.
 - Alunos não podem ter seu perfil alterado para Administrador global através deste painel.
 
 ## Dúvidas comuns
 **Como matricular um aluno que já aparece no diretório?**
 Acesse o curso desejado em "Cursos", vá até a aba "Matrículas" e selecione o aluno pelo nome.
+
+**O aluno disse que o link não funciona?**
+Verifique o status na listagem: se estiver "Convite pendente", use "Renovar" para gerar um novo link e envie-o novamente; o anterior é revogado automaticamente.
 MARKDOWN
     ],
     [

@@ -126,7 +126,7 @@ the host context explicitly on every query (`Credential::scopeForOrg()`).
 ## Data Model — Org-Scoped vs Cascade-Inherited Tables
 
 **Directly org-scoped** (own `org_id` column, `OrgScope` trait applied —
-exactly five models: `Course`, `InvitationLink`, `ForumTopic`,
+exactly five models: `Course`, `StudentInvitation`, `ForumTopic`,
 `HelpArticle`, `AuditLog`). `help_articles.org_id` nullable (global or
 org-specific); `audit_logs.org_id` nullable (guest/Admin-global events
 legitimately have `null`, see `audit-logs-architecture`).

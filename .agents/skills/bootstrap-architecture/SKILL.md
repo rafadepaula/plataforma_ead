@@ -47,7 +47,7 @@ metadata:
 > `components/ui/card.blade.php`) foi removida do projeto inteiro, substituída
 > por `.ds-pastel-wash`. **Fase 3 (telas de listagem: `dashboard/index`,
 > `courses/index`, `courses/modules/_list`, `modules/lessons/index`,
-> `courses/enrollments/index`, `courses/invitation-links/index`,
+> `courses/enrollments/index`,
 > `courses/completion-rules/index`, `certificates/index`,
 > `organizations/index`, `users/index`, `admin/users/index`,
 > `admin/users/show`, `audit-logs/index` e o modal `audit-logs/partials/
@@ -229,7 +229,7 @@ Princípio: **Bootstrap tem a API, o projeto não escreve a sua.** Motivos concr
 3. **Menos manutenção** — ~10 KB de JS do projeto somem.
 4. **Contrato estável para Dusk** — `data-bs-toggle` + classe `.show` são contrato público documentado, alvo melhor de `waitFor` que estado interno de objeto do projeto.
 
-Módulos que **ficam** carregam lógica de domínio, não de widget: `HttpClient`, `CsvImporter`, `LessonPlayer`, `ModuleReorder`, `SmartInvitationForm`, `QuizBuilder`, `QuizTimer`, `ForumPolling`, `NotificationBell`, `ForumReportModal`, `AuditLogDiffModal`, `PasswordToggle`. Os que abrem diálogo **param de instanciar `ModalManager`** e usam `bootstrap.Modal.getOrCreateInstance(el)`. API pública de cada módulo (`init()`, construtor com dependências injetadas, registro em `window.*`) fica intacta — é contrato de `app.js` e das views.
+Módulos que **ficam** carregam lógica de domínio, não de widget: `HttpClient`, `CsvImporter`, `LessonPlayer`, `ModuleReorder`, `QuizBuilder`, `QuizTimer`, `ForumPolling`, `NotificationBell`, `ForumReportModal`, `AuditLogDiffModal`, `PasswordToggle`. Os que abrem diálogo **param de instanciar `ModalManager`** e usam `bootstrap.Modal.getOrCreateInstance(el)`. API pública de cada módulo (`init()`, construtor com dependências injetadas, registro em `window.*`) fica intacta — é contrato de `app.js` e das views.
 
 Bundle: `resources/js/app.js` começa com
 

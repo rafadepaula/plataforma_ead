@@ -19,6 +19,7 @@
             subtitle="Visualize e gerencie os Alunos matriculados nos cursos da sua Organização."
         >
             <x-slot:actions>
+                <x-ui.button variant="primary" href="{{ route('gestor.students.create') }}" dusk="create-student">Cadastrar aluno</x-ui.button>
                 <x-ui.button variant="secondary" href="{{ route('users.import.create') }}" dusk="import-students">Importar CSV</x-ui.button>
             </x-slot:actions>
         </x-layout.page-header>
@@ -61,6 +62,8 @@
                     <td data-label="Status">
                         @if($student->account_status === 'active')
                             <x-ui.badge variant="success" dusk="student-status-{{ $student->id }}">Ativo</x-ui.badge>
+                        @elseif($student->account_status === 'pending')
+                            <x-ui.badge variant="info" dusk="student-status-{{ $student->id }}">Convite pendente</x-ui.badge>
                         @else
                             <x-ui.badge variant="neutral" dusk="student-status-{{ $student->id }}">Inativo</x-ui.badge>
                         @endif
@@ -71,6 +74,28 @@
                                          size="sm"
                                          href="{{ route('gestor.students.edit', $student) }}"
                                          dusk="edit-student-{{ $student->id }}">Editar</x-ui.button>
+
+                            {{--
+                                Link de convite único deste aluno:
+                                "Copiar convite" (fetch + clipboard) é
+                                get-or-create — idempotente; "Renovar" é um
+                                form com confirm-modal (padrão declarativo
+                                da tela) que revoga o token vivo e emite
+                                outro, devolvido no banner de flash.
+                            --}}
+                            <x-ui.button variant="ghost"
+                                         size="sm"
+                                         type="button"
+                                         icon="clipboard"
+                                         data-issue-invitation="{{ route('gestor.students.invitations.issue', $student) }}"
+                                         dusk="copy-invitation-{{ $student->id }}">Copiar convite</x-ui.button>
+
+                            <x-ui.button variant="ghost"
+                                         size="sm"
+                                         type="button"
+                                         data-bs-toggle="modal"
+                                         data-bs-target="#renew-invitation-{{ $student->id }}"
+                                         dusk="renew-invitation-{{ $student->id }}">Renovar</x-ui.button>
 
                             <x-ui.button variant="danger"
                                          size="sm"
@@ -98,8 +123,98 @@
                                 confirm-label="Remover"
                                 message="Remover {{ $student->name }} da organização? Esta ação não poderá ser desfeita."
                                 dusk="delete-form-{{ $student->id }}" />
+
+            <x-ui.confirm-modal id="renew-invitation-{{ $student->id }}"
+                                title="Renovar link de convite"
+                                :action="route('gestor.students.invitations.regenerate', $student)"
+                                method="POST"
+                                confirm-label="Renovar"
+                                message="Renovar o link de convite de {{ $student->name }}? O link atual deixará de funcionar e um novo será gerado."
+                                confirm-dusk="renew-invitation-confirm-{{ $student->id }}" />
         @endforeach
+
+        @if(session('invitation_url'))
+            <div class="alert alert-success d-flex flex-wrap align-items-center gap-2" dusk="invitation-flash">
+                <span class="flex-1 min-w-0 text-truncate" dusk="invitation-flash-link">{{ session('invitation_url') }}</span>
+                <button type="button"
+                        class="btn btn-sm btn-primary flex-shrink-0"
+                        data-copy-link="{{ session('invitation_url') }}"
+                        dusk="copy-invitation-flash">Copiar novo link</button>
+            </div>
+        @endif
 
         <x-ui.pagination :paginator="$students" />
     </div>
 @endsection
+
+@push('scripts')
+    <script>
+        // "Copiar convite" (e o banner de flash pós-renovação): a URL vai
+        // para a área de transferência com toast de confirmação — inline,
+        // sem novo módulo em resources/js/, mesmo padrão dos demais.
+        document.addEventListener('DOMContentLoaded', function () {
+            // `navigator.clipboard` só existe em contexto seguro (HTTPS ou
+            // localhost); em hosts HTTP puros (ex.: `laravel.test` interno
+            // do Docker) cai no fallback legado `execCommand('copy')`.
+            function copyInvitationText(value) {
+                if (navigator.clipboard && window.isSecureContext) {
+                    return navigator.clipboard.writeText(value);
+                }
+
+                var textarea = document.createElement('textarea');
+                textarea.value = value;
+                textarea.setAttribute('readonly', '');
+                textarea.style.position = 'fixed';
+                textarea.style.opacity = '0';
+                document.body.appendChild(textarea);
+                textarea.select();
+
+                try {
+                    document.execCommand('copy');
+                } finally {
+                    textarea.remove();
+                }
+
+                return Promise.resolve();
+            }
+            document.querySelectorAll('[data-issue-invitation], [data-copy-link]').forEach(function (button) {
+                button.addEventListener('click', function () {
+                    var value = button.getAttribute('data-issue-invitation')
+                        ? null
+                        : button.getAttribute('data-copy-link');
+
+                    var promise = value !== null
+                        ? Promise.resolve(value)
+                        : fetch(button.getAttribute('data-issue-invitation'), {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                                'Accept': 'application/json',
+                            },
+                        }).then(function (response) {
+                            if (!response.ok) {
+                                throw new Error('request failed');
+                            }
+
+                            return response.json();
+                        }).then(function (payload) {
+                            return payload.url;
+                        });
+
+                    promise.then(function (url) {
+                        return copyInvitationText(url);
+                    }).then(function () {
+                        if (window.NotificationService) {
+                            window.NotificationService.success('Link de convite copiado. Envie ao aluno para ele finalizar o cadastro.');
+                        }
+                    }).catch(function () {
+                        if (window.NotificationService) {
+                            window.NotificationService.error('Não foi possível copiar o link de convite.');
+                        }
+                    });
+                });
+            });
+        });
+    </script>
+@endpush

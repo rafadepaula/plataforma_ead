@@ -1,9 +1,8 @@
 <?php
 
 use App\Exceptions\CourseHasActiveEnrollmentsException;
-use App\Exceptions\InvitationLinkInvalidException;
+use App\Exceptions\InvitationInvalidException;
 use App\Exceptions\UnresolvedOrgContextException;
-use App\Exceptions\UserHasCreatedInvitationLinksException;
 use App\Exceptions\UserHasIssuedCertificatesException;
 use App\Http\Middleware\EnsureStudentIsEnrolled;
 use App\Http\Middleware\EnsureTenantAccess;
@@ -98,22 +97,10 @@ return Application::configure(basePath: dirname(__DIR__))
             return back()->with('error', $message);
         });
 
-        // A User who has created InvitationLink(s) can never be hard-deleted from the global Admin user-management screen
-        // (`invitation_links.created_by` is `ON DELETE RESTRICT`).
-        $exceptions->render(function (UserHasCreatedInvitationLinksException $e, Request $request) {
-            $message = 'Não é possível excluir um usuário que criou links de convite.';
-
-            if ($request->expectsJson()) {
-                return response()->json(['message' => $message], 422);
-            }
-
-            return back()->with('error', $message);
-        });
-
-        // A `/convite/{token}` that cannot be resolved to a usable `InvitationLink`
+        // A `/convite/{token}` that cannot be resolved to a usable `StudentInvitation`
         // must never surface as a raw 404/500 — and the visitor is told which of the
-        // four states (not found/expired/revoked/exhausted) they ran into.
-        $exceptions->render(function (InvitationLinkInvalidException $e, Request $request) {
+        // states (not found/expired/revoked/used) they ran into.
+        $exceptions->render(function (InvitationInvalidException $e, Request $request) {
             $message = $e->userMessage();
 
             if ($request->expectsJson()) {

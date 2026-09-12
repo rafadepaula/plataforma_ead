@@ -35,9 +35,10 @@ class UserCrudTest extends TestCase
 
         //  `users.*` is Admin-exclusive (`role:admin`): the
         // Gestor is blocked by middleware, before any Policy or
-        // validation runs — new Alunos enter their Organization via
-        // invitation links, the shared CSV import or per-Course manual
-        // enrollment instead.
+        // validation runs — new Alunos enter their Organization via the
+        // one-step create-and-enroll flow (with its unique invitation
+        // link), the shared CSV import or per-Course manual enrollment
+        // instead.
         $response->assertForbidden();
         $this->assertFalse(User::where('email', 'aluno.novo@example.com')->exists());
     }

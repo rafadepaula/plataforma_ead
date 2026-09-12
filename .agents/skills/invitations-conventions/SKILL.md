@@ -1,16 +1,15 @@
 ---
 name: invitations-conventions
 description: >
-  Code patterns, snippets, guardrails for Smart Invitation & Enrollment
-  feature: ProcessSmartInvitationAction lockForUpdate
-  transaction with post-lock host re-check, credential-based
-  check-email/adaptive-form contract, EnrollmentController
-  course_user upsert pattern, convite/show.blade.php guest-shell +
-  .d-none-only visibility contract, InvitationLinkPolicy/route
-  conventions. Use
-  when writing controller, Form Request, Policy, or Action managing
-  InvitationLink or course_user records, or wiring /convite/{token}
-  endpoints.
+  Code patterns, snippets, guardrails for the per-student unique
+  Invitation feature: RedeemStudentInvitationAction lockForUpdate
+  transaction with post-lock host re-check, identity-bound token
+  (no identity fields in the request), FinalizeStudentInvitationRequest
+  contract, convite/show.blade.php guest-shell + readonly identity,
+  StudentInvitationController get-or-create/rotate conventions, implicit
+  route binding ({user}) for the gestor endpoints. Use when writing
+  controller, Form Request, Policy, or Action managing StudentInvitation
+  or course_user records, or wiring /convite/{token} endpoints.
 license: MIT
 metadata:
   feature: invitations
@@ -19,253 +18,216 @@ metadata:
 
 # Invitations Conventions
 
-## `ProcessSmartInvitationAction`: Lock First, Re-Check Usability, Then Branch
+## `RedeemStudentInvitationAction`: Lock First, Re-Check Usability, Then Branch
 
 Whole Action runs inside one `DB::transaction()`. First thing inside that
-transaction: re-fetch `InvitationLink` **with `lockForUpdate()`**,
+transaction: re-fetch `StudentInvitation` **with `lockForUpdate()`**,
 bypassing `OrgScope` (`withoutGlobalScopes()`) since this runs with no
 authenticated tenant context:
 
 ```php
 return DB::transaction(function () use ($token, $data) {
-    $invitationLink = InvitationLink::query()
+    $invitation = StudentInvitation::query()
         ->withoutGlobalScopes()
         ->where('token', $token)
         ->lockForUpdate()
         ->first();
 
-    if (! $invitationLink) {
-        throw InvitationLinkInvalidException::notFound($token);
+    if (! $invitation) {
+        throw InvitationInvalidException::notFound($token);
     }
 
-    if ((int) $invitationLink->org_id !== (int) OrgContext::current()->orgId()) {
-        throw InvitationLinkInvalidException::notFound($token);
+    if ((int) $invitation->org_id !== (int) OrgContext::current()->orgId()) {
+        throw InvitationInvalidException::notFound($token);
     }
 
-    if ($reason = $invitationLink->unusableReason()) {
-        throw InvitationLinkInvalidException::forReason($reason, $token);
+    if ($reason = $invitation->unusableReason()) {
+        throw InvitationInvalidException::forReason($reason, $token);
     }
     // ...
 });
 ```
 
-Never construct `new InvitationLinkInvalidException('some sentence')` at a call
-site: the visitor-facing copy lives on the exception (`userMessage()`), keyed by
-reason, and is rendered once by `bootstrap/app.php` — see
+Never construct `new InvitationInvalidException('some sentence')` at a call
+site: the visitor-facing copy lives on the exception (`userMessage()`), keyed
+by reason, and is rendered once by `bootstrap/app.php` — see
 `invitations-architecture`. Call sites only pick the *reason*: `::notFound()`
-for a null row **and** for a wrong-host row, `::forReason($link->unusableReason(),
-$token)` for a row that exists but may not be consumed.
-`InvitationController::resolveUsableLink()` uses the exact same three-step
-shape, minus the lock. The host check must sit *inside* the transaction,
-after the lock — a redemption racing a link transfer between orgs is
-arbitrated from the freshly locked row, same as the usability verdict.
+for a null row **and** for a wrong-host row **and** for a staff-target row,
+`::forReason($invitation->unusableReason(), $token)` for a row that exists
+but may not be redeemed, `::forReason(REASON_INACTIVE, $token)` for the
+Gestor-deactivated credential.
+`InvitationController::resolveUsableInvitation()` uses the exact same
+three-step shape, minus the lock. The host check must sit *inside* the
+transaction, after the lock — a redemption is arbitrated from the freshly
+locked row, same as the usability verdict.
 
-Never move `isUsable()` check before `lockForUpdate()` call. Never reuse
-`InvitationLink` instance caller loaded before entering transaction. Either
-mistake reopens exact race lock exists to close (see
-`invitations-architecture` two-concurrent-requests example).
+Never move the `isUsable()` check before the `lockForUpdate()` call. Never
+reuse an `StudentInvitation` instance the caller loaded before entering the
+transaction. Either mistake reopens the exact race the lock exists to close
+(two concurrent redemptions of one single-use token).
 
-## Existing Person: Branch On The Host Org's Credential, Never On A Global Column
+## Identity Comes From The Token, Never From The Request
+
+The Action resolves the account from `$invitation->user_id`; the Form
+Request (`FinalizeStudentInvitationRequest`) validates ONLY
+`password` (`required|min:8|confirmed`) and `consent`
+(`accepted`, message
+`'É necessário concordar para concluir o cadastro.'`). There is no
+`email`/`name`/`cpf` field and no `check-email` endpoint — adding one back
+reopens account enumeration and re-introduces the duplicate-identity
+problems the unique-per-student paradigm exists to kill. The public view
+renders e-mail/name as **readonly inputs** fed from `$invitation->student`;
+the readonly-ness is UX, the *real* immutability is that the POST body's
+identity fields are never read.
 
 ```php
-$user = User::query()->where('email', $data['email'])->first();
+$student = $invitation->student()->withoutGlobalScopes()->firstOrFail();
 
-if ($user) {
-    $credential = Credential::query()
-        ->forOrg($invitationLink->org_id)
-        ->where('user_id', $user->id)
-        ->first();
+// staff promotion after issuance → token can't become a staff password
+// reset; reads as 404 like every other forbidden redemption.
+if ($student->hasAnyRole([RolesEnum::GESTOR->value, RolesEnum::ADMIN->value])) {
+    throw InvitationInvalidException::notFound($token);
+}
 
-    if ($credential) {
-        if (! Hash::check($data['password'], $credential->password)) {
-            throw ValidationException::withMessages([
-                'password' => ['Senha incorreta para o e-mail informado.'],
-            ]);
-        }
+$credential = Credential::query()
+    ->forOrg($invitation->org_id)
+    ->where('user_id', $student->id)
+    ->first();
 
-        if ($credential->status !== 'active') {
-            throw ValidationException::withMessages([
-                'email' => ['Esta conta está inativa. Procure o gestor da sua organização.'],
-            ]);
-        }
-    } else {
-        // Person exists in another portal only: typed password creates
-        // THIS portal's account.
-        Credential::create([
-            'user_id' => $user->id,
-            'org_id' => $invitationLink->org_id,
-            'password' => Hash::make($data['password']),
-            'status' => 'active',
-        ]);
-    }
+if ($credential && $credential->status === 'inactive') {
+    throw InvitationInvalidException::forReason(InvitationInvalidException::REASON_INACTIVE, $token);
+}
+
+if ($credential) {
+    $credential->update(['password' => Hash::make($data['password']), 'status' => 'active']);
 } else {
-    $user = User::create([...(identity fields: name/email/cpf/email_verified_at)...]);
-    $user->assignRole(RolesEnum::ALUNO->value);
-    Credential::create([...same shape as above...]);
+    Credential::create([...same shape, 'status' => 'active']);
 }
+
+$invitation->update(['used_at' => now()]);
+Auth::login($student);
 ```
 
-Order inside the `$credential` branch is load-bearing: password first,
-status second. Inactive status is blocked **after** the password check so
-the status of an account is never disclosed to someone who cannot
-authenticate into it (same order as login). Never validate against
-`$user->password` — `users.password` no longer exists; the account hash
-lives on the org's `credentials` row (`Credential::forOrg(...)`). Wrong
-password is `ValidationException` (surfaced back to `password` field,
-HTTP 422 via normal FormRequest/Exception pipeline), **not**
-`InvitationLinkInvalidException` — link itself is fine, submitted
-credential is wrong. Never write `org_id` on the `User::create` call:
-`users` has no such column; the link's org lands on the `Credential`.
+`pending` and missing credentials are both redeemable (the missing one is
+recreated — same semantics as the Gestor issuing a fresh invite); only a
+Gestor-imposed `inactive` credential is rejected. Redemption never touches
+`course_user` — enrollment is Gestor work done before the link goes out.
 
-## `course_user` Upsert: Read-Then-Branch, Never a Blind `attach()`
+## `convite/show.blade.php`: Guest Shell, `level="h2"`, Readonly Identity
 
-```php
-$enrollment = $user->courses()->withoutGlobalScopes()
-    ->wherePivot('course_id', $invitationLink->course_id)->first();
-
-if (! $enrollment) {
-    $user->courses()->attach($invitationLink->course_id, ['enrolled_at' => now(), 'status' => 'active']);
-} elseif ($enrollment->pivot->status === 'cancelled') {
-    $user->courses()->updateExistingPivot($invitationLink->course_id, ['status' => 'active', 'enrolled_at' => now()]);
-}
-```
-
-`course_user` has real `UNIQUE(user_id, course_id)` constraint. Second
-`attach()` for pair that already has row (active, cancelled, or completed)
-throws DB integrity exception. `EnrollmentController::store()` (the
-manual-enroll form) follows identical shape:
-
-```php
-if ($course->students()->where('users.id', $userId)->exists()) {
-    $course->students()->updateExistingPivot($userId, ['status' => 'active', 'enrolled_at' => now()]);
-} else {
-    $course->students()->attach($userId, ['enrolled_at' => now(), 'status' => 'active']);
-}
-```
-
-Both call sites reactivate `cancelled` row to `active`, never attempt
-second insert. See `invitations-architecture` for why this must never touch
-`completed` row same way — un-completing finished course is out of this
-feature scope; if ever requested, needs own explicit design, not tweak to
-this upsert.
-
-## `check-email`: Existence Is Scoped To The Host Org's Credentials
-
-`InvitationController::checkEmail()` is one endpoint in this feature that
-intentionally answers "does account with this e-mail exist?" to
-unauthenticated caller — the whole point of the adaptive form. The verdict
-is **credential existence in the host org**, not mere user existence:
-
-```php
-$exists = $user !== null
-    && Credential::query()->forOrg($context->orgId())->where('user_id', $user->id)->exists();
-```
-
-So a person registered only in another portal gets `exists: false` here,
-sees the full new-account form, and the typed password provisions this
-portal's credential on submit (see `invitations-architecture`). Every
-other endpoint in this feature must **not** leak same fact through
-different channel (timing, distinct error codes, etc.). In particular
-`ProcessSmartInvitationAction` wrong-password branch above returns same
-generic validation shape whether or not account exists elsewhere in request
-lifecycle, since by time `store()` runs client already got answer via
-`check-email`.
-
-## `convite/show.blade.php`: Guest Shell + `.d-none`-Only Visibility
-
-The public invitation screen extends `layouts.guest` (the split shell: 46%
+The public invitation screen extends `layouts.guest` (the split shell:
 institutional panel at `col-lg-5`, 440px form column) and opens with
-`<x-layout.page-header kicker="Convite" :title="'Matrícula em '.$courseTitle"
-level="h2" subtitle="..." />`. **`level="h2"` is mandatory here** — the guest
-shell's institutional panel already renders the page's only `<h1>`, so a
-default `page-header` would emit a second one. `InvitationController::show()`
-passes `tenantName` explicitly (`$invitationLink->organization?->name`) because
-a visitor arriving from an invite has no tenant session for
+`<x-layout.page-header kicker="Convite" title="Finalize seu cadastro"
+level="h2" ... />`. **`level="h2"` is mandatory here** — the guest shell's
+institutional panel already renders the page's only `<h1>`, so a default
+`page-header` would emit a second one. `InvitationController::show()`
+passes `tenantName` explicitly (`$invitation->organization?->name`)
+because a visitor arriving from an invite has no tenant session for
 `<x-layout.guest-panel>` to read.
 
-Visibility of the adaptive fields is **the `.d-none` class and nothing else** —
-never the `hidden` attribute, never `style.display`. The server renders the same
-screen without JavaScript and `ProcessInvitationRequest` validates
-conditionally, so the hidden state must be one single, inspectable decision.
-`SmartInvitationForm.applyVisibility()` is the module's only door to that class
-(and clears a stray `hidden`/`display:none` when showing, to keep the class
-authoritative).
+Dusk contract on this screen: `dusk="invitation-form"` on the `<form>`,
+`dusk="invitation-email"` / `dusk="invitation-name"` on the readonly
+identity inputs, `dusk="invitation-password"` /
+`dusk="invitation-password-confirmation"` on the credential fields and
+`dusk="invitation-consent"` on the `<x-ui.switch name="consent">`.
+Frozen in `tests/fixtures/dusk-selectors-snapshot.json` — do not rename
+without updating the snapshot deliberately.
 
-Field wrappers keep the contract the JS module reads: every registration-only
-field sits in `<div data-invitation-field="new-account">`, the existing-account
-hint is a neutral `<p class="guest-hint ... d-none">` (block in `--blue-50`,
-radius 12px — **not** an `.alert`) carrying
-`data-invitation-existing-hint` / `data-invitation-field="existing-account-hint"`
-/ `dusk="invitation-existing-account-hint"` on the same node, and `password`
-stays outside any wrapper (both branches need it). Consent is
-`<x-ui.switch name="consent" value="1" required label="Concordo em compartilhar
-meus dados com a organização responsável por este curso." dusk="invitation-consent" />`
-— label verbatim.
+## Gestor Endpoints: Get-Or-Create For Copy, Transaction For Rotation
 
-`ProcessInvitationRequest::messages()` owns the consent copy:
-`'consent.accepted' => 'É necessário concordar para concluir a matrícula.'`.
-Client-side `required` on the switch is a convenience only; the rule is what
-holds when the attribute is stripped.
+`StudentInvitationController::issue()` is deliberately **get-or-create**
+(`StudentInvitation::where('user_id', $student->id)->usable()->first() ??
+create`): the "Copiar convite" button must be idempotent — clicking it
+twice hands back the same live token instead of silently rotating.
+`regenerate()` is the opposite: revoke live + create new **in one
+`DB::transaction()`**, so there is never a window with zero usable
+invitations. Both return the URL built with plain
+`url('/convite/'.$token)` — safe because the Gestor is browsing their own
+portal's host (same assumption `OrgUrl` documents for non-queued
+contexts).
 
-## `InvitationLinkPolicy`: Mirrors `CoursePolicy`, Not `ModulePolicy`
+Authorization is `Gate::authorize('updateStudent', $user)` — the student
+directory's own boundary (`UserPolicy::managesSameOrgAluno`: gestor of
+the host org + target holds account in that org + target is ALUNO). No
+separate `StudentInvitationPolicy` exists; do not create one.
 
-`InvitationLink` carries own `OrgScope` (like `Course`), so — same
-reasoning as `courses-conventions` Course vs. Module/Lesson split — this
-Policy needs only role check for `viewAny`/`create`, plus one explicit
-`org_id` comparison for `delete` (route-model-bound `{invitation_link}` for
-`destroy` is not confined by any parent route segment the way
-`index`/`create`/`store` are via `{course}`):
+## Implicit Binding: The Route Placeholder Is `{user}` — Name The Parameter `$user`
+
+The gestor invitation routes are
+`gestor/students/{user}/convite[/renovar]`. Laravel's implicit binding
+matches the placeholder name to the **parameter name**; naming the
+controller parameter `$student` silently injects an empty `User` (no
+exception), and the first thing to fail is the Policy with a 403 that
+looks like an authorization bug but isn't. Match `GestorStudentController`:
+`public function issue(User $user)`. Same trap documented in
+`auth-orgs-conventions` for the `{user}` segment.
+
+## Clipboard: Inline Script With `execCommand` Fallback
+
+`navigator.clipboard` exists only in secure contexts (HTTPS or
+localhost); the Dusk portal (`http://laravel.test` inside the compose
+network) and any HTTP deployment have no such API, so both copy scripts
+(the students-index "Copiar convite" fetch handler and the
+`invitation_url` flash banners) go through one `copyInvitationText()`
+helper that uses `navigator.clipboard.writeText()` when
+`window.isSecureContext`, else a fixed-position `<textarea>` +
+`document.execCommand('copy')`. Keep the toast via
+`window.NotificationService.success(...)` guarded by `if
+(window.NotificationService)` — unit tests render these views without the
+module registry. Inline in the view's `@push('scripts')`, never a new
+`resources/js/modules/` file (repo convention for screen-local glue).
+
+## Route Shape: Explicit Routes, `{user}`-Nested, Under `role:gestor`
 
 ```php
-public function delete(User $user, InvitationLink $invitationLink): bool
-{
-    return $this->authorize($user, $invitationLink->course()->withoutGlobalScopes()->firstOrFail());
-}
+Route::post('gestor/students/{user}/convite', [StudentInvitationController::class, 'issue'])
+    ->name('gestor.students.invitations.issue');
+Route::post('gestor/students/{user}/convite/renovar', [StudentInvitationController::class, 'regenerate'])
+    ->name('gestor.students.invitations.regenerate');
+Route::delete('gestor/students/{user}/convite', [StudentInvitationController::class, 'destroy'])
+    ->name('gestor.students.invitations.destroy');
 ```
 
-`withoutGlobalScopes()` here is load-bearing for exact same reason
-`ModulePolicy`/`LessonPolicy` need it in `courses-conventions`: reading
-parent `Course` through normal scoped relation while acting user is
-*different*-org Gestor returns `null` (scope filters row out), turning
-intended 403 into null-argument crash.
+They live in the same `role:gestor` group as `gestor.students.*` (the
+Gestor's exclusive Aluno directory), NOT in the `role:admin|gestor`
+group: an Admin has no org-scoped Aluno directory and therefore no
+invitation surface. The public `convite/{token}` pair stays in the
+`guest` group, throttled (`throttle:10,1`).
 
-## Route Shape: `courses.enrollments` Is Seven Explicit Routes, Not A Resource
+## `CreateOrgStudentAction`: One Engine, Two Surfaces, Multi-Org Linking
 
-`routes/web.php:257-270` registers all seven `courses.enrollments.*` routes by
-hand. No `Route::resource('courses.enrollments', ...)` at all, not even
-partial:
+Both create-a-student flows delegate to `App\Actions\CreateOrgStudentAction`:
+`EnrollmentController::storeStudent` (course-nested form) and
+`GestorStudentController::store` (directory-level "Cadastrar aluno", where
+the Course picker is REQUIRED — the directory lists only enrolled Alunos).
+Inside one transaction the Action writes: `User` (or REUSES the existing
+person), `credentials` row (`Hash::make(Str::random(32))`,
+`status: 'pending'` — never the CPF, never a known password; provisioned
+only when the person has none in this org), `course_user` attach
+(read-then-branch upsert, `cancelled` rows reactivated), and a
+get-or-create usable `StudentInvitation` (reuse, never rotate).
+`EnrollmentConfirmed` dispatches only after commit AND only when
+`$result['enrolled']` is true — a no-op run never notifies. The redirect
+flashes `invitation_url` plus a message differentiated by
+`$result['existed']` (new person vs linked person vs already-member).
 
-```php
-Route::get('courses/{course}/enrollments', [EnrollmentController::class, 'index'])
-    ->name('courses.enrollments.index');
-Route::get('courses/{course}/enrollments/search', [EnrollmentController::class, 'search'])
-    ->name('courses.enrollments.search');
-Route::get('courses/{course}/enrollments/create', [EnrollmentController::class, 'create'])
-    ->name('courses.enrollments.create');
-Route::post('courses/{course}/enrollments/store-student', [EnrollmentController::class, 'storeStudent'])
-    ->name('courses.enrollments.store-student');
-Route::post('courses/{course}/enrollments', [EnrollmentController::class, 'store'])
-    ->name('courses.enrollments.store');
-Route::delete('courses/{course}/enrollments/{user}', [EnrollmentController::class, 'destroy'])
-    ->name('courses.enrollments.destroy');
-Route::post('courses/{course}/enrollments/{user}/restore', [EnrollmentController::class, 'restore'])
-    ->name('courses.enrollments.restore');
-```
+Multi-org people are LINKED, never duplicated: the identity rules are the
+pair `App\Rules\AlunoEmail`/`AlunoCpf` (used by BOTH
+`StoreStudentEnrollmentRequest` and `StoreGestorStudentRequest` in place
+of `unique:users`) — an existing e-mail with the MATCHING CPF is the same
+person and passes; a mismatched CPF, a CPF owned by another e-mail, or a
+staff (gestor/admin) account fail with friendly, actionable copy. The
+Action re-verifies the staff case defensively (assigns ALUNO when the
+existing person lacks it). One `users` row, one `credentials` row per
+Organization.
 
-Deliberate: no `Enrollment` Eloquent model to route-bind (`course_user` is
-pivot only — see `invitations-architecture`), so `index`/`store` bind only
-`{course}`, and `EnrollmentController::destroy(Course $course, User $user)`
-needs **both** parent Course and target User bound from URI. Single
-trailing `{enrollment}` segment (what any `shallow()` resource `destroy`
-produces) cannot supply two named route parameters. Need `edit`/`update` in
-this group later? Add another explicit `Route::` line same way, do not
-introduce `Route::resource()`/`shallow()` for this feature.
-`InvitationLinkController` routes have no such problem (`InvitationLink` is
-real model, `{invitation_link}` alone is enough), so those *do* use plain
-`shallow()` resource shape (`only(['index', 'create', 'store',
-'destroy'])`).
+The manual-enroll side (`search` + `StoreEnrollmentRequest`) accepts
+credentials in `['active', 'pending']` — a pending account is enrollable;
+only a Gestor-imposed `inactive` is not.
 
 ## Related Skills
 
-- `courses-conventions` — `withoutGlobalScopes()`-for-Policy-parent pattern
-  this feature `InvitationLinkPolicy` reuses verbatim.
+- `courses-conventions` — pivot-only `course_user` upsert shape the
+  manual-enroll panel follows.
+- `auth-orgs-conventions` — the `credentials` enum and per-org account
+  rules this feature extends with the `pending` state.

@@ -20,7 +20,7 @@ metadata:
 ## Applying `OrgScope` to a Model
 
 Trait only on models owning `org_id` column directly (see "Directly org-scoped"
-list in `tenancy-architecture` — today: `Course`, `InvitationLink`,
+list in `tenancy-architecture` — today: `Course`, `StudentInvitation`,
 `ForumTopic`, `HelpArticle`, `AuditLog`). Never on `User` or `Credential`:
 identity stays queryable across organizations and the credential's org
 target comes explicitly from the host context (`Credential::scopeForOrg()`).

@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Actions\ProvisionOrgAccountAction;
 use App\Enums\Permissions\RolesEnum;
-use App\Exceptions\UserHasCreatedInvitationLinksException;
 use App\Exceptions\UserHasIssuedCertificatesException;
 use App\Http\Controllers\Concerns\ResolvesOrgContext;
 use App\Http\Requests\StoreGestorProfessorRequest;
@@ -183,7 +182,7 @@ class GestorProfessorController extends Controller
         // Removing from THIS portal only — person row hard-deleted only
         // when this was the last account (same ON DELETE RESTRICT
         // pre-flights as the global Admin screen; a Professor never owns
-        // certificates nor creates invitation links today, but cheap).
+        // certificates today, but cheap).
         if ($user->credentials()->count() > 1) {
             $credential->delete();
 
@@ -194,12 +193,6 @@ class GestorProfessorController extends Controller
         if ($user->certificates()->exists()) {
             throw new UserHasIssuedCertificatesException(
                 "Professor #{$user->id} possui certificados emitidos e não pode ser excluído."
-            );
-        }
-
-        if ($user->createdInvitationLinks()->withoutGlobalScope('org')->exists()) {
-            throw new UserHasCreatedInvitationLinksException(
-                "Professor #{$user->id} criou links de convite e não pode ser excluído."
             );
         }
 

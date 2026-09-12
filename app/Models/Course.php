@@ -109,14 +109,6 @@ class Course extends Model
     }
 
     /**
-     * @return HasMany<InvitationLink, $this>
-     */
-    public function invitationLinks(): HasMany
-    {
-        return $this->hasMany(InvitationLink::class);
-    }
-
-    /**
      * @return HasMany<Certificate, $this>
      */
     public function certificates(): HasMany

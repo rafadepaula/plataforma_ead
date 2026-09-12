@@ -6,11 +6,11 @@ use App\Models\Certificate;
 use App\Models\Course;
 use App\Models\CourseCompletionRule;
 use App\Models\ForumTopic;
-use App\Models\InvitationLink;
 use App\Models\Module;
 use App\Models\Organization;
 use App\Models\Quiz;
 use App\Models\QuizQuestion;
+use App\Models\StudentInvitation;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -78,7 +78,7 @@ class DatabaseSeederDevelopmentTest extends TestCase
         $this->assertSame(1, $essayCount);
 
         // 5. No fictitious leftover data.
-        $this->assertSame(0, InvitationLink::query()->count());
+        $this->assertSame(0, StudentInvitation::query()->count());
         $this->assertSame(0, Certificate::query()->count());
         $this->assertSame(0, ForumTopic::query()->count());
         $this->assertSame(0, DatabaseNotification::query()->count());

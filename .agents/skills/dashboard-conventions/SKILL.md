@@ -124,7 +124,7 @@ Dashboard export links plain downloads:
 ```
 
 No `resources/js/modules/*.js` module needed for this. Only add one (following
-`ModuleReorder.js`/`SmartInvitationForm.js` SOLID-module convention) if future
+`ModuleReorder.js` SOLID-module convention) if future
 iteration add type-picker/date-range form needing client-side behavior beyond
 static link.
 

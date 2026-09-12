@@ -416,14 +416,14 @@ Página institucional de apresentação da plataforma educacional. Demonstra os 
 ## Passo a passo
 1. Conheça os diferenciais da plataforma: salas de aula modernas, reprodutor de vídeo inteligente, suporte a provas avaliativas e emissão segura de certificados.
 2. Caso já possua conta, clique no botão "Acessar Plataforma" no cabeçalho para fazer seu login.
-3. Se recebeu um link de convite para um curso, acesse diretamente o link fornecido pelo seu instrutor ou empresa.
+3. Se recebeu um link de convite (um link único, pessoal), acesse-o diretamente para finalizar seu cadastro com a senha que você escolher.
 
 ## Regras e limites
 - Página pública e estática, projetada para carregamento ultrarrápido sem dependência de autenticação prévia.
 
 ## Dúvidas comuns
 **Como me cadastro para fazer um curso?**
-O cadastro na plataforma é realizado através do convite enviado pela sua instituição ou pelo link direto do curso em que você for matriculado.
+O cadastro na plataforma é realizado através do link de convite único enviado pela sua organização: ele abre com seu e-mail já preenchido e você define a própria senha.
 MARKDOWN
     ],
     [
@@ -506,31 +506,31 @@ MARKDOWN
     [
         'target_page_key' => 'invitation.show',
         'audience' => 'aluno',
-        'title' => 'Aceite de Convite Inteligente',
+        'title' => 'Finalização de Cadastro por Convite',
         'slug' => 'aceite-de-convite-inteligente',
         'category' => 'Matrículas e Convites',
         'content' => <<<'MARKDOWN'
 ## Para que serve
-Permitir que um estudante ingresse e se matricule em um curso através de um link público de convite (`/convite/{token}`), com suporte a cadastro adaptativo inteligente que unifica contas sem duplicações.
+Permitir que o aluno finalize o próprio cadastro através de um link de convite **único** (`/convite/{token}`), criado pela organização especificamente para ele, com e-mail e nome já preenchidos e imutáveis.
 
 ## Passo a passo
-1. Ao abrir o link de convite recebido, confira as informações do curso e da instituição de ensino no cabeçalho.
-2. Digite seu endereço de e-mail no formulário.
-3. O sistema detectará automaticamente se você já possui uma conta na plataforma:
-   - **Se você já possui cadastro**: o formulário solicitará apenas sua senha habitual para confirmar o ingresso no curso.
-   - **Se você for um novo usuário**: os campos de Nome Completo, CPF e criação de senha serão abertos para que você conclua seu registro.
-4. Clique em "Confirmar Inscrição" para concluir o acesso imediato à sala de aula.
+1. Abra o link de convite recebido da sua organização (cada link é pessoal e intransferível).
+2. Confira seu nome e e-mail no formulário — eles vêm preenchidos e não podem ser alterados, pois identificam a conta criada para você.
+3. Escolha uma senha (mínimo de 8 caracteres) e digite-a novamente para confirmar.
+4. Marque a caixinha de concordância para a organização organizar seus cursos e dados de estudo.
+5. Clique em "Salvar senha e começar" para ir direto para a sua lista "Meus Cursos".
 
 ## Regras e limites
-- Links com prazo de validade expirado ou que já atingiram a cota máxima de utilizações não aceitam novos inscritos.
-- Usuários já cadastrados não precisam preencher nome ou criar outra senha: sua conta global é conectada à nova organização sem duplicar seus registros no banco de dados.
+- O link é de uso único: depois de finalizado o cadastro, ele deixa de funcionar.
+- Links revogados, expirados ou já utilizados exibem o motivo e não aceitam novo uso.
+- Se sua conta foi desativada pela organização, o convite não a reativa: procure o gestor.
 
 ## Dúvidas comuns
-**O que acontece se eu já estiver matriculado no curso?**
-O sistema identificará sua matrícula e direcionará você diretamente para a sala de aula do curso sem cobranças ou inconsistências.
+**Por que não consigo alterar meu e-mail no convite?**
+Porque o convite é vinculado à conta que a organização criou para você; isso impede que o link seja usado para acessar a conta de outra pessoa.
 
-**O link de convite é seguro?**
-Sim. Os tokens de convite são gerados de forma criptograficamente aleatória e auditada pela plataforma.
+**E se eu perder o link antes de usar?**
+Solicite ao gestor da organização: ela pode copiar o mesmo link novamente ou gerar um novo (o anterior deixa de funcionar).
 MARKDOWN
     ],
     [

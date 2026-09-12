@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Auth;
 
 /**
  * Eloquent trait applied to every *directly* org-scoped model
- * (`Course`, `InvitationLink`, `ForumTopic`, `HelpArticle`).
+ * (`Course`, `StudentInvitation`, `ForumTopic`, `HelpArticle`).
  * Do NOT apply to `User`, `Credential` or to cascade-inherited models
  * (see the `tenancy-architecture` skill for the full list) — those inherit
  * their tenant boundary through a parent relation instead.

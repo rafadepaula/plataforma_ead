@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Exceptions\UserHasCreatedInvitationLinksException;
 use App\Exceptions\UserHasIssuedCertificatesException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UpdateUserAdminRequest;
@@ -158,18 +157,6 @@ class UserAdminController extends Controller
         if ($user->certificates()->exists()) {
             throw new UserHasIssuedCertificatesException(
                 "Usuário #{$user->id} possui certificados emitidos e não pode ser excluído."
-            );
-        }
-
-        // `invitation_links.created_by` is also `ON DELETE RESTRICT`
-        // . `InvitationLink` is directly org-scoped (`OrgScope`),
-        // so the check must bypass the `org` global scope — otherwise an
-        // Admin impersonating a different Organization (or none at all)
-        // would miss links the user created in other orgs and the delete
-        // would still crash with a raw 500 QueryException.
-        if ($user->createdInvitationLinks()->withoutGlobalScope('org')->exists()) {
-            throw new UserHasCreatedInvitationLinksException(
-                "Usuário #{$user->id} criou links de convite e não pode ser excluído."
             );
         }
 

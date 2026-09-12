@@ -286,13 +286,6 @@ Deactivation on the global screen flips EVERY credential of the person and rotat
 if ($user->certificates()->exists()) {
     throw new UserHasIssuedCertificatesException(...);
 }
-
-// InvitationLink IS OrgScope'd — bypass the scope or an Admin with no
-// active impersonation (or impersonating a different Org) silently
-// misses links created in other Organizations and still crashes.
-if ($user->createdInvitationLinks()->withoutGlobalScope('org')->exists()) {
-    throw new UserHasCreatedInvitationLinksException(...);
-}
 ```
 
 New FK referencing `users.id` with `ON DELETE RESTRICT` = add its own pre-flight check here (and in the operational `UserController::destroy()` if that path is also reachable).

@@ -84,7 +84,7 @@ HTTP process); `DatabaseMigrations` retired (per-method `migrate:fresh`)
 - **Admin with no active Impersonate Org session see single Org numbers
   instead of global total (or reverse).** `OrgScope` itself resolve
   "admin + no `active_org_id` in session => no `WHERE` clause" for free
-  on `Course`/`InvitationLink`, but `DashboardMetricsService` raw
+  on `Course`/`StudentInvitation`, but `DashboardMetricsService` raw
   `Certificate`/`course_user`/`User` queries must replicate that exact
   branch manually — missing `if` here is most common cause of
   `OrgDashboardTest` global-KPI case failing while scoped case still

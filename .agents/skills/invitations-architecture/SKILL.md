@@ -1,15 +1,16 @@
 ---
 name: invitations-architecture
 description: >
-  Smart Invitation & Enrollment domain: invitation_links schema,
-  public unauthenticated /convite/{token} flow, host-scoped redemption
-  (wrong host reads as 404), adaptive form keyed on the host org's
-  `credentials` account, typed
-  InvitationLinkInvalidException reason contract (one message per cause), manual enrollment panel reusing
+  Per-student unique Invitation domain: student_invitations schema,
+  public unauthenticated /convite/{token} finalize flow, host-scoped
+  redemption (wrong host reads as 404), identity bound to the token
+  (e-mail/name pre-filled and immutable, never read from the request),
+  pending→active credential lifecycle, typed InvitationInvalidException
+  reason contract (one message per cause), manual enrollment panel reusing
   course_user/CoursePolicy instead of dedicated Enrollment model. Use when
-  designing or reviewing feature touching InvitationLink or course_user
+  designing or reviewing feature touching StudentInvitation or course_user
   data, before adding new enrollment/invitation endpoint, or when deciding
-  how multi-org adaptive registration form behaves.
+  how the finalize-registration form behaves.
 license: MIT
 metadata:
   feature: invitations
@@ -20,213 +21,217 @@ metadata:
 
 ## Overview
 
-Every Course has a shareable `/convite/{token}` link. Unauthenticated
-visitor self-registers (or authenticates into existing account) and gets
-enrolled in that one Course, one step, no admin. Gestor
-(`role:gestor`)/Admin get a manual enroll-or-revoke panel over same
-`course_user` rows, for cases with no invite link. Host-based tenancy
-governs everything here: a link is redeemable **only on its own
-Organization's host**, and the account consumed or created is the
-`credentials` row of the host org — a person already enrolled in another
-portal simply gets a new account here (`credentials` row for this org),
-never a second `users` row (`users` is the global person identity;
-per-org account data lives in `credentials` — see `auth-orgs-architecture`).
+The invitation is **unique per student**: the Gestor creates the Aluno
+(one step: `users` row + `credentials` row + enrollment, via
+`CreateOrgStudentAction` — an already-existing multi-org person is LINKED
+into the Organization, never duplicated), enrolls them in
+Courses through the normal panels, and then hands over ONE
+`/convite/{token}` link that finalizes that person's own account — the
+student opens it with e-mail/name **already filled and immutable**, sets
+their own password and consents. Nobody (not even the Gestor) knows the
+initial credential: it is born `pending` with a random password. The old
+shareable per-Course link (a `max_uses` URL anyone could redeem) was
+removed: a link that carries no identity cannot implement this flow.
+Host-based tenancy governs everything here: a link is redeemable **only
+on its own Organization's host**, and the account it finalizes is the
+`credentials` row of the invitation's org — `users` is the global person
+identity; per-org account data lives in `credentials` (see
+`auth-orgs-architecture`).
 
 ## Schema
 
 | Table | Key columns | Tenancy |
 | --- | --- | --- |
-| `invitation_links` | `org_id`, `token` (64-char, unique), `course_id`, `max_uses`, `current_uses`, `expires_at`, `revoked_at`, `created_by` | **Directly org-scoped** — `OrgScope` trait, same as `Course` |
+| `student_invitations` | `org_id`, `token` (64-char, unique), `user_id`, `created_by` (nullable), `expires_at`, `used_at`, `revoked_at` | **Directly org-scoped** — `OrgScope` trait, same as `Course` |
 | `course_user` (pivot) | `user_id`, `course_id`, `status` (`active`\|`cancelled`\|`completed`), `enrolled_at`, `progress_percentage`, `completed_at` | Not org-scoped — `UNIQUE(user_id, course_id)` pair, one row per student/course regardless of Org |
 
+`student_invitations.user_id` is `ON DELETE CASCADE` (invitations die
+with the student); `created_by` is `ON DELETE SET NULL` on purpose —
+removing the Gestor who issued a link must never block a user deletion
+(the old RESTRICT + `UserHasCreatedInvitationLinksException` guard died
+with the shareable table).
+
 No `Enrollment` Eloquent model exists. Never create one. `course_user`
-managed purely as pivot through `Course::students()`/`User::courses()`
+is managed purely as pivot through `Course::students()`/`User::courses()`
 (`app/Models/Course.php`, `app/Models/User.php`), exactly as
 `courses-architecture` documents. So `EnrollmentController` authorizes
 every action against parent `Course` via `CoursePolicy` (`update`
 ability) — same "no policy of its own, authorize against parent" pattern
-`ModulePolicy`/`LessonPolicy` use for `Module`/`Lesson`.
+`ModulePolicy`/`LessonPolicy` use for `Module`/`Lesson`. The Gestor's
+invitation endpoints (`gestor.students.invitations.*`) authorize via
+`UserPolicy::updateStudent` — the same boundary as the student directory
+itself (gestor of the same org + target holds the ALUNO role + an account
+in the org).
+
+## The Credential Lifecycle: `pending` ≠ `inactive`
+
+`credentials.status` gained a third value, and the distinction is the
+security core of this feature:
+
+- **`pending`** — created by the Gestor (`EnrollmentController::storeStudent`
+  creates it with `Hash::make(Str::random(32))`), awaiting the Aluno's
+  unique-invite finalization. Redeeming the invitation ACTIVATES it
+  (sets the chosen password + `status: 'active'`).
+- **`active`** — usable account. Re-issuing an invitation for an active
+  account and redeeming it replaces the password (the re-issued invite
+  doubles as password reset, which is safe because issuance is
+  Gestor-gated).
+- **`inactive`** — Gestor-imposed deactivation. Redemption REJECTS it
+  (`REASON_INACTIVE`, copy mirrors the login screen's "procure o gestor")
+  and never resurrects it. A pending invitation must never become a
+  deactivation override.
+
+`OrgCredentialUserProvider` only accepts `active` for login, so a
+`pending` account cannot log in by any path until finalized.
 
 ## Two Independent Revocation Mechanisms — Do Not Conflate Them
 
-- **Link-level revocation** (`invitation_links.revoked_at`, set by
-  `InvitationLinkController::destroy()`): stops *link itself* from being
-  consumed again. Does **not** retroactively cancel enrollment already
-  created through it. Revoked link is statement about URL, not about
-  students who already joined.
-- **Enrollment-level revocation** (`course_user.status = 'cancelled'`, set
-  by `EnrollmentController::destroy()`): cancels one student's
-  membership in one Course. No effect on any `InvitationLink` row.
+- **Invitation-level revocation** (`student_invitations.revoked_at`, set
+  by `StudentInvitationController@regenerate`/`@destroy`): stops the
+  *token itself* from being redeemed again. Regenerate = revoke live
+  token + issue another, in one transaction (rotation when a link leaks);
+  destroy = revoke without replacing. Neither touches enrollments.
+- **Enrollment-level revocation** (`course_user.status = 'cancelled'`,
+  set by `EnrollmentController::destroy()`): cancels one student's
+  membership in one Course. No effect on any `StudentInvitation` row.
 
-Change to one must never write to other. Future requirement "revoking link
-should also cancel everyone who joined through it" is new explicit
-feature, not bug fix to either `destroy()` method.
+Change to one must never write to other. Redemption also does NOT create
+or reactivate enrollments — enrollment is Gestor work done before the
+link goes out; the token only finalizes the account.
 
 ## Public `/convite/{token}` Flow Is Deliberately Unauthenticated
 
 `routes/web.php` `Route::middleware('guest')` group (not `auth`) covers
-`GET convite/{token}` (`invitation.show`), `POST convite/check-email`
-(`invitation.check-email`), `POST convite/{token}` (`invitation.store`).
-All three run with no `Gate::authorize()` call, by design: unauthenticated
-visitor is only actor these routes expect. Do not add `auth` middleware or
-Policy to this controller. `guest` middleware itself keeps already-logged-in
-user out of this flow — they get redirected away, same as hitting `/login`
-while logged in. Both public POSTs are throttled per IP (`throttle:20,1` on
-`invitation.check-email`, `throttle:10,1` on `invitation.store`,
-`routes/web.php:300-305`): they answer questions about personal data to
-unauthenticated callers, so the rate limit keeps them from being usable as
-enumeration oracles.
+`GET convite/{token}` (`invitation.show`) and `POST convite/{token}`
+(`invitation.store`). Both run with no `Gate::authorize()` call, by
+design: unauthenticated visitor is the only actor these routes expect.
+Do not add `auth` middleware or Policy to this controller. `guest`
+middleware itself keeps already-logged-in user out of this flow — they
+get redirected away, same as hitting `/login` while logged in. `POST`
+is throttled per IP (`throttle:10,1`): it consumes a single-use
+credential-setting token, so the rate limit keeps it from being probed
+as a password-setting oracle. There is no `check-email` endpoint
+anymore — the identity never comes from the request.
+
+## The Token Is The Identity — The Request Cannot Redirect Redemption
+
+`InvitationController::show()` renders `convite.show` with the
+invitation's `student` relation: e-mail and name are rendered **readonly**
+and the form's POST body carries only `password` +
+`password_confirmation` + `consent` (`FinalizeStudentInvitationRequest`
+validates nothing else; an extra `email` field in the payload is simply
+discarded by `validated()`). `RedeemStudentInvitationAction` resolves
+the account from `$invitation->user_id`, never from input — so a forged
+field cannot point the password set at another person, and the
+pre-registered e-mail is immutable by construction.
 
 ## Wrong-Host Redemption Reads As 404, Never As "Wrong Portal"
 
-`InvitationController::resolveUsableLink()` (private, backs `show()`) and
-`ProcessSmartInvitationAction::execute()` both compare
-`(int) $invitationLink->org_id !== (int) OrgContext::current()->orgId()`
-and throw `InvitationLinkInvalidException::notFound($token)` on mismatch —
-the same 404 (and same `userMessage()` copy) as a token that never
-existed. A valid token hit from another Organization's portal must never
-reveal that the link exists: no redirect to the right host, no distinct
+`InvitationController::resolveUsableInvitation()` (private, backs
+`show()`) and `RedeemStudentInvitationAction::execute()` both compare
+`(int) $invitation->org_id !== (int) OrgContext::current()->orgId()` and
+throw `InvitationInvalidException::notFound($token)` on mismatch — the
+same 404 (and same `userMessage()` copy) as a token that never existed.
+A valid token hit from another Organization's portal must never reveal
+that the link exists: no redirect to the right host, no distinct
 message, no timing-visible branch. The Action re-checks **after**
 `lockForUpdate()` so the verdict comes from the freshly locked row, not
 from the state the caller read a moment earlier. Same token, same 404
 copy, verified host-scoped in
 `tests/Feature/Tenancy/PublicFlowsHostScopeTest.php`.
 
-## `InvitationLink::unusableReason()` / `isUsable()` — One Source of Truth, Checked Twice
+## `StudentInvitation::unusableReason()` / `isUsable()` — One Source of Truth, Checked Twice
 
-"Why may this link no longer be consumed?" is answered once, on the model,
-by `InvitationLink::unusableReason(): ?string` — a `match (true)` in a
-**fixed precedence**: revoked > expired > exhausted > Course unavailable,
-returning `null` when the link is still usable. `isUsable()` is now literally
-`unusableReason() === null`, so the boolean and the reason can never drift
-apart. The precedence is deliberate: one row can sit in several unusable
-states at once (a revoked link that also ran past `expires_at`), and the same
-row must always report the same reason to the visitor, run after run. `courseIsAvailable()` re-queries linked
-`Course` (via `->course()->withoutGlobalScope('org')->value(
-'is_published')`, bypassing only `OrgScope` — `SoftDeletingScope` stays on
-purpose), so link pointing at soft-deleted or unpublished Course is as
-unusable as expired/exhausted/revoked one; nothing to enroll invitee into
-otherwise. `scopeUsable()` still covers only expired/exhausted/revoked trio
-(predates this check, no controller calls it anymore — `isUsable()` is
-single source of truth both `show()` and Action use now). Do not rely on
-`scopeUsable()` alone to gate course availability. Evaluated deliberately
-in **two different places** for two different reasons:
+"Why may this invitation no longer be redeemed?" is answered once, on
+the model, by `StudentInvitation::unusableReason(): ?string` — a
+`match (true)` in a **fixed precedence**: revoked > expired > used,
+returning `null` when the invitation is still usable. `isUsable()` is
+literally `unusableReason() === null`. The precedence is deliberate: one
+row can sit in several unusable states at once (a revoked invitation
+that also ran past `expires_at`), and the same row must always report
+the same reason to the visitor, run after run. Evaluated deliberately in
+**two different places** for two different reasons:
 
-1. `InvitationController::show()` (via private `resolveUsableLink()`) —
-   `InvitationLink::query()
+1. `InvitationController::show()` (via private
+   `resolveUsableInvitation()`) — `StudentInvitation::query()
    ->withoutGlobalScopes()->where('token', $token)->first()`, then a
-   **three-step verdict**: a missing row throws
-   `InvitationLinkInvalidException::notFound($token)`, a row whose
-   `org_id` differs from the request host's org throws `::notFound($token)`
-   too (wrong-portal = never-existed), and a present-but-unusable row
-   throws `::forReason($invitationLink->unusableReason(), $token)`. The
-   lookup deliberately no longer chains `->usable()`: filtering the row out in
-   SQL would collapse "expired" and "never existed" into the same 404 copy.
-2. `ProcessSmartInvitationAction::execute()` — repeats the org-host check
-   and that same null-row/`unusableReason()` split *after* acquiring
-   `lockForUpdate()` inside the transaction, so the verdict is resolved
-   from the freshly locked row (a link exhausted by a concurrent request
-   reports `REASON_EXHAUSTED`, not whatever state the caller read a moment
-   earlier).
-   Second check not redundant: without it, two concurrent requests against
-   link at exactly `max_uses - 1` remaining uses both pass step 1 check
-   before either increments `current_uses`, both insert enrollment. Only
-   *lock* (not scope) serializes them, so second one's post-lock re-check
-   correctly fails.
+   **three-step verdict**: missing row → `::notFound($token)`; row whose
+   `org_id` differs from the request host's org → `::notFound($token)`
+   too (wrong-portal = never-existed); present-but-unusable row →
+   `::forReason($invitation->unusableReason(), $token)`. Filtering the
+   row out in SQL would collapse "expired" and "never existed" into the
+   same 404 copy, so the lookup never chains `->usable()`.
+2. `RedeemStudentInvitationAction::execute()` — repeats the org-host
+   check and that same null-row/`unusableReason()` split *after*
+   acquiring `lockForUpdate()` inside the transaction, so the verdict is
+   resolved from the freshly locked row. Second check not redundant:
+   without it, two concurrent requests against the same single-use token
+   both pass the pre-lock check before either writes `used_at`; only the
+   *lock* serializes them, so the second one's post-lock re-check
+   correctly fails with `REASON_USED`.
 
-Both `show()` and Action call `->withoutGlobalScopes()` explicitly.
-`InvitationLink` carries `OrgScope`, and these paths run with no
-authenticated user (or, for Action, no *relevant* tenant context), so
-ordinary scope "no user, no filter" branch already lets this through in
-practice. Explicit call documents this must never silently start filtering
-once someone touches `OrgScope` "no authenticated user" branch.
+Both paths call `->withoutGlobalScopes()` explicitly.
+`StudentInvitation` carries `OrgScope`, and these paths run with no
+authenticated user, so the ordinary "no user, no filter" branch already
+lets this through in practice. Explicit call documents this must never
+silently start filtering once someone touches `OrgScope`'s
+"no authenticated user" branch.
 
-## The Reason Contract: `InvitationLinkInvalidException` Carries Copy, The View Never Does
+## The Reason Contract: `InvitationInvalidException` Carries Copy, The View Never Does
 
-`InvitationLinkInvalidException` (`app/Exceptions/InvitationLinkInvalidException.php`)
-is no longer a bare `RuntimeException` with an ad-hoc string. It carries a typed
-reason, built through named constructors (`notFound()`, `expired()`, `revoked()`,
-`exhausted()`, `courseUnavailable()`, plus `forReason(string $reason, string $token)`
-for a verdict coming straight out of `unusableReason()`), and exposes
-`reason()` and `userMessage()`:
+`InvitationInvalidException` (`app/Exceptions/InvitationInvalidException.php`)
+carries a typed reason, built through named constructors (`notFound()`,
+`expired()`, `revoked()`, `used()`, plus `forReason(string $reason,
+string $token)` for a verdict coming straight out of `unusableReason()`),
+and exposes `reason()` and `userMessage()`:
 
 | Reason constant | `userMessage()` (visitor-facing, verbatim) |
 | --- | --- |
 | `REASON_NOT_FOUND` | Este convite não foi encontrado. |
 | `REASON_EXPIRED` | Este convite expirou. |
 | `REASON_REVOKED` | Este convite foi cancelado. |
-| `REASON_EXHAUSTED` | Limite de vagas atingido. |
-| `REASON_COURSE_UNAVAILABLE` | Este convite não está mais disponível. |
+| `REASON_USED` | Este convite já foi utilizado. |
+| `REASON_INACTIVE` | Esta conta está inativa. Procure o gestor da sua organização. |
 
-`getMessage()` keeps the operational sentence (`Convite '{token}' indisponível
-({reason}).`) for the log; only `userMessage()` ever reaches a screen. An
-unrecognised reason string degrades to `REASON_NOT_FOUND` instead of throwing a
-second error inside the 404 handler. The public constructor stays
-`RuntimeException`-compatible (`__construct(string $message = '', string $reason
-= REASON_NOT_FOUND, ...)`), so `expectException(...)` assertions written before
-this change still hold.
+`getMessage()` keeps the operational sentence (`Convite '{token}'
+indisponível ({reason}).`) for the log; only `userMessage()` ever
+reaches a screen. An unrecognised reason string degrades to
+`REASON_NOT_FOUND` instead of throwing a second error inside the 404
+handler.
 
-Only `bootstrap/app.php`'s render hook turns that into a response — 404 in both
-channels, `response()->json(['message' => $e->userMessage()], 404)` for
-`expectsJson()` requests and `view('convite.invalid', ['message' => ...])`
-otherwise. `resources/views/convite/invalid.blade.php` renders `$message` and keeps a
-single neutral fallback (`Este convite não está mais disponível.`) for a render
-with no `$message` bound; it must never grow a per-reason branch of its own —
-two copies of the same sentence diverge and the test then asserts the wrong one.
+Only `bootstrap/app.php`'s render hook turns that into a response — 404
+in both channels, `response()->json(['message' => $e->userMessage()],
+404)` for `expectsJson()` requests and `view('convite.invalid',
+['message' => ...])` otherwise. `resources/views/convite/invalid.blade.php`
+renders `$message` and keeps a single neutral fallback; it must never
+grow a per-reason branch of its own — two copies of the same sentence
+diverge and the test then asserts the wrong one.
 
-## Adaptive Enrollment Operates On The Host Org's `credentials` Account
+## Staff Accounts Can Never Be Finalized Through A Token
 
-`ProcessSmartInvitationAction` branches on the `(user, host-org)` pair,
-not on the e-mail alone. After the link guards pass, the Action looks up
-`User::query()->where('email', $data['email'])->first()`, then:
+If the pre-registered person has been promoted to `role:gestor`/
+`role:admin` after the link went out, `RedeemStudentInvitationAction`
+throws `InvitationInvalidException::notFound($token)` — the same 404 as
+an unknown token, not a form error — instead of letting the token become
+a staff password reset. Deliberate: the invitation surface is
+Gestor-gated at issuance (`updateStudent` requires the ALUNO role), and
+redemption re-verifies it.
 
-- **Person exists, holds credential in the link's org**
-  (`Credential::forOrg($invitationLink->org_id)` hit): submitted password
-  is verified against **that credential's** hash (`Hash::check` against
-  `$credential->password`, not any global column — `users.password` no
-  longer exists). Wrong password surfaces as `errors.password`. An
-  `inactive` credential is blocked **after** the password check
-  (`errors.email`, "Esta conta está inativa...") so status is never
-  disclosed to someone who cannot authenticate into it — same order the
-  login flow uses.
-- **Person exists, no credential in this org** (account lives in another
-  portal only): the Action **creates** this portal's account —
-  `Credential::create([...'org_id' => $invitationLink->org_id, 'password'
-  => Hash::make($data['password']), 'status' => 'active'])` — with the
-  password chosen on this form. The other portal's credential keeps its
-  own password, untouched.
-- **New person**: creates `User` (role `aluno`, `email_verified_at` set)
-  **and** the org's `Credential`. `users` receives no `org_id` — the
-  column no longer exists; the link's org lands on the `credentials` row.
+## Gestor Surfaces
 
-Multi-org tenancy for the enrolled student lives in two places, never in
-a `users.org_id` (gone with the host-tenancy migration): the per-org
-accounts in `credentials`, and the `course_user` rows (`user_id` ×
-`course_id`). See `tenancy-architecture` and `auth-orgs-architecture`.
-The adaptive form mirrors this exactly: `/convite/check-email` answers
-`exists` **by credential existence in the host org**
-(`Credential::query()->forOrg($context->orgId())->where('user_id',
-$user->id)->exists()`), so a person known only to another portal sees the
-full form here and types a brand-new password for this portal.
-
-Either branch then upserts exactly one `course_user` row for
-`[user_id, invitation_link.course_id]`: `firstOrCreate`-equivalent logic
-(read-then-attach/reactivate, see `invitations-conventions`), not blind
-`attach()`. Pair protected by real `UNIQUE(user_id, course_id)` constraint.
-Student re-using invite link (or using second Org's link after being
-`cancelled` from first enrollment) must never hit duplicate-key DB error.
-
-## Staff Accounts Are Rejected By The Self-Service Flow
-
-If e-mail submitted to `POST /convite/{token}` belongs to existing `User`
-with `role:gestor` or `role:admin`, `ProcessSmartInvitationAction` throws
-`ValidationException::withMessages(['email' => [...]])` — before checking
-password — instead of silently enrolling staff account as student.
-Deliberate decision, not oversight: staff member is not "aluno", and
-falling through this flow would give Gestor/Admin `course_user` row (and
-course-access UI) meant for students, of Course they may not administer.
-Distinct rejection from wrong-password case (`errors.password`) — check
-`errors.email` to diagnose which branch fired.
+- `POST gestor/students/{user}/convite` (`issue`) — **get-or-create**: a
+  usable invitation is returned if one exists, otherwise one is created.
+  This is what makes the "Copiar convite" button idempotent. JSON
+  `{ url }`, copied to the clipboard client-side (with an
+  `execCommand('copy')` fallback for non-secure contexts).
+- `POST gestor/students/{user}/convite/renovar` (`regenerate`) — revoke
+  live + create new, in one transaction; redirects back with the new URL
+  in the `invitation_url` flash banner.
+- `DELETE gestor/students/{user}/convite` (`destroy`) — revoke without
+  replacing.
+- `EnrollmentController::storeStudent` issues the first invitation in
+  the same transaction that creates the account/enrollment and flashes
+  `invitation_url` back to the enrollments screen.
 
 ## Related
 
@@ -236,6 +241,6 @@ Distinct rejection from wrong-password case (`errors.password`) — check
 - `tenancy-architecture` — `OrgScope`, `RolesEnum`, host resolution, why
   student tenancy lives in `credentials`/`course_user`, not on the
   `users` row.
-- `auth-orgs-architecture` — `credentials` schema, `Credential::forOrg`,
-  the `(user, org)` login-identity pair this flow creates accounts
-  against.
+- `auth-orgs-architecture` — `credentials` schema (including the
+  `active|inactive|pending` enum), `Credential::forOrg`, the `(user, org)`
+  login-identity pair this flow finalizes.

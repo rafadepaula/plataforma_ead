@@ -5,7 +5,6 @@ namespace Tests\Browser;
 use App\Enums\Permissions\RolesEnum;
 use App\Models\Certificate;
 use App\Models\Course;
-use App\Models\InvitationLink;
 use App\Models\Organization;
 use App\Models\User;
 use Laravel\Dusk\Browser;
@@ -112,11 +111,12 @@ class AdminUserManagementTest extends DuskTestCase
     }
 
     /**
-     * Full deletion lifecycle through the real UI: both `ON DELETE RESTRICT`
-     * fail paths first (`certificates.user_id` and
-     * `invitation_links.created_by`, guarded in `UserAdminController@destroy`
-     * and rendered as a flash `error` by `bootstrap/app.php`), then the happy
-     * path. Covers in the browser what
+     * Full deletion lifecycle through the real UI: the `ON DELETE RESTRICT`
+     * fail path first (`certificates.user_id`, guarded in
+     * `UserAdminController@destroy` and rendered as a flash `error` by
+     * `bootstrap/app.php` — the old invitation-links guard died with the
+     * shareable-link table; `student_invitations.created_by` is `SET NULL`),
+     * then the happy path. Covers in the browser what
      * `UserAdminManagementTest::test_admin_cannot_delete_a_user_who_*` only
      * covers at the HTTP level — the Admin must see the error alert and find
      * the row still listed, never a raw 500.
@@ -133,18 +133,10 @@ class AdminUserManagementTest extends DuskTestCase
         $withCertificate->assignRole(RolesEnum::ALUNO->value);
         Certificate::factory()->create(['user_id' => $withCertificate->id, 'course_id' => $course->id]);
 
-        $withInvitationLink = User::factory()->inOrg($org->id)->create(['name' => 'Gestor Com Convite']);
-        $withInvitationLink->assignRole(RolesEnum::GESTOR->value);
-        InvitationLink::factory()->create([
-            'org_id' => $org->id,
-            'course_id' => $course->id,
-            'created_by' => $withInvitationLink->id,
-        ]);
-
         $target = User::factory()->inOrg($org->id)->create(['name' => 'Usuário A Remover']);
         $target->assignRole(RolesEnum::ALUNO->value);
 
-        $this->browse(function (Browser $browser) use ($admin, $withCertificate, $withInvitationLink, $target): void {
+        $this->browse(function (Browser $browser) use ($admin, $withCertificate, $target): void {
             $browser->loginAs($admin)
                 ->visit(route('admin.users.index'))
                 ->waitFor('@admin-user-row-'.$withCertificate->id);
@@ -158,15 +150,7 @@ class AdminUserManagementTest extends DuskTestCase
                 ->assertPresent('@admin-user-row-'.$withCertificate->id)
                 ->assertSee('Aluno Com Certificado');
 
-            // 2. Same for a user who created invitation links.
-            $browser->click('@delete-admin-user-'.$withInvitationLink->id)
-                ->waitForModalShown('confirm-delete-'.$withInvitationLink->id)
-                ->click('@confirm-modal-confirm-delete-'.$withInvitationLink->id.'-confirm')
-                ->waitForText('Não é possível excluir um usuário que criou links de convite.')
-                ->assertPresent('@admin-user-row-'.$withInvitationLink->id)
-                ->assertSee('Gestor Com Convite');
-
-            // 3. A user with no restricting rows is actually deleted.
+            // 2. A user with no restricting rows is actually deleted.
             $browser->click('@delete-admin-user-'.$target->id)
                 ->waitForModalShown('confirm-delete-'.$target->id)
                 ->click('@confirm-modal-confirm-delete-'.$target->id.'-confirm')
@@ -175,7 +159,6 @@ class AdminUserManagementTest extends DuskTestCase
         });
 
         $this->assertDatabaseHas('users', ['id' => $withCertificate->id]);
-        $this->assertDatabaseHas('users', ['id' => $withInvitationLink->id]);
         $this->assertDatabaseMissing('users', ['id' => $target->id]);
     }
 

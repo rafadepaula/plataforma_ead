@@ -61,6 +61,17 @@ class CredentialFactory extends Factory
     }
 
     /**
+     * Indicate that the account was created by the Gestor but the Aluno
+     * has not finalized it through their unique invitation link yet.
+     */
+    public function pending(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => 'pending',
+        ]);
+    }
+
+    /**
      * Set a known plain-text password (default: "password").
      */
     public function withPassword(#[\SensitiveParameter] string $password): static

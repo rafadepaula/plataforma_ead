@@ -2,19 +2,21 @@
 
 namespace App\Http\Requests;
 
+use App\Rules\AlunoCpf;
+use App\Rules\AlunoEmail;
 use App\Rules\Cpf;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 /**
  * validates "Cadastrar novo aluno" from the Course enrollments panel:
  * creates the Aluno account (in the Course's org) and enrolls it into that
- * Course in one step. Mirrors `StoreUserRequest`'s field rules but is
- * Course-nested and Gestor-reachable: there is no `role` choice (the new
- * account is always an Aluno) and no `password` input — the CPF is both
- * identity and initial credential, hashed server-side in
- * `EnrollmentController::storeStudent()`. `org_id` is likewise resolved
- * from the route-bound Course, never trusted from request input.
+ * Course in one step. Course-nested and Gestor-reachable: there is no
+ * `role` choice (the account is always an Aluno) and no `password` input
+ * — the credential is born `pending` and the Aluno finalizes it through
+ * their unique invitation link. `org_id` is resolved from the route-bound
+ * Course, never trusted from request input. An e-mail/CPF that already
+ * exists is NOT an error by itself — multi-org people get LINKED, not
+ * duplicated (see {@see AlunoEmail}/{@see AlunoCpf}).
  */
 class StoreStudentEnrollmentRequest extends FormRequest
 {
@@ -40,8 +42,8 @@ class StoreStudentEnrollmentRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')],
-            'cpf' => ['required', 'string', 'max:14', new Cpf, Rule::unique('users', 'cpf')],
+            'email' => ['required', 'string', 'email', 'max:255', new AlunoEmail],
+            'cpf' => ['required', 'string', 'max:14', new Cpf, new AlunoCpf],
         ];
     }
 }

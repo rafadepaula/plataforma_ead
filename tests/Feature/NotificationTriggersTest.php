@@ -3,53 +3,30 @@
 namespace Tests\Feature;
 
 use App\Actions\IssueCertificateAction;
-use App\Actions\ProcessSmartInvitationAction;
 use App\Enums\Permissions\RolesEnum;
 use App\Events\ForumReplyPosted;
 use App\Models\Course;
 use App\Models\CourseCompletionRule;
 use App\Models\ForumReply;
 use App\Models\ForumTopic;
-use App\Models\InvitationLink;
 use App\Models\Organization;
 use App\Models\User;
 use App\Notifications\CertificateIssuedNotification;
 use App\Notifications\EnrollmentConfirmedNotification;
-use App\Notifications\InvitationSentNotification;
 use App\Notifications\NewForumReplyNotification;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 /**
- * covers the 4 notification triggers wired in Bucket 1: an
- * `InvitationLink` being created (gatilho 1), a `Certificate` being
- * genuinely issued (gatilho 2), a `ForumReply` being posted (gatilho 3),
- * and a `course_user` row transitioning into `active` (gatilho 4).
+ * covers the notification triggers: a `Certificate` being
+ * genuinely issued, a `ForumReply` being posted, and a `course_user` row
+ * transitioning into `active` (Gestor-driven enrollment — the
+ * shareable-link self-service trigger died with `invitation_links`; the
+ * per-student unique invitation never dispatches anything on issuance).
  */
 class NotificationTriggersTest extends TestCase
 {
-    public function test_creating_an_invitation_link_notifies_its_creator_by_mail_only(): void
-    {
-        Notification::fake();
-
-        $org = Organization::factory()->create();
-        $gestor = $this->actingAsOrgUser($org, RolesEnum::GESTOR->value);
-        $course = Course::factory()->inOrg($org->id)->create();
-
-        $this->post(route('courses.invitation-links.store', $course), [])
-            ->assertRedirect(route('courses.invitation-links.index', $course));
-
-        Notification::assertSentOnDemand(
-            InvitationSentNotification::class,
-            fn (InvitationSentNotification $notification, array $channels, object $notifiable): bool => $notifiable->routes['mail'] === $gestor->email
-        );
-
-        // Mail-only trigger 's table — no `database` row for
-        // this notification type, and no `User` "invitee" to attach it to.
-        $this->assertDatabaseCount('notifications', 0);
-    }
-
     public function test_issuing_a_certificate_notifies_the_student_via_mail_and_database_only_on_genuine_issuance(): void
     {
         Notification::fake();
@@ -191,28 +168,6 @@ class NotificationTriggersTest extends TestCase
             ->assertRedirect(route('courses.enrollments.index', $course));
 
         Notification::assertSentTo($student, EnrollmentConfirmedNotification::class);
-    }
-
-    public function test_self_service_invitation_enrollment_notifies_the_student(): void
-    {
-        Notification::fake();
-
-        $org = Organization::factory()->create();
-        $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
-        $creator = User::factory()->inOrg($org->id)->create();
-        $invitationLink = InvitationLink::factory()->for($course)->create([
-            'org_id' => $org->id,
-            'created_by' => $creator->id,
-        ]);
-        $this->withOrgContext($org);
-
-        $user = app(ProcessSmartInvitationAction::class)->execute($invitationLink->token, [
-            'name' => 'Novo Aluno',
-            'email' => 'novo.aluno@example.com',
-            'password' => 'password123',
-        ]);
-
-        Notification::assertSentTo($user, EnrollmentConfirmedNotification::class);
     }
 
     /**

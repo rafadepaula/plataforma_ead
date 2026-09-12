@@ -22,7 +22,6 @@ import PdfViewer           from './PdfViewer';
 import QuizBuilder         from './QuizBuilder';
 import QuizTaking          from './QuizTaking';
 import QuizTimer           from './QuizTimer';
-import SmartInvitationForm from './SmartInvitationForm';
 import ThemeManager        from './ThemeManager';
 
 // ModalManager e ForumEditHistory foram REMOVIDOS: substituídos por
@@ -52,6 +51,5 @@ export default {
     QuizBuilder:         new QuizBuilder(notifications),
     QuizTaking:          new QuizTaking(),
     QuizTimer:           new QuizTimer(),
-    SmartInvitationForm: new SmartInvitationForm(httpClient, notifications),
     ThemeManager:        themeManager,
 };
