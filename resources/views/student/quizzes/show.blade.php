@@ -49,6 +49,16 @@
             @endif
         </x-layout.page-header>
 
+        {{-- Link para o histórico de tentativas: presente sempre que o
+             Aluno já tem ao menos uma attempt neste quiz (`$hasAttempts`). --}}
+        @if($hasAttempts ?? false)
+            <div class="mb-4">
+                <a href="{{ route('student.quizzes.history', $lesson) }}"
+                   class="btn btn-outline-secondary btn-sm"
+                   dusk="attempt-history-link">Minhas tentativas</a>
+            </div>
+        @endif
+
         {{-- STRICT BANNER HIERARCHY --}}
 
         {{-- 0. Tentativa anterior encerrada por estouro de tempo --}}

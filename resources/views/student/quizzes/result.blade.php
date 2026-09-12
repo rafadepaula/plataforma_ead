@@ -77,7 +77,12 @@
                 @endif
             @endif
 
-            <div class="mb-5">
+            <div class="mb-5 d-flex flex-wrap gap-2">
+                @if($resultAttempt !== null)
+                    <a href="{{ route('student.quizzes.history', $lesson) }}"
+                       class="btn btn-outline-secondary btn-sm"
+                       dusk="attempt-history-link">Minhas tentativas</a>
+                @endif
                 <x-ui.button variant="primary" href="{{ route('classroom.show', $course) }}" dusk="back-to-course">
                     Voltar para o curso
                 </x-ui.button>

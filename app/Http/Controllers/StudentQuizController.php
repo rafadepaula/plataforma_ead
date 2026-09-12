@@ -19,7 +19,11 @@ use Illuminate\Validation\ValidationException;
  * form (`$openAttempt` exists) and blocked states without ever creating an
  * attempt, `start()` stamps the clock (PRG), `submit()` processes the
  * attempt via `SubmitQuizAttemptAction`, and `result()` renders the
- * finalized attempt with the answer key when configured.
+ * finalized attempt with the answer key when configured. `history()` lists
+ * every attempt of the current student (newest first, numbered
+ * chronologically) and `attemptResult()` renders one specific attempt —
+ * both authorize by student ownership (`user_id` + lesson's quiz), never
+ * via the staff-only `QuizAttemptPolicy`.
  */
 class StudentQuizController extends Controller
 {
@@ -95,6 +99,11 @@ class StudentQuizController extends Controller
             ->latest('id')
             ->first();
 
+        $hasAttempts = QuizAttempt::query()
+            ->where('quiz_id', $quiz->id)
+            ->where('user_id', $user->id)
+            ->exists();
+
         /**
          * Gabarito só quando não há mais o que "vazar": tentativas esgotadas
          * (`!$canAttempt`, estado bloqueado) com ao menos uma tentativa
@@ -117,6 +126,7 @@ class StudentQuizController extends Controller
             'hasPendingGrading' => $hasPendingGrading,
             'showAnswerKey' => $showAnswerKey,
             'latestGradedAttempt' => $latestGradedAttempt,
+            'hasAttempts' => $hasAttempts,
         ]);
     }
 
@@ -203,17 +213,15 @@ class StudentQuizController extends Controller
      * (`graded` ou `awaiting_manual_grading`) com gabarito sempre que
      * `show_correct_answers` — a attempt exibida já está finalizada, então
      * não há o que "vazar". Sem attempt a mostrar, volta ao `show()`.
+     * Rota sem parâmetro, mantida retrocompatível: resolve a última
+     * finalizada e delega a renderização a `renderResult()`, o mesmo caminho
+     * usado por `attemptResult()`.
      */
     public function result(Lesson $lesson): View|RedirectResponse
     {
         $this->abortIfProfessor();
 
-        $course = $lesson->module->course()->withoutGlobalScopes()->firstOrFail();
-        $lesson->module->setRelation('course', $course);
-
-        $quiz = $lesson->quiz()->with(['questions' => function ($query): void {
-            $query->orderBy('order_index')->with('options');
-        }])->firstOrFail();
+        $quiz = $lesson->quiz()->firstOrFail();
 
         $user = request()->user();
 
@@ -228,6 +236,93 @@ class StudentQuizController extends Controller
         if ($attempt === null) {
             return redirect()->route('student.quizzes.show', $lesson);
         }
+
+        return $this->renderResult($lesson, $attempt);
+    }
+
+    /**
+     * Histórico de tentativas do próprio Aluno nesta prova: todas as
+     * attempts (`in_progress` incluída, que ali é só status — nunca
+     * renderiza gabarito), da mais recente para a mais antiga, cada uma com
+     * o número cronológico ("Tentativa N", N = posição por `started_at`
+     * asc, a mais antiga sendo 1 — não existe coluna de numeração em
+     * `quiz_attempts`). A posse é garantida pelo `where('user_id')` —
+     * `QuizAttemptPolicy` é staff-only e não participa aqui.
+     */
+    public function history(Lesson $lesson): View
+    {
+        $this->abortIfProfessor();
+
+        $course = $lesson->module->course()->withoutGlobalScopes()->firstOrFail();
+        $lesson->module->setRelation('course', $course);
+
+        $quiz = $lesson->quiz()->firstOrFail();
+
+        /**
+         * Busca única em ordem cronológica (`started_at` asc, `id` como
+         * desempate) para numerar sem janela SQL; a exibição inverte para
+         * "mais recente primeiro".
+         */
+        $chronological = QuizAttempt::query()
+            ->where('quiz_id', $quiz->id)
+            ->where('user_id', request()->user()->id)
+            ->orderBy('started_at')
+            ->orderBy('id')
+            ->get()
+            ->values();
+
+        $numbered = $chronological
+            ->map(fn (QuizAttempt $attempt, int $index): array => [
+                'attempt' => $attempt,
+                'number' => $index + 1,
+            ])
+            ->reverse()
+            ->values();
+
+        return view('student.quizzes.history', [
+            'lesson' => $lesson,
+            'course' => $course,
+            'quiz' => $quiz,
+            'numberedAttempts' => $numbered,
+        ]);
+    }
+
+    /**
+     * Resultado de UMA attempt específica (`student.quizzes.attempt-result`):
+     * 404 a menos que a attempt pertença ao usuário corrente E ao quiz desta
+     * lesson. Attempts `in_progress` não são visualizáveis como resultado
+     * (404) — `awaiting_manual_grading` e `graded` são. O gabarito renderiza
+     * as respostas DESSA attempt.
+     */
+    public function attemptResult(Lesson $lesson, QuizAttempt $quizAttempt): View
+    {
+        $this->abortIfProfessor();
+
+        $quiz = $lesson->quiz()->firstOrFail();
+
+        $attempt = QuizAttempt::query()
+            ->where('id', $quizAttempt->id)
+            ->where('quiz_id', $quiz->id)
+            ->where('user_id', request()->user()->id)
+            ->whereIn('status', ['graded', 'awaiting_manual_grading'])
+            ->with('answers')
+            ->firstOrFail();
+
+        return $this->renderResult($lesson, $attempt);
+    }
+
+    /**
+     * Caminho único de renderização do resultado, compartilhado por
+     * `result()` (última finalizada) e `attemptResult()` (attempt pontual).
+     */
+    protected function renderResult(Lesson $lesson, QuizAttempt $attempt): View
+    {
+        $course = $lesson->module->course()->withoutGlobalScopes()->firstOrFail();
+        $lesson->module->setRelation('course', $course);
+
+        $quiz = $lesson->quiz()->with(['questions' => function ($query): void {
+            $query->orderBy('order_index')->with('options');
+        }])->firstOrFail();
 
         $showAnswerKey = (bool) $quiz->show_correct_answers;
 

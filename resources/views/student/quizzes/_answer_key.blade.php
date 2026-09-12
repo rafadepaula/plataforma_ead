@@ -30,9 +30,7 @@
                         @endif
 
                         @if($answer?->essay_answer)
-                            <div class="mt-2 p-3 bg-body-secondary rounded-3 text-body small text-prewrap">
-                                <strong>Sua resposta:</strong> {{ $answer->essay_answer }}
-                            </div>
+                            <div class="mt-2 p-3 bg-body-secondary rounded-3 text-body small text-prewrap"><strong>Sua resposta:</strong> {{ $answer->essay_answer }}</div>
                         @endif
                     </div>
                 @else

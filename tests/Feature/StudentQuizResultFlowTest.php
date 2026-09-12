@@ -149,6 +149,27 @@ class StudentQuizResultFlowTest extends TestCase
             ->assertSee('Gabarito');
     }
 
+    public function test_the_answer_key_renders_the_essay_answer_flush_inside_the_pre_wrap_block(): void
+    {
+        [$aluno, $lesson, $quiz] = $this->createQuizSetup(['show_correct_answers' => true]);
+        $essayQuestion = QuizQuestion::factory()->for($quiz)->essay()->create();
+
+        $attempt = QuizAttempt::factory()->for($quiz)->for($aluno)->create([
+            'status' => 'awaiting_manual_grading',
+        ]);
+        $attempt->answers()->create([
+            'question_id' => $essayQuestion->id,
+            'essay_answer' => 'Resposta dissertativa do aluno.',
+        ]);
+
+        // `.text-prewrap` preserva quebras: o `{{ }}` precisa estar colado
+        // às tags, sem indentação do template no meio.
+        $this->actingAs($aluno)
+            ->get(route('student.quizzes.result', $lesson))
+            ->assertOk()
+            ->assertSee('<strong>Sua resposta:</strong> Resposta dissertativa do aluno.</div>', false);
+    }
+
     public function test_the_result_screen_hides_the_answer_key_when_disabled(): void
     {
         [$aluno, $lesson, $quiz] = $this->createQuizSetup(['show_correct_answers' => false]);
