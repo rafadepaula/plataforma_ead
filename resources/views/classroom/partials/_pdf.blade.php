@@ -137,5 +137,6 @@
     :lesson="$lesson"
     :is-completed="$isCompleted ?? false"
     :tracks-progress="$tracksProgress ?? true"
+    data-mark-complete-redirect="{{ route('classroom.show', $course) }}"
     class="justify-content-end mt-4"
 />

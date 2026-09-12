@@ -170,4 +170,40 @@ class LessonManualCompletionTest extends TestCase
 
         $response->assertForbidden();
     }
+
+    /**
+     * O "Concluir" de uma aula PDF devolve o aluno à sala de aula: a
+     * completion-bar do partial `_pdf` carrega a rota de destino em
+     * `data-mark-complete-redirect`, que o `LessonPlayer.js` segue após o
+     * POST bem-sucedido de `lessons.complete`.
+     */
+    public function test_pdf_lesson_page_carries_the_classroom_redirect_on_its_completion_bar(): void
+    {
+        $org = Organization::factory()->create();
+        $course = Course::factory()->inOrg($org->id)->create();
+        $module = Module::factory()->for($course)->create();
+        $lesson = Lesson::factory()->for($module)->withPdf()->create(['is_published' => true]);
+
+        $this->actingAs($this->enrolledAluno($course));
+
+        $response = $this->get(route('classroom.lesson', $lesson));
+
+        $response->assertOk();
+        $response->assertSee('data-mark-complete-redirect="'.route('classroom.show', $course).'"', false);
+    }
+
+    public function test_text_lesson_page_does_not_carry_a_completion_redirect(): void
+    {
+        $org = Organization::factory()->create();
+        $course = Course::factory()->inOrg($org->id)->create();
+        $module = Module::factory()->for($course)->create();
+        $lesson = Lesson::factory()->for($module)->richText()->create(['is_published' => true]);
+
+        $this->actingAs($this->enrolledAluno($course));
+
+        $response = $this->get(route('classroom.lesson', $lesson));
+
+        $response->assertOk();
+        $response->assertDontSee('data-mark-complete-redirect', false);
+    }
 }

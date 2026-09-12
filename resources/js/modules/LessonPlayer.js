@@ -122,6 +122,20 @@ export class LessonPlayer {
             const response = await this.httpClient.post(url);
             this.reflectCompletion(response.data, button ? button.dataset.lessonId : null);
             this.notify('success', COMPLETION_SUCCESS_MESSAGE);
+
+            // PDF lessons opt into going back to the classroom after the
+            // "Concluir" click: the completion-bar carries the destination in
+            // `data-mark-complete-redirect` (see `_pdf.blade.php`).
+            const redirectUrl = button
+                ? (button.getAttribute('data-mark-complete-redirect')
+                    || button.closest('[data-mark-complete-redirect]')?.getAttribute('data-mark-complete-redirect')
+                    || null)
+                : null;
+
+            if (redirectUrl && response.data && response.data.is_completed) {
+                window.location.assign(redirectUrl);
+            }
+
             return response.data;
         } catch (error) {
             if (button) {
