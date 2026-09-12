@@ -89,13 +89,7 @@
                         <p class="fw-bold mb-3x" id="grading-question-prompt-{{ $question->id }}">{{ $question->question_text }}</p>
 
                         @if($question->type === 'essay')
-                            <div class="ds-answer-surface mb-3x" dusk="essay-answer-{{ $question->id }}">
-                                @if(filled($answer?->essay_answer))
-                                    {{ $answer->essay_answer }}
-                                @else
-                                    <em>O aluno não respondeu esta questão.</em>
-                                @endif
-                            </div>
+                            <div class="ds-answer-surface mb-3x" dusk="essay-answer-{{ $question->id }}">@if(filled($answer?->essay_answer)){{ $answer->essay_answer }}@else<em>O aluno não respondeu esta questão.</em>@endif</div>
 
                             {{--
                                 `GradeEssayAnswerRequest`/`GradeEssayAnswerAction` expect `grades`

@@ -293,6 +293,24 @@ class EssayGradingTest extends TestCase
         $response->assertSee(e($maliciousAnswer), false);
     }
 
+    public function test_essay_answer_is_rendered_flush_inside_the_pre_wrap_surface(): void
+    {
+        [$org, $course, $lesson, $quiz, $choiceQuestion, $correct, $essayQuestion] = $this->makeCourseWithEssayQuiz();
+        $aluno = $this->enrolledAluno($course);
+        $essayAnswer = 'Resposta sem whitespace de template.';
+        $attempt = $this->submitAttempt($lesson, $aluno, $choiceQuestion, $correct, $essayQuestion, $essayAnswer);
+
+        $gestor = $this->gestorFor($org);
+
+        // `.ds-answer-surface` usa `pre-wrap`: qualquer indentação/quebra de
+        // linha do template entre a tag e o `{{ }}` apareceria como espaço
+        // visível na correção. O eco precisa estar colado às tags.
+        $response = $this->actingAs($gestor)->get(route('quiz-attempts.show', $attempt));
+
+        $response->assertOk();
+        $response->assertSee('dusk="essay-answer-'.$essayQuestion->id.'">'.e($essayAnswer).'</div>', false);
+    }
+
     public function test_grading_screen_and_endpoint_remain_reachable_and_repostable_after_the_attempt_is_graded(): void
     {
         [$org, $course, $lesson, $quiz, $choiceQuestion, $correct, $essayQuestion] = $this->makeCourseWithEssayQuiz();
