@@ -112,7 +112,6 @@
                 <x-ui.input name="user_search"
                             label="Usuário"
                             :value="request('user_search')"
-                            placeholder="Nome ou e-mail"
                             dusk="audit-logs-user-filter" />
             </div>
         </x-ui.filter-bar>

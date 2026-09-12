@@ -503,7 +503,7 @@ class EnrollmentManagementTest extends TestCase
             'email' => 'multi.org@example.com',
             'cpf' => '529.982.247-25',
         ])->assertRedirect(route('courses.enrollments.index', $courseB))
-            ->assertSessionHas('success', 'Aluno já existente na plataforma: conta vinculada e matriculada com sucesso.')
+            ->assertSessionHas('success', 'Aluno cadastrado e matriculado com sucesso.')
             ->assertSessionHas('invitation_url');
 
         $this->assertSame(1, User::query()->where('email', 'multi.org@example.com')->count());

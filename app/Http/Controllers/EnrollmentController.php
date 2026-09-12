@@ -144,23 +144,8 @@ class EnrollmentController extends Controller
         }
 
         return redirect()->route('courses.enrollments.index', $course)
-            ->with('success', $this->creationMessage($result['existed'], $result['enrolled']))
+            ->with('success', 'Aluno cadastrado e matriculado com sucesso.')
             ->with('invitation_url', url('/convite/'.$result['invitation']->token));
-    }
-
-    /**
-     * Success copy reflects what actually happened — linking an existing
-     * multi-org person reads differently from a brand-new registration.
-     *
-     * @param  array{existed: bool, enrolled: bool}  ...$flags
-     */
-    private function creationMessage(bool $existed, bool $enrolled): string
-    {
-        return match (true) {
-            ! $existed => 'Aluno cadastrado e matriculado com sucesso. Envie o link de convite para ele criar a senha.',
-            $enrolled => 'Aluno já existente na plataforma: conta vinculada e matriculada com sucesso.',
-            default => 'Aluno já pertence à sua organização. O link de convite serve para ele acessar ou redefinir a senha.',
-        };
     }
 
     /**

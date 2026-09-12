@@ -41,19 +41,6 @@
         </x-slot:actions>
     </x-layout.page-header>
 
-    {{-- Link de convite único do aluno recém-criado (flash de
-         `storeStudent`): o momento exato de copiar e enviar. Aparece só
-         após o cadastro — é o token de finalização de conta do aluno. --}}
-    @if(session('invitation_url'))
-        <div class="alert alert-success d-flex flex-wrap align-items-center gap-2" dusk="invitation-flash">
-            <span class="flex-1 min-w-0 text-truncate" dusk="invitation-flash-link">{{ session('invitation_url') }}</span>
-            <button type="button"
-                    class="btn btn-sm btn-primary flex-shrink-0"
-                    data-copy-link="{{ session('invitation_url') }}"
-                    dusk="copy-invitation-flash">Copiar link de convite</button>
-        </div>
-    @endif
-
     {{--
         Busca client-side ainda não filtra no servidor: `EnrollmentController`
         fica fora do escopo deste bucket (não está na lista de arquivos
@@ -80,6 +67,22 @@
             />
         </div>
     </x-ui.filter-bar>
+
+    {{-- Link de convite único do aluno recém-criado (flash de
+         `storeStudent`): o momento exato de copiar e enviar. Aparece só
+         após o cadastro — fica entre o filtro e a listagem, padrão da
+         tela. --}}
+    @if(session('invitation_url'))
+    <x-ui.alert variant="success" class="mb-4" dusk="invitation-flash">
+        <div class="d-flex flex-wrap align-items-center gap-3">
+            <span class="flex-1 min-w-0 text-truncate" dusk="invitation-flash-link">{{ session('invitation_url') }}</span>
+            <button type="button"
+                    class="btn btn-sm btn-primary flex-shrink-0"
+                    data-copy-link="{{ session('invitation_url') }}"
+                    dusk="copy-invitation-flash">Copiar link de convite</button>
+        </div>
+    </x-ui.alert>
+    @endif
 
     <x-ui.data-table striped hover responsive
                      :headers="['Aluno', 'Progresso', 'Status', 'Matriculado em', 'Ações']">

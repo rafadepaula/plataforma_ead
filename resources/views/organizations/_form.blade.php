@@ -14,7 +14,6 @@
         name="host"
         label="Host do portal"
         value="{{ $organization->host }}"
-        placeholder="plataforma.suaorg.com"
         hint="Endereço exclusivo do portal desta organização (minúsculas, sem http://). Sem host, só o admin acessa via IP."
         dusk="organization-host"
     />
@@ -23,7 +22,6 @@
         name="landing_view"
         label="Blade da Landing"
         value="{{ $organization->landing_view }}"
-        placeholder="ligacerto"
         hint="Nome do diretório em resources/views/tenants/{nome}/landing.blade.php. Sem blade, a raiz do portal cai no login."
         dusk="organization-landing-view"
     />
@@ -32,7 +30,6 @@
         name="cnpj"
         label="CNPJ"
         value="{{ $organization->cnpj }}"
-        placeholder="00.000.000/0000-00"
         hint="Opcional. Usado apenas para identificação em certificados."
     />
 

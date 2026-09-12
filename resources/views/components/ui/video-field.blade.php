@@ -69,7 +69,6 @@
                id="{{ $id }}"
                name="{{ $name }}"
                value="{{ old($name, $value) }}"
-               placeholder="https://..."
                @if($hasError) aria-invalid="true" aria-describedby="{{ $id }}-error" @endif
                {{ $attributes->merge(['class' => 'form-control'.($hasError ? ' is-invalid' : '')]) }} />
 
