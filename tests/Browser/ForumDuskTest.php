@@ -134,11 +134,14 @@ class ForumDuskTest extends DuskTestCase
     {
         $org = $this->duskTenant();
         $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
+        // O denunciante é outro aluno: o próprio autor não pode denunciar
+        // o seu post (`ForumTopicPolicy::report`), e o botão nem renderiza.
         $student = $this->enrolledStudent($course);
+        $author = $this->enrolledStudent($course);
         $gestor = User::factory()->inOrg($org->id)->create();
         $gestor->assignRole(RolesEnum::GESTOR->value);
 
-        $topic = ForumTopic::factory()->for($course)->for($student)->create([
+        $topic = ForumTopic::factory()->for($course)->for($author)->create([
             'org_id' => $course->org_id,
             'title' => 'Tópico a ser denunciado',
             // A fila de moderação (`forum.moderation.index`) renderiza o
@@ -148,7 +151,7 @@ class ForumDuskTest extends DuskTestCase
         ]);
 
         $this->browse(function (Browser $browser) use ($student, $gestor, $course, $topic): void {
-            // 1. O Aluno denuncia o tópico.
+            // 1. O Aluno denuncia o tópico (de outro aluno).
             $browser->loginAs($student)
                 ->visit(route('forum.show', [$course, $topic]))
                 ->waitFor('@report-topic-'.$topic->id)

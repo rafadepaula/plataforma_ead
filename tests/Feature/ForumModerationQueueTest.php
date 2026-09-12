@@ -36,7 +36,10 @@ class ForumModerationQueueTest extends TestCase
         $org = Organization::factory()->create();
         $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $student = $this->enrolledStudent($course);
-        $topic = ForumTopic::factory()->for($course)->for($student)->inOrg($course->org_id)->create();
+        // o autor é OUTRO aluno: desde as regras de denúncia, o próprio
+        // autor não pode denunciar o seu post.
+        $author = $this->enrolledStudent($course);
+        $topic = ForumTopic::factory()->for($course)->for($author)->inOrg($course->org_id)->create();
 
         // The HTTP/JS boundary always uses the short `forum_topic`/
         // `forum_reply` strings (`StoreForumReportRequest`'s
@@ -63,8 +66,9 @@ class ForumModerationQueueTest extends TestCase
         $org = Organization::factory()->create();
         $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $student = $this->enrolledStudent($course);
-        $topic = ForumTopic::factory()->for($course)->for($student)->inOrg($course->org_id)->create();
-        $reply = ForumReply::factory()->for($topic, 'topic')->for($student)->create();
+        $author = $this->enrolledStudent($course);
+        $topic = ForumTopic::factory()->for($course)->for($author)->inOrg($course->org_id)->create();
+        $reply = ForumReply::factory()->for($topic, 'topic')->for($author)->create();
 
         $this->actingAs($student)->post(route('forum-reports.store', $course), [
             'postable_type' => 'forum_reply',
@@ -78,6 +82,58 @@ class ForumModerationQueueTest extends TestCase
             'reported_by' => $student->id,
             'status' => 'pending',
         ]);
+    }
+
+    public function test_a_user_cannot_report_their_own_post(): void
+    {
+        $org = Organization::factory()->create();
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
+        $student = $this->enrolledStudent($course);
+        $topic = ForumTopic::factory()->for($course)->for($student)->inOrg($course->org_id)->create();
+        $reply = ForumReply::factory()->for($topic, 'topic')->for($student)->create();
+
+        $this->actingAs($student)->postJson(route('forum-reports.store', $course), [
+            'postable_type' => 'forum_topic',
+            'postable_id' => $topic->id,
+            'reason' => 'Autodenúncia.',
+        ])->assertForbidden()->assertJsonPath('message', 'Esta publicação não pode ser denunciada.');
+
+        $this->actingAs($student)->postJson(route('forum-reports.store', $course), [
+            'postable_type' => 'forum_reply',
+            'postable_id' => $reply->id,
+            'reason' => 'Autodenúncia.',
+        ])->assertForbidden();
+
+        $this->assertDatabaseCount('forum_reports', 0);
+    }
+
+    public function test_staff_posts_cannot_be_reported(): void
+    {
+        $org = Organization::factory()->create();
+        $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
+        $student = $this->enrolledStudent($course);
+
+        $gestor = User::factory()->inOrg($org->id)->create();
+        $gestor->assignRole(RolesEnum::GESTOR->value);
+
+        $professor = User::factory()->professor()->inOrg($org->id)->create();
+
+        $staffTopic = ForumTopic::factory()->for($course)->for($gestor)->inOrg($course->org_id)->create();
+        $staffReply = ForumReply::factory()->for($staffTopic, 'topic')->for($professor)->create();
+
+        $this->actingAs($student)->postJson(route('forum-reports.store', $course), [
+            'postable_type' => 'forum_topic',
+            'postable_id' => $staffTopic->id,
+            'reason' => 'Denúncia contra staff.',
+        ])->assertForbidden();
+
+        $this->actingAs($student)->postJson(route('forum-reports.store', $course), [
+            'postable_type' => 'forum_reply',
+            'postable_id' => $staffReply->id,
+            'reason' => 'Denúncia contra staff.',
+        ])->assertForbidden();
+
+        $this->assertDatabaseCount('forum_reports', 0);
     }
 
     public function test_reporting_without_a_reason_fails_validation(): void

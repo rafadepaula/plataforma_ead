@@ -53,6 +53,27 @@ class ForumTopicPolicy
     }
 
     /**
+     * Reporting is for peers, not for self-moderation and not against
+     * staff: the author themself can never report their own topic, and a
+     * topic authored by staff (Admin/Gestor/Professor) is out of the
+     * report flow entirely — students take those concerns to the
+     * organization, which IS the moderation chain for staff content.
+     * Still requires plain course `view` access.
+     */
+    public function report(User $user, ForumTopic $topic): bool
+    {
+        if ((int) $topic->user_id === (int) $user->id) {
+            return false;
+        }
+
+        if ($topic->user->hasAnyRole([RolesEnum::ADMIN->value, RolesEnum::GESTOR->value, RolesEnum::PROFESSOR->value])) {
+            return false;
+        }
+
+        return $this->view($user, $topic);
+    }
+
+    /**
      * Loads the parent `Course` bypassing `OrgScope` — a cross-org
      * Gestor's `$topic->course` must still resolve to a real `Course` to
      * compare `org_id` against (mirrors `ModulePolicy::parentCourse()`),

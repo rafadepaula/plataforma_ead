@@ -77,7 +77,10 @@ class User extends Authenticatable
     /**
      * Human-readable label of the user's primary role, used as the badge
      * next to their name in forum posts and mirrored by the polling
-     * payload. A user carrying no known role reads as "Membro".
+     * payload. A user carrying no known role reads as "Membro". From the
+     * student's perspective the person who runs the course IS the
+     * "Professor" — a Gestor author displays as such (the internal
+     * `Gestor` role keeps its own identity everywhere else).
      *
      * @return Attribute<string, never>
      */
@@ -85,9 +88,9 @@ class User extends Authenticatable
     {
         return Attribute::get(fn (): string => match ($this->getRoleNames()->first()) {
             RolesEnum::ADMIN->value => 'Admin',
-            RolesEnum::GESTOR->value => 'Gestor',
-            RolesEnum::ALUNO->value => 'Aluno',
+            RolesEnum::GESTOR->value,
             RolesEnum::PROFESSOR->value => 'Professor',
+            RolesEnum::ALUNO->value => 'Aluno',
             default => 'Membro',
         });
     }

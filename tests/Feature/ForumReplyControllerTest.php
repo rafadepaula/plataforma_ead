@@ -258,7 +258,7 @@ class ForumReplyControllerTest extends TestCase
         $response->assertJsonPath('last_id', $reply->id);
     }
 
-    public function test_fetch_new_labels_a_gestor_reply_with_the_gestor_role(): void
+    public function test_fetch_new_labels_a_gestor_reply_as_professor_for_students(): void
     {
         $organization = Organization::factory()->create();
         $course = $this->publishedCourse($organization);
@@ -274,7 +274,7 @@ class ForumReplyControllerTest extends TestCase
 
         $response->assertOk();
         $response->assertJsonPath('data.0.initials', 'AT');
-        $response->assertJsonPath('data.0.role_label', 'Gestor');
+        $response->assertJsonPath('data.0.role_label', 'Professor');
         $response->assertJsonPath('data.0.is_staff', true);
     }
 

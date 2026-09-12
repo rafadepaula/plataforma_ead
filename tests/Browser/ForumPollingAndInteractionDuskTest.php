@@ -117,17 +117,17 @@ class ForumPollingAndInteractionDuskTest extends DuskTestCase
                 ->waitFor('@pin-form-'.$topic->id)
                 ->click('@pin-topic-'.$topic->id)
                 ->waitFor('@pinned-badge-'.$topic->id)
-                ->assertSeeInIgnoringCase('@pinned-badge-'.$topic->id, 'Fixado')
-                // Status chip, not a filter: `.ds-chip-info` on a non-focusable
-                // `<span>`, never a `<button>` that submits nothing.
+                // Pin sutil: ícone sem fundo (nada de chip), com o texto
+                // "Fixado" acessível via `.visually-hidden`.
                 ->assertScript(
                     "document.querySelector('[dusk=\"pinned-badge-{$topic->id}\"]').classList.contains('ds-chip-info')",
-                    true
+                    false
                 )
                 ->assertScript(
                     "document.querySelector('[dusk=\"pinned-badge-{$topic->id}\"]').tagName",
                     'SPAN'
-                );
+                )
+                ->assertSeeInIgnoringCase('@pinned-badge-'.$topic->id, 'Fixado');
 
             $this->assertDatabaseHas('forum_topics', [
                 'id' => $topic->id,
@@ -213,6 +213,9 @@ class ForumPollingAndInteractionDuskTest extends DuskTestCase
         $org = $this->duskTenant();
         $course = Course::factory()->inOrg($org->id)->create(['is_published' => true]);
         $student = $this->enrolledStudent($course);
+        // A resposta denunciada é de outro aluno — posts do próprio autor
+        // e de staff não carregam botão "Denunciar" (`can_report`).
+        $author = $this->enrolledStudent($course);
         $gestor = $this->gestorFor($org);
 
         $topic = ForumTopic::factory()->for($course)->for($student)->create([
@@ -221,7 +224,7 @@ class ForumPollingAndInteractionDuskTest extends DuskTestCase
             'content' => 'Conteúdo do post principal.',
         ]);
 
-        $this->browse(function (Browser $browser) use ($student, $gestor, $course, $topic): void {
+        $this->browse(function (Browser $browser) use ($student, $author, $gestor, $course, $topic): void {
             $browser->resize(...self::DESKTOP_VIEWPORT)
                 ->loginAs($student)
                 ->visit(route('forum.show', [$course, $topic]))
@@ -232,7 +235,7 @@ class ForumPollingAndInteractionDuskTest extends DuskTestCase
 
             $reply = ForumReply::query()->create([
                 'topic_id' => $topic->id,
-                'user_id' => $gestor->id,
+                'user_id' => $author->id,
                 'content' => 'Resposta entregue pelo polling e depois denunciada.',
             ]);
 

@@ -7,7 +7,6 @@ use App\Http\Requests\StoreForumReportRequest;
 use App\Models\ForumReply;
 use App\Models\ForumTopic;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Gate;
 
 /**
  * the "Denunciar" button
@@ -35,7 +34,12 @@ class ForumReportController extends Controller
             (int) $request->validated('postable_id'),
         );
 
-        Gate::authorize('view', $postable);
+        // `report` subsumes course `view` access and adds the two hard
+        // exclusions: no self-reports, no reports against staff posts
+        // (see `ForumTopicPolicy::report`/`ForumReplyPolicy::report`).
+        if (! $request->user()->can('report', $postable)) {
+            abort(403, 'Esta publicação não pode ser denunciada.');
+        }
 
         $this->reportForumPostAction->execute($postable, $request->user(), $request->validated('reason'));
 

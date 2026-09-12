@@ -27,7 +27,7 @@ class ForumStaffHighlightsTest extends TestCase
         $course->professors()->attach($professor->id);
 
         /** @var User $gestor */
-        $gestor = User::factory()->inOrg($org->id)->create(['name' => 'Gestor Carlos']);
+        $gestor = User::factory()->inOrg($org->id)->create(['name' => 'Carlos Andrade']);
         $gestor->assignRole(RolesEnum::GESTOR->value);
 
         return [$org, $course, $student, $professor, $gestor];
@@ -55,14 +55,13 @@ class ForumStaffHighlightsTest extends TestCase
         ]);
         $this->assertStringNotContainsString('reply-'.$studentReply->id.'" data-reply-id="'.$studentReply->id.'" class="forum-reply card mb-2 forum-post-staff', $response->getContent());
 
-        // Professor reply has staff highlight and info badge
+        // Staff replies (professor AND gestor) carry the staff highlight,
+        // the primary badge tone and the student-facing "Professor" label
+        // — a Gestor author is the course's teacher in the students' eyes.
         $response->assertSee('forum-post-staff');
-        $response->assertSee('ds-tone-info');
-        $response->assertSee('Professor');
-
-        // Gestor reply has primary badge
         $response->assertSee('ds-tone-primary');
-        $response->assertSee('Gestor');
+        $response->assertSee('Professor');
+        $this->assertStringNotContainsString('Gestor', $response->getContent());
     }
 
     public function test_professor_topic_renders_highlight_in_index_and_show(): void
@@ -78,7 +77,7 @@ class ForumStaffHighlightsTest extends TestCase
         $indexResponse = $this->actingAs($student)->get(route('forum.index', $course));
         $indexResponse->assertOk();
         $indexResponse->assertSee('forum-post-staff');
-        $indexResponse->assertSee('ds-tone-info');
+        $indexResponse->assertSee('ds-tone-primary');
         $indexResponse->assertSee('Professor');
         $indexResponse->assertSee('Anuncio importante da professora');
 
@@ -86,7 +85,7 @@ class ForumStaffHighlightsTest extends TestCase
         $showResponse = $this->actingAs($student)->get(route('forum.show', [$course, $profTopic]));
         $showResponse->assertOk();
         $showResponse->assertSee('forum-post-staff');
-        $showResponse->assertSee('ds-tone-info');
+        $showResponse->assertSee('ds-tone-primary');
         $showResponse->assertSee('Professor');
     }
 
@@ -110,6 +109,7 @@ class ForumStaffHighlightsTest extends TestCase
         $response->assertJsonPath('data.1.role_label', 'Professor');
         $response->assertJsonPath('data.2.id', $replyGestor->id);
         $response->assertJsonPath('data.2.is_staff', true);
-        $response->assertJsonPath('data.2.role_label', 'Gestor');
+        // Gestor author reads as "Professor" for the students.
+        $response->assertJsonPath('data.2.role_label', 'Professor');
     }
 }

@@ -14,11 +14,12 @@
 
     $topicAuthorRole = $topic->user->role_label;
     $isStaffTopic = in_array($topicAuthorRole, ['Admin', 'Gestor', 'Professor'], true);
-    $topicRoleBadgeVariant = match ($topicAuthorRole) {
-        'Professor' => 'info',
-        'Gestor', 'Admin' => 'primary',
-        default => 'outline',
-    };
+    // `ForumTopicPolicy::report`: nada de denunciar o próprio tópico ou
+    // tópicos de staff — o botão nem chega a renderizar.
+    $canReportTopic = auth()->check()
+        && (int) auth()->id() !== (int) $topic->user_id
+        && ! $isStaffTopic;
+    $topicRoleBadgeVariant = $isStaffTopic ? 'primary' : 'outline';
 
     // `$coursesCrumb` — the role-aware root crumb — is bound by
     // `ForumBreadcrumbComposer`, shared with the other forum screens.
@@ -51,13 +52,16 @@
                     <div class="d-flex align-items-center gap-3">
                         <x-ui.avatar :initials="$topic->user->initials" size="lg" />
 
-                        <div class="small text-body-secondary">
+                        <div class="small text-body-secondary d-flex align-items-center gap-2 flex-wrap">
                             @if($topic->is_pinned)
-                                <x-ui.chip :static="true" variant="info" dusk="pinned-badge-{{ $topic->id }}">Fixado</x-ui.chip>
+                                <span class="text-body-secondary d-inline-flex align-items-center" title="Fixado" dusk="pinned-badge-{{ $topic->id }}">
+                                    <x-ui.icon name="pin" size="14" aria-hidden="true" />
+                                    <span class="visually-hidden">Fixado</span>
+                                </span>
                             @endif
                             <strong class="text-body">{{ $topic->user->name }}</strong>
                             <x-ui.badge :variant="$topicRoleBadgeVariant">{{ $topicAuthorRole }}</x-ui.badge>
-                            —
+                            <span aria-hidden="true">—</span>
                             <span title="{{ $topic->created_at->format('d/m/Y H:i') }}">{{ $topic->created_at->diffForHumans() }}</span>
 
                             @include('forum.partials._edit-history-modal', [
@@ -70,19 +74,21 @@
                     </div>
 
                     <div class="d-flex gap-2 flex-wrap">
-                        <x-ui.button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            data-forum-report-button
-                            data-postable-type="forum_topic"
-                            data-postable-id="{{ $topic->id }}"
-                            data-bs-toggle="modal"
-                            data-bs-target="#report-modal"
-                            dusk="report-topic-{{ $topic->id }}"
-                        >
-                            Denunciar
-                        </x-ui.button>
+                        @if($canReportTopic)
+                            <x-ui.button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                data-forum-report-button
+                                data-postable-type="forum_topic"
+                                data-postable-id="{{ $topic->id }}"
+                                data-bs-toggle="modal"
+                                data-bs-target="#report-modal"
+                                dusk="report-topic-{{ $topic->id }}"
+                            >
+                                Denunciar
+                            </x-ui.button>
+                        @endif
 
                         @if($canEditTopic)
                             <x-ui.button
@@ -177,7 +183,6 @@
                     name="content"
                     label="Responder à discussão"
                     rows="4"
-                    placeholder="Escreva sua resposta para a turma..."
                     required
                     dusk="new-reply-content"
                 />
@@ -203,7 +208,6 @@
                 name="reason"
                 label="Motivo da denúncia"
                 rows="4"
-                placeholder="Explique o motivo da denúncia..."
                 required
                 dusk="report-reason"
             />

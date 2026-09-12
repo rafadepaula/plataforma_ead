@@ -239,13 +239,16 @@ export class ForumPolling {
         textMeta.className = 'small text-body-secondary';
 
         if (reply.is_pinned) {
-            const pinnedChip = document.createElement('span');
-            pinnedChip.className = 'ds-chip ds-chip-info ds-chip-static';
-            pinnedChip.setAttribute('dusk', `pinned-reply-badge-${reply.id}`);
-            const chipText = document.createElement('span');
-            chipText.textContent = 'Fixado';
-            pinnedChip.appendChild(chipText);
-            textMeta.appendChild(pinnedChip);
+            // Ícone de pin sutil, sem fundo — mesmo visual do
+            // `forum/partials/_reply.blade.php` (o SVG é inline porque o
+            // card injetado não passa pelo Blade).
+            const PIN_SVG = '<svg xmlns="http://www.w3.org/2000/svg" class="lucide lucide-pin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1z"/></svg>';
+            const pinnedIcon = document.createElement('span');
+            pinnedIcon.className = 'text-body-secondary d-inline-flex align-items-center';
+            pinnedIcon.title = 'Fixado';
+            pinnedIcon.setAttribute('dusk', `pinned-reply-badge-${reply.id}`);
+            pinnedIcon.innerHTML = PIN_SVG;
+            textMeta.appendChild(pinnedIcon);
             textMeta.appendChild(document.createTextNode(' '));
         }
 
@@ -258,9 +261,7 @@ export class ForumPolling {
         if (reply.role_label) {
             const roleBadge = document.createElement('span');
             let badgeClass = 'badge ds-badge border ds-muted';
-            if (reply.role_label === 'Professor') {
-                badgeClass = 'badge ds-badge ds-tone-info';
-            } else if (reply.role_label === 'Gestor' || reply.role_label === 'Admin') {
+            if (['Admin', 'Gestor', 'Professor'].includes(reply.role_label)) {
                 badgeClass = 'badge ds-badge ds-tone-primary';
             }
             roleBadge.className = badgeClass;
@@ -292,17 +293,22 @@ export class ForumPolling {
         const actions = document.createElement('div');
         actions.className = 'd-flex gap-2';
 
-        const reportButton = document.createElement('button');
-        reportButton.type = 'button';
-        reportButton.className = 'btn btn-ghost ds-state-layer btn-sm';
-        reportButton.setAttribute('data-forum-report-button', '');
-        reportButton.setAttribute('data-postable-type', 'forum_reply');
-        reportButton.setAttribute('data-postable-id', String(reply.id));
-        reportButton.setAttribute('data-bs-toggle', 'modal');
-        reportButton.setAttribute('data-bs-target', '#report-modal');
-        reportButton.setAttribute('dusk', `report-reply-${reply.id}`);
-        reportButton.textContent = 'Denunciar';
-        actions.appendChild(reportButton);
+        // `can_report` espelha `ForumReplyPolicy::report` (calculado
+        // server-side): o próprio autor e posts de staff não ganham
+        // botão "Denunciar".
+        if (reply.can_report) {
+            const reportButton = document.createElement('button');
+            reportButton.type = 'button';
+            reportButton.className = 'btn btn-ghost ds-state-layer btn-sm';
+            reportButton.setAttribute('data-forum-report-button', '');
+            reportButton.setAttribute('data-postable-type', 'forum_reply');
+            reportButton.setAttribute('data-postable-id', String(reply.id));
+            reportButton.setAttribute('data-bs-toggle', 'modal');
+            reportButton.setAttribute('data-bs-target', '#report-modal');
+            reportButton.setAttribute('dusk', `report-reply-${reply.id}`);
+            reportButton.textContent = 'Denunciar';
+            actions.appendChild(reportButton);
+        }
         header.appendChild(actions);
 
         const content = document.createElement('div');

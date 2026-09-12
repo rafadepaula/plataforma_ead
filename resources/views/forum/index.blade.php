@@ -96,7 +96,6 @@
                 <x-ui.input
                     name="title"
                     label="Título do tópico"
-                    placeholder="Ex: Dúvida sobre o módulo 2"
                     required
                     dusk="new-topic-title"
                     class="mb-3"
@@ -107,7 +106,6 @@
                     name="content"
                     label="Mensagem"
                     rows="5"
-                    placeholder="Descreva sua dúvida ou comentário detalhadamente..."
                     required
                     dusk="new-topic-content"
                 />

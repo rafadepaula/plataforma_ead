@@ -10,11 +10,7 @@
 
     $topicAuthorRole = $topic->user->role_label;
     $isStaffTopic = in_array($topicAuthorRole, ['Admin', 'Gestor', 'Professor'], true);
-    $topicRoleBadgeVariant = match ($topicAuthorRole) {
-        'Professor' => 'info',
-        'Gestor', 'Admin' => 'primary',
-        default => 'outline',
-    };
+    $topicRoleBadgeVariant = $isStaffTopic ? 'primary' : 'outline';
 @endphp
 
 <div
@@ -34,9 +30,10 @@
                      `<button>` — dentro de um card cujo título é um
                      `stretched-link`, um botão que não submete nada só
                      poluiria a ordem de foco do teclado. --}}
-                <x-ui.chip :static="true" variant="info" dusk="pinned-badge-{{ $topic->id }}">
-                    Fixado
-                </x-ui.chip>
+                <span class="text-body-secondary d-inline-flex align-items-center" title="Fixado" dusk="pinned-badge-{{ $topic->id }}">
+                    <x-ui.icon name="pin" size="14" aria-hidden="true" />
+                    <span class="visually-hidden">Fixado</span>
+                </span>
             @endif
 
             <a

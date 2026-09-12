@@ -35,6 +35,23 @@ class ForumReplyPolicy
         return $this->canModerateCourse($user, $this->parentCourse($reply));
     }
 
+    /**
+     * Mirrors {@see ForumTopicPolicy::report()}: no
+     * self-reports and no reports against staff-authored replies.
+     */
+    public function report(User $user, ForumReply $reply): bool
+    {
+        if ((int) $reply->user_id === (int) $user->id) {
+            return false;
+        }
+
+        if ($reply->user->hasAnyRole([RolesEnum::ADMIN->value, RolesEnum::GESTOR->value, RolesEnum::PROFESSOR->value])) {
+            return false;
+        }
+
+        return $this->view($user, $reply);
+    }
+
     public function update(User $user, ForumReply $reply): bool
     {
         if ((int) $reply->user_id === (int) $user->id) {

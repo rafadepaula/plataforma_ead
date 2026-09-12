@@ -19,11 +19,14 @@
 
     $replyAuthorRole = $reply->user->role_label;
     $isStaff = in_array($replyAuthorRole, ['Admin', 'Gestor', 'Professor'], true);
-    $roleBadgeVariant = match ($replyAuthorRole) {
-        'Professor' => 'info',
-        'Gestor', 'Admin' => 'primary',
-        default => 'outline',
-    };
+    // `ForumReplyPolicy::report`: nada de denunciar o próprio post ou
+    // posts de staff — o botão nem chega a renderizar.
+    $canReportReply = auth()->check()
+        && (int) auth()->id() !== (int) $reply->user_id
+        && ! $isStaff;
+    $roleBadgeVariant = in_array($replyAuthorRole, ['Admin', 'Gestor', 'Professor'], true)
+        ? 'primary'
+        : 'outline';
 @endphp
 {{-- `forum-reply` também é gerada literalmente por
      `resources/js/modules/ForumPolling.js::appendReply()` ao injetar
@@ -38,13 +41,16 @@
         <div class="d-flex align-items-center gap-3">
             <x-ui.avatar size="lg" :initials="$reply->user->initials" />
 
-            <div class="small text-body-secondary">
+            <div class="small text-body-secondary d-flex align-items-center gap-2 flex-wrap">
                 @if($reply->is_pinned)
-                    <x-ui.chip :static="true" variant="info" dusk="pinned-reply-badge-{{ $reply->id }}">Fixado</x-ui.chip>
+                    <span class="text-body-secondary d-inline-flex align-items-center" title="Fixado" dusk="pinned-reply-badge-{{ $reply->id }}">
+                    <x-ui.icon name="pin" size="14" aria-hidden="true" />
+                    <span class="visually-hidden">Fixado</span>
+                </span>
                 @endif
                 <strong class="text-body">{{ $reply->user->name }}</strong>
                 <x-ui.badge :variant="$roleBadgeVariant">{{ $replyAuthorRole }}</x-ui.badge>
-                —
+                <span aria-hidden="true">—</span>
                 <span title="{{ $reply->created_at->format('d/m/Y H:i') }}">{{ $reply->created_at->diffForHumans() }}</span>
 
             @include('forum.partials._edit-history-modal', [
@@ -70,17 +76,19 @@
                 </form>
             @endcan
 
-            <x-ui.button
-                type="button"
-                variant="ghost"
-                size="sm"
-                data-forum-report-button
-                data-postable-type="forum_reply"
-                data-postable-id="{{ $reply->id }}"
-                data-bs-toggle="modal"
-                data-bs-target="#report-modal"
-                dusk="report-reply-{{ $reply->id }}"
-            >Denunciar</x-ui.button>
+            @if($canReportReply)
+                <x-ui.button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    data-forum-report-button
+                    data-postable-type="forum_reply"
+                    data-postable-id="{{ $reply->id }}"
+                    data-bs-toggle="modal"
+                    data-bs-target="#report-modal"
+                    dusk="report-reply-{{ $reply->id }}"
+                >Denunciar</x-ui.button>
+            @endif
 
             @if($isReplyAuthor || $canModerate)
                 <x-ui.button

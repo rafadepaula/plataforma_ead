@@ -170,6 +170,9 @@ class ForumReplyController extends Controller
                 'is_staff' => in_array($reply->user->role_label, ['Admin', 'Gestor', 'Professor'], true),
                 'is_pinned' => (bool) $reply->is_pinned,
                 'user' => ['name' => $reply->user->name],
+                // espelha `ForumReplyPolicy::report`: o próprio autor e
+                // posts de staff não carregam botão "Denunciar".
+                'can_report' => $request->user()->can('report', $reply),
             ])->values()->all(),
             'last_id' => (int) ($replies->max('id') ?? 0),
         ]);
