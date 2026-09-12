@@ -16,6 +16,7 @@ use App\Services\AuditService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -70,6 +71,17 @@ class GestorStudentController extends Controller
             ->with(['courses' => fn (BelongsToMany $query) => $query
                 ->where('courses.org_id', $orgId)
                 ->where('course_user.status', '!=', 'cancelled')])
+            // The per-row "Certificados" modal renders every certificate the
+            // Aluno holds for an own-org Course, eager-loaded so the
+            // directory stays N+1-free (cascade-inherited tenancy: filter by
+            // the Course's `org_id` explicitly, since `Certificate` carries
+            // no `OrgScope` of its own).
+            ->with(['certificates' => fn (HasMany $query) => $query
+                ->whereHas('course', fn (Builder $courseQuery) => $courseQuery
+                    ->withoutGlobalScopes()
+                    ->where('courses.org_id', $orgId))
+                ->with('course')
+                ->orderByDesc('issued_at')])
             // Same name/e-mail/CPF match as the enrollments panel's
             // autocomplete feed: the CPF arm only fires when the typed term
             // actually carries digits, so a plain name search never
@@ -136,21 +148,8 @@ class GestorStudentController extends Controller
         }
 
         return redirect()->route('gestor.students.index')
-            ->with('success', $this->creationMessage($result['existed'], $result['enrolled']))
+            ->with('success', 'Aluno cadastrado e matriculado com sucesso.')
             ->with('invitation_url', url('/convite/'.$result['invitation']->token));
-    }
-
-    /**
-     * Success copy reflects what actually happened — linking an existing
-     * multi-org person reads differently from a brand-new registration.
-     */
-    private function creationMessage(bool $existed, bool $enrolled): string
-    {
-        return match (true) {
-            ! $existed => 'Aluno cadastrado e matriculado com sucesso. Envie o link de convite para ele criar a senha.',
-            $enrolled => 'Aluno já existente na plataforma: conta vinculada e matriculada com sucesso.',
-            default => 'Aluno já pertence à sua organização. O link de convite serve para ele acessar ou redefinir a senha.',
-        };
     }
 
     public function edit(Request $request, User $user): View

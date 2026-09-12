@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\Permissions\RolesEnum;
+use App\Models\Certificate;
 use App\Models\Course;
 use App\Models\Credential;
 use App\Models\Organization;
@@ -289,7 +290,7 @@ class GestorStudentManagementTest extends TestCase
             'cpf' => '529.982.247-25',
             'course_id' => $courseB->id,
         ])->assertRedirect(route('gestor.students.index'))
-            ->assertSessionHas('success', 'Aluno já existente na plataforma: conta vinculada e matriculada com sucesso.')
+            ->assertSessionHas('success', 'Aluno cadastrado e matriculado com sucesso.')
             ->assertSessionHas('invitation_url');
 
         $this->assertSame(1, User::query()->where('email', 'multi@example.com')->count());
@@ -344,5 +345,86 @@ class GestorStudentManagementTest extends TestCase
 
         $this->get(route('gestor.students.create'))->assertForbidden();
         $this->post(route('gestor.students.store'), [])->assertForbidden();
+    }
+
+    // ── Painel "Certificados" por aluno ─────────────────────────────
+
+    public function test_listing_renders_the_certificates_button_and_modal_with_a_valid_certificate(): void
+    {
+        $org = Organization::factory()->create();
+        $course = Course::factory()->for($org)->create();
+        $aluno = User::factory()->inOrg($org->id)->create();
+        $aluno->assignRole(RolesEnum::ALUNO->value);
+        $aluno->courses()->attach($course->id, ['status' => 'active', 'enrolled_at' => now()]);
+        $certificate = Certificate::factory()->for($course)->for($aluno)->create();
+        $this->actingAsOrgUser($org);
+
+        $response = $this->get(route('gestor.students.index'));
+
+        $response->assertOk();
+        $response->assertSee('dusk="student-certificates-'.$aluno->id.'"', false);
+        $response->assertSee('dusk="certificates-modal-'.$aluno->id.'"', false);
+        $response->assertSee($course->title, false);
+        $response->assertSee($certificate->issued_at->format('d/m/Y'), false);
+        $response->assertSee('Válido', false);
+        // Estado válido → ação oferecida é "Invalidar", nunca "Validar".
+        $response->assertSee('Invalidar', false);
+        $response->assertSee('action="'.route('certificates.revoke', $certificate).'"', false);
+        $response->assertDontSee('Validar', false);
+    }
+
+    public function test_certificates_modal_shows_revoked_state_with_the_validate_action(): void
+    {
+        $org = Organization::factory()->create();
+        $course = Course::factory()->for($org)->create();
+        $aluno = User::factory()->inOrg($org->id)->create();
+        $aluno->assignRole(RolesEnum::ALUNO->value);
+        $aluno->courses()->attach($course->id, ['status' => 'active', 'enrolled_at' => now()]);
+        $certificate = Certificate::factory()->for($course)->for($aluno)->revoked()->create([
+            'revoke_reason' => 'Revogação para teste de tela.',
+        ]);
+        $this->actingAsOrgUser($org);
+
+        $response = $this->get(route('gestor.students.index'));
+
+        $response->assertOk();
+        $response->assertSee('Revogado', false);
+        $response->assertSee('Validar', false);
+        $response->assertSee('action="'.route('certificates.restore', $certificate).'"', false);
+        $response->assertDontSee('>Invalidar<', false);
+    }
+
+    public function test_certificates_modal_shows_an_empty_state_when_the_student_has_none(): void
+    {
+        $org = Organization::factory()->create();
+        $this->enrolledAluno($org, 'Aluno Sem Certificado');
+        $this->actingAsOrgUser($org);
+
+        $response = $this->get(route('gestor.students.index'));
+
+        $response->assertOk();
+        $response->assertSee('Nenhum certificado emitido para este aluno nos cursos da sua Organização.');
+    }
+
+    public function test_certificates_modal_never_lists_certificates_of_foreign_org_courses(): void
+    {
+        $org = Organization::factory()->create();
+        $otherOrg = Organization::factory()->create();
+        // Aluno matriculado num curso da própria org, mas com um
+        // certificado emitido por um curso de OUTRA organização: o painel
+        // só pode mostrar certificados de cursos da própria Organização.
+        $course = Course::factory()->for($org)->create();
+        $foreignCourse = Course::factory()->for($otherOrg)->create();
+        $aluno = User::factory()->inOrg($org->id)->create();
+        $aluno->assignRole(RolesEnum::ALUNO->value);
+        $aluno->courses()->attach($course->id, ['status' => 'active', 'enrolled_at' => now()]);
+        $foreignCertificate = Certificate::factory()->for($foreignCourse)->for($aluno)->create();
+        $this->actingAsOrgUser($org);
+
+        $response = $this->get(route('gestor.students.index'));
+
+        $response->assertOk();
+        $response->assertDontSee('action="'.route('certificates.revoke', $foreignCertificate).'"', false);
+        $response->assertSee('Nenhum certificado emitido para este aluno nos cursos da sua Organização.');
     }
 }
