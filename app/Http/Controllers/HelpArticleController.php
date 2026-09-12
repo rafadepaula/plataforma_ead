@@ -3,8 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Enums\Help\HelpAudienceEnum;
-use App\Enums\Permissions\RolesEnum;
-use App\Http\Controllers\Concerns\ResolvesOrgContext;
 use App\Models\HelpArticle;
 use App\Models\Organization;
 use Illuminate\Http\JsonResponse;
@@ -18,29 +16,18 @@ use Illuminate\View\View;
 
 class HelpArticleController extends Controller
 {
-    use ResolvesOrgContext;
-
     public function index(Request $request): View
     {
         Gate::authorize('viewAny', HelpArticle::class);
 
-        $user = $request->user();
         $query = HelpArticle::withoutGlobalScopes()->with('organization');
 
-        if ($user->hasRole(RolesEnum::GESTOR->value)) {
-            $orgId = $this->resolveOrgId($request);
-            $query->where(function ($q) use ($orgId): void {
+        $activeOrgId = session('active_org_id');
+        if ($activeOrgId) {
+            $query->where(function ($q) use ($activeOrgId): void {
                 $q->whereNull('org_id')
-                    ->orWhere('org_id', $orgId);
+                    ->orWhere('org_id', $activeOrgId);
             });
-        } elseif ($user->hasRole(RolesEnum::ADMIN->value)) {
-            $activeOrgId = session('active_org_id');
-            if ($activeOrgId) {
-                $query->where(function ($q) use ($activeOrgId): void {
-                    $q->whereNull('org_id')
-                        ->orWhere('org_id', $activeOrgId);
-                });
-            }
         }
 
         $articles = $query->orderBy('category')->orderBy('title')->get();
@@ -58,7 +45,7 @@ class HelpArticleController extends Controller
             'article' => new HelpArticle,
             'categories' => $this->availableCategories(),
             'targetPageKeys' => $this->availableTargetPageKeys(),
-            'organizations' => $request->user()->hasRole(RolesEnum::ADMIN->value) ? Organization::orderBy('name')->get() : collect(),
+            'organizations' => Organization::orderBy('name')->get(),
         ]);
     }
 
@@ -78,17 +65,10 @@ class HelpArticleController extends Controller
 
         $validated['audience'] ??= HelpAudienceEnum::ALUNO->value;
 
-        $user = $request->user();
-
-        if ($user->hasRole(RolesEnum::GESTOR->value)) {
-            $validated['org_id'] = $this->resolveOrgId($request);
-            HelpArticle::create($validated);
-        } else {
-            if (empty($validated['org_id'])) {
-                $validated['org_id'] = null;
-            }
-            HelpArticle::withoutEvents(fn () => HelpArticle::create($validated));
+        if (empty($validated['org_id'])) {
+            $validated['org_id'] = null;
         }
+        HelpArticle::withoutEvents(fn () => HelpArticle::create($validated));
 
         return redirect()->route('org.help.artigos.index')
             ->with('success', 'Artigo de ajuda criado com sucesso.');
@@ -103,7 +83,7 @@ class HelpArticleController extends Controller
             'article' => $article,
             'categories' => $this->availableCategories(),
             'targetPageKeys' => $this->availableTargetPageKeys(),
-            'organizations' => $request->user()->hasRole(RolesEnum::ADMIN->value) ? Organization::orderBy('name')->get() : collect(),
+            'organizations' => Organization::orderBy('name')->get(),
         ]);
     }
 
@@ -124,17 +104,10 @@ class HelpArticleController extends Controller
 
         $validated['audience'] ??= HelpAudienceEnum::ALUNO->value;
 
-        $user = $request->user();
-
-        if ($user->hasRole(RolesEnum::GESTOR->value)) {
-            $validated['org_id'] = $this->resolveOrgId($request);
-            $article->update($validated);
-        } else {
-            if (empty($validated['org_id'])) {
-                $validated['org_id'] = null;
-            }
-            HelpArticle::withoutEvents(fn () => $article->update($validated));
+        if (empty($validated['org_id'])) {
+            $validated['org_id'] = null;
         }
+        HelpArticle::withoutEvents(fn () => $article->update($validated));
 
         return redirect()->route('org.help.artigos.index')
             ->with('success', 'Artigo de ajuda atualizado com sucesso.');
@@ -165,16 +138,7 @@ class HelpArticleController extends Controller
 
     private function findAccessibleArticle(Request $request, int $id): HelpArticle
     {
-        $article = HelpArticle::withoutGlobalScopes()->findOrFail($id);
-        $user = $request->user();
-
-        if ($user->hasRole(RolesEnum::GESTOR->value)) {
-            if ($article->org_id !== $this->resolveOrgId($request)) {
-                abort(404);
-            }
-        }
-
-        return $article;
+        return HelpArticle::withoutGlobalScopes()->findOrFail($id);
     }
 
     /**

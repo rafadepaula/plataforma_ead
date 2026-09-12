@@ -223,7 +223,8 @@ class NavigationServiceTest extends TestCase
      * Organization, so nothing moves for them: the operational items stay
      * in "Administração" and no "Impersonate" heading is ever emitted.
      * `users`/`audit-logs` are Admin-only now; `students` and `professors`
-     * are the Gestor-exclusive people-management items.
+     * are the Gestor-exclusive people-management items. Help-article
+     * management is Admin-only too, so `help-articles` is gone as well.
      */
     public function test_gestor_keeps_the_operational_items_in_administracao_and_never_sees_impersonate(): void
     {
@@ -234,9 +235,10 @@ class NavigationServiceTest extends TestCase
         $this->assertNotContains('Impersonate', $this->sectionTitlesFor($gestor));
         $this->assertNotContains('Ensino', $this->sectionTitlesFor($gestor));
         $this->assertSame(
-            ['dashboard', 'students', 'professors', 'courses', 'quiz-attempts', 'forum-moderation', 'help-articles'],
+            ['dashboard', 'students', 'professors', 'courses', 'quiz-attempts', 'forum-moderation'],
             $this->keysInSection($gestor, 'Administração'),
         );
+        $this->assertNotContains('help-articles', $this->keysFor($gestor));
     }
 
     /**

@@ -20,11 +20,10 @@ metadata:
 
 ## Overview
 
-The domain covers the standalone public Landing Page (`GET /`,
-`landing.show`) and the Contextual Help Center: every screen in platform —
+The domain covers the Contextual Help Center: every screen in platform —
 staff
 (`layouts.app`), guest/auth (`layouts.guest`), and fully public/standalone
-documents (Landing Page, `/convite/{token}`, `/validar-certificado/{hash}`)
+documents (`/convite/{token}`, `/validar-certificado/{hash}`)
 — must carry `<x-help-button key="...">` that open modal with article
 content, or render inert if no article authored yet for that `key`. This
 feature never mutate any other domain data. It only read `help_articles`
@@ -39,7 +38,11 @@ and render on top of every other feature screens.
 `target_page_key` have no uniqueness constraint by itself — same key can
 have both global row (`org_id = null`) and one org-specific row per
 Organization at same time. `slug` is only globally-unique column, used
-for admin-facing article management, not for resolution.
+for admin-facing article management, not for resolution. Article
+management (create/edit/delete, `gestao/ajuda` routes) is **admin-only**:
+the route group is `role:admin` and `HelpArticlePolicy` denies everyone
+else. The Gestor is read-only — they consume the public wiki at `/ajuda`
+and contextual help buttons, but never manage articles.
 
 ## Resolution: `HelpArticleResolverService`
 
@@ -93,7 +96,10 @@ carry component:
 | --- | --- | --- |
 | Staff (authenticated) | `components/layout/topbar.blade.php`, once, keyed by `Route::currentRouteName()` | every `layouts.app`-based Admin/Gestor/Aluno screen |
 | Guest (unauthenticated, session-aware layout) | `layouts/guest.blade.php`, once, keyed by `Route::currentRouteName()` | `auth/login`, `auth/forgot-password`, `auth/reset-password` |
-| Standalone public documents | inline per view, explicit `key` | `tenants/{landing_view}/landing.blade.php` (`key="landing"`), `public/certificates/show.blade.php` (`key="certificates.verify"`) |
+| Standalone public documents | inline per view, explicit `key` | `public/certificates/show.blade.php` (`key="certificates.verify"`) |
+
+The Landing Page (`tenants/{landing_view}/landing.blade.php`) intentionally
+has **no** help button and no `landing` target_page_key — do not wire one.
 
 `convite/show.blade.php` (`key="invitation.show"`) is **not** in the
 standalone bucket — it `@extends('layouts.guest')`, so its help button is

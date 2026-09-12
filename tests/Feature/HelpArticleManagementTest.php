@@ -63,7 +63,7 @@ class HelpArticleManagementTest extends TestCase
         ]);
     }
 
-    public function test_gestor_can_create_article_for_own_organization(): void
+    public function test_gestor_cannot_create_articles(): void
     {
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org);
@@ -76,136 +76,54 @@ class HelpArticleManagementTest extends TestCase
             'content' => 'Conteúdo específico da nossa escola.',
         ]);
 
-        $response->assertRedirect(route('org.help.artigos.index'));
+        $response->assertForbidden();
 
-        $this->assertDatabaseHas('help_articles', [
+        $this->assertDatabaseMissing('help_articles', [
             'slug' => 'regras-da-organizacao',
-            'org_id' => $org->id,
-            'target_page_key' => 'courses.index',
         ]);
     }
 
-    public function test_gestor_index_does_not_list_articles_from_other_organizations(): void
-    {
-        $org1 = Organization::factory()->create();
-        $org2 = Organization::factory()->create();
-
-        $this->actingAsOrgUser($org1);
-
-        HelpArticle::withoutEvents(function () use ($org1, $org2): void {
-            HelpArticle::factory()->global()->create([
-                'title' => 'Artigo Global de Ajuda',
-                'slug' => 'artigo-global-ajuda',
-            ]);
-
-            HelpArticle::factory()->forOrg($org1)->create([
-                'title' => 'Artigo Exclusivo Org 1',
-                'slug' => 'artigo-exclusivo-org-1',
-            ]);
-
-            HelpArticle::factory()->forOrg($org2)->create([
-                'title' => 'Artigo Secreto Org 2',
-                'slug' => 'artigo-secreto-org-2',
-            ]);
-        });
-
-        $response = $this->get(route('org.help.artigos.index'));
-
-        $response->assertOk();
-        $response->assertSee('Artigo Global de Ajuda');
-        $response->assertSee('Artigo Exclusivo Org 1');
-        $response->assertDontSee('Artigo Secreto Org 2');
-    }
-
-    public function test_gestor_cannot_edit_update_or_delete_articles_from_other_organizations(): void
-    {
-        $org1 = Organization::factory()->create();
-        $org2 = Organization::factory()->create();
-
-        $this->actingAsOrgUser($org1);
-
-        $foreignArticle = HelpArticle::withoutEvents(fn () => HelpArticle::factory()->forOrg($org2)->create([
-            'title' => 'Artigo Org 2',
-            'slug' => 'artigo-org-2',
-        ]));
-
-        $this->get(route('org.help.artigos.edit', $foreignArticle->id))
-            ->assertNotFound();
-
-        $this->put(route('org.help.artigos.update', $foreignArticle->id), [
-            'title' => 'Tentativa de Hack',
-            'slug' => 'artigo-org-2',
-            'category' => 'Geral',
-            'content' => 'Invasão',
-        ])
-            ->assertNotFound();
-
-        $this->delete(route('org.help.artigos.destroy', $foreignArticle->id))
-            ->assertNotFound();
-    }
-
-    public function test_gestor_cannot_edit_update_or_delete_global_articles(): void
+    public function test_gestor_cannot_access_help_article_management(): void
     {
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org);
 
-        $globalArticle = HelpArticle::withoutEvents(fn () => HelpArticle::factory()->global()->create([
-            'title' => 'Artigo Global',
-            'slug' => 'artigo-global-lock',
-        ]));
-
-        $this->get(route('org.help.artigos.edit', $globalArticle->id))
-            ->assertNotFound();
-
-        $this->put(route('org.help.artigos.update', $globalArticle->id), [
-            'title' => 'Tentativa de Editar Global',
-            'slug' => 'artigo-global-lock',
-            'category' => 'Geral',
-            'content' => 'Conteúdo adulterado',
-        ])
-            ->assertNotFound();
-
-        $this->delete(route('org.help.artigos.destroy', $globalArticle->id))
-            ->assertNotFound();
+        $this->get(route('org.help.artigos.index'))->assertForbidden();
+        $this->get(route('org.help.artigos.create'))->assertForbidden();
     }
 
-    public function test_gestor_can_update_and_delete_own_article(): void
+    public function test_gestor_cannot_edit_update_or_delete_articles(): void
     {
         $org = Organization::factory()->create();
         $this->actingAsOrgUser($org);
 
         $article = HelpArticle::withoutEvents(fn () => HelpArticle::factory()->forOrg($org)->create([
-            'title' => 'Artigo Próprio',
-            'slug' => 'artigo-proprio',
-            'category' => 'Cursos',
-            'content' => 'Original',
+            'title' => 'Artigo da Org',
+            'slug' => 'artigo-da-org',
         ]));
 
-        $editResponse = $this->get(route('org.help.artigos.edit', $article->id));
-        $editResponse->assertOk();
-        $editResponse->assertSee('dusk="save-help-article"', false);
+        $this->get(route('org.help.artigos.edit', $article->id))
+            ->assertForbidden();
 
-        $updateResponse = $this->put(route('org.help.artigos.update', $article->id), [
-            'title' => 'Artigo Próprio Atualizado',
-            'slug' => 'artigo-proprio-atualizado',
-            'category' => 'Cursos',
-            'content' => 'Atualizado',
-        ]);
+        $this->put(route('org.help.artigos.update', $article->id), [
+            'title' => 'Tentativa de Hack',
+            'slug' => 'artigo-da-org',
+            'category' => 'Geral',
+            'content' => 'Invasão',
+        ])
+            ->assertForbidden();
 
-        $updateResponse->assertRedirect(route('org.help.artigos.index'));
+        $this->delete(route('org.help.artigos.destroy', $article->id))
+            ->assertForbidden();
+    }
 
-        $this->assertDatabaseHas('help_articles', [
-            'id' => $article->id,
-            'title' => 'Artigo Próprio Atualizado',
-            'slug' => 'artigo-proprio-atualizado',
-        ]);
+    public function test_gestor_cannot_preview_markdown(): void
+    {
+        $org = Organization::factory()->create();
+        $this->actingAsOrgUser($org);
 
-        $deleteResponse = $this->delete(route('org.help.artigos.destroy', $article->id));
-        $deleteResponse->assertRedirect(route('org.help.artigos.index'));
-
-        $this->assertDatabaseMissing('help_articles', [
-            'id' => $article->id,
-        ]);
+        $this->postJson(route('org.help.preview'), ['content' => 'x'])
+            ->assertForbidden();
     }
 
     public function test_admin_can_update_and_delete_any_article(): void
@@ -244,7 +162,7 @@ class HelpArticleManagementTest extends TestCase
     public function test_slug_uniqueness_is_validated(): void
     {
         $org = Organization::factory()->create();
-        $this->actingAsOrgUser($org);
+        $this->actingAsAdmin($org);
 
         HelpArticle::withoutEvents(fn () => HelpArticle::factory()->forOrg($org)->create([
             'slug' => 'slug-em-uso',
@@ -282,7 +200,7 @@ class HelpArticleManagementTest extends TestCase
     public function test_org_article_overrides_global_article_in_resolver_when_created(): void
     {
         $org = Organization::factory()->create();
-        $this->actingAsOrgUser($org);
+        $this->actingAsAdmin();
 
         HelpArticle::withoutEvents(fn () => HelpArticle::factory()->global()->create([
             'target_page_key' => 'courses.index',
@@ -294,7 +212,7 @@ class HelpArticleManagementTest extends TestCase
         $resolvedBefore = $resolver->resolve('courses.index', $org->id);
         $this->assertSame('Global Courses Help', $resolvedBefore->title);
 
-        $this->actingAsOrgUser($org);
+        $this->actingAsAdmin($org);
 
         $this->post(route('org.help.artigos.store'), [
             'title' => 'Org Custom Courses Help',
@@ -302,6 +220,7 @@ class HelpArticleManagementTest extends TestCase
             'category' => 'Cursos',
             'target_page_key' => 'courses.index',
             'content' => 'Regras customizadas para nossa organização.',
+            'org_id' => $org->id,
         ]);
 
         $resolvedAfter = $resolver->resolve('courses.index', $org->id);

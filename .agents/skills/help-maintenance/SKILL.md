@@ -22,8 +22,8 @@ metadata:
 Tests guard this module's contract. Must stay green (PHPUnit, no Pest):
 
 - `tests/Feature/LandingPageTest.php` — public `GET /` route render
-  without session, show marketing copy, carry
-  `<x-help-button key="landing">`.
+  without session, show marketing copy, render **no** contextual help
+  button (the landing page deliberately has no help mapping).
 - `tests/Feature/HelpCenterTest.php` — `<x-help-button>` render resolved
   article on Admin, Gestor, Aluno authenticated screen (`assertSee` on
   both `dusk="help-button-{key}"` element and article title/content),
@@ -63,9 +63,11 @@ HTTP process); `DatabaseMigrations` retired (per-method `migrate:fresh`)
   `layouts.app` or `layouts.guest` (both wire `<x-help-button>` once, at
   layout level — see `help-architecture` coverage table). Bespoke
   standalone document (own `<!DOCTYPE html>`, like
-  `tenants/{landing_view}/landing.blade.php` or `public/certificates/show.blade.php`) have
+  `public/certificates/show.blade.php`) have
   no shared layout to inherit, must add `<x-help-button key="...">`
-  explicitly. This bucket have no automatic enforcement — missing button
+  explicitly. Exception: the Landing Page
+  (`tenants/{landing_view}/landing.blade.php`) intentionally has no help
+  button — do not add one. This bucket have no automatic enforcement — missing button
   here is wiring omission, not framework bug.
 - **Wrong article resolve (org-specific instead of global, or reverse).**
   Check `target_page_key` match **exactly**, including full dotted route

@@ -218,10 +218,15 @@ final class NavigationRegistry
             new NavigationItem(
                 key: 'help-articles',
                 label: 'Artigos de Ajuda',
+                //  help-article management is a
+                // system-administration surface: the `gestao/ajuda`
+                // route group is `role:admin` and the policy is
+                // admin-only, so the item mirrors that parity exactly.
+                // The Gestor keeps only the public wiki at `/ajuda`.
                 route: 'org.help.artigos.index',
                 activePatterns: ['org.help.*'],
                 icon: $this->helpCircleIcon(),
-                roles: self::ADMIN_GESTOR,
+                roles: ['admin'],
                 section: 'Administração',
             ),
 
