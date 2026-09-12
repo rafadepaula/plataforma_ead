@@ -70,7 +70,7 @@ static::observe(AuditObserver::class))` (`AuditableTrait.php:28`) — never
 | Gestão de Usuários | `user.status_changed` | `UserController::update()` |
 | Importação em Lote | `csv.import` | `UserImportService` |
 | Avaliações | `essay.graded` | `GradeEssayAnswerAction` |
-| Certificados | `certificate.issued`, `certificate.revoked` | `IssueCertificateAction`, `RevokeCertificateAction` |
+| Certificados | `certificate.issued`, `certificate.revoked`, `certificate.restored` | `IssueCertificateAction`, `RevokeCertificateAction`, `RestoreCertificateAction` |
 | Gestão de Conteúdo | `content.deleted` | Course/Module/Lesson `destroy()` |
 | Mutação Geral | `{ModelFQCN}.created`, `.updated`, `.deleted` | `AuditableTrait`/`AuditObserver` |
 

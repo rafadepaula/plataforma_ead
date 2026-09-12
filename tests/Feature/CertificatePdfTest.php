@@ -7,6 +7,9 @@ use App\Models\Course;
 use App\Models\Organization;
 use App\Models\User;
 use App\Services\CertificatePdfService;
+use chillerlan\QRCode\Output\QRMarkupSVG;
+use chillerlan\QRCode\QRCode;
+use chillerlan\QRCode\QROptions;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
@@ -244,13 +247,14 @@ class CertificatePdfTest extends TestCase
         $presentation = $result['presentation'];
 
         // Same arithmetic as the builder: leftover of the 184mm body after
-        // the measured variable bands and the 86mm fixed-sections bound,
-        // split 1/3 above and 2/3 below.
+        // the measured variable bands and the 101mm fixed-sections bound
+        // (including the 30mm QR validation footer), split 1/3 above and
+        // 2/3 below.
         $mmPerPt = 25.4 / 72;
         $variableMm = count($presentation['student']['lines']) * $presentation['student']['fontSize'] * 1.2 * $mmPerPt
             + count($presentation['course']['lines']) * $presentation['course']['fontSize'] * 1.5 * $mmPerPt
             + count($presentation['organization']['lines']) * $presentation['organization']['fontSize'] * 1.5 * $mmPerPt;
-        $expected = max(0.0, 184.0 - 86.0 - $variableMm);
+        $expected = max(0.0, 184.0 - 101.0 - $variableMm);
 
         $this->assertGreaterThan(0.0, $presentation['spacerTopMm']);
         $this->assertGreaterThan(0.0, $presentation['spacerBottomMm']);
@@ -354,5 +358,83 @@ class CertificatePdfTest extends TestCase
             @unlink($diskRoot.'logos/evil.png');
             @unlink($outside);
         }
+    }
+
+    /**
+     * Resolves the service to its rendered Blade HTML (pre-Dompdf), the
+     * layer where the footer QR markup is asserted.
+     */
+    private function renderHtml(Certificate $certificate): string
+    {
+        $certificate->loadMissing('user');
+        $certificate->setRelation(
+            'course',
+            $certificate->course()->withoutGlobalScopes()->with('organization')->firstOrFail(),
+        );
+        $presentation = $this->service->presentation()->build($certificate);
+
+        return view('certificates.pdf', [
+            'certificate' => $certificate,
+            'verificationHost' => parse_url(route('certificates.verify', $certificate->validation_hash), PHP_URL_HOST),
+            'qrCodeDataUri' => 'data:image/svg+xml;base64,'.base64_encode('<svg>qr</svg>'),
+            'logo' => $presentation['logo'],
+            'presentation' => $presentation['presentation'],
+        ])->render();
+    }
+
+    public function test_footer_shows_the_validation_qr_instead_of_the_raw_url(): void
+    {
+        $certificate = $this->certificateWith();
+        $html = $this->renderHtml($certificate);
+
+        // The QR data-URI image replaces the raw full validation URL:
+        // the full URL text (with its hash path segment) must not appear.
+        $this->assertStringContainsString('data:image/svg+xml;base64,', $html);
+        $this->assertStringNotContainsString('/validar-certificado/'.$certificate->validation_hash, $html);
+    }
+
+    public function test_footer_keeps_a_tiny_human_readable_host_hint(): void
+    {
+        $certificate = $this->certificateWith();
+        $host = parse_url(route('certificates.verify', $certificate->validation_hash), PHP_URL_HOST);
+
+        $html = $this->renderHtml($certificate);
+
+        $this->assertIsString($host);
+        $this->assertStringContainsString('Valide a autenticidade', $html);
+        $this->assertStringContainsString($host, $html);
+    }
+
+    public function test_the_qr_data_uri_encodes_the_org_scoped_verification_url(): void
+    {
+        // OrgUrl::route(): scheme/port from APP_URL, host from the org.
+        config(['app.url' => 'http://localhost:8080']);
+        $certificate = $this->certificateWith();
+        $certificate->course->organization->update(['host' => 'portal.escola.test']);
+
+        $options = new QROptions([
+            'outputInterface' => QRMarkupSVG::class,
+            'eccLevel' => 'L',
+            'addQuietzone' => true,
+            'scale' => 10,
+            'imageTransparent' => true,
+        ]);
+        $expectedQr = (new QRCode($options))->render(
+            'http://portal.escola.test:8080/validar-certificado/'.$certificate->validation_hash,
+        );
+
+        $this->assertSame($expectedQr, $this->service->qrCodeDataUri(
+            'http://portal.escola.test:8080/validar-certificado/'.$certificate->validation_hash,
+        ));
+
+        // The generated document still renders end-to-end with the QR
+        // embedded (no exception, single A4 landscape page).
+        $output = $this->service->generate($certificate)->output();
+        $this->assertStringStartsWith('%PDF', $output);
+        $this->assertSame(
+            1,
+            preg_match_all('#/Type\s*/Page[^s]#', $output),
+            'Certificate must render as exactly one page.',
+        );
     }
 }

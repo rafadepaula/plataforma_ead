@@ -354,7 +354,7 @@ class StudentCourseControllerTest extends TestCase
 
             return $row->ctaLabel === 'Ver sala de aula'
                 && $row->ctaHref === route('classroom.show', $course)
-                && $row->secondaryCtaLabel === 'Baixar certificado'
+                && $row->secondaryCtaLabel === 'Visualizar certificado'
                 && $row->secondaryCtaHref === route('certificates.download', $certificate);
         });
     }

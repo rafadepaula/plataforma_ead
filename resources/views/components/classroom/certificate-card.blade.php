@@ -34,8 +34,10 @@
 
         <x-ui.button variant="primary"
                      :href="route('certificates.download', $certificate)"
+                     target="_blank"
+                     rel="noopener"
                      dusk="download-certificate">
-            Baixar certificado
+            Visualizar certificado
         </x-ui.button>
 
         {{--

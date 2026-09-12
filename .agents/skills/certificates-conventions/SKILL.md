@@ -46,7 +46,8 @@ $hash = hash('sha256', $userId.$courseId.$issuedAt->format('Y-m-d H:i:s').config
 
 ```php
 route('courses.certificates.index', $course);          // GET  courses/{course}/certificates    — role:admin|gestor
-route('certificates.revoke', $certificate);             // PUT  certificates/{certificate}/revoke — role:admin|gestor
+route('certificates.revoke', $certificate);            // POST certificates/{certificate}/revoke — role:admin|gestor
+route('certificates.restore', $certificate);           // POST certificates/{certificate}/restore — role:admin|gestor (undo of revocation)
 route('certificates.download', $certificate);           // GET  certificates/{certificate}/download — plain `auth` + staff-or-owner (`CertificateController::authorizeDownloadAccess`: owner-Aluno always, else role:admin|gestor with Gestor same-org check)
 route('certificates.verify', $certificate->validation_hash); // GET validar-certificado/{hash?} — NO middleware at all; host-scoped (see below)
 route('certificates.verify');                           // GET validar-certificado — same route, hash omitted: the public lookup form
@@ -163,6 +164,32 @@ Request alone.
   inline `style=` attributes) — the inline-style regression test excludes it
   on purpose, so never "fix" it.
 
+## The Gestor's Students-Directory "Certificados" Panel Reuses the Same Routes
+
+`gestor/students/index.blade.php` renders, per Aluno row, a "Certificados"
+trigger (`dusk="student-certificates-{userId}"`) opening one
+`x-ui.modal` per student (`dusk="certificates-modal-{userId}"`) listing
+that student's certificates on own-org Courses only — `GestorStudentController::index()`
+eager-loads `certificates` filtered by `whereHas('course', org_id)` with
+`with('course')` (N+1-free; cascade-inherited tenancy means the filter is
+explicit, never an `OrgScope`). Rows show curso, data de emissão, estado
+(Válido/Revogado badge) and one action per state:
+
+- Valid (non-revoked): "Invalidar" opens a reason-textarea modal
+  (NOT `x-ui.confirm-modal` — revocation requires `revoke_reason`
+  min:10, which the confirm-modal's footer form cannot carry), same
+  inline `[data-revoke-form]` submit-toggle pattern as the per-course
+  listing; POSTs to `certificates.revoke`.
+- Revoked: "Validar" opens an `x-ui.confirm-modal` POSTing to
+  `certificates.restore` (no reason involved).
+
+Both modals live OUTSIDE the data table (responsive-wrapper clipping),
+same as the directory's delete/renew modals. Flash copy from the shared
+controller: "Certificado invalidado com sucesso." / "Certificado validado
+com sucesso."; both actions `redirect()->back()` with a fallback to
+`courses.certificates.index`, so the write path serves both screens
+unchanged.
+
 ## Revoke Modal Wiring: Inline `@push('scripts')`, Not a New Vite Entry
 
 `vite.config.js` declares only `resources/js/app.js` as build input.
@@ -190,17 +217,20 @@ Bootstrap 5.3 migration: `data-bs-toggle="modal"` +
 `data-bs-dismiss="modal"` to close. `ModalManager` no longer exists — do
 not write second modal-open/close implementation.
 
-## The QR Code Is a Pending Dependency Decision
+## The PDF Footer Uses a QR Code, Not a Raw Link
 
-No QR-code composer package installed (`barryvdh/laravel-dompdf` only).
-`certificates/pdf.blade.php` never references `$qrCodeDataUri` — it prints
-the verification URL + hash as plain text, full stop.
-`CertificatePdfService::generate()` still passes `'qrCodeDataUri' => null`
-(an unused placeholder for the future wiring, not a consumed template
-branch). This is **temporary** placeholder, not
-the final design (the intent is a real scannable QR code), pending
-approval to add package (see `certificates-maintenance`
-open-questions note). Once package approved,
-`CertificatePdfService::generate()` should populate `$qrCodeDataUri` *and*
-the template must actually consume it; until then, do not build further
-features around text-only fallback.
+`chillerlan/php-qrcode` (v6) is installed. `CertificatePdfService::generate()`
+builds the QR with `qrCodeDataUri()`: an SVG data URI
+(`QRMarkupSVG::class`, `outputBase64` on — v6's `render()` already returns
+the full `data:image/svg+xml;base64,...` string; ECC `L`, quiet zone on,
+`scale` 10). The URL encoded is `OrgUrl::route($course->organization,
+'certificates.verify', $hash)` — org host, APP_URL scheme/port — because
+the PDF may be generated under a non-org request host and the verification
+route is host-scoped. `certificates/pdf.blade.php` consumes it as a 30mm
+`<img>` bottom-left with a tiny caption (`Valide a autenticidade` +
+`$verificationHost`); the raw full URL is intentionally no longer printed.
+Dompdf renders data-URI images reliably but distorts inline SVG — keep the
+data-URI form. The 30mm footer raises the template's fixed-height bound:
+`CertificatePresentationBuilder::BODY_FIXED_MM` is 101.0 (was 86.0); if
+the footer changes size again, that constant must follow or the page
+overflows to a second page.

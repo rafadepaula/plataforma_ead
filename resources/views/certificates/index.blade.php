@@ -85,7 +85,7 @@
                             rel="noopener"
                         >Ver</x-ui.button>
 
-                        <x-ui.button variant="secondary" size="sm" icon="file-text" href="{{ route('certificates.download', $certificate) }}" dusk="download-certificate-{{ $certificate->id }}">Baixar PDF</x-ui.button>
+                        <x-ui.button variant="secondary" size="sm" icon="file-text" href="{{ route('certificates.download', $certificate) }}" target="_blank" rel="noopener" dusk="download-certificate-{{ $certificate->id }}">Visualizar PDF</x-ui.button>
 
                         @unless($certificate->isRevoked())
                             <x-ui.button
@@ -129,7 +129,6 @@
                     data-revoke-form
                 >
                     @csrf
-                    @method('PUT')
 
                     <p class="small text-body-secondary mb-3">
                         Certificado de <strong>{{ $certificate->user->name }}</strong>. Esta ação não pode ser desfeita.

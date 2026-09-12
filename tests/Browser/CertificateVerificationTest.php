@@ -65,7 +65,7 @@ class CertificateVerificationTest extends DuskTestCase
 
         $this->browse(function (Browser $browser) use ($validCertificate, $revokedCertificate, $student): void {
             // 1. Certificado válido, sem qualquer autenticação — o botão
-            //    "Baixar PDF" (gated por @auth na view) não pode vazar para
+            //    "Visualizar PDF" (gated por @auth na view) não pode vazar para
             //    visitante anônimo, mesmo a rota exigindo staff-ou-dono.
             $browser->visit('/validar-certificado/'.$validCertificate->validation_hash)
                 ->waitFor('@certificate-valid-banner')
@@ -75,7 +75,7 @@ class CertificateVerificationTest extends DuskTestCase
                 ->assertSeeIn('@certificate-course-title', 'Curso Válido Dusk')
                 ->assertSeeIn('@certificate-org-name', 'Portal Dusk')
                 ->assertSeeIn('@certificate-workload', '40h')
-                ->assertDontSee('Baixar PDF');
+                ->assertDontSee('Visualizar PDF');
 
             // 2. Certificado revogado: NUNCA 404 — banner + motivo, sem
             //    esconder os dados originais.
@@ -91,13 +91,13 @@ class CertificateVerificationTest extends DuskTestCase
                 ->assertSee('404');
 
             // 4. Mesma página, agora autenticado como o dono do certificado:
-            //    o botão "Baixar PDF" aparece e aponta para a rota
+            //    o botão "Visualizar PDF" aparece e aponta para a rota
             //    `certificates.download` (que continua staff-ou-dono no
             //    controller, inalterada por esta tela).
             $browser->loginAs($student)
                 ->visit('/validar-certificado/'.$validCertificate->validation_hash)
                 ->waitFor('@certificate-valid-banner')
-                ->assertSee('Baixar PDF')
+                ->assertSee('Visualizar PDF')
                 ->assertSourceHas(route('certificates.download', $validCertificate))
                 ->logout();
         });

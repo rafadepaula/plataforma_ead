@@ -11,6 +11,10 @@
     leitura (antes `max-width: 640px`, depois `.col-lg-6`) é dada por
     `.max-w-reading` (760px).
 
+    O h1 é um título fixo ("Validação de Certificado") — o hash de 64
+    caracteres NÃO entra no título (era um "muro" ilegível atravessando a
+    página); ele vive na linha truncada abaixo do cartão de detalhes.
+
     Expected `$certificate` variable: the bound Certificate, with `user`,
     `course`, and `course.organization` eager-loaded. Renders for BOTH
     states (never a separate 404 view) — `revoked_at === null` ("Válido")
@@ -23,15 +27,12 @@
 
     <div class="max-w-reading">
 
-        <div class="position-relative text-center mb-4">
+        <div class="d-flex align-items-center justify-content-center gap-2 mb-2">
             <span class="kicker text-primary">Validação pública</span>
-
-            <div class="position-absolute top-0 end-0">
-                <x-help-button key="certificates.verify" />
-            </div>
+            <x-help-button key="certificates.verify" />
         </div>
 
-        <h1 class="text-center mb-4">Certificado nº {{ $certificate->validation_hash }}</h1>
+        <h1 class="text-center mb-4">Validação de Certificado</h1>
 
         <x-ui.card class="mb-4">
             <div class="d-flex align-items-center gap-3">
@@ -85,14 +86,15 @@
             </div>
         </x-ui.card>
 
-        <p class="ds-caption font-monospace mt-4 mb-4 text-body-secondary text-center text-break">
-            Hash de validação: {{ $certificate->validation_hash }}
+        <p class="ds-caption small font-monospace mt-4 mb-4 text-body-secondary text-center">
+            Hash de validação:
+            <span class="text-break" title="{{ $certificate->validation_hash }}">{{ $certificate->validation_hash }}</span>
         </p>
 
         @auth
             <div class="text-center mb-4">
-                <x-ui.button variant="tonal" icon="file-text" href="{{ route('certificates.download', $certificate) }}">
-                    Baixar PDF
+                <x-ui.button variant="tonal" icon="file-text" href="{{ route('certificates.download', $certificate) }}" target="_blank" rel="noopener">
+                    Visualizar PDF
                 </x-ui.button>
             </div>
         @endauth

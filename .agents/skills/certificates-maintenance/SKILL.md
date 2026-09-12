@@ -5,7 +5,7 @@ description: >
   mandatory PHPUnit/Dusk test files, common
   eligibility/idempotency/revocation failure modes,
   never-404-a-revoked-hash contract, cross-org PDF/organization
-  resolution gotchas, open QR-code dependency question. Use when
+  resolution gotchas, QR-code (chillerlan v6) wiring. Use when
   `CertificateEligibilityTest`, `CertificateRevocationTest`, or
   `PublicVerificationTest` fail; certificate not issued after course
   complete; public page 404 when it should not (or reverse); or PDF/QR
@@ -29,7 +29,13 @@ Tests guard this module's contract. Must stay green (PHPUnit, no Pest):
 - `tests/Feature/CertificateRevocationTest.php` — Gestor
   own-org success, Gestor other-org 403, Admin any-org success,
   `revoke_reason` `min:10` validation, revoked row never hard/soft
-  deleted.
+  deleted. Restoration
+  (undo) is covered here too: own-org success, other-org 403, Admin
+  any-org, Aluno denial, non-revoked guard. HTTP layer
+  (`CertificateControllerTest`) asserts the POST verbs, the
+  redirect-back + flash wording ("Certificado invalidado/validado com
+  sucesso.") and Aluno/Professor 403s on both
+  `certificates.revoke`/`certificates.restore`.
 - `tests/Feature/PublicVerificationTest.php` — valid
   certificate show student/course/org/workload/issued_at + "Válido",
   revoked certificate return `200` with revoked banner + reason (never
@@ -127,19 +133,17 @@ instead).
   second revoke (it should still reject too, defense in depth, but UI
   must not offer action at all).
 
-## Open Question: QR-Code Composer Package
+## QR-Code Package: Resolved
 
-No QR-code generation package installed — only
-`barryvdh/laravel-dompdf`. `certificates/pdf.blade.php` never references
-`$qrCodeDataUri`: it prints the verification URL + hash as plain text, and
-`CertificatePdfService` passes `'qrCodeDataUri' => null` as an unused
-placeholder (see `certificates-conventions`). This is **not** the intended end state on its own —
-the screen contract requires an actual scannable QR image. Adding package
-(`endroid/qr-code`, `simple-qrcode`, or `bacon/bacon-qr-code` are usual
-Laravel-ecosystem choices) require explicit user approval per this
-project "no dependency changes without approval" rule (project
-`CLAUDE.md`) — confirm which package before wiring
-`CertificatePdfService` to actually populate `$qrCodeDataUri`.
+`chillerlan/php-qrcode` (v6) is installed and wired: `CertificatePdfService::qrCodeDataUri()`
+emits an SVG data URI encoding the org-hosted `certificates.verify` URL
+(`OrgUrl::route`), and `certificates/pdf.blade.php` renders it as a 30mm
+bottom-left QR with a short caption — the raw URL link is gone. Note the
+v6 API: no `outputType`/`OUTPUT_*` constants — select the renderer via
+`outputInterface => QRMarkupSVG::class`, and with `outputBase64` on (the
+default) `render()` already returns the complete `data:image/svg+xml;base64,...`
+string (don't double-prefix). See `certificates-conventions` for the
+`BODY_FIXED_MM` coupling between footer size and one-page guarantee.
 
 ---
 

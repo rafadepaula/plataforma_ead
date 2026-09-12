@@ -182,7 +182,7 @@ class StudentCourseController extends Controller
     }
 
     /**
-     * The secondary CTA slot of a `concluido` row: "Baixar certificado"
+     * The secondary CTA slot of a `concluido` row: "Visualizar certificado"
      * when a non-revoked Certificate was already issued, or the neutral
      * "Certificado em emissão" placeholder (no link — the button/link
      * must degrade rather than 404) while it hasn't. The primary CTA is
@@ -202,7 +202,7 @@ class StudentCourseController extends Controller
             return ['Certificado em emissão', null];
         }
 
-        return ['Baixar certificado', route('certificates.download', $certificate)];
+        return ['Visualizar certificado', route('certificates.download', $certificate)];
     }
 
     /**

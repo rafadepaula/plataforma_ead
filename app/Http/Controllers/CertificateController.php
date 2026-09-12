@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\RestoreCertificateAction;
 use App\Actions\RevokeCertificateAction;
 use App\Enums\Permissions\RolesEnum;
 use App\Http\Requests\RevokeCertificateRequest;
@@ -11,6 +12,7 @@ use App\Services\CertificatePdfService;
 use App\Services\OrgContext;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Gate;
 
@@ -26,6 +28,7 @@ class CertificateController extends Controller
 {
     public function __construct(
         protected RevokeCertificateAction $revokeCertificateAction,
+        protected RestoreCertificateAction $restoreCertificateAction,
         protected CertificatePdfService $certificatePdfService,
     ) {}
 
@@ -55,16 +58,43 @@ class CertificateController extends Controller
             $request->validated('revoke_reason'),
         );
 
-        return redirect()->route('courses.certificates.index', $certificate->course_id)
-            ->with('success', 'Certificado revogado com sucesso.');
+        // The write path is shared by the per-course listing and the
+        // Gestor's students-directory "Certificados" modal, so we go back
+        // to wherever the confirm modal was submitted from (the students
+        // directory) with a fallback to the per-course listing.
+        return redirect()->back(fallback: route('courses.certificates.index', $certificate->course_id))
+            ->with('success', 'Certificado invalidado com sucesso.');
+    }
+
+    /**
+     * Undo of a logical revocation (`RestoreCertificateAction` clears
+     * `revoked_at`/`revoked_by`/`revoke_reason`, never deleting the row).
+     * Authorization is `CertificatePolicy::restore()` via plain
+     * `Gate::authorize()` — unlike revocation there is no reason to
+     * validate, so no Form Request is involved.
+     */
+    public function restore(Request $request, Certificate $certificate): RedirectResponse
+    {
+        Gate::authorize('restore', $certificate);
+
+        $this->restoreCertificateAction->execute(
+            $certificate,
+            $request->user(),
+        );
+
+        return redirect()->back(fallback: route('courses.certificates.index', $certificate->course_id))
+            ->with('success', 'Certificado validado com sucesso.');
     }
 
     public function download(Certificate $certificate): Response
     {
         $this->authorizeDownloadAccess($certificate);
 
+        // `stream()` renders the PDF inline (`Content-Disposition: inline`),
+        // so the browser opens it in its built-in PDF viewer instead of
+        // forcing a file download.
         return $this->certificatePdfService->generate($certificate)
-            ->download("certificado-{$certificate->validation_hash}.pdf");
+            ->stream("certificado-{$certificate->validation_hash}.pdf");
     }
 
     /**

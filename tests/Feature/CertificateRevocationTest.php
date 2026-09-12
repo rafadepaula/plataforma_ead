@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Actions\RestoreCertificateAction;
 use App\Actions\RevokeCertificateAction;
 use App\Enums\Permissions\RolesEnum;
 use App\Models\Certificate;
@@ -128,5 +129,75 @@ class CertificateRevocationTest extends TestCase
 
         $this->assertDatabaseCount('certificates', 1);
         $this->assertDatabaseHas('certificates', ['id' => $certificate->id]);
+    }
+
+    // ── Restoration (undo of the logical revocation) ─────────────────
+
+    public function test_a_gestor_can_restore_a_revoked_certificate_of_their_own_org(): void
+    {
+        $org = Organization::factory()->create();
+        $certificate = $this->certificateFor($org);
+        $gestor = $this->actingAsOrgUser($org);
+
+        app(RevokeCertificateAction::class)->execute($certificate, $gestor, 'Revogação para teste de restauração.');
+
+        $this->withOrgContext($org);
+        $this->assertTrue($gestor->can('restore', $certificate));
+
+        $restored = app(RestoreCertificateAction::class)->execute($certificate->fresh(), $gestor);
+
+        $this->assertFalse($restored->isRevoked());
+        $this->assertNull($restored->revoked_at);
+        $this->assertNull($restored->revoked_by);
+        $this->assertNull($restored->revoke_reason);
+    }
+
+    public function test_a_gestor_cannot_restore_a_certificate_of_a_different_org(): void
+    {
+        $ownOrg = Organization::factory()->create();
+        $otherOrg = Organization::factory()->create();
+        $certificate = $this->certificateFor($otherOrg);
+        $certificate->update(['revoked_at' => now()]);
+        $gestor = $this->actingAsOrgUser($ownOrg);
+
+        $this->assertFalse($gestor->can('restore', $certificate));
+    }
+
+    public function test_an_admin_can_restore_a_revoked_certificate_of_any_org(): void
+    {
+        $org = Organization::factory()->create();
+        $certificate = $this->certificateFor($org);
+        $certificate->update(['revoked_at' => now(), 'revoked_by' => null, 'revoke_reason' => 'Revogação administrativa para teste.']);
+        $admin = $this->actingAsAdmin();
+
+        $this->assertTrue($admin->can('restore', $certificate));
+
+        $restored = app(RestoreCertificateAction::class)->execute($certificate->fresh(), $admin);
+
+        $this->assertFalse($restored->isRevoked());
+    }
+
+    public function test_a_student_cannot_restore_any_certificate(): void
+    {
+        $org = Organization::factory()->create();
+        $certificate = $this->certificateFor($org);
+        $certificate->update(['revoked_at' => now()]);
+
+        /** @var User $student */
+        $student = User::factory()->inOrg($org->id)->create();
+        $student->assignRole(RolesEnum::ALUNO->value);
+
+        $this->assertFalse($student->can('restore', $certificate));
+    }
+
+    public function test_restoring_a_non_revoked_certificate_is_guarded(): void
+    {
+        $org = Organization::factory()->create();
+        $certificate = $this->certificateFor($org);
+        $gestor = $this->actingAsOrgUser($org);
+
+        $this->expectException(ValidationException::class);
+
+        app(RestoreCertificateAction::class)->execute($certificate, $gestor);
     }
 }

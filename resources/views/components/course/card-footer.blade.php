@@ -6,7 +6,7 @@
     (first published lesson / resume lesson / classroom); when `ctaHref`
     is null (no published lessons yet) the button degrades to disabled
     instead of linking to a 404. The secondary slot carries a `concluido`
-    row's certificate: "Baixar certificado" as a link once issued, or the
+    row's certificate: "Visualizar certificado" as a link once issued, or the
     neutral "Certificado em emissão" placeholder while it hasn't.
 --}}
 @props(['enrollment'])

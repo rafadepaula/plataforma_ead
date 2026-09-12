@@ -251,6 +251,32 @@
             width: 42%;
             text-align: right;
         }
+        /* QR de validação + legenda: substitui o link puro do rodapé */
+        .qr-footer-table {
+            border-collapse: collapse;
+        }
+        .qr-image-td {
+            vertical-align: middle;
+            padding-right: 2.5mm;
+        }
+        .qr-image {
+            width: 30mm;
+            height: 30mm;
+            display: block;
+        }
+        .qr-caption {
+            font-size: 6pt;
+            font-weight: bold;
+            color: #183247;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 0.4mm;
+        }
+        .qr-caption-host {
+            font-size: 6.5pt;
+            color: #46515C;
+            letter-spacing: 0.2px;
+        }
         .auth-title {
             font-size: 6pt;
             font-weight: bold;
@@ -264,14 +290,9 @@
             color: #55606E;
             line-height: 1.15;
         }
-        .verify-lookup-url {
-            font-size: 10pt;
-            font-weight: bold;
-            margin: 0.3mm 0;
-        }
-        .verify-link {
-            color: #183247;
-            text-decoration: underline;
+        .qr-text-td {
+            vertical-align: middle;
+            padding-right: 3mm;
         }
         .legal-notice-sub {
             font-size: 5.5pt;
@@ -431,16 +452,24 @@
                         <table class="footer-table">
                             <tr>
                                 <td class="footer-left">
-                                    <div class="auth-title">Validação de Autenticidade Institucional</div>
-                                    <div class="legal-notice">
-                                        A veracidade deste documento pode ser verificada a qualquer momento através do endereço:
-                                    </div>
-                                    <div class="verify-lookup-url">
-                                        <a class="verify-link" href="{{ $verificationUrl }}">{{ $verificationLookupUrl ?? ($verificationUrl ?? url('/validar-certificado')) }}</a>
-                                    </div>
-                                    <div class="legal-notice-sub">
-                                        Certificado emitido digitalmente pela plataforma acadêmica com validação por chave criptográfica SHA-256 inviolável.
-                                    </div>
+                                    <table class="qr-footer-table">
+                                        <tr>
+                                            <td class="qr-image-td">
+                                                <img class="qr-image" src="{{ $qrCodeDataUri }}" alt="QR de validação do certificado">
+                                            </td>
+                                            <td class="qr-text-td">
+                                                <div class="qr-caption">Valide a autenticidade</div>
+                                                <div class="qr-caption-host">{{ $verificationHost }}</div>
+                                                <div class="auth-title">Validação de Autenticidade Institucional</div>
+                                                <div class="legal-notice">
+                                                    A veracidade deste documento pode ser verificada a qualquer momento lendo o código QR ou digitando a chave de validação no endereço ao lado.
+                                                </div>
+                                                <div class="legal-notice-sub">
+                                                    Certificado emitido digitalmente pela plataforma acadêmica com validação por chave criptográfica SHA-256 inviolável.
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </table>
                                 </td>
                                 <td class="footer-right">
                                     <div class="auth-box">

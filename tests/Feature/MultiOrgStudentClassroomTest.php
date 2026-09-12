@@ -293,7 +293,7 @@ class MultiOrgStudentClassroomTest extends TestCase
         $responseWithCert = $this->actingAs($aluno)->get(route('classroom.show', $course));
         $responseWithCert->assertOk();
         $responseWithCert->assertViewHas('certificate', fn (Certificate $c): bool => $c->id === $certificate->id);
-        $responseWithCert->assertSee('Baixar certificado');
+        $responseWithCert->assertSee('Visualizar certificado');
     }
 
     public function test_admin_can_preview_the_classroom_without_enrollment(): void
@@ -488,7 +488,7 @@ class MultiOrgStudentClassroomTest extends TestCase
         $response->assertViewHas('certificate', fn (?Certificate $c): bool => $c !== null
             && $c->id === $certificate->id
             && $c->isRevoked());
-        $response->assertDontSee('Baixar certificado');
+        $response->assertDontSee('Visualizar certificado');
         $response->assertSee('certificate-unavailable', false);
         $response->assertSee('Certificado ainda não disponível');
         $response->assertSee('Este certificado foi revogado pela organização e não pode mais ser baixado.');

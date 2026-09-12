@@ -37,6 +37,17 @@ class CertificatePolicy
     }
 
     /**
+     * Restoration of a logically revoked certificate follows exactly the
+     * same boundary as revocation itself: `role:admin` unrestricted,
+     * `role:gestor` only for a Certificate whose Course belongs to their
+     * own Org (Professors and Alunos always `false`).
+     */
+    public function restore(User $user, Certificate $certificate): bool
+    {
+        return $this->revoke($user, $certificate);
+    }
+
+    /**
      * Loads the parent `Course` bypassing `OrgScope` — same reasoning as
      * `ModulePolicy::parentCourse()`: the Certificate itself carries no
      * scope, so its `course` relation must be read unscoped too, otherwise

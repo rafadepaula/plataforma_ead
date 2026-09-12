@@ -59,11 +59,12 @@ class CertificatePresentationBuilder
 
     /**
      * Upper bound (never a calibration) of every fixed-height section:
-     * header, title, divider, course prose, meta grid, footer and the
-     * template's breathing margins. Over-measuring only shrinks the
-     * spacer — under-measuring would overflow to a second page.
+     * header, title, divider, course prose, meta grid, the QR validation
+     * footer (30mm QR symbol plus its caption column) and the template's
+     * breathing margins. Over-measuring only shrinks the spacer —
+     * under-measuring would overflow to a second page.
      */
-    private const BODY_FIXED_MM = 86.0;
+    private const BODY_FIXED_MM = 101.0;
 
     /** Upper bound of the revocation banner block when present. */
     private const BODY_REVOKED_MM = 12.0;

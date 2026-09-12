@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Actions\RevokeCertificateAction;
 use App\Enums\Permissions\RolesEnum;
 use App\Models\Certificate;
 use App\Models\Course;
@@ -80,12 +81,12 @@ class CertificateControllerTest extends TestCase
         $certificate = $this->certificateFor($org);
         $gestor = $this->actingAsOrgUser($org);
 
-        $response = $this->put(route('certificates.revoke', $certificate), [
+        $response = $this->post(route('certificates.revoke', $certificate), [
             'revoke_reason' => 'Fraude comprovada na avaliação final.',
         ]);
 
         $response->assertRedirect(route('courses.certificates.index', $certificate->course_id));
-        $response->assertSessionHas('success');
+        $response->assertSessionHas('success', 'Certificado invalidado com sucesso.');
 
         $certificate->refresh();
         $this->assertNotNull($certificate->revoked_at);
@@ -99,7 +100,7 @@ class CertificateControllerTest extends TestCase
         $certificate = $this->certificateFor($org);
         $this->actingAsOrgUser($org);
 
-        $response = $this->put(route('certificates.revoke', $certificate), [
+        $response = $this->post(route('certificates.revoke', $certificate), [
             'revoke_reason' => 'curto',
         ]);
 
@@ -114,9 +115,99 @@ class CertificateControllerTest extends TestCase
         $certificate = $this->certificateFor($otherOrg);
         $this->actingAsOrgUser($ownOrg);
 
-        $this->put(route('certificates.revoke', $certificate), [
+        $this->post(route('certificates.revoke', $certificate), [
             'revoke_reason' => 'Tentativa indevida de revogação cruzada.',
         ])->assertForbidden();
+
+        $this->assertNull($certificate->fresh()->revoked_at);
+    }
+
+    public function test_a_professor_cannot_revoke_or_restore_certificates(): void
+    {
+        $org = Organization::factory()->create();
+        $certificate = $this->certificateFor($org);
+        $this->actingAsOrgUser($org, 'professor');
+
+        $this->post(route('certificates.revoke', $certificate), [
+            'revoke_reason' => 'Professor tentando revogar certificado.',
+        ])->assertForbidden();
+
+        $this->post(route('certificates.restore', $certificate))
+            ->assertForbidden();
+
+        $this->assertNull($certificate->fresh()->revoked_at);
+    }
+
+    public function test_a_gestor_can_restore_a_revoked_certificate_via_http(): void
+    {
+        $org = Organization::factory()->create();
+        $certificate = $this->certificateFor($org);
+        $gestor = $this->actingAsOrgUser($org);
+
+        app(RevokeCertificateAction::class)->execute($certificate, $gestor, 'Revogação para teste de restauração.');
+
+        $response = $this->post(route('certificates.restore', $certificate));
+
+        $response->assertRedirect(route('courses.certificates.index', $certificate->course_id));
+        $response->assertSessionHas('success', 'Certificado validado com sucesso.');
+
+        $certificate->refresh();
+        $this->assertNull($certificate->revoked_at);
+        $this->assertNull($certificate->revoked_by);
+        $this->assertNull($certificate->revoke_reason);
+    }
+
+    public function test_an_admin_can_restore_a_revoked_certificate_of_any_org(): void
+    {
+        $org = Organization::factory()->create();
+        $certificate = $this->certificateFor($org);
+        $gestor = $this->actingAsOrgUser($org);
+
+        app(RevokeCertificateAction::class)->execute($certificate, $gestor, 'Revogação para teste de restauração.');
+
+        $this->actingAsAdmin();
+
+        $this->post(route('certificates.restore', $certificate))
+            ->assertRedirect(route('courses.certificates.index', $certificate->course_id));
+
+        $this->assertNull($certificate->fresh()->revoked_at);
+    }
+
+    public function test_a_gestor_cannot_restore_a_certificate_of_a_different_org_via_http(): void
+    {
+        $ownOrg = Organization::factory()->create();
+        $otherOrg = Organization::factory()->create();
+        $course = Course::factory()->inOrg($otherOrg->id)->create();
+
+        /** @var User $student */
+        $student = User::factory()->inOrg($otherOrg->id)->create();
+        $student->assignRole(RolesEnum::ALUNO->value);
+
+        $certificate = Certificate::factory()->for($course)->for($student)->revoked()->create();
+        $this->actingAsOrgUser($ownOrg);
+
+        $this->post(route('certificates.restore', $certificate))
+            ->assertForbidden();
+
+        $this->assertNotNull($certificate->fresh()->revoked_at);
+    }
+
+    public function test_a_student_cannot_revoke_or_restore_any_certificate(): void
+    {
+        $org = Organization::factory()->create();
+        $certificate = $this->certificateFor($org);
+
+        /** @var User $student */
+        $student = User::factory()->inOrg($org->id)->create();
+        $student->assignRole(RolesEnum::ALUNO->value);
+        $this->actingAs($student);
+
+        $this->post(route('certificates.revoke', $certificate), [
+            'revoke_reason' => 'Aluno tentando revogar o próprio certificado.',
+        ])->assertForbidden();
+
+        $this->post(route('certificates.restore', $certificate))
+            ->assertForbidden();
 
         $this->assertNull($certificate->fresh()->revoked_at);
     }
@@ -131,6 +222,14 @@ class CertificateControllerTest extends TestCase
 
         $response->assertOk();
         $response->assertHeader('content-type', 'application/pdf');
+        $this->assertStringStartsWith(
+            'inline',
+            (string) $response->headers->get('Content-Disposition'),
+        );
+        $this->assertStringContainsString(
+            "certificado-{$certificate->validation_hash}.pdf",
+            (string) $response->headers->get('Content-Disposition'),
+        );
     }
 
     public function test_an_admin_can_download_a_certificate_pdf_of_any_org(): void
@@ -139,8 +238,14 @@ class CertificateControllerTest extends TestCase
         $certificate = $this->certificateFor($org);
         $this->actingAsAdmin();
 
-        $this->get(route('certificates.download', $certificate))
-            ->assertOk();
+        $response = $this->get(route('certificates.download', $certificate));
+
+        $response->assertOk();
+        $response->assertHeader('content-type', 'application/pdf');
+        $this->assertStringStartsWith(
+            'inline',
+            (string) $response->headers->get('Content-Disposition'),
+        );
     }
 
     public function test_a_gestor_cannot_download_a_certificate_pdf_of_a_different_org(): void

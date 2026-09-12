@@ -251,7 +251,7 @@ class ClassroomOverviewRenderingTest extends TestCase
         $response->assertSee('dusk="certificate-unavailable"', false);
         $response->assertSee('Certificado ainda não disponível');
         $response->assertDontSee('dusk="download-certificate"', false);
-        $response->assertDontSee('Baixar certificado');
+        $response->assertDontSee('Visualizar certificado');
         $response->assertDontSee('Este certificado foi revogado pela organização e não pode mais ser baixado.');
         $response->assertDontSee('Curso concluído. O certificado fica disponível abaixo.');
         $response->assertSee('Curso concluído. Acompanhe a situação do certificado abaixo.');
@@ -278,7 +278,7 @@ class ClassroomOverviewRenderingTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('Curso concluído. O certificado fica disponível abaixo.');
-        $response->assertSee('Baixar certificado');
+        $response->assertSee('Visualizar certificado');
         $response->assertDontSee('Curso concluído. Acompanhe a situação do certificado abaixo.');
     }
 
@@ -345,7 +345,7 @@ class ClassroomOverviewRenderingTest extends TestCase
         $response->assertSee('Certificado ainda não disponível');
         $response->assertSee('Este certificado foi revogado pela organização e não pode mais ser baixado.');
         $response->assertDontSee('Curso concluído. O certificado fica disponível abaixo.');
-        $response->assertDontSee('Baixar certificado');
+        $response->assertDontSee('Visualizar certificado');
     }
 
     public function test_staff_preview_without_enrollment_renders_zero_progress(): void

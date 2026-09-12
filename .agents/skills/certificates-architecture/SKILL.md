@@ -139,4 +139,4 @@ loaded `withoutGlobalScopes()` for comparison — same reasoning as above;
 comparison is against the **request host's** org, never a `users.org_id`,
 which no longer exists). Revocation is audited by `RevokeCertificateAction`
 as `certificate.revoked` with `orgId` from the certificate's own
-`course.org_id`.
+`course.org_id`. Restoration is the deliberate inverse (`CertificatePolicy::restore()` mirrors `revoke()`; `RestoreCertificateAction` clears `revoked_at`/`revoked_by`/`revoke_reason`, audited as `certificate.restored`) and is a first-class surface, not a data fix: revoked state is otherwise terminal per enrollment.
