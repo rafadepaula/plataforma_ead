@@ -12,7 +12,7 @@ use Illuminate\View\Component;
  * `<x-help-button key="...">`, present on every
  * authenticated screen (topbar) plus every public screen (Landing Page,
  * `/convite/*`, `/validar-certificado/*`). Resolution mirrors `OrgScope`'s
- * own admin-vs-org-user branching (see `tenancy-conventions`) but reads
+ * own admin-vs-org-user branching (see `tenancy-maintenance` (`resource/conventions.md`)) but reads
  * `session('active_org_id')` (Admin) / `OrgContext::current()` (everyone
  * else) directly instead of relying on the scope, because the resolved
  * `org_id` must be compared explicitly

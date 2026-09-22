@@ -3,7 +3,7 @@
 
     Abertura e fechamento são 100% declarativos (`data-bs-toggle="modal"` /
     `data-bs-target="#{id}"` no gatilho, `data-bs-dismiss="modal"` aqui dentro):
-    nenhuma linha de JS artesanal (`bootstrap-conventions` §1 e §3.2).
+    nenhuma linha de JS artesanal (`bootstrap-maintenance` (`resource/conventions.md`) §1 e §3.2).
 
     O markup NUNCA emite `.show` nem `style=` — o modal nasce fechado
     (`.modal` sozinho é `display:none`) e quem adiciona `.show` é o

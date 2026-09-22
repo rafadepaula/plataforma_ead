@@ -19,7 +19,7 @@ use Tests\DuskTestCase;
  * min-2-options guard, marking an option correct) plus the full
  * create/edit/reorder round-trip through the real HTTP endpoints.
  *
- * Grouped as ONE lifecycle chain per `testing-conventions`/`laravel-dusk`:
+ * Grouped as ONE lifecycle chain per `testing-maintenance` (`resource/conventions.md`)/`laravel-dusk`:
  * a single Gestor session drives every UI interaction, then the actual
  * save/edit/reorder round-trip, checkpointing the DB at each write.
  */
@@ -200,7 +200,7 @@ class QuizAuthoringDuskTest extends DuskTestCase
      * `StoreQuizQuestionRequest`'s cross-field rule), and the validation
      * message comes back rendered on the page (`layout.alerts`'s
      * `$errors->any()` block — the app-wide convention every form,
-     * modal-hosted or not, relies on; see `quizzes-conventions`) instead
+     * modal-hosted or not, relies on; see `quizzes-maintenance` (`resource/conventions.md`)) instead
      * of the question ever being persisted or a success toast appearing.
      */
     public function test_question_without_a_correct_option_is_rejected_with_a_422_validation_error(): void

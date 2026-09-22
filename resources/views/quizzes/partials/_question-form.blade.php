@@ -11,7 +11,7 @@
      *
      * Contract with `StoreQuizQuestionRequest`/`UpdateQuizQuestionRequest`
      * (Bucket 1) and `QuizQuestionController` (Bucket 2), documented in
-     * full in the `quizzes-conventions` skill:
+     * full in the `quizzes-maintenance` skill (`resource/conventions.md`):
      *   - `question_text`, `type` (single_choice|multiple_choice|
      *     true_false|essay), `order_index` is server-assigned (append at
      *     end), not submitted here.

@@ -15,7 +15,7 @@ use Illuminate\Notifications\Notification;
  * (`wasRecentlyCreated`), never on the idempotent re-fetch/race-recovery
  * paths. `database` is listed before `mail` in {@see self::via()} so the
  * in-app row is guaranteed to persist even if the `mail` channel's queued
- * job throws (see  §3 / the `notifications-conventions` skill).
+ * job throws (see  §3 / the `notifications-maintenance` skill (`resource/conventions.md`)).
  */
 class CertificateIssuedNotification extends Notification implements ShouldQueue
 {

@@ -14,7 +14,7 @@ use Tests\DuskTestCase;
 /**
  * E2E coverage of the forum's full browser-facing flow.
  *
- * Agrupado por cadeia de ciclo de vida (ver `testing-conventions`): a
+ * Agrupado por cadeia de ciclo de vida (ver `testing-maintenance` (`resource/conventions.md`)): a
  * jornada do Aluno autor (criar tópico → sanitização do conteúdo →
  * responder → editar → histórico de edição) é um método; a jornada de
  * moderação (denunciar → Gestor revisa a fila → fixa) é outro; as duas

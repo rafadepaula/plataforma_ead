@@ -20,13 +20,13 @@ use Tests\DuskTestCase;
  * rodapé da Landing Page): o formulário de consulta e o `?hash=` que ele
  * submete de volta para a mesma rota.
  *
- * Agrupado por cadeia de ciclo de vida (ver `testing-conventions`): os três
+ * Agrupado por cadeia de ciclo de vida (ver `testing-maintenance` (`resource/conventions.md`)): os três
  * estados da página pública são percorridos como VISITANTE numa única
  * sessão de navegador; a tela autenticada do Aluno é jornada de outro ator.
  *
  * Certificates are seeded directly here using the
  * `hash('sha256', user_id.course_id.issued_at->format('Y-m-d H:i:s').APP_KEY)`
- * formula documented in the `certificates-conventions` skill.
+ * formula documented in the `certificates-maintenance` skill (`resource/conventions.md`).
  */
 class CertificateVerificationTest extends DuskTestCase
 {

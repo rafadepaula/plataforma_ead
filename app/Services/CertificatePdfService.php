@@ -13,7 +13,7 @@ use chillerlan\QRCode\QROptions;
  * renders `resources/views/certificates/pdf.blade.php`
  * via `barryvdh/laravel-dompdf`, personalized with the issuing
  * Organization's name/CNPJ/logo (`certificate->course->organization`,
- * read `withoutGlobalScopes()` — see `certificates-architecture` — so a
+ * read `withoutGlobalScopes()` — see `certificates-maintenance` (`resource/architecture.md`) — so a
  * Gestor previewing from a different active-org context, or any staff
  * download, always resolves the Course's actual owning Organization
  * rather than `null`).
@@ -24,7 +24,7 @@ use chillerlan\QRCode\QROptions;
  * issuing Organization's host — the PDF may render in a request whose
  * host is not the Organization's portal (staff download from another
  * context), and the QR must resolve on the issuing portal, which is
- * host-scoped (see `certificates-architecture`).
+ * host-scoped (see `certificates-maintenance` (`resource/architecture.md`)).
  */
 class CertificatePdfService
 {

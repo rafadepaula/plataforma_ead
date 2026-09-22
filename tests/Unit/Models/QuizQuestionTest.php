@@ -15,7 +15,7 @@ use Tests\TestCase;
 
 /**
  * `QuizQuestion` is cascade-inherited (no `OrgScope`, see
- * `quizzes-architecture` skill); this covers its relationships directly.
+ * `quizzes-maintenance` skill (`resource/architecture.md`)); this covers its relationships directly.
  */
 class QuizQuestionTest extends TestCase
 {

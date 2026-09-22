@@ -27,30 +27,26 @@ class HarnessVerificationTest extends TestCase
     }
 
     /**
-     * Test that harness:check-skills returns status code 0 when given valid path with 3 skills.
+     * Test that harness:check-skills returns status code 0 when given valid path with a complete module skill.
      */
     public function test_artisan_check_skills_command_passes_with_custom_valid_path(): void
     {
         $tempDir = sys_get_temp_dir().'/harness_valid_skills_'.uniqid();
 
-        mkdir($tempDir.'/quiz-architecture', 0777, true);
-        file_put_contents($tempDir.'/quiz-architecture/SKILL.md', '# Quiz Architecture');
-
-        mkdir($tempDir.'/quiz-conventions', 0777, true);
-        file_put_contents($tempDir.'/quiz-conventions/SKILL.md', '# Quiz Conventions');
-
-        mkdir($tempDir.'/quiz-maintenance', 0777, true);
-        file_put_contents($tempDir.'/quiz-maintenance/SKILL.md', '# Quiz Maintenance');
+        mkdir($tempDir.'/quiz-maintenance/resource', 0777, true);
+        file_put_contents($tempDir.'/quiz-maintenance/SKILL.md', '# Quiz');
+        file_put_contents($tempDir.'/quiz-maintenance/resource/architecture.md', '# Quiz Architecture');
+        file_put_contents($tempDir.'/quiz-maintenance/resource/conventions.md', '# Quiz Conventions');
+        file_put_contents($tempDir.'/quiz-maintenance/resource/maintenance.md', '# Quiz Maintenance');
 
         $this->artisan('harness:check-skills', ['--path' => $tempDir])
             ->expectsOutputToContain('Harness skill audit passed')
             ->assertExitCode(0);
 
-        @unlink($tempDir.'/quiz-architecture/SKILL.md');
-        @rmdir($tempDir.'/quiz-architecture');
-        @unlink($tempDir.'/quiz-conventions/SKILL.md');
-        @rmdir($tempDir.'/quiz-conventions');
-        @unlink($tempDir.'/quiz-maintenance/SKILL.md');
+        foreach (['SKILL.md', 'resource/architecture.md', 'resource/conventions.md', 'resource/maintenance.md'] as $file) {
+            @unlink($tempDir.'/quiz-maintenance/'.$file);
+        }
+        @rmdir($tempDir.'/quiz-maintenance/resource');
         @rmdir($tempDir.'/quiz-maintenance');
         @rmdir($tempDir);
     }

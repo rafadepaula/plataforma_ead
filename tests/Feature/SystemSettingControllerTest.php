@@ -16,7 +16,7 @@ use Tests\TestCase;
  * Org session reads/writes the global row, an impersonating Admin writes
  * that org's override row, and every other role (Gestor and Aluno) is
  * forbidden by middleware. A blank `smtp_password` never overwrites the
- * currently stored one (see `dashboard-conventions`).
+ * currently stored one (see `dashboard-maintenance` (`resource/conventions.md`)).
  */
 class SystemSettingControllerTest extends TestCase
 {

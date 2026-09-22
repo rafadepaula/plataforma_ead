@@ -15,7 +15,7 @@ use Tests\DuskTestCase;
  * herdado de `Tests\DuskTestCase` (nunca `RefreshDatabase`, pois o Dusk
  * dirige navegador e app como processos/conexões HTTP separados).
  *
- * Agrupado por cadeia de ciclo de vida (ver `testing-conventions`): a
+ * Agrupado por cadeia de ciclo de vida (ver `testing-maintenance` (`resource/conventions.md`)): a
  * jornada de sessão (entrar → destino por papel → sair), as rejeições de
  * credencial na mesma tela de login, e a jornada de recuperação de senha
  * (solicitar → token inválido → token válido → entrar com a nova senha).

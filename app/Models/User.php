@@ -23,7 +23,7 @@ use Spatie\Permission\Traits\HasRoles;
  * (password, status, remember token) lives in `Credential` rows keyed by
  * `(user_id, org_id)`, where the org comes from the request host.
  * `OrgScope` is intentionally NOT applied to this model — see the
- * `tenancy-architecture` skill.
+ * `tenancy-maintenance` skill (`resource/architecture.md`).
  */
 #[Fillable(['name', 'email', 'cpf'])]
 class User extends Authenticatable

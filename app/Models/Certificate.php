@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * Cascade-inherited: org is implied by `course.org_id`. Do NOT apply
- * `OrgScope` here — see the `tenancy-architecture` skill. Revocation is
+ * `OrgScope` here — see the `tenancy-maintenance` skill (`resource/architecture.md`). Revocation is
  * logical (`revoked_at`/`revoke_reason`), never a soft-delete of the row.
  */
 class Certificate extends Model

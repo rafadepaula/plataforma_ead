@@ -62,7 +62,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('gestao/ajuda')->name('org.hel
 });
 
 // Organization CRUD + Impersonate Org, both
-// reserved to `role:admin` (see `auth-orgs-conventions` skill).
+// reserved to `role:admin` (see `auth-orgs-maintenance` skill (`resource/conventions.md`)).
 Route::middleware(['auth', 'role:admin'])->group(function (): void {
     Route::resource('organizations', OrganizationController::class)->except(['show']);
 
@@ -73,7 +73,7 @@ Route::middleware(['auth', 'role:admin'])->group(function (): void {
 
     // Admin-side audit trail UI. See the `role:gestor`
     // block below for the Gestor-side counterpart pointing at the same
-    // controller methods (see `audit-logs-conventions` for why these are
+    // controller methods (see `audit-logs-maintenance` (`resource/conventions.md`) for why these are
     // two distinct route names/prefixes rather than one shared
     // `role:admin|gestor` group).
     Route::get('admin/audit-logs', [AuditLogController::class, 'index'])->name('admin.audit-logs.index');
@@ -121,7 +121,7 @@ Route::middleware(['auth', 'role:admin|gestor'])->group(function (): void {
 // remove) — nothing beyond their own tenant and never another staff
 // account (see `GestorStudentController` and `UserPolicy::*Student`).
 // Distinct from the Admin-only `users.*` resource above by design (see
-// `auth-orgs-conventions`): a separate controller, a separate route
+// `auth-orgs-maintenance` (`resource/conventions.md`)): a separate controller, a separate route
 // namespace and a `role:gestor`-only middleware group, so the boundary is
 // enforced by middleware first and Policy second.
 Route::middleware(['auth', 'role:gestor'])->group(function (): void {
@@ -162,7 +162,7 @@ Route::middleware(['auth', 'role:gestor'])->group(function (): void {
     Route::delete('gestor/professors/{user}', [GestorProfessorController::class, 'destroy'])->name('gestor.professors.destroy');
 });
 
-// Course CRUD, restricted to Admin/Gestor (see the `courses-conventions`
+// Course CRUD, restricted to Admin/Gestor (see the `courses-maintenance` (`resource/conventions.md`)
 // skill). Deliberately SEPARATE from the Module/Lesson block below: an
 // assigned Professor authors the Course's content (modules/lessons) but
 // never its metadata (`courses.edit` stays 403 to them).
@@ -190,7 +190,7 @@ Route::middleware(['auth', 'role:admin|gestor|professor'])->group(function (): v
 // Quiz (1:1 with a Lesson) + nested QuizQuestion/QuizOption
 // CRUD + reorder, in the same `role:admin|gestor|professor` group as
 // `modules.lessons`: an assigned Professor authors the Lesson and its
-// Quiz on the same screens (see the `quizzes-conventions` skill), the
+// Quiz on the same screens (see the `quizzes-maintenance` skill (`resource/conventions.md`)), the
 // policies keep non-assigned professors (and everyone else) out.
 // `quizzes.{create,store}` are reached via
 // `{lesson}` (mirroring `modules.lessons`' shallow nesting one level
@@ -230,7 +230,7 @@ Route::middleware(['auth', 'role:admin|gestor|professor'])->group(function (): v
 
 // Gestor/Admin per-course certificate list +
 // revocation/restoration + PDF download, restricted to Admin/Gestor (see
-// the `certificates-conventions` skill). Not a `Route::resource()` —
+// the `certificates-maintenance` skill (`resource/conventions.md`)). Not a `Route::resource()` —
 // `certificates` has no `create`/`store`/`edit`/`update` staff-facing
 // screens (issuance is fully automatic via `IssueCertificateAction`), so
 // only `index`/`revoke`/`restore`/`download` are routed explicitly.
@@ -280,11 +280,11 @@ Route::middleware('auth')->group(function (): void {
 });
 
 // Manual enrollment panel, restricted to Admin/Gestor (see the
-// `courses-conventions` skill). The per-student unique invitation lives
+// `courses-maintenance` skill (`resource/conventions.md`)). The per-student unique invitation lives
 // under `role:gestor` below (`gestor.students.invitations.*`).
 Route::middleware(['auth', 'role:admin|gestor'])->group(function (): void {
     // Not a `Route::resource()` — `course_user` is a pivot with no
-    // `Enrollment` Eloquent model to route-bind (see `courses-architecture`),
+    // `Enrollment` Eloquent model to route-bind (see `courses-maintenance` (`resource/architecture.md`)),
     // so `destroy` takes both `{course}` and `{user}` explicitly rather than
     // a `shallow()` single-segment `{enrollment}`.
     Route::get('courses/{course}/enrollments', [EnrollmentController::class, 'index'])
@@ -321,7 +321,7 @@ Route::middleware(['auth', 'role:admin|gestor'])->group(function (): void {
 // public, unauthenticated invitation redemption flow: a
 // pre-registered Aluno finalizes their own account purely from a
 // `/convite/{token}` link, with no prior session (see the
-// `invitations-architecture` skill). The token IS the identity — the
+// `invitations-maintenance` skill (`resource/architecture.md`)). The token IS the identity — the
 // e-mail/name shown come from the invitation's `user_id` and are
 // immutable; the visitor only sets a password and consents.
 Route::middleware('guest')->group(function (): void {
@@ -371,7 +371,7 @@ Route::middleware(['auth', 'student.enrolled'])->group(function (): void {
 
     // the Aluno's quiz-taking flow, nested under `{lesson}`
     // (never a bare `{quiz}`) so `EnsureStudentIsEnrolled::resolveCourse()`
-    // keeps working unmodified (see the `quizzes-architecture` skill).
+    // keeps working unmodified (see the `quizzes-maintenance` skill (`resource/architecture.md`)).
     // `submit` is a distinct `/quiz/submit` suffix — not the same
     // `POST lessons/{lesson}/quiz` URI as the Gestor's `quizzes.store`
     // above — Laravel's route collection keys routes by method+URI, so an
@@ -381,7 +381,7 @@ Route::middleware(['auth', 'student.enrolled'])->group(function (): void {
     // também gated por `student.enrolled`. A posse do attempt (`quizAttempt`
     // é binding padrão por id) é checada no controller (user_id + quiz da
     // lesson), nunca via `QuizAttemptPolicy` — que é exclusiva do staff de
-    // correção (ver `quizzes-architecture`).
+    // correção (ver `quizzes-maintenance` (`resource/architecture.md`)).
     Route::get('lessons/{lesson}/quiz/tentativas', [StudentQuizController::class, 'history'])->name('student.quizzes.history');
     Route::get('lessons/{lesson}/quiz/tentativas/{quizAttempt}', [StudentQuizController::class, 'attemptResult'])->name('student.quizzes.attempt-result');
     Route::post('lessons/{lesson}/quiz/start', [StudentQuizController::class, 'start'])->name('student.quizzes.start');
@@ -442,7 +442,7 @@ Route::middleware(['auth', 'role:admin|gestor|professor'])->group(function (): v
 });
 
 // Admin/Gestor dashboard + CSV export, restricted to
-// `role:admin|gestor` (no dedicated Policy, see `dashboard-conventions`).
+// `role:admin|gestor` (no dedicated Policy, see `dashboard-maintenance` (`resource/conventions.md`)).
 // The `admin.dashboard` route name is load-bearing:
 // `components/layout/sidebar.blade.php` checks `Route::has('admin.dashboard')`
 // and silently degrades to a dead `#` link if it is ever renamed.
@@ -471,7 +471,7 @@ Route::middleware(['auth', 'role:admin'])->group(function (): void {
 // bell. `DatabaseNotification` has no Policy/OrgScope of its own, so
 // `NotificationController` manually scopes every query to
 // `$request->user()->notifications()` rather than relying on a route-model
-// binding (see the `notifications-conventions` skill).
+// binding (see the `notifications-maintenance` skill (`resource/conventions.md`)).
 Route::middleware('auth')->group(function (): void {
     Route::get('notifications/unread-count', [NotificationController::class, 'unreadCount'])
         ->name('notifications.unread-count');
@@ -487,7 +487,7 @@ Route::middleware('auth')->group(function (): void {
 // -authenticated visitor is redirected away from it), this route must
 // resolve identically for a fully anonymous visitor AND an already
 // -logged-in Admin/Gestor/Aluno alike, so no middleware applies at all
-// (see the `certificates-architecture` skill).
+// (see the `certificates-maintenance` skill (`resource/architecture.md`)).
 Route::get('validar-certificado/{hash?}', [PublicCertificateController::class, 'show'])
     ->name('certificates.verify');
 

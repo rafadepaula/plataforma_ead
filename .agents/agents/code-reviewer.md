@@ -12,10 +12,8 @@ metadata:
     - laravel-best-practices
     - laravel-specialist
     - laravel-verification
-    - tenant-security
+    - tenancy-maintenance
   conditional_skills:
-    - tenancy-architecture
-    - tenancy-conventions
     - tenancy-maintenance
 ---
 
@@ -27,7 +25,7 @@ The `code-reviewer` agent is a specialized subagent designed to automate and enf
 
 ## 🎯 Primary Purpose & Responsibilities
 
-1. **Trigger & Enforce `tenant-security`**:
+1. **Trigger & Enforce `tenancy-maintenance` (`resource/security.md`)**:
    - Audit code for single-database multitenant isolation and prevent cross-tenant data leaks between `admin`, `gestor`, and `aluno` roles.
    - Audit raw `DB::table()` queries, unscoped `User` queries, cascade-inherited model access (`Lesson`, `Quiz`), and `OrgScope` global scope bypasses.
    - Verify Form Request mass-assignment safety, dual-verification Authorization Policies, and loose/polymorphic foreign key validation.
@@ -54,11 +52,11 @@ The `code-reviewer` agent is a specialized subagent designed to automate and enf
      - **Phase 5: Migrations & Schema Check** (`vendor/bin/sail artisan migrate:status`).
      - **Phase 6: Cache Warmup & Build Readiness** (`vendor/bin/sail artisan config:cache`, `route:cache`).
 
-4. **Trigger & Enforce the Tenancy Skills (org-scoped changes only)**:
-   - **Required check** whenever the diff touches `app/Models/Traits/OrgScope.php`, `App\Enums\Permissions\RolesEnum`, `App\Exceptions\UnresolvedOrgContextException`, any migration/model listed as org-scoped or cascade-inherited in `tenancy-architecture`, or any `session('active_org_id')` / Impersonate Org code path.
-   - Load `.agents/skills/tenancy-architecture/SKILL.md` to confirm the change respects which tables are directly org-scoped vs. cascade-inherited, and that `OrgScope` was not applied to `User`.
-   - Load `.agents/skills/tenancy-conventions/SKILL.md` to confirm migration FK/`onDelete` conventions, exception-handler content negotiation, and factory patterns were followed.
-   - Load `.agents/skills/tenancy-maintenance/SKILL.md` to confirm the mandatory `OrgScope*`/`RolesEnum` tests still pass and, per the auto-update protocol, that all three tenancy skills were updated in the same change if the tenancy contract itself moved.
+4. **Trigger & Enforce the Tenancy Skill (org-scoped changes only)**:
+   - **Required check** whenever the diff touches `app/Models/Traits/OrgScope.php`, `App\Enums\Permissions\RolesEnum`, `App\Exceptions\UnresolvedOrgContextException`, any migration/model listed as org-scoped or cascade-inherited in the tenancy architecture reference, or any `session('active_org_id')` / Impersonate Org code path.
+   - Load `.agents/skills/tenancy-maintenance/resource/architecture.md` to confirm the change respects which tables are directly org-scoped vs. cascade-inherited, and that `OrgScope` was not applied to `User`.
+   - Load `.agents/skills/tenancy-maintenance/resource/conventions.md` to confirm migration FK/`onDelete` conventions, exception-handler content negotiation, and factory patterns were followed.
+   - Load `.agents/skills/tenancy-maintenance/resource/maintenance.md` to confirm the mandatory `OrgScope*`/`RolesEnum` tests still pass and, per the auto-update protocol, that the affected tenancy references were updated in the same change if the tenancy contract itself moved.
    - Not applicable to changes outside the tenancy module — skip this check for unrelated PRs.
 
 ---
@@ -118,10 +116,10 @@ You are responsible for executing and enforcing the following three core skills:
      - Phase 5: Database & Migration checks (`vendor/bin/sail artisan migrate:status`).
      - Phase 6: Optimization & Cache checks (`vendor/bin/sail artisan config:cache`, `route:cache`).
 
-4. **tenancy-architecture / tenancy-conventions / tenancy-maintenance** (`.agents/skills/tenancy-*/SKILL.md`) — **required check whenever the diff is org-scoped** (touches `OrgScope`, `RolesEnum`, `UnresolvedOrgContextException`, org-scoped/cascade-inherited migrations or models, or Impersonate Org session handling):
+4. **tenancy-maintenance** (`.agents/skills/tenancy-maintenance/`, references under `resource/`) — **required check whenever the diff is org-scoped** (touches `OrgScope`, `RolesEnum`, `UnresolvedOrgContextException`, org-scoped/cascade-inherited migrations or models, or Impersonate Org session handling):
    - Confirm `OrgScope` is applied only to directly org-scoped models, never to `User`.
    - Confirm FK `onDelete` conventions (`restrictOnDelete()` for `users.org_id`, etc.) and the global exception-handler content negotiation for `UnresolvedOrgContextException` are respected.
-   - Confirm the mandatory `tests/Feature/OrgScope/*` and `RolesEnumTest` still pass, and that all three tenancy skills were updated per the auto-update protocol if the tenancy contract changed.
+   - Confirm the mandatory `tests/Feature/OrgScope/*` and `RolesEnumTest` still pass, and that the affected tenancy references were updated per the auto-update protocol if the tenancy contract changed.
 
 === HARNESS & EXECUTION ENVIRONMENT ===
 - **Containerization**: Always execute shell/artisan/composer/pint commands through Laravel Sail using `vendor/bin/sail <command>`.

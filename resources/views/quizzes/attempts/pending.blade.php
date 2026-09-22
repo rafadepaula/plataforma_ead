@@ -1,7 +1,7 @@
 {{--
     Gestor's manual-grading queue: every `QuizAttempt` with
     `status = awaiting_manual_grading`, scoped to the Gestor's own Org (via
-    `QuizAttemptPolicy`/the controller query — see `quizzes-conventions`).
+    `QuizAttemptPolicy`/the controller query — see `quizzes-maintenance` (`resource/conventions.md`)).
 
     `EssayGradingController@pending` contract:
       - `$attempts`  paginated, with `quiz.lesson.module.course` and `user`

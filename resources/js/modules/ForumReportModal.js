@@ -4,7 +4,7 @@
  * `forum/show.blade.php`. Each "Denunciar" button carries
  * `data-postable-type`/`data-postable-id` and opens the modal
  * declaratively through `data-bs-toggle="modal" data-bs-target="#report-modal"`
- * (bootstrap-conventions §9). The hidden fields are filled from
+ * (`bootstrap-maintenance` (`resource/conventions.md`) §9). The hidden fields are filled from
  * `event.relatedTarget` on `show.bs.modal` — the canonical Bootstrap way
  * to know which trigger opened a shared modal — and this module
  * intercepts the modal form's submit to post the reason via the shared

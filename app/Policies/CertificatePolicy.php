@@ -11,7 +11,7 @@ use App\Services\OrgContext;
 /**
  * `Certificate` is cascade-inherited (org implied by
  * `course.org_id`) and has no `OrgScope` of its own (see
- * `tenancy-architecture`), so this Policy is the only place a Gestor's
+ * `tenancy-maintenance` (`resource/architecture.md`)), so this Policy is the only place a Gestor's
  * cross-tenant revocation attempt gets rejected — mirrors
  * `ModulePolicy`'s cascade-authorize style.
  */

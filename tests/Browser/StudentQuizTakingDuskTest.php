@@ -20,7 +20,7 @@ use Tests\DuskTestCase;
  * answering every question in one submission, and seeing the resulting
  * grade/lesson-completion feedback.
  *
- * Agrupado por cadeia de ciclo de vida (ver `testing-conventions`): a
+ * Agrupado por cadeia de ciclo de vida (ver `testing-maintenance` (`resource/conventions.md`)): a
  * jornada auto-corrigida (abrir da sala → responder → aprovar → lição
  * concluída), a jornada dissertativa (aguardando correção manual) e os
  * estados de bloqueio da tela (tentativas esgotadas, tempo esgotado,

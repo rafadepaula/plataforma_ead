@@ -8,7 +8,7 @@ use Illuminate\Foundation\Http\FormRequest;
 /**
  * validates one AJAX CSV-import chunk. The whole file is read
  * and split into batches of up to 50 rows client-side by
- * `CsvImporter.js` (see the `auth-orgs-maintenance` skill for why this is
+ * `CsvImporter.js` (see the `auth-orgs-maintenance` (`resource/maintenance.md`) skill (`resource/maintenance.md`) for why this is
  * client-driven rather than a server-side streamed upload); this request
  * never receives the raw file, only its already-parsed `rows`. `filename`
  * is optional metadata carried on the first chunk only, so the extension

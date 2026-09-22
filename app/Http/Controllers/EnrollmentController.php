@@ -24,7 +24,7 @@ use Illuminate\Support\Facades\Gate;
  * reached via `{course}` alone, `destroy`/`restore` via `{course}` +
  * `{user}` — not a `Route::resource()`, see `routes/web.php`). No separate `Enrollment`
  * model/policy exists — `course_user` is a pivot only (see
- * `courses-architecture`), so every action is authorized against the
+ * `courses-maintenance` (`resource/architecture.md`)), so every action is authorized against the
  * parent `Course` via `CoursePolicy::update`, matching
  * `ModulePolicy`/`LessonPolicy`'s "authorize nested actions against the
  * parent Course" convention.

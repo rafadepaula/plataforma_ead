@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Crypt;
  * Directly org-scoped, with a composite primary key `(setting_key, org_id)`.
  *
  * `org_id` uses a `0` sentinel for "global" settings (see the migration's
- * docblock and the `tenancy-maintenance` skill for the full rationale) —
+ * docblock and the `tenancy-maintenance` (`resource/maintenance.md`) skill (`resource/maintenance.md`) for the full rationale) —
  * a literal nullable `org_id` cannot participate in a MySQL/MariaDB
  * composite `PRIMARY KEY`. `OrgScope` is intentionally NOT applied here:
  * the composite key already scopes lookups explicitly via `forOrg()`, and
@@ -36,7 +36,7 @@ class SystemSetting extends Model
 
     /**
      * `setting_key`s whose `setting_value` holds credential material and
-     * must never be persisted in plaintext (see `dashboard-architecture`).
+     * must never be persisted in plaintext (see `dashboard-maintenance` (`resource/architecture.md`)).
      *
      * @var list<string>
      */

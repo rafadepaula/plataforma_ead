@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * Cascade-inherited: org is implied by `lesson.module.course.org_id`. Do
- * NOT apply `OrgScope` here — see the `tenancy-architecture` skill.
+ * NOT apply `OrgScope` here — see the `tenancy-maintenance` skill (`resource/architecture.md`).
  */
 class Quiz extends Model
 {

@@ -8,7 +8,7 @@
     (`users.index`), que continua restrita à própria Organização e a
     Aluno/Gestor apenas.
 
-    Bootstrap 5.3 composition (ver `bootstrap-conventions` §4/§5): a tela
+    Bootstrap 5.3 composition (ver `bootstrap-maintenance` (`resource/conventions.md`) §4/§5): a tela
     não tem markup Bootstrap cru nem `style=` — é montada a partir de
     `<x-layout.page-header>`, `<x-ui.filter-bar>`, `<x-ui.data-table>`,
     `<x-ui.badge>`, `<x-ui.button>`, `<x-ui.confirm-modal>`,

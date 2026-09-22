@@ -23,7 +23,7 @@ use Tests\DuskTestCase;
  * correção, o guard de submit com pendência e a finalização que remove a
  * tentativa da fila (`status = graded`).
  *
- * Agrupado por cadeia de ciclo de vida (ver `testing-conventions`): é o
+ * Agrupado por cadeia de ciclo de vida (ver `testing-maintenance` (`resource/conventions.md`)): é o
  * mesmo Gestor percorrendo a jornada inteira de autoria + correção numa
  * única sessão de navegador.
  */

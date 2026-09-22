@@ -137,7 +137,7 @@ class LessonController extends Controller
         }
 
         // soft-delete only; `lesson_progress` rows must never be
-        // cascade-purged by this action (see `courses-architecture`).
+        // cascade-purged by this action (see `courses-maintenance` (`resource/architecture.md`)).
         $lesson->delete();
 
         return redirect()->route('modules.lessons.index', $module)

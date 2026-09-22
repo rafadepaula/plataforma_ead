@@ -13,7 +13,7 @@ use Tests\TestCase;
  * `HelpArticleResolverService` for a given viewer: the impersonated org
  * for an Admin, the bound org for a Gestor/Aluno, or `null` for a guest
  * (Landing Page, `/convite/*`, `/validar-certificado/*`) — see
- * `tenancy-conventions`.
+ * `tenancy-maintenance` (`resource/conventions.md`).
  */
 class HelpButtonTest extends TestCase
 {
@@ -22,7 +22,7 @@ class HelpButtonTest extends TestCase
         $org = Organization::factory()->create();
 
         // `HelpArticle::withoutEvents()` is required here — `OrgScope`'s
-        // `creating` hook (see `tenancy-conventions`) always overwrites
+        // `creating` hook (see `tenancy-maintenance` (`resource/conventions.md`)) always overwrites
         // `org_id` with the acting user's own org, so a `global()` article
         // could not otherwise be created while logged in as $org's gestor.
         $global = HelpArticle::withoutEvents(fn () => HelpArticle::factory()->global()->create(['target_page_key' => 'dashboard']));

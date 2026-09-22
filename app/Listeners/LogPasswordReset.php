@@ -12,7 +12,7 @@ use Illuminate\Auth\Events\PasswordReset;
  * `Illuminate\Auth\Events\PasswordReset` event, fired by
  * `NewPasswordController::store()` once the single-use reset token is
  * consumed. Covers the completion stage only — see
- * `audit-logs-architecture` for why the request stage
+ * `audit-logs-maintenance` (`resource/architecture.md`) for why the request stage
  * (`PasswordResetLinkController::store()`) does not also emit an audit
  * event under the same `password.reset` name.
  */

@@ -17,7 +17,7 @@ use Tests\DuskTestCase;
  * read then redirects to its `data.action_url`, and "marcar todas como
  * lidas" clears the badge.
  *
- * Agrupado por cadeia de ciclo de vida (ver `testing-conventions`): toda a
+ * Agrupado por cadeia de ciclo de vida (ver `testing-maintenance` (`resource/conventions.md`)): toda a
  * interação do sino (badge → dropdown → item individual → marcar todas) é
  * uma jornada contínua num único método. A visibilidade por papel exige
  * três atores distintos, então permanece em método próprio.

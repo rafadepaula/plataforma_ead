@@ -13,7 +13,7 @@ use Tests\DuskTestCase;
  *  E2E — upload a CSV, observe the chunked AJAX progress bar, and
  * verify the final course roster reflects every imported row.
  *
- * Agrupado por cadeia de ciclo de vida (ver `testing-conventions`): a
+ * Agrupado por cadeia de ciclo de vida (ver `testing-maintenance` (`resource/conventions.md`)): a
  * jornada de importação (upload válido → segundo upload com e-mail já
  * existente em outra Organização) é um método, as rejeições de arquivo são
  * exercitadas na mesma sessão de formulário em outro, e o bloqueio do Admin

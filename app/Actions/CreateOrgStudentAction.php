@@ -29,7 +29,7 @@ use Illuminate\Support\Str;
  *
  * The account is born `pending` with an unknowable random password: the
  * Aluno finalizes their own registration by redeeming the unique
- * `StudentInvitation` issued here (see `invitations-architecture`).
+ * `StudentInvitation` issued here (see `invitations-maintenance` (`resource/architecture.md`)).
  */
 class CreateOrgStudentAction
 {

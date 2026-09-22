@@ -12,7 +12,7 @@ use Tests\DuskTestCase;
  * E2E coverage of the Gestor's completion-rule CRUD
  * screen (`courses.completion-rules.*`).
  *
- * Agrupado por cadeia de ciclo de vida (ver `testing-conventions`): criar a
+ * Agrupado por cadeia de ciclo de vida (ver `testing-maintenance` (`resource/conventions.md`)): criar a
  * regra → vê-la na tabela após recarregar → removê-la é uma jornada única.
  */
 class CourseCompletionRuleTest extends DuskTestCase

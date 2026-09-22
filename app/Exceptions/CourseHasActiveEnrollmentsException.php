@@ -9,7 +9,7 @@ use RuntimeException;
  * when a Gestor/Admin attempts to soft-delete a `Course` that still has at
  * least one `active` `course_user` enrollment. Must never surface as a raw
  * 500 — mapped globally in `bootstrap/app.php` to an HTTP 422 response
- * (see `courses-conventions` skill), the same pattern used for
+ * (see `courses-maintenance` skill (`resource/conventions.md`)), the same pattern used for
  * `UnresolvedOrgContextException`.
  */
 class CourseHasActiveEnrollmentsException extends RuntimeException

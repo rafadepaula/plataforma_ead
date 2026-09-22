@@ -10,7 +10,7 @@ use Illuminate\Foundation\Http\FormRequest;
  * blank value means "keep the currently stored password" (see
  * `SystemSettingController::update()`), never overwritten with an empty
  * string. Field names must stay in sync with
- * `resources/views/settings/edit.blade.php` (see `dashboard-conventions`).
+ * `resources/views/settings/edit.blade.php` (see `dashboard-maintenance` (`resource/conventions.md`)).
  */
 class UpdateSystemSettingRequest extends FormRequest
 {

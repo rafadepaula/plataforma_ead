@@ -16,7 +16,7 @@ return new class extends Migration
      * references, and many events (guest `login.failed`, Admin-global
      * actions with no active Organization) legitimately have a null
      * `org_id` from the moment they're written — see the
-     * `audit-logs-architecture` skill for the `OrgScope`
+     * `audit-logs-maintenance` skill (`resource/architecture.md`) for the `OrgScope`
      * creating-hook-bypass rationale.
      */
     public function up(): void

@@ -35,7 +35,7 @@
 </div>
 
 {{--
-    Container único de toasts do Bootstrap (bootstrap-conventions §9).
+    Container único de toasts do Bootstrap (`bootstrap-maintenance` (`resource/conventions.md`) §9).
     O id `notification-container` é contrato: `NotificationService` injeta os
     `.toast` aqui e a suíte Dusk o asserta.
 --}}

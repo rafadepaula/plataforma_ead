@@ -79,7 +79,7 @@ class CheckSkillsCommand extends Command
         }
 
         $this->info(sprintf(
-            'Harness skill audit passed: %d feature(s) verified with required 3-skill coverage.',
+            'Harness skill audit passed: %d feature(s) verified with required single-skill coverage.',
             $auditResult['feature_count']
         ));
 
@@ -87,7 +87,8 @@ class CheckSkillsCommand extends Command
     }
 
     /**
-     * Audit skills directory for 3 mandatory skills per feature.
+     * Audit skills directory for the mandatory files of each feature skill
+     * ({feature}-maintenance/SKILL.md + resource/ references).
      *
      * @return array{success: bool, feature_count: int, errors: array<int, string>}
      */
@@ -114,23 +115,22 @@ class CheckSkillsCommand extends Command
                 continue;
             }
 
-            if (preg_match('/^([a-z0-9_-]+)-(architecture|conventions|maintenance)$/', $entry, $matches)) {
-                $feature = $matches[1];
-                $type = $matches[2];
-                $features[$feature][$type] = file_exists($fullPath.'/SKILL.md');
+            if (preg_match('/^([a-z0-9_-]+)-maintenance$/', $entry, $matches) && is_dir($fullPath.'/resource')) {
+                $features[$matches[1]] = $fullPath;
             }
         }
+
+        $requiredFiles = ['SKILL.md', 'resource/architecture.md', 'resource/conventions.md', 'resource/maintenance.md'];
 
         $errors = [];
         $validFeatures = 0;
 
-        foreach ($features as $feature => $types) {
-            $requiredTypes = ['architecture', 'conventions', 'maintenance'];
+        foreach ($features as $feature => $fullPath) {
             $missing = [];
 
-            foreach ($requiredTypes as $required) {
-                if (empty($types[$required])) {
-                    $missing[] = "{$feature}-{$required}/SKILL.md";
+            foreach ($requiredFiles as $required) {
+                if (! is_file($fullPath.'/'.$required)) {
+                    $missing[] = "{$feature}-maintenance/{$required}";
                 }
             }
 

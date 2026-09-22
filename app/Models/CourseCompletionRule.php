@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * Cascade-inherited: org is implied by `course.org_id`. Do NOT apply
- * `OrgScope` here — see the `tenancy-architecture` skill. `target_id` is a
+ * `OrgScope` here — see the `tenancy-maintenance` skill (`resource/architecture.md`). `target_id` is a
  * pseudo-polymorphic pointer with no real DB foreign key — its integrity
  * (pointing to `modules.id` or `quizzes.id` depending on `rule_type`) is
  * validated at the application layer only.

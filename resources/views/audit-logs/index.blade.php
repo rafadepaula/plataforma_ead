@@ -4,19 +4,19 @@
     Audit is Admin-only (`role:admin`) — the legacy Gestor-prefixed
     counterpart route was removed.
 
-    Bootstrap 5.3 composition (see `bootstrap-conventions` §4/§5): the screen
+    Bootstrap 5.3 composition (see `bootstrap-maintenance` (`resource/conventions.md`) §4/§5): the screen
     holds no raw Bootstrap markup and no `style=` — it is assembled from
     `<x-layout.page-header>`, `<x-ui.filter-bar>`, `<x-ui.data-table>`,
     `<x-ui.badge>`, `<x-ui.button>`, `<x-ui.empty-state>` and
     `<x-ui.pagination>`.
 
-    Expected variables (Bucket B contract — see `audit-logs-conventions`):
+    Expected variables (Bucket B contract — see `audit-logs-maintenance` (`resource/conventions.md`)):
       - `$auditLogs`        `AuditLog::query()->...->paginate(25)->withQueryString()`,
                              each row with its `user` relation eager-loaded.
       - `$organizations`    `Organization::pluck('name', 'id')` — Admin only.
       - `$eventCategories`  `[string $key => string $label]` map used to
                              populate the "Evento" dropdown (see
-                             `audit-logs-conventions` for the exact keys).
+                             `audit-logs-maintenance` (`resource/conventions.md`) for the exact keys).
 
     The current route name (`admin.audit-logs.index`) is read at render
     time to resolve both the filter form's own `action` and the

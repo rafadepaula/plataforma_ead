@@ -27,7 +27,7 @@ use Throwable;
  * `validation_hash = sha256(user_id.course_id.formatted_issued_at.APP_KEY)`
  * per . `formatted_issued_at` uses the fixed
  * `Y-m-d H:i:s` Carbon format — this exact format must never be
- * re-derived differently elsewhere (see the `certificates-conventions`
+ * re-derived differently elsewhere (see the `certificates-maintenance` (`resource/conventions.md`)
  * skill).
  *
  * Idempotent via `certificates`' `UNIQUE(user_id, course_id)`: an existing

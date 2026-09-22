@@ -80,7 +80,7 @@ public function test_gestor_user_management_full_lifecycle(): void
 - Before write new E2E test, look for **existing chain already covering
   that journey and extend it**. New file per module is retired pattern.
 
-Full rule, with canonical example, lives in `testing-conventions`.
+Full rule, with canonical example, lives in `testing-maintenance` (`resource/conventions.md`).
 
 ## Quick Reference
 
@@ -311,7 +311,7 @@ drop-handling logic as a plain JS function (e.g. `window.ModuleReorder
 .persistOrder(list)` in `ModuleReorder.js`), reorder the DOM nodes
 with `$browser->script()` and then invoke that function directly — the same
 call path a real `drop` event would trigger — rather than trying to fire
-synthetic drag events. See `courses-maintenance`'s "Diagnosing a Dusk
+synthetic drag events. See `courses-maintenance` (`resource/maintenance.md`)'s "Diagnosing a Dusk
 Reorder Test That Times Out" section for the concrete example.
 
 **Project note (`script()` is not chainable):** `Browser::script()` returns

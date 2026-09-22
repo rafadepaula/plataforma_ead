@@ -1,39 +1,28 @@
 ---
 name: seeders-maintenance
 description: >
-  Debug, test, idempotency guide for Database Seeders: mandatory
-  PHPUnit tests (`DatabaseSeederProductionTest`, `DatabaseSeederDevelopmentTest`,
-  `SeederIdempotencyTest`), duplicate key fixes via firstOrCreate/updateOrCreate,
-  event/notification suppression, org_id context preservation.
+  Database seeders: DatabaseSeeder environment dispatch, RolesAndPermissionsSeeder,
+  SystemSettingSeeder, AdminSeeder, app()->environment('production') test-data block,
+  idempotency via firstOrCreate/updateOrCreate, event/notification suppression,
+  org_id context preservation. Use when writing or editing Seeder classes in
+  database/seeders/, or when `DatabaseSeederProductionTest`,
+  `DatabaseSeederDevelopmentTest` or `SeederIdempotencyTest` fails, a duplicate-key
+  error appears on re-seed, or a seeder fires events/notifications it should not.
 license: MIT
 metadata:
   feature: seeders
-  role: maintenance
+  roles: [architecture, conventions, maintenance]
 ---
 
-# Seeders Maintenance
+# Database Seeders (`seeders-maintenance`)
 
-## Mandatory Test Coverage
+Database seeders: `DatabaseSeeder` environment dispatch, RolesAndPermissions/SystemSetting/Admin seeders, production test-data block, idempotency via `firstOrCreate`/`updateOrCreate`, explicit `org_id` keeping tenant integrity.
 
-These PHPUnit tests guard the seeder contract. Keep green:
+The detailed knowledge for this module lives in the reference files below
+— read only the one the task needs:
 
-- `tests/Feature/Seeders/DatabaseSeederProductionTest.php` — production run seeds baseline only (roles, admin, settings, help articles), no fake orgs/users/courses.
-- `tests/Feature/Seeders/DatabaseSeederDevelopmentTest.php` — seeding in local/development/testing creates the two demo tenants (`localhost.ligacerto` and `localhost.informatica`), the 5 accounts (gestor + aluno + professor on Liga Certo, gestor + aluno on Informática), the two courses ("Curso de Eletricista" with three modules and quizzes + enrollment + completion rules; "Introdução à Informática Básica" with one module) with explicit `org_id`, no mail/events leak.
-- `tests/Feature/Seeders/SeederIdempotencyTest.php` — `php artisan db:seed` run many times: no duplicate key exception, table counts identical.
-
-Run:
-
-```bash
-vendor/bin/sail artisan test --filter=DatabaseSeederDevelopmentTest
-```
-
-## Failure Modes
-
-- **Duplicate key / unique constraint `QueryException` on re-run:**
-  Seeder used bare `Model::create()` or raw insert. Switch to `firstOrCreate`/`updateOrCreate` keyed on unique natural key (`token`, `validation_hash`, `email`, `slug`, `id`).
-
-- **`UnresolvedOrgContextException` while seeding:**
-  `OrgScope` models (`Course`, `HelpArticle`) have no HTTP session. Pass `org_id` explicitly, or wrap reads in `withoutGlobalScopes()` (`OrgScope.php` `creating` hook at `app/Models/Traits/OrgScope.php:52-54`; `CourseSeeder.php:62`). `withoutEvents()` does NOT bypass the `creating` hook — it only suspends observers/listeners.
-
-- **Unwanted mail / event side effects:**
-  Use the `WithoutModelEvents` trait on the seeder (or `Model::withoutEvents(...)`), `Mail::fake()`, `Notification::fake()` inside seeder or test setup.
+| Reference | Read when |
+| --- | --- |
+| `resource/architecture.md` | How `DatabaseSeeder` dispatches per environment, which system seeders exist, how the production test-data block works, idempotency and tenant-integrity rules. |
+| `resource/conventions.md` | Writing or editing Seeder classes in `database/seeders/`. |
+| `resource/maintenance.md` | `DatabaseSeederProductionTest`, `DatabaseSeederDevelopmentTest`, or `SeederIdempotencyTest` fails; duplicate keys on re-seed; event/notification side effects; org_id context lost. |

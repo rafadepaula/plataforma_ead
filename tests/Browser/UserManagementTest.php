@@ -11,7 +11,7 @@ use Tests\DuskTestCase;
 /**
  * E2E coverage for user management screens.
  *
- * Agrupado por cadeia de ciclo de vida (ver `testing-conventions`): a
+ * Agrupado por cadeia de ciclo de vida (ver `testing-maintenance` (`resource/conventions.md`)): a
  * jornada do Gestor sobre um ALUNO matriculado (visualizar na listagem →
  * editar → inativar → consequência no login) é um único método, a jornada
  * de matrícula (matricular → revogar) é outra, e as rejeições de

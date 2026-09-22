@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  * @extends Factory<Course>
  *
  * `org_id` is intentionally left out of the default definition (see
- * `tenancy-conventions`): callers must set it explicitly, either via
+ * `tenancy-maintenance` (`resource/conventions.md`)): callers must set it explicitly, either via
  * `->inOrg($org)` / `->for(Organization::factory())`, or by leaving it
  * unset so `OrgScope::booted()`'s `creating` hook auto-assigns/validates
  * it from the acting user's session context.

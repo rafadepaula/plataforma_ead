@@ -13,7 +13,7 @@
  * cannot be a plain `data-bs-toggle="modal"`: this module renders the
  * clicked row's JSON and then opens the modal imperatively through
  * `bootstrap.Modal.getOrCreateInstance()` (never `new`, per
- * `bootstrap-conventions` §9). `ModalManager` and the `.dialog-backdrop`
+ * `bootstrap-maintenance` (`resource/conventions.md`) §9). `ModalManager` and the `.dialog-backdrop`
  * display toggling it required are gone — a `.modal.fade` without
  * `.show` is already hidden by Bootstrap's own CSS.
  */

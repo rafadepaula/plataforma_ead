@@ -13,7 +13,6 @@ metadata:
   harness: laravel-sail
   parallel: false
   skills:
-    - bootstrap-conventions
     - bootstrap-maintenance
 ---
 

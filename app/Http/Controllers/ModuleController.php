@@ -19,7 +19,7 @@ use Throwable;
  *  Module CRUD, nested under a Course (`courses.modules`, shallow —
  * `index`/`create`/`store` are reached via `{course}`, `edit`/`update`/
  * `destroy` via `{module}` alone). `Module` has no `OrgScope` of its own
- * (see `courses-architecture`), so every action is guarded by
+ * (see `courses-maintenance` (`resource/architecture.md`)), so every action is guarded by
  * `ModulePolicy`, which independently verifies the parent Course's
  * `org_id`.
  */

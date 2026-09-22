@@ -18,7 +18,7 @@ class HelpCenterTest extends TestCase
     {
         // Created via `withoutEvents()` before/independently of the acting
         // Admin session — `OrgScope`'s `creating` hook (see
-        // `tenancy-conventions`) would otherwise overwrite `org_id` (or
+        // `tenancy-maintenance` (`resource/conventions.md`)) would otherwise overwrite `org_id` (or
         // throw `UnresolvedOrgContextException`, since a system Admin
         // with no active "Impersonate Org" session has neither its own
         // `org_id` nor a `session('active_org_id')`) rather than leaving

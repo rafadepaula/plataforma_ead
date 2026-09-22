@@ -5,7 +5,7 @@
     restricted to `role:admin|gestor` and scoped to the Gestor's own Org
     (`ForumReport` carries no `OrgScope` — the controller must resolve
     each report's postable's `org_id` and filter manually, or join through
-    the topic; see the `certificates-architecture` skill's cascade-scoping
+    the topic; see the `certificates-maintenance` skill (`resource/architecture.md`)'s cascade-scoping
     precedent for the same pseudo-polymorphic-without-FK shape).
 
     Expected variables:

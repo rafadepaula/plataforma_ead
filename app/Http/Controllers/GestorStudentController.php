@@ -34,7 +34,7 @@ use Throwable;
  * `deleteStudent`, which are the enforcement point).
  *
  * Deliberately a separate controller from the Admin-only
- * `UserController`/`UserAdminController` stack (see `auth-orgs-conventions`):
+ * `UserController`/`UserAdminController` stack (see `auth-orgs-maintenance` (`resource/conventions.md`)):
  * there is no role-change surface here. New Alunos enter the Organization
  * through this controller's own one-step create form (`create`/`store`,
  * with the course picker and the unique invitation link), the shared CSV

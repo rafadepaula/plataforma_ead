@@ -11,7 +11,7 @@ use Tests\TestCase;
  * `users.org_id` uses `ON DELETE RESTRICT`, not
  * `CASCADE`. An Organization with existing users can be soft-deleted, but
  * a hard delete must fail at the database level while any user still
- * references it (see the `tenancy-maintenance` skill).
+ * references it (see the `tenancy-maintenance` (`resource/maintenance.md`) skill (`resource/maintenance.md`)).
  */
 class UsersOrganizationForeignKeyTest extends TestCase
 {

@@ -19,7 +19,7 @@ use Tests\DuskTestCase;
  * active-highlight behaviour on a sub-route. Mirrors the Feature-level
  * `RoleMenuVisibilityTest` but drives a real browser.
  *
- * Agrupado por cadeia de ciclo de vida (ver `testing-conventions`): há uma
+ * Agrupado por cadeia de ciclo de vida (ver `testing-maintenance` (`resource/conventions.md`)): há uma
  * cadeia por ator (Admin, Gestor, Aluno), porque a navegação é justamente
  * função do ator e do contexto — não uma tela isolada por módulo.
  */

@@ -1,0 +1,142 @@
+# Dashboard Architecture
+
+## Overview
+
+The dashboard domain have 3 pieces sharing one screen and one settings screen:
+
+1. **Admin/Gestor Dashboard** (`GET /admin/dashboard`, route name **must** be
+   exactly `admin.dashboard` — sidebar (`components/layout/sidebar.blade.php:4-19`)
+   renders `$navigationSections` from `NavigationRegistry` with no
+   `Route::has` guard; the only `Route::has('admin.dashboard')` fallback left
+   lives in `tenants/{landing_view}/landing.blade.php` and (for non-Admin shells)
+   degrade to `#` if name ever drift). Render 4 stat cards (`active_students`,
+   `certificates_issued`, `completion_rate`, `courses_count`) and "Matrículas
+   recentes" table, per the mockup's exact
+   Blade/data contract.
+2. **Streamed CSV export** (`GET /admin/reports/{type}/export`, route name
+   `reports.export`). Must stream via `response()->streamDownload()` plus
+   `chunk()`/`lazy()`, never buffer full dataset into memory first (128M
+   shared-hosting constraint).
+3. **`system_settings` org-override editing** (`GET`/`PUT /admin/settings`, route
+   names `settings.edit`/`settings.update`) for SMTP/logo/signature, built on top
+   of pre-existing `system_settings` table/model (do not recreate — see Schema
+   below) via `SettingService`.
+
+Both Dashboard and CSV export gated `role:admin|gestor` with no dedicated Policy
+class (mirror `quiz-attempts.pending`/`forum-moderation.index` precedent of
+role-middleware-only for cross-cutting, non-resource screens — see
+`quizzes-maintenance` (`resource/conventions.md`)/`forum-maintenance` (`resource/conventions.md`)).
+
+## Schema (already exists, do not recreate)
+
+| Table | Key columns | Tenancy |
+| --- | --- | --- |
+| `system_settings` | composite PK `(org_id, key)`, `org_id` uses a `GLOBAL_ORG_ID` **sentinel value (not `NULL`)** for the global row, `value` (text/JSON) | **Not** `OrgScope`-scoped — model deliberately opts out (composite-PK sentinel design incompatible with global scope's implicit `WHERE org_id = ...`) |
+
+`SystemSetting::forKey()/forOrg()` query helpers already exist.
+`SettingService` thin `get()`/`set()`/`forget()` wrapper around them with
+`Cache::remember()`, mirroring `HelpArticleResolverService`
+org-specific-then-global fallback pattern (see `help-maintenance` (`resource/architecture.md`)) but keyed by
+`GLOBAL_ORG_ID` sentinel instead of nullable `org_id`.
+
+## Why Metrics Service Cannot Just Rely on `OrgScope`
+
+`Course` and `StudentInvitation` carry `OrgScope` and resolve
+admin-global-vs-everyone-else automatically: the Admin branch filters by
+`session('active_org_id')` (Impersonate Org), every other role by the
+request-host Organization (`OrgContext::current()->orgId()`) — host-based
+tenancy (see `tenancy-maintenance` (`resource/architecture.md`)). `Certificate`, `course_user` pivot, and
+`User` do **not** carry `OrgScope`; `Certificate`/`course_user`
+cascade-inherited through `courses.org_id` (mirror `certificates-maintenance` (`resource/architecture.md`)
+note on `Certificate` never carrying `OrgScope` directly), and a `User` has no
+`org_id` at all — the per-Organization account is the `credentials` row
+(`credentials.org_id` + `credentials.status`).
+`DashboardMetricsService` must therefore:
+
+- Resolve `Course::query()` first (which **does** get `OrgScope` filtering "for
+  free" for Gestor, or Admin impersonating Org), then join
+  `course_user`/`Certificate`/`User` through `courses.org_id`/`course_id` rather
+  than query those tables directly and hope global scope narrow them. It will
+  not.
+- For Admin with **no** active "Impersonate Org" session, replicate `OrgScope`'s
+  own "admin + no `active_org_id` in session => no `WHERE` clause added" branch
+  **manually** for every raw `Certificate`/`course_user`/`User` query, since none
+  of those 3 models inherit that behavior from scope.
+
+## CSV Streaming Contract
+
+CSV builder (`CsvStreamExportService`, `CsvStreamExportService.php:25`) wrap
+`response()->streamDownload()` and write with `fputcsv()` inside
+`Model::query()->chunk(500, ...)` or `->lazy()` loop. Only approach keeping peak
+memory O(1) regardless of dataset size. Parameterized by same
+org-filter branching described above (mirror `DashboardMetricsService` scoping,
+not second ad-hoc implementation) and by report `type` (`enrollments`,
+`certificates`, ...). Non-Admin `org_id` always resolved from the request host
+via `OrgContext::current()->orgId()` server-side, never trusted from request
+input. Gestor passing
+`?org_id=<anotherOrg>` must 403, not silently scope to own org (see
+`resource/conventions.md` for exact guard).
+
+## Organizations Summary Table (Admin-Global-Only)
+
+`admin.dashboard` also renders a per-Organization "Resumo das Organizações"
+table, but **only** for an Admin viewing globally (no active Impersonate Org).
+`DashboardController@index` computes this gate once as `$isGlobalAdminView`
+(`$user->hasRole(RolesEnum::ADMIN->value) && $orgId === null`, where `$orgId`
+is the same `resolveViewingOrgId()` result used for the stat cards/recent
+enrollments) and passes `organizationsSummary` to the view as `null` whenever
+`$isGlobalAdminView` is `false` — Gestor and an Admin impersonating an Org never
+receive rows, not even an empty collection. Reuse this controller-resolved flag
+rather than re-deriving role/impersonation state elsewhere (e.g. in the view or
+a new consumer); it is the one place the gate is decided.
+
+`DashboardMetricsService::organizationsSummary()` itself takes no `$orgId` (it
+is unconditionally "all Organizations", called only when the controller has
+already gated it) and returns one row per `Organization` via 3 correlated
+subqueries (N+1-free):
+
+- `students_count` — distinct `users` with the spatie role `aluno` joined
+  through `credentials`: only rows with `credentials.status = 'active'` AND
+  `credentials.org_id = organizations.id` count (the per-org account, not
+  enrollment-derived — different shape than `getStats()`'s
+  `active_students`, which is enrollment-derived). A student whose
+  credential in the org was deactivated drops out of the count.
+- `courses_count` — raw `DB::table('courses')` filtered by
+  `courses.org_id = organizations.id` **plus `whereNull('courses.deleted_at')`**
+  (soft-deleted courses excluded), deliberately bypassing `Course`'s
+  `OrgScope` so an Admin sees every Organization's courses regardless of the
+  acting user's own tenant context.
+- `certificates_count` — certificates joined through `courses.org_id`,
+  excluding revoked ones (mirrors `certificatesIssuedCount()`'s
+  `whereNull('certificates.revoked_at')`).
+
+Organizations with no related rows are zero-filled, not omitted.
+
+View contract (`resources/views/dashboard/index.blade.php`, only rendered
+inside `@isset($organizationsSummary)`): `<x-ui.data-table>` with headers
+`['Organização', 'Alunos', 'Cursos', 'Certificados']`, `dusk` selectors
+`organizations-summary-table` (table), `organization-summary-row-{id}` (row),
+and `org-summary-students-{id}` / `org-summary-courses-{id}` /
+`org-summary-certificates-{id}` (per-metric cells) — see `resource/conventions.md`
+for the full selector table.
+
+Mandatory test coverage (see `resource/maintenance.md` for
+exact method names): 3 `OrgDashboardTest` cases (Admin-global sees it with
+correct counts, Gestor never receives it, Admin-impersonating never receives
+it), 4 `DashboardMetricsServiceTest` cases (counts, `OrgScope`-bypass, zero-fill,
+soft-deleted-Organization exclusion), and `DashboardDuskTest` assertions that
+the table is present for the Admin-global lifecycle and `assertMissing` for the
+Gestor lifecycle.
+
+## Relationship to Other Modules
+
+- Reuse `HelpArticleResolverService` org-then-global fallback shape (see
+  `help-maintenance` (`resource/architecture.md`)) as template for `SettingService`, but against sentinel-PK
+  `system_settings` schema rather than nullable-`org_id` table.
+- Reuse `FileUploadService` (see `courses-maintenance` (`resource/conventions.md`)) for settings screen logo
+  upload, same convention as `Organization` `logo_path` field.
+- Dashboard `recentEnrollments` shape (`student_name`, `student_initials`,
+  `student_email`, `course_name`, `progress_percentage`,
+  `status_label`, `status_badge_variant`, `DashboardMetricsService.php:136-160`) presentation data computed by service,
+  not raw `course_user` row. Do not leak pivot column names (`status`,
+  `progress_percentage`) into view; translate them in `DashboardMetricsService`.

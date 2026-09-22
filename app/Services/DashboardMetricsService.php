@@ -20,7 +20,7 @@ use Illuminate\Support\Str;
  *
  * `Certificate` and `course_user` (the `courses`↔`users` pivot) carry no
  * `OrgScope` of their own (cascade-inherited tenancy through `Course` —
- * see the `tenancy-architecture` skill), so every method here receives an
+ * see the `tenancy-maintenance` skill (`resource/architecture.md`)), so every method here receives an
  * explicit, already-resolved `$orgId` (`null` meaning "no filter", i.e. an
  * Admin with no active Impersonate Org context) and joins through
  * `courses.org_id` by hand — it never reads `Auth::user()`/
@@ -82,7 +82,7 @@ class DashboardMetricsService
      * - `pending_essays`: `QuizAttempt`s awaiting manual grading, joined
      *   through `quiz.lesson.module.course.org_id` (none of those tables
      *   carry `OrgScope` — cascade-inherited tenancy, see
-     *   `tenancy-architecture`).
+     *   `tenancy-maintenance` (`resource/architecture.md`)).
      * - `forum_reports`: pending `ForumReport`s. `postable_type`/
      *   `postable_id` are a pseudo-polymorphic pair with no DB FK (see
      *   `ForumReport::postable()`), so this unions the two concrete

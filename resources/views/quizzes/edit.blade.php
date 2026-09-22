@@ -16,7 +16,7 @@
         `POST route('quiz-questions.reorder', $quiz)` (same
         `{ ordered_ids: [...] }` shape as `modules.reorder`/`lessons.reorder`,
         consumed by the existing `ModuleReorder.js` — no new reorder JS
-        needed here, see `quizzes-conventions`).
+        needed here, see `quizzes-maintenance` (`resource/conventions.md`)).
 --}}
 @extends('layouts.app')
 

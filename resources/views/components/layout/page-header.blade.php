@@ -3,7 +3,7 @@
 
     Vive em `layout/` e não em `ui/` porque é peça estrutural do chrome da
     aplicação: singular por página, sempre o primeiro bloco do `@section`
-    (`bootstrap-conventions` §2). Substitui o bloco `<div style="display:flex…">`
+    (`bootstrap-maintenance` (`resource/conventions.md`) §2). Substitui o bloco `<div style="display:flex…">`
     + `<span>kicker</span>` + `<h1 style="font-family:var(--font-heading)…">`
     repetido em ~19–25 telas de index/create/edit.
 

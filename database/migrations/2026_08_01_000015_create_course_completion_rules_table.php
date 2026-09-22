@@ -13,7 +13,7 @@ return new class extends Migration
      * `courses`. `target_id` is a pseudo-polymorphic pointer (to
      * `modules.id` or `quizzes.id` depending on `rule_type`) with
      * intentionally NO database foreign key — integrity is validated at
-     * the application layer only (see `tenancy-conventions` skill).
+     * the application layer only (see `tenancy-maintenance` skill (`resource/conventions.md`)).
      */
     public function up(): void
     {

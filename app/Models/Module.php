@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * Cascade-inherited: org is implied by `course.org_id`. Do NOT apply
- * `OrgScope` here — see the `tenancy-architecture` skill.
+ * `OrgScope` here — see the `tenancy-maintenance` skill (`resource/architecture.md`).
  */
 class Module extends Model
 {

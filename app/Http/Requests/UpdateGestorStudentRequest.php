@@ -11,7 +11,7 @@ use Illuminate\Validation\Rule;
  *  validates the Organizador's edits to one of their
  * own Organization's Alunos (`gestor.students.update`). Deliberately a
  * separate Form Request from `UpdateUserRequest` (see
- * `auth-orgs-conventions` — one Form Request per actor/surface, never a
+ * `auth-orgs-maintenance` (`resource/conventions.md`) — one Form Request per actor/surface, never a
  * mode flag): there is NO `role` field here — an Organizador manages
  * Alunos and can never promote/demote anyone — and `org_id` is absent
  * because it is immutable via this endpoint by design.

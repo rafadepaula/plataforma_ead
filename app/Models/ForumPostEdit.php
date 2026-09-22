@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * Public edit-history log for `ForumTopic`/`ForumReply` .
  * `postable_type`/`postable_id` are a pseudo-polymorphic pair with no real
  * database foreign key — integrity is validated at the application layer.
- * Do NOT apply `OrgScope` here — see the `tenancy-architecture` skill.
+ * Do NOT apply `OrgScope` here — see the `tenancy-maintenance` skill (`resource/architecture.md`).
  */
 class ForumPostEdit extends Model
 {

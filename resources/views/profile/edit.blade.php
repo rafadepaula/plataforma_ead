@@ -3,7 +3,7 @@
     `{user}` route param exists, the target is always `Auth::user()`.
      global help coverage already comes from `layouts.app`'s
     topbar, which mounts `<x-help-button :key="Route::currentRouteName()" />`
-    on every authenticated screen — see `help-conventions` skill: a
+    on every authenticated screen — see `help-maintenance` skill (`resource/conventions.md`): a
     second explicit `<x-help-button>` here would render two buttons keyed
     to the same route, so this page intentionally does not add one
     (unlike `convite/show.blade.php`/`public/certificates/show.blade.php`,

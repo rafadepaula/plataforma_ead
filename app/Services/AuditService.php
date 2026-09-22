@@ -14,7 +14,7 @@ use Throwable;
  * independent of the DB outcome).
  *
  * The DB write goes through `AuditLog::withoutEvents()` to bypass
- * `OrgScope`'s `creating` hook — see the `audit-logs-architecture` skill.
+ * `OrgScope`'s `creating` hook — see the `audit-logs-maintenance` skill (`resource/architecture.md`).
  */
 class AuditService
 {

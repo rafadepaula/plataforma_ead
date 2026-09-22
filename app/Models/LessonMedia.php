@@ -15,7 +15,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * must read through `Lesson::media()` instead of those columns.
  *
  * Cascade-inherited: org is implied by `lesson.module.course.org_id`. Do NOT
- * apply `OrgScope` here — see the `tenancy-architecture` skill.
+ * apply `OrgScope` here — see the `tenancy-maintenance` skill (`resource/architecture.md`).
  */
 class LessonMedia extends Model
 {

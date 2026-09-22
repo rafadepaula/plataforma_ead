@@ -14,7 +14,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  * full result set into an array/Collection first.
  *
  * `certificates`/`course_user` are cascade-inherited tenancy (no
- * `OrgScope` of their own — see `dashboard-architecture`), so every query
+ * `OrgScope` of their own — see `dashboard-maintenance` (`resource/architecture.md`)), so every query
  * here joins through `courses.org_id` and takes an explicit,
  * already-resolved `$orgId` (`null` meaning "no filter", i.e. an Admin
  * with no active Impersonate Org context) rather than reading

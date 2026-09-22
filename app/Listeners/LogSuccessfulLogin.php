@@ -9,7 +9,7 @@ use Illuminate\Auth\Events\Login;
 
 /**
  * auto-discovered (no `EventServiceProvider` in this
- * codebase, see `audit-logs-architecture`) listener for the stock
+ * codebase, see `audit-logs-maintenance` (`resource/architecture.md`)) listener for the stock
  * `Illuminate\Auth\Events\Login` event, fired on every successful
  * authentication. Logs `login.success` with the actual password value
  * never touched — only the fixed `'[REDACTED]'` placeholder is recorded

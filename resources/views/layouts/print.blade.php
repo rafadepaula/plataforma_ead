@@ -5,7 +5,7 @@
     MUST NOT `@vite` app.scss, pull in Bootstrap, or reference any design
     token. Views extending it (currently only `certificates/pdf.blade.php`)
     keep their own literal-value `<style>` block and inline `style=`
-    attributes — see `certificates-conventions` and the public-screens guideline for why this
+    attributes — see `certificates-maintenance` (`resource/conventions.md`) and the public-screens guideline for why this
     screen is a deliberate exception to the rest of the front-end
     migration.
 --}}

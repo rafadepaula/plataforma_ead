@@ -11,7 +11,7 @@ use Tests\DuskTestCase;
  * E2E coverage of the profile self-service
  * screen (`profile.edit`/`profile.update`/`password.update`).
  *
- * Agrupado por cadeia de ciclo de vida (ver `testing-conventions`): a
+ * Agrupado por cadeia de ciclo de vida (ver `testing-maintenance` (`resource/conventions.md`)): a
  * jornada de autoatendimento (editar dados → trocar senha) é um método, e
  * as três rejeições inline (e-mail duplicado, CPF com checksum inválido,
  * `current_password` errada) são exercitadas na MESMA sessão de formulário.

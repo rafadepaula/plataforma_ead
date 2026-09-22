@@ -10,7 +10,7 @@ use Illuminate\Auth\Events\Failed;
  * `Illuminate\Auth\Events\Failed` event. The attempting user is never
  * identified (bad credentials), so `org_id`/`user_id` both stay `null`
  * rather than guessing an Org from the unverified `email` string (see
- * `audit-logs-architecture`).
+ * `audit-logs-maintenance` (`resource/architecture.md`)).
  */
 class LogFailedLogin
 {

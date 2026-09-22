@@ -48,14 +48,14 @@ use App\Models\Post;
 
 test('authenticated user can create post', function () {
     $user = User::factory()->create();
-    
+
     $this->actingAs($user)
         ->post('/posts', [
             'title' => 'My First Post',
             'content' => 'Post content here',
         ])
         ->assertRedirect('/posts');
-    
+
     expect(Post::where('title', 'My First Post')->exists())->toBeTrue();
     expect(Post::first()->user_id)->toBe($user->id);
 });
@@ -95,10 +95,10 @@ uses(RefreshDatabase::class);
 
 test('creates post in database', function () {
     $user = User::factory()->create();
-    
+
     $this->actingAs($user)
         ->post('/posts', ['title' => 'Test', 'content' => 'Content']);
-    
+
     $this->assertDatabaseHas('posts', ['title' => 'Test']);
 });
 ```
@@ -108,7 +108,7 @@ test('creates post in database', function () {
 test('user cannot delete others posts', function () {
     $user = User::factory()->create();
     $post = Post::factory()->create();
-    
+
     $this->actingAs($user)
         ->delete("/posts/{$post->id}")
         ->assertForbidden();
@@ -119,7 +119,7 @@ test('user cannot delete others posts', function () {
 ```php
 test('creates post via API', function () {
     $user = User::factory()->create();
-    
+
     $this->actingAs($user, 'sanctum')
         ->postJson('/api/posts', ['title' => 'API Post', 'content' => 'Content'])
         ->assertCreated();
@@ -132,7 +132,7 @@ For UI interactions, JavaScript frontend components, full browser workflows.
 **Project rule — TDD granularity differs by suite:**
 
 - **Unit/Feature: atomic.** One behavior per test method, RED-GREEN per behavior.
-- **Dusk/E2E: lifecycle chain.** RED step is **new numbered step appended to chain** covering that journey (create → edit → state change → delete → consequence), with own UI + DB assertions — not new atomic method, not new file per module. Only independent negatives (403, cross-tenant, other actor) get own method. Why: each browser method pays DB reset + WebDriver boot + login + navigation. See `testing-conventions` / `laravel-dusk`.
+- **Dusk/E2E: lifecycle chain.** RED step is **new numbered step appended to chain** covering that journey (create → edit → state change → delete → consequence), with own UI + DB assertions — not new atomic method, not new file per module. Only independent negatives (403, cross-tenant, other actor) get own method. Why: each browser method pays DB reset + WebDriver boot + login + navigation. See `testing-maintenance` (`resource/conventions.md`) / `laravel-dusk`.
 - Dusk classes declare **no** DB trait. `DatabaseTruncation` inherited from `Tests\DuskTestCase`. `RefreshDatabase` forbidden there.
 
 ```php

@@ -17,7 +17,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * throws `UnresolvedOrgContextException` when no tenant can be resolved,
  * which is wrong here: many audit events (guest `login.failed`,
  * Admin-global actions) legitimately have a null `org_id`. See the
- * `audit-logs-architecture` skill for the full rationale.
+ * `audit-logs-maintenance` skill (`resource/architecture.md`) for the full rationale.
  */
 class AuditLog extends Model
 {

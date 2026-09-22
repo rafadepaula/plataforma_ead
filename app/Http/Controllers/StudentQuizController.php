@@ -329,7 +329,7 @@ class StudentQuizController extends Controller
         /**
          * "Tempo excedido" computado na leitura a partir de
          * `started_at`/`completed_at`/`time_limit_minutes` — nunca persistido
-         * (`quiz_attempts` não tem coluna para isso; ver `quizzes-conventions`).
+         * (`quiz_attempts` não tem coluna para isso; ver `quizzes-maintenance` (`resource/conventions.md`)).
          */
         $timeExceeded = (bool) ($quiz->time_limit_minutes
             && $attempt->completed_at

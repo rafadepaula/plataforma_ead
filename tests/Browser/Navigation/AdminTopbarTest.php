@@ -16,7 +16,7 @@ use Tests\DuskTestCase;
  * `$activeOrganization` injected by `NavigationComposer`, so it is present
  * on *every* authenticated screen — asserted here on more than one route.
  *
- * Agrupado por cadeia de ciclo de vida (ver `testing-conventions`): um
+ * Agrupado por cadeia de ciclo de vida (ver `testing-maintenance` (`resource/conventions.md`)): um
  * único Admin percorre contexto global → assumir Organização → badge em
  * várias telas → viewport estreito → encerrar contexto.
  */

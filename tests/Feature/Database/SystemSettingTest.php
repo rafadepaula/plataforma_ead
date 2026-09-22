@@ -12,7 +12,7 @@ use Tests\TestCase;
  * `(setting_key, org_id)` edge case: a literal nullable `org_id` cannot
  * participate in a MySQL/MariaDB composite PK, so global settings use a
  * `0` sentinel (`SystemSetting::GLOBAL_ORG_ID`) instead of `NULL` (see the
- * migration's docblock and the `tenancy-maintenance` skill).
+ * migration's docblock and the `tenancy-maintenance` (`resource/maintenance.md`) skill (`resource/maintenance.md`)).
  */
 class SystemSettingTest extends TestCase
 {

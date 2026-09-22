@@ -11,7 +11,7 @@ use Tests\DuskTestCase;
 /**
  * E2E coverage of the contextual Help Center.
  *
- * Agrupado por cadeia de ciclo de vida (ver `testing-conventions`): a
+ * Agrupado por cadeia de ciclo de vida (ver `testing-maintenance` (`resource/conventions.md`)): a
  * jornada do botão de ajuda na tela "Meus Cursos" — sem artigo (placeholder)
  * → com artigo global publicado (conteúdo resolvido pelo fallback) — é um
  * único método, pois é o mesmo ator na mesma tela mudando de estado.

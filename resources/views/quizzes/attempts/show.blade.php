@@ -15,7 +15,7 @@
       - route: `POST route('quiz-attempts.grade', $attempt)` posting
         `grades[{index}][answer_id]`/`[is_correct]` as a **list** (not
         keyed by `answer_id`) for every essay `QuizAnswer` on the attempt —
-        see `GradeEssayAnswerRequest` and `quizzes-conventions`.
+        see `GradeEssayAnswerRequest` and `quizzes-maintenance` (`resource/conventions.md`).
 
     Material Bootstrap refactor: single 760px
     reading column, essay answers in a `--surface-sunken` AnswerSurface,

@@ -47,7 +47,7 @@ use Tests\TestCase;
  * `GradeEssayAnswerAction`/`IssueCertificateAction`/
  * `RevokeCertificateAction`/`CourseController`/`ModuleController`/
  * `LessonController`). Those assertions are written against the
- * documented contract (see `audit-logs-conventions`/`audit-logs-
+ * documented contract (see `audit-logs-maintenance` (`resource/conventions.md`)/`audit-logs-
  * maintenance` skills) and are expected to RED until Bucket B lands —
  * they are not skipped, so the suite documents the exact contract the
  * next bucket must satisfy.
@@ -613,7 +613,7 @@ class AuditLogTest extends TestCase
 
         $certificate = app(IssueCertificateAction::class)->execute($course, $student);
 
-        $this->assertInstanceOf(Certificate::class, $certificate, 'Fixture must satisfy IssueCertificateAction eligibility — see certificates-conventions.');
+        $this->assertInstanceOf(Certificate::class, $certificate, 'Fixture must satisfy IssueCertificateAction eligibility — see `certificates-maintenance` (`resource/conventions.md`).');
 
         $issuedLog = AuditLog::withoutGlobalScopes()->where('event', 'certificate.issued')->first();
         $this->assertNotNull($issuedLog, 'Expected a certificate.issued audit row (Bucket B: IssueCertificateAction).');

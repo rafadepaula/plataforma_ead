@@ -10,7 +10,7 @@ use App\Services\OrgContext;
 
 /**
  * `Module` is cascade-inherited and has no `OrgScope` of its own
- * (see `courses-architecture`), so this Policy is the only place a
+ * (see `courses-maintenance` (`resource/architecture.md`)), so this Policy is the only place a
  * cross-tenant Module access attempt (e.g. a Gestor guessing another
  * org's `/courses/{course}/modules/{module}` URL) gets rejected — defense
  * in depth on top of `Course`'s own `OrgScope`, which already keeps route

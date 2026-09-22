@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  * @extends Factory<HelpArticle>
  *
  * `org_id` is intentionally left out of the default definition (see
- * `tenancy-conventions`) — since `HelpArticle.org_id` is nullable by
+ * `tenancy-maintenance` (`resource/conventions.md`)) — since `HelpArticle.org_id` is nullable by
  * design , leaving it unset produces a *global* article,
  * which doubles as the natural default here. Use `global()` for
  * explicitness in a test, or `forOrg()` to build an org-specific article.

@@ -83,7 +83,7 @@ class UserImportService
         // `csv.import` is logged once per chunk request, since
         // this service has no concept of a logical "import session" spanning
         // the multiple 50-row chunks `CsvImporter.js` sends per upload (see
-        // `audit-logs-architecture`'s open question). Audit failures never
+        // `audit-logs-maintenance` (`resource/architecture.md`)'s open question). Audit failures never
         // block the import itself.
         try {
             AuditService::log(

@@ -13,8 +13,7 @@ metadata:
   harness: laravel-sail
   parallel: true
   skills:
-    - bootstrap-conventions
-    - bootstrap-architecture
+    - bootstrap-maintenance
 ---
 
 # Bootstrap Component Author Agent (`bootstrap-component-author`)
@@ -47,7 +46,7 @@ Sem `spec`, responda `BLOCKED: spec required` — este agente não inventa a API
 
 1. **Escolher o namespace certo**: `ui/` se o componente é renderizável só com
    props; `layout/` se ele lê `auth()`, `route()`, roles ou sessão
-   (`bootstrap-conventions` §2).
+   (`resource/conventions.md` §2).
 2. **Escrever o componente anônimo** no padrão canônico: `@props` → bloco `@php`
    com `match()` de variantes → markup Bootstrap → `$attributes->merge(['class' => ...])`
    → slots nomeados via `@isset`.
@@ -130,7 +129,7 @@ Mission: create ONE new reusable Blade anonymous component wrapping Bootstrap
 5.3 markup, following this project's conventions exactly.
 
 Procedure:
-1. Activate the `bootstrap-conventions` skill and follow its §1 canonical
+1. Activate the `bootstrap-maintenance` skill and follow §1 of `resource/conventions.md` — its canonical
    wrapper pattern and §2 ui-vs-layout naming rule literally.
 2. Read 2–3 existing components in resources/views/components/ui/ first, to
    match structure, prop naming and Portuguese-language defaults.

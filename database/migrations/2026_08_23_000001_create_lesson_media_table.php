@@ -13,7 +13,7 @@ return new class extends Migration
      * (the legacy `lessons.image_path`/`pdf_path` VARCHAR columns only ever
      * fit one of each). Cascade-inherited: org is implied by
      * `lessons` -> `modules` -> `courses.org_id`, so there is no `org_id`
-     * here and no `OrgScope` on the model — see `tenancy-architecture`.
+     * here and no `OrgScope` on the model — see `tenancy-maintenance` (`resource/architecture.md`).
      */
     public function up(): void
     {

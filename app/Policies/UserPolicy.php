@@ -12,7 +12,7 @@ use App\Services\OrgContext;
  * (scoped by the impersonated `session('active_org_id')`); Gestor manages
  * only their own `org_id`; Aluno has no access at all. Mirrors the same
  * tenant-boundary resolution `OrgScope` uses elsewhere (see
- * `tenancy-conventions`), but User is intentionally never `OrgScope`d
+ * `tenancy-maintenance` (`resource/conventions.md`)), but User is intentionally never `OrgScope`d
  * itself (see `App\Models\User`'s docblock), so this policy is the
  * enforcement point instead of a global scope.
  */
@@ -84,7 +84,7 @@ class UserPolicy
     /**
      * the Gestor's exclusive Aluno directory
      * (`gestor.students.*`). A parallel set of named abilities — not a
-     * branch inside `sharesOrgContext()` (see `auth-orgs-conventions`) —
+     * branch inside `sharesOrgContext()` (see `auth-orgs-maintenance` (`resource/conventions.md`)) —
      * because the Gestor's surface is genuinely narrower than the
      * operational screen's: it covers ONLY Aluno accounts inside their
      * own `org_id`. A Gestor never manages a fellow Gestor or an Admin,

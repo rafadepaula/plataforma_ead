@@ -13,7 +13,7 @@ return new class extends Migration
      * literal nullable `org_id` cannot participate in a composite
      * PRIMARY KEY on MySQL/MariaDB (PK columns are implicitly NOT NULL).
      *
-     * Resolution (documented edge case — see `tenancy-maintenance` skill):
+     * Resolution (documented edge case — see `tenancy-maintenance` (`resource/maintenance.md`) skill (`resource/maintenance.md`)):
      * `org_id` uses a `0` sentinel for "global" settings instead of `NULL`,
      * keeping the composite PRIMARY KEY `(setting_key, org_id)` intact and
      * genuinely unique for both global and per-org rows. Because `0` is

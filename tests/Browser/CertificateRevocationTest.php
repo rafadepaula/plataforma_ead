@@ -17,13 +17,13 @@ use Tests\DuskTestCase;
  * resulting public verification page immediately reflects the revoked
  * state.
  *
- * Agrupado por cadeia de ciclo de vida (ver `testing-conventions`): a
+ * Agrupado por cadeia de ciclo de vida (ver `testing-maintenance` (`resource/conventions.md`)): a
  * jornada de revogação (abrir modal → razão curta bloqueia o envio → razão
  * válida confirma → badge REVOGADO → página pública reflete) acontece na
  * MESMA sessão de modal. A negativa cross-org segue isolada.
  *
  * Certificates are seeded directly using the hash formula documented in
- * `certificates-conventions`.
+ * `certificates-maintenance` (`resource/conventions.md`).
  */
 class CertificateRevocationTest extends DuskTestCase
 {

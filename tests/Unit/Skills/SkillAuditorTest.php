@@ -8,20 +8,19 @@ use Tests\TestCase;
 class SkillAuditorTest extends TestCase
 {
     /**
-     * Test auditing a valid skills directory structure containing all 3 required skills per feature.
+     * Test auditing a valid skills directory structure containing the
+     * consolidated feature skill (SKILL.md + resource/ references).
      */
     public function test_audits_valid_feature_skills_structure_successfully(): void
     {
         $tempDir = sys_get_temp_dir().'/harness_test_skills_'.uniqid();
 
-        mkdir($tempDir.'/course-architecture', 0777, true);
-        file_put_contents($tempDir.'/course-architecture/SKILL.md', '# Course Architecture');
-
-        mkdir($tempDir.'/course-conventions', 0777, true);
-        file_put_contents($tempDir.'/course-conventions/SKILL.md', '# Course Conventions');
-
-        mkdir($tempDir.'/course-maintenance', 0777, true);
-        file_put_contents($tempDir.'/course-maintenance/SKILL.md', '# Course Maintenance');
+        mkdir($tempDir.'/course-maintenance/resource', 0777, true);
+        file_put_contents($tempDir.'/course-maintenance/SKILL.md', '# Course');
+        file_put_contents($tempDir.'/course-maintenance/resource/architecture.md', '# Course Architecture');
+        file_put_contents($tempDir.'/course-maintenance/resource/conventions.md', '# Course Conventions');
+        file_put_contents($tempDir.'/course-maintenance/resource/maintenance.md', '# Course Maintenance');
+        file_put_contents($tempDir.'/course-maintenance/resource/security.md', '# Course Security');
 
         $command = new CheckSkillsCommand;
         $result = $command->auditSkillsDirectory($tempDir);
@@ -30,27 +29,26 @@ class SkillAuditorTest extends TestCase
         $this->assertEquals(1, $result['feature_count']);
         $this->assertEmpty($result['errors']);
 
-        @unlink($tempDir.'/course-architecture/SKILL.md');
-        @rmdir($tempDir.'/course-architecture');
-        @unlink($tempDir.'/course-conventions/SKILL.md');
-        @rmdir($tempDir.'/course-conventions');
         @unlink($tempDir.'/course-maintenance/SKILL.md');
+        @unlink($tempDir.'/course-maintenance/resource/architecture.md');
+        @unlink($tempDir.'/course-maintenance/resource/conventions.md');
+        @unlink($tempDir.'/course-maintenance/resource/maintenance.md');
+        @unlink($tempDir.'/course-maintenance/resource/security.md');
+        @rmdir($tempDir.'/course-maintenance/resource');
         @rmdir($tempDir.'/course-maintenance');
         @rmdir($tempDir);
     }
 
     /**
-     * Test auditing a skills directory missing required feature skills fails.
+     * Test auditing a skills directory missing required feature references fails.
      */
     public function test_fails_audit_when_feature_is_missing_required_skill(): void
     {
         $tempDir = sys_get_temp_dir().'/harness_test_skills_'.uniqid();
 
-        mkdir($tempDir.'/auth-architecture', 0777, true);
-        file_put_contents($tempDir.'/auth-architecture/SKILL.md', '# Auth Architecture');
-
-        mkdir($tempDir.'/auth-conventions', 0777, true);
-        file_put_contents($tempDir.'/auth-conventions/SKILL.md', '# Auth Conventions');
+        mkdir($tempDir.'/auth-maintenance/resource', 0777, true);
+        file_put_contents($tempDir.'/auth-maintenance/SKILL.md', '# Auth');
+        file_put_contents($tempDir.'/auth-maintenance/resource/architecture.md', '# Auth Architecture');
 
         $command = new CheckSkillsCommand;
         $result = $command->auditSkillsDirectory($tempDir);
@@ -58,12 +56,13 @@ class SkillAuditorTest extends TestCase
         $this->assertFalse($result['success']);
         $this->assertCount(1, $result['errors']);
         $this->assertStringContainsString('auth', $result['errors'][0]);
-        $this->assertStringContainsString('auth-maintenance/SKILL.md', $result['errors'][0]);
+        $this->assertStringContainsString('auth-maintenance/resource/conventions.md', $result['errors'][0]);
+        $this->assertStringContainsString('auth-maintenance/resource/maintenance.md', $result['errors'][0]);
 
-        @unlink($tempDir.'/auth-architecture/SKILL.md');
-        @rmdir($tempDir.'/auth-architecture');
-        @unlink($tempDir.'/auth-conventions/SKILL.md');
-        @rmdir($tempDir.'/auth-conventions');
+        @unlink($tempDir.'/auth-maintenance/SKILL.md');
+        @unlink($tempDir.'/auth-maintenance/resource/architecture.md');
+        @rmdir($tempDir.'/auth-maintenance/resource');
+        @rmdir($tempDir.'/auth-maintenance');
         @rmdir($tempDir);
     }
 

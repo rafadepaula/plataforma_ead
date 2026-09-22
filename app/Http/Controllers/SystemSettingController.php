@@ -12,7 +12,7 @@ use Illuminate\Http\Request;
 
 /**
  * `GET`/`PUT /admin/settings` (route names `settings.edit`/
- * `settings.update`, see `dashboard-conventions`) — a
+ * `settings.update`, see `dashboard-maintenance` (`resource/conventions.md`)) — a
  * system-administration surface reserved to `role:admin` (the Gestor
  * lost the menu item AND the reachability). Reads/writes the
  * org-override SMTP/logo/signature settings via `SettingService`, which

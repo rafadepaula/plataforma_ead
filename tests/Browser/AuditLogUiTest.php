@@ -17,7 +17,7 @@ use Tests\DuskTestCase;
  * at all (the legacy `/gestor/audit-logs` URL 404s, and the Admin URL
  * 403s via `role:admin` middleware).
  *
- * Agrupado por cadeia de ciclo de vida (ver `testing-conventions`): toda a
+ * Agrupado por cadeia de ciclo de vida (ver `testing-maintenance` (`resource/conventions.md`)): toda a
  * jornada do Admin na tela (estado inicial → diff → filtro → paginação →
  * export) é um método; a jornada do Gestor (nenhuma superfície de
  * auditoria) é outro, pois exige outro ator.
@@ -77,7 +77,7 @@ class AuditLogUiTest extends DuskTestCase
                 ->assertSeeIn('@audit-diff-new', 'Título Novo');
 
             // 3. Com volume suficiente para uma 2ª página (25/página, ver
-            //    `audit-logs-conventions`), o filtro por categoria de evento
+            //    `audit-logs-maintenance` (`resource/conventions.md`)), o filtro por categoria de evento
             //    aplica e a paginação aparece.
             $this->seedLog($org, null, 'course.updated');
             for ($i = 0; $i < 26; $i++) {

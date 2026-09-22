@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /**
  * Cascade-inherited: org is implied by
  * `attempt.quiz.lesson.module.course.org_id`. Do NOT apply `OrgScope`
- * here — see the `tenancy-architecture` skill.
+ * here — see the `tenancy-maintenance` skill (`resource/architecture.md`).
  */
 class QuizAnswer extends Model
 {

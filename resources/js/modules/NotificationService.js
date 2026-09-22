@@ -1,6 +1,6 @@
 /**
  * NotificationService — fachada pública de toasts, reimplementada sobre
- * `bootstrap.Toast` (bootstrap-conventions §9).
+ * `bootstrap.Toast` (`bootstrap-maintenance` (`resource/conventions.md`) §9).
  *
  * A ASSINATURA PÚBLICA É CONTRATO e não muda: `show(message, type, options)`,
  * `success/error/warning/info(message, options)`, `dismiss(element)` e

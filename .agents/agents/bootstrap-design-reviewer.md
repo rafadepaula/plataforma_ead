@@ -13,8 +13,6 @@ metadata:
   harness: laravel-sail
   parallel: true
   skills:
-    - bootstrap-conventions
-    - bootstrap-architecture
     - bootstrap-maintenance
 ---
 
@@ -41,7 +39,7 @@ context:        "migration" ou "refactor"
 
 ## 🎯 Responsabilidades
 
-1. **Ativar `bootstrap-conventions`** e usar como referência normativa.
+1. **Ativar `bootstrap-maintenance`** (`resource/conventions.md`) e usar como referência normativa.
 2. **Verificar cada categoria** e reportar achados em formato compacto.
 3. **Um achado por linha**, severidade no início, sem elogios.
 

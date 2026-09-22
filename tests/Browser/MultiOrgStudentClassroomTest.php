@@ -18,7 +18,7 @@ use Tests\DuskTestCase;
  * course progress bar reflect it, and the idempotency of a second
  * completion call.
  *
- * Agrupado por cadeia de ciclo de vida (ver `testing-conventions`): a
+ * Agrupado por cadeia de ciclo de vida (ver `testing-maintenance` (`resource/conventions.md`)): a
  * jornada de aprendizagem inteira num método; as negativas de acesso (não
  * matriculado e matrícula cancelada) exigem outros atores e ficam isoladas.
  */

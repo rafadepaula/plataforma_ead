@@ -1,0 +1,157 @@
+# Dashboard Maintenance
+
+## Mandatory Test Coverage for This Module
+
+Tests guard this module's contract. Must stay green (PHPUnit, no Pest):
+
+- `tests/Unit/Services/SettingServiceTest.php` — org-then-global fallback
+  + cache-busting on `set()`/`forget()`.
+- `tests/Unit/Services/DashboardMetricsServiceTest.php` — exact stat shape
+  and manual admin-global-vs-gestor-own-org branching for
+  `Certificate`/`course_user`/`User` (see `resource/architecture.md`); plus
+  4 cases for `organizationsSummary()`:
+  `test_organizations_summary_counts_active_alunos_courses_and_non_revoked_certificates_per_org`,
+  `test_organizations_summary_bypasses_courses_org_scope_regardless_of_the_acting_user`,
+  `test_organizations_summary_zero_fills_an_organization_with_no_related_data`,
+  `test_organizations_summary_excludes_soft_deleted_organizations`.
+- `tests/Feature/OrgDashboardTest.php` — Admin with no impersonated Org
+  see global KPIs/recentEnrollments, Admin impersonating Org see only
+  that Org, Gestor see only their request-host Organization
+  (`OrgContext::current()->orgId()`); plus 3 cases for the
+  Organizations summary table:
+  `test_admin_with_no_impersonated_org_sees_organizations_summary_with_correct_counts`,
+  `test_gestor_never_receives_organizations_summary`,
+  `test_admin_impersonating_an_org_does_not_receive_organizations_summary`.
+- `tests/Feature/MultiTenantCsvExportTest.php` — export is genuine
+  `StreamedResponse` (not buffered string) with correct
+  `Content-Disposition`, row-scoping mirror `OrgDashboardTest` 3 cases.
+- `tests/Browser/DashboardDuskTest.php` (Dusk E2E) — Admin dashboard
+  render + KPI values + recent-enrollments table, Gestor scoped view, CSV
+  export link `href`, settings edit screen persisting org override; plus
+  `@organizations-summary-table` present in the Admin-global lifecycle
+  and `assertMissing` in the Gestor (and Admin-impersonating) lifecycle.
+
+Run narrowest first after touch module:
+
+```bash
+vendor/bin/sail artisan test --filter=OrgDashboardTest
+vendor/bin/sail artisan test --filter=MultiTenantCsvExportTest
+vendor/bin/sail dusk --filter=DashboardDuskTest
+```
+
+Dusk classes declare no DB trait — `DatabaseTruncation` inherited from
+`Tests\DuskTestCase`; `RefreshDatabase` forbidden (Dusk run in separate
+HTTP process); `DatabaseMigrations` retired (per-method `migrate:fresh`)
+— see `laravel-dusk`/`testing-maintenance` (`resource/conventions.md`).
+
+## Common Failure Modes
+
+- **Dashboard sidebar link stay `#` / 404.** Route name must be
+  **exactly** `admin.dashboard` — sidebar (`components/layout/sidebar.blade.php:4-19`)
+  renders `$navigationSections` from `NavigationRegistry` with no
+  `Route::has` guard, so a typo'd or renamed route (or drifted registry
+  entry) produce dead link with no exception to catch it. The only
+  `Route::has('admin.dashboard')` fallback lives in
+  `tenants/{landing_view}/landing.blade.php`.
+- **KPI/recent-enrollment row leak another Organization data for Gestor,
+  or Admin impersonating Org.** `Certificate`, `course_user`, `User` do
+  **not** carry `OrgScope` — check `DashboardMetricsService` explicitly
+  join through `courses.org_id` (or filter via already-`OrgScope`d
+  `Course` query first) rather than assume global scope narrow these
+  tables automatically; see `resource/architecture.md` "cannot just rely on
+  `OrgScope`" section.
+- **Admin with no active Impersonate Org session see single Org numbers
+  instead of global total (or reverse).** `OrgScope` itself resolve
+  "admin + no `active_org_id` in session => no `WHERE` clause" for free
+  on `Course`/`StudentInvitation`, but `DashboardMetricsService` raw
+  `Certificate`/`course_user`/`User` queries must replicate that exact
+  branch manually — missing `if` here is most common cause of
+  `OrgDashboardTest` global-KPI case failing while scoped case still
+  pass.
+- **`MultiTenantCsvExportTest` pass but export actually buffer whole
+  dataset first.** Grep export service/action for `->get()` followed by
+  loop over in-memory `Collection` — that defeat O(1)-RAM contract even
+  if response type still happen to be `StreamedResponse`. Correct shape
+  is `chunk()`/`lazy()` **inside** `streamDownload()` callback, writing
+  each row with `fputcsv()` as fetched, never collecting rows into array
+  first.
+- **Gestor export request with spoofed `?org_id=` query param return
+  another Org rows instead of 403.** Controller must resolve non-Admin
+  org strictly from `OrgContext::current()->orgId()` (request host),
+  never trust `$request->query('org_id')` for that role — see
+  `resource/conventions.md` exact guard snippet.
+- **Organizations summary table appears for Gestor, or for an Admin
+  impersonating an Org (or is missing for a true global Admin).** The
+  gate is `$isGlobalAdminView` computed once in `DashboardController@index`
+  (`Admin role AND resolveViewingOrgId() === null`) — check that value,
+  not a fresh role/session read, and check the view still wraps the
+  block in `@isset($organizationsSummary)` rather than always rendering
+  it. See `resource/architecture.md` "Organizations Summary Table" section.
+- **Dusk CSV export assertion cannot detect actual downloaded file.**
+  Headless Chrome download verification out of scope for this suite
+  current coverage — `DashboardDuskTest` assert export `<a>` `href`
+  resolve to correct `reports.export` URL rather than inspect downloaded
+  file on disk; do not add filesystem-download assertions without also
+  updating Dusk browser download preferences in `DuskTestCase`.
+
+## Open Questions Still Needing a Decision
+
+Logged during design review. **Not** resolved by this module's
+implementation — flag again before building on top of assumptions baked
+into current code:
+
+1. **Exact KPI/CSV column definitions.** The dashboard mockup show only 4 stat values
+   + 3-column recent-enrollments table with no field list for CSV itself,
+   and no historical-comparison logic for `delta` percentages
+   (`+4,2%`/`+12%` are hardcoded display strings in mockup, not computed)
+   — confirm whether real delta computation in scope before treat
+   hardcoded mockup values as final.
+2. **CSV report types.** Only `enrollments` and `certificates` wired by
+   this bucket dashboard entry points; confirm whether `users` report or
+   others also expected under "Central de Exportação" before assume
+   `type` route parameter valid set is closed.
+3. **SMTP settings: admin-only or gestor-editable per-org?** Resolved at
+   route level — `settings.edit`/`settings.update` are `role:admin`
+   EXCLUSIVE (`routes/web.php:425-427`); Gestor never reaches the screen.
+   Logo/signature per-org overrides remain Admin-driven either way.
+4. **Admin per-Org dashboard access: Impersonate Org only, or also
+   `?org_id=` query param?** The documented intent — "recurso de Impersonate
+   Org para visualizar dashboards de Orgs específicas" — suggests Impersonate
+   Org is
+   sole sanctioned path; `DashboardController`/`ReportExportController`
+   must not grow parallel Admin-facing `org_id` query-param affordance
+   without confirming this.
+
+---
+
+## E2E Coverage: Per-Module File Exists
+
+This module HAS its own Dusk file — `tests/Browser/DashboardDuskTest.php`
+(Admin render + KPIs + recent-enrollments table, Gestor scoped view, CSV
+export link `href`, settings edit persisting org override,
+`@organizations-summary-table` present/missing per actor). Prefer it over
+chain-grep when maintaining this module.
+
+Browser tests in `tests/Browser/` are otherwise grouped by **user journey (lifecycle
+chain)** — one method drive create → edit → state change → delete →
+consequence — **not** by module or feature. Consequences when
+maintain this module:
+
+- **Finding coverage**: Dusk scenarios listed above may be asserted as
+  numbered steps inside chain method, possibly in file named after
+  another module when journey cross module boundaries. Locate with
+  `grep -rn "<route name|dusk selector>" tests/Browser/`, not by file
+  name. Missing per-module file is **not** coverage gap.
+- **Adding coverage**: extend existing chain for that journey with new
+  numbered step carrying own UI **and** DB assertion. New method only for
+  independent negatives (403, cross-tenant, other actor); new file only
+  for genuinely new journey.
+- **Debugging failure**: stack trace point at step, not whole scenario —
+  match line to its `// N.` comment. Late failure usually mean earlier
+  step not persist what it should.
+- **Database**: no DB trait declared in `tests/Browser/*`;
+  `DatabaseTruncation` inherited from `Tests\DuskTestCase`. Re-adding
+  `DatabaseMigrations` is suite-wide performance regression. Files, cache
+  and session **not** reset between methods.
+
+Full rule: `testing-maintenance` (`resource/conventions.md`). Chain debugging: `testing-maintenance` (`resource/maintenance.md`).

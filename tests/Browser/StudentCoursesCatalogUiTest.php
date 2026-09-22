@@ -17,7 +17,7 @@ use Tests\DuskTestCase;
  * progress bar, contextual CTA per status), and the per-tab empty state.
  *
  * Agrupado por cadeia de ciclo de vida (ver `laravel-dusk`/
- * `testing-conventions`): a jornada do aluno com matrículas nos 4 status
+ * `testing-maintenance` (`resource/conventions.md`)): a jornada do aluno com matrículas nos 4 status
  * percorre as 3 abas num único login; o estado vazio (sem matrícula
  * nenhuma) é uma jornada independente, num segundo método.
  */

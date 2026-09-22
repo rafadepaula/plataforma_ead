@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * §2.2). `postable_type`/`postable_id` are a pseudo-polymorphic pair with
  * no real database foreign key — integrity is validated at the
  * application layer. Do NOT apply `OrgScope` here — see the
- * `tenancy-architecture` skill.
+ * `tenancy-maintenance` skill (`resource/architecture.md`).
  */
 class ForumReport extends Model
 {

@@ -13,8 +13,6 @@ metadata:
   harness: laravel-sail
   parallel: true
   skills:
-    - bootstrap-conventions
-    - bootstrap-architecture
     - bootstrap-maintenance
     - laravel-dusk
 ---
@@ -51,18 +49,18 @@ responda `BLOCKED: file list required` e pare.
 
 ## 🎯 Responsabilidades
 
-1. **Ler antes de escrever.** Ative `bootstrap-conventions` e leia cada arquivo
+1. **Ler antes de escrever.** Ative `bootstrap-maintenance` (leia `resource/conventions.md`) e leia cada arquivo
    designado por inteiro. Inventarie: `style=` inline, classes fantasma, atributos
    `dusk=`, ganchos de JS (`data-modal-target`, ids, `data-reorder-url`), diretivas
    Blade (`@error`, `@role`, `@can`, `@forelse`).
-2. **Traduzir pela tabela**, não pelo gosto — a tabela de `bootstrap-conventions`
-   §4 é normativa. Utility primeiro, componente do Bootstrap depois, classe do
+2. **Traduzir pela tabela**, não pelo gosto — a tabela §4 de `resource/conventions.md`
+   é normativa. Utility primeiro, componente do Bootstrap depois, classe do
    projeto por último (árvore de decisão §5).
 3. **Usar os componentes existentes.** Se `available_components` tem
    `<x-ui.modal>`, use-o; não escreva `.modal` cru. Se falta um componente que a
    tela precisa, **não crie** — reporte `BLOCKED: missing component <nome>` e
    migre o resto.
-4. **Preservar todo `dusk=`** verbatim (regra §8 de `bootstrap-conventions`).
+4. **Preservar todo `dusk=`** verbatim (regra §8 de `resource/conventions.md`).
 5. **Preservar comportamento**: mesmas rotas, mesmos `name=` de campo, mesmos
    `@csrf`/`@method`, mesmos ids referenciados por JS, mesmo `<x-help-button>`.
 6. **Verificar**:
@@ -148,7 +146,7 @@ Bootstrap 5.3 markup — without changing behavior and without changing the test
 contract.
 
 Procedure:
-1. Activate the `bootstrap-conventions` skill and read it. Its §4 translation
+1. Activate the `bootstrap-maintenance` skill and read `resource/conventions.md`. Its §4 translation
    table and §5 decision tree are normative; do not improvise equivalents.
 2. Read every assigned file completely. Inventory inline styles, phantom
    classes, `dusk="..."` attributes, JS hooks (ids, data-* attributes) and Blade

@@ -16,7 +16,7 @@
     `modules/lessons/index.blade.php`'s `[data-reorder-url]` contract — no
     dedicated JS module needed here, the existing `ModuleReorder.js`
     already binds to any list carrying that attribute (see
-    `quizzes-conventions`).
+    `quizzes-maintenance` (`resource/conventions.md`)).
 --}}
 <ul data-reorder-url="{{ route('quiz-questions.reorder', $quiz) }}"
     dusk="question-list"

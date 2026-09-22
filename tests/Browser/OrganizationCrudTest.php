@@ -12,7 +12,7 @@ use Tests\DuskTestCase;
 /**
  * E2E coverage for the Organization CRUD screens.
  *
- * Agrupado por cadeia de ciclo de vida (ver `testing-conventions`): criar →
+ * Agrupado por cadeia de ciclo de vida (ver `testing-maintenance` (`resource/conventions.md`)): criar →
  * editar → abrir modal de remoção e cancelar → confirmar soft delete é uma
  * jornada única. A checagem do preview de logo  é outra jornada, e
  * a negativa de autorização do Gestor segue isolada.

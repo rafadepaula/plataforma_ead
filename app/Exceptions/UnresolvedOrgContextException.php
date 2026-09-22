@@ -9,7 +9,7 @@ use RuntimeException;
  * when an org-scoped model is being created and neither the acting user's
  * `org_id` nor `session('active_org_id')` can resolve a tenant. Must never
  * surface as a raw 500 — mapped globally in `bootstrap/app.php` to an HTTP
- * 422 response (see `tenancy-conventions` skill).
+ * 422 response (see `tenancy-maintenance` skill (`resource/conventions.md`)).
  */
 class UnresolvedOrgContextException extends RuntimeException
 {

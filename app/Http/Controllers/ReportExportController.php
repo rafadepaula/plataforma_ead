@@ -10,14 +10,14 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * `GET /admin/reports/{type}/export` (route name
- * `reports.export`, see `dashboard-conventions`). Streams a CSV via
+ * `reports.export`, see `dashboard-maintenance` (`resource/conventions.md`)). Streams a CSV via
  * `CsvStreamExportService`. The acting org is resolved the same way
  * `DashboardController` resolves it, replicating `OrgScope`'s own
  * "admin + no active Impersonate Org session => no filter (global)"
  * branch — never trusted from a request-supplied `org_id`. A Gestor
  * whose request carries an `org_id` for another Organization is
  * rejected with a 403 rather than silently scoped to their own org (see
- * `dashboard-conventions`'s exact guard).
+ * `dashboard-maintenance` (`resource/conventions.md`)'s exact guard).
  */
 class ReportExportController extends Controller
 {

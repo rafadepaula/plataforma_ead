@@ -17,7 +17,7 @@ use Tests\DuskTestCase;
 /**
  * E2E coverage do papel `professor` (happy path).
  *
- * Agrupado por cadeia de ciclo de vida (ver `testing-conventions`): a
+ * Agrupado por cadeia de ciclo de vida (ver `testing-maintenance` (`resource/conventions.md`)): a
  * jornada do próprio Professor (entrar pelo formulário → dashboard de
  * Ensino → seção do menu → "Meus Cursos" vazio → curso atribuído aparece)
  * é um método; a jornada de correção manual (fila → tela de correção →

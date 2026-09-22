@@ -5,7 +5,7 @@
 // `QuizBuilder.js` alterna `.is-correct` em `[data-option-row]` sempre que o
 // `[data-correct-checkbox]` da linha muda (`syncCorrectHighlight()`); o
 // servidor já marca a classe no primeiro render quando `$option->is_correct`
-// é verdadeiro — ver `quizzes-conventions`.
+// é verdadeiro — ver `quizzes-maintenance` (`resource/conventions.md`).
 // Regra: qualquer declaração aqui só pode consumir var(--*), nunca literal de
 // cor/raio/sombra.
 // =============================================================================

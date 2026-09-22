@@ -18,7 +18,7 @@ use Tests\DuskTestCase;
  * Split into TWO methods on purpose (deviation allowed by the task): a
  * single chain would need Gestor → Aluno → Gestor → Aluno, i.e. TWO
  * logins for the same actor, breaking the ≤1-login-per-actor budget from
- * `testing-conventions`. Each method below logs each actor in exactly
+ * `testing-maintenance` (`resource/conventions.md`). Each method below logs each actor in exactly
  * once and seeds its own state, so no method depends on another
  * (`DatabaseTruncation` wipes the DB between them).
  *
