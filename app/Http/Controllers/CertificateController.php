@@ -4,12 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Actions\RestoreCertificateAction;
 use App\Actions\RevokeCertificateAction;
-use App\Enums\Permissions\RolesEnum;
 use App\Http\Requests\RevokeCertificateRequest;
 use App\Models\Certificate;
 use App\Models\Course;
 use App\Services\CertificatePdfService;
-use App\Services\OrgContext;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -86,50 +84,20 @@ class CertificateController extends Controller
             ->with('success', 'Certificado validado com sucesso.');
     }
 
+    /**
+     * Authorization lives in `CertificatePolicy::download()`: the owning
+     * Aluno always, plus Admin (unrestricted) and Gestor/Professor of the
+     * certificate's own Org — 403 otherwise (cross-org staff, any other
+     * Aluno).
+     */
     public function download(Certificate $certificate): Response
     {
-        $this->authorizeDownloadAccess($certificate);
+        Gate::authorize('download', $certificate);
 
         // `stream()` renders the PDF inline (`Content-Disposition: inline`),
         // so the browser opens it in its built-in PDF viewer instead of
         // forcing a file download.
         return $this->certificatePdfService->generate($certificate)
             ->stream("certificado-{$certificate->validation_hash}.pdf");
-    }
-
-    /**
-     * `Certificate` has no dedicated `view`/`download` Policy method —
-     * `CertificatePolicy` (Bucket A) only defines `revoke` — so this
-     * inline check mirrors that Policy's own role/org logic (Admin
-     * unrestricted, Gestor only within their own Org) rather than
-     * expanding the Policy's contract for a single Controller action.
-     * `Course` is read `withoutGlobalScopes()` for the same reason
-     * `CertificatePolicy::parentCourse()` does: `Certificate` carries no
-     * scope of its own, so a cross-org Gestor must see the REAL owning
-     * Course to be correctly denied, not `null`.
-     *
-     *  also grants the Aluno who OWNS the certificate (`user_id`
-     * match), since `certificates.download` sits behind plain `auth` (see
-     * `routes/web.php`) to let the classroom's "baixar certificado" link
-     * work for the student themselves, without opening the door to any
-     * other Aluno's certificate.
-     */
-    private function authorizeDownloadAccess(Certificate $certificate): void
-    {
-        $user = request()->user();
-
-        abort_unless($user, 403);
-
-        if ((int) $user->id === (int) $certificate->user_id) {
-            return;
-        }
-
-        abort_unless($user->hasAnyRole([RolesEnum::ADMIN->value, RolesEnum::GESTOR->value]), 403);
-
-        if ($user->hasRole(RolesEnum::GESTOR->value)) {
-            $course = $certificate->course()->withoutGlobalScopes()->firstOrFail();
-
-            abort_unless((int) OrgContext::current()->orgId() === (int) $course->org_id, 403);
-        }
     }
 }

@@ -1,5 +1,5 @@
 {
-    "count": 592,
+    "count": 593,
     "entries": [
         {
             "file": "admin/users/edit.blade.php",
@@ -2368,6 +2368,10 @@
         {
             "file": "users/index.blade.php",
             "selector": "user-status-{{ $user->id }}"
+        },
+        {
+            "file": "gestor/students/index.blade.php",
+            "selector": "download-certificate-{{ $certificate->id }}"
         }
     ]
 }

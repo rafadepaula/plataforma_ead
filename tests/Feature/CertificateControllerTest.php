@@ -248,6 +248,33 @@ class CertificateControllerTest extends TestCase
         );
     }
 
+    public function test_a_professor_can_download_a_certificate_pdf_of_their_own_org(): void
+    {
+        $org = Organization::factory()->create();
+        $certificate = $this->certificateFor($org);
+        $this->actingAsOrgUser($org, RolesEnum::PROFESSOR->value);
+
+        $response = $this->get(route('certificates.download', $certificate));
+
+        $response->assertOk();
+        $response->assertHeader('content-type', 'application/pdf');
+        $this->assertStringStartsWith(
+            'inline',
+            (string) $response->headers->get('Content-Disposition'),
+        );
+    }
+
+    public function test_a_professor_cannot_download_a_certificate_pdf_of_a_different_org(): void
+    {
+        $ownOrg = Organization::factory()->create();
+        $otherOrg = Organization::factory()->create();
+        $certificate = $this->certificateFor($otherOrg);
+        $this->actingAsOrgUser($ownOrg, RolesEnum::PROFESSOR->value);
+
+        $this->get(route('certificates.download', $certificate))
+            ->assertForbidden();
+    }
+
     public function test_a_gestor_cannot_download_a_certificate_pdf_of_a_different_org(): void
     {
         $ownOrg = Organization::factory()->create();

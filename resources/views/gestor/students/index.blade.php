@@ -155,8 +155,11 @@
                 Painel "Certificados" deste aluno: um modal por aluno
                 (mesmo padrão declarativo `data-bs-*` do resto da tela) com
                 todos os certificados dele nos cursos da própria
-                Organização — eager-loadados no Controller. Revogação exige
-                motivo (mínimo de 10 caracteres, validado server-side por
+                Organização — eager-loadados no Controller. Cada linha
+                oferece "Baixar PDF" (rota compartilhada
+                `certificates.download`, mesma rota usada pela listagem
+                por curso). Revogação exige motivo (mínimo de 10
+                caracteres, validado server-side por
                 `RevokeCertificateRequest`), então "Invalidar" abre um
                 modal com textarea (mesmo padrão de
                 `certificates/index.blade.php`) em vez do confirm-modal;
@@ -189,6 +192,17 @@
                                     @endif
                                 </td>
                                 <td data-label="Ação">
+                                    {{-- Download do PDF: oferecido nos dois
+                                        estados — revogado já sinalizado pelo
+                                        badge e o download não muta estado;
+                                        abre em nova aba (stream inline). --}}
+                                    <x-ui.button variant="secondary"
+                                                 size="sm"
+                                                 href="{{ route('certificates.download', $certificate) }}"
+                                                 target="_blank"
+                                                 rel="noopener"
+                                                 dusk="download-certificate-{{ $certificate->id }}">Baixar PDF</x-ui.button>
+
                                     @if($certificate->isRevoked())
                                         <x-ui.button variant="secondary"
                                                      size="sm"

@@ -367,6 +367,10 @@ class GestorStudentManagementTest extends TestCase
         $response->assertSee($course->title, false);
         $response->assertSee($certificate->issued_at->format('d/m/Y'), false);
         $response->assertSee('Válido', false);
+        // Download do PDF direto do painel, em nova aba.
+        $response->assertSee('dusk="download-certificate-'.$certificate->id.'"', false);
+        $response->assertSee('href="'.route('certificates.download', $certificate).'"', false);
+        $response->assertSee('target="_blank"', false);
         // Estado válido → ação oferecida é "Invalidar", nunca "Validar".
         $response->assertSee('Invalidar', false);
         $response->assertSee('action="'.route('certificates.revoke', $certificate).'"', false);
@@ -391,6 +395,11 @@ class GestorStudentManagementTest extends TestCase
         $response->assertSee('Revogado', false);
         $response->assertSee('Validar', false);
         $response->assertSee('action="'.route('certificates.restore', $certificate).'"', false);
+        // Revogado mantém o botão de download: o estado já sinalizado pelo
+        // badge e o download não muta estado (útil para reenviar após
+        // revalidação).
+        $response->assertSee('dusk="download-certificate-'.$certificate->id.'"', false);
+        $response->assertSee('href="'.route('certificates.download', $certificate).'"', false);
         $response->assertDontSee('>Invalidar<', false);
     }
 
@@ -425,6 +434,9 @@ class GestorStudentManagementTest extends TestCase
 
         $response->assertOk();
         $response->assertDontSee('action="'.route('certificates.revoke', $foreignCertificate).'"', false);
+        // Nem o download: certificado de curso alheio não renderiza linha
+        // no painel (o 403 da rota é só rede de segurança).
+        $response->assertDontSee('dusk="download-certificate-'.$foreignCertificate->id.'"', false);
         $response->assertSee('Nenhum certificado emitido para este aluno nos cursos da sua Organização.');
     }
 }
