@@ -66,25 +66,57 @@ MARKDOWN
         'category' => 'Para Alunos',
         'content' => <<<'MARKDOWN'
 ## Para que serve
-Espaço imersivo de estudo para assistir a videoaulas, consultar apostilas e materiais em PDF ou ler artigos didáticos desenvolvidos para o treinamento.
+Abrir a lição e consumir o conteúdo dela. Nas videoaulas, o player de vídeo da plataforma reproduz a aula, registra o que você efetivamente assistiu e conclui a lição sozinha quando você alcança 90% do vídeo. Nas lições em texto ou PDF, você lê o material e confirma a conclusão com um clique.
 
 ## Passo a passo
-1. Caso a lição seja uma videoaula, dê o play no player de vídeo. O sistema salva o segundo exato em que você pausou para que possa retomar depois.
-2. Para videoaulas, ao atingir 90% de reprodução do vídeo, o sistema marcará a lição como concluída automaticamente.
-3. Se a lição for um documento PDF ou texto explicativo, leia o material até o final e clique no botão "Marcar como Concluída" ao término dos estudos.
-4. Use os botões "Aula Anterior" e "Próxima Aula" para navegar confortavelmente pela trilha de aprendizagem.
+1. Ao abrir uma videoaula, o vídeo não carrega de imediato: clique uma vez na área do player para iniciar a reprodução. Nada é carregado antes desse primeiro clique.
+2. Pause e retome pelo botão de play/pause na barra de controles, ou simplesmente clicando em qualquer ponto da área do vídeo.
+3. A barra de progresso mostra o tempo decorrido e a duração total do vídeo. Arraste-a para navegar pela aula: os trechos que você já assistiu aparecem pintados de verde, facilitando localizar o que ainda falta.
+4. Ajuste o volume na barra ao lado do botão de mudo. O player lembra do volume e da preferência de silêncio nas próximas aulas e sessões.
+5. Para tela cheia, use o botão de expandir da barra de controles ou dê um duplo clique sobre o vídeo; repita o gesto para voltar ao tamanho normal.
+6. Durante a reprodução, os controles se escondem sozinhos após cerca de 2,5 segundos sem mexer o mouse, para não cobrir a imagem. Mova o cursor para exibi-los de novo; com o vídeo pausado, eles ficam sempre visíveis.
+7. Se a lição for de texto ou PDF, leia o material até o final e clique no botão "Marcar como concluída".
+8. Use os botões "Aula Anterior" e "Próxima Aula" para navegar pela trilha de aprendizagem.
+
+## Atalhos de teclado
+Com o player em foco (basta ter clicado na área do vídeo), você pode controlar a aula pelo teclado:
+
+| Tecla | Ação |
+| --- | --- |
+| Espaço ou K | Pausar ou retomar |
+| ← (seta esquerda) | Voltar 5 segundos |
+| → (seta direita) | Avançar 5 segundos |
+| ↑ (seta para cima) | Aumentar o volume em 5% |
+| ↓ (seta para baixo) | Diminuir o volume em 5% |
+| M | Silenciar ou reativar o som |
+| F | Alternar tela cheia |
+
+Se o foco estiver em um botão ou em uma barra do próprio player, as teclas exercem sua função natural ali (as setas ajustam a barra selecionada, por exemplo).
 
 ## Regras e limites
-- Lições em vídeo exigem assistir pelo menos 90% da duração total para computar a conclusão automática no sistema.
-- Aceleradores de vídeo ou avançar o marcador diretamente para o final sem assistir ao conteúdo não ativam a conclusão automática.
-- Para lições que contenham uma prova ou quiz, a conclusão só é atingida após a realização e aprovação da avaliação.
+- A lição em vídeo é concluída automaticamente quando os trechos efetivamente assistidos somam 90% da duração do vídeo. A contagem é por segundo único: reassistir um trecho não vale dobrado e arrastar a barra para frente não adianta nada.
+- O progresso é salvo automaticamente a cada 5 segundos de reprodução, e também quando você pausa, arrasta a barra, troca de aba ou fecha a página. Mesmo saindo no meio da aula, tudo o que foi assistido até o último segundo permanece registrado.
+- Ao atingir os 90%, surge o aviso "Lição concluída automaticamente!" e o selo "Concluída" passa a identificar a lição na trilha do curso.
+- Ao lado do vídeo, o indicador "X% assistido · 90% necessário para concluir" acompanha seu avanço com uma barra verde.
+- A retomada é automática: o sistema guarda o último ponto do vídeo e o player recomeça de lá na próxima visita. Se ainda não houver ponto marcado, ele sugere o primeiro segundo que você ainda não assistiu.
+- Se a duração do vídeo não puder ser reconhecida, a conclusão automática não acontece; informe o responsável pelo curso.
+- Lições de prova ou quiz são concluídas pela realização e aprovação da avaliação, não por este player.
 
 ## Dúvidas comuns
-**Se eu fechar o vídeo pela metade, perco o que assisti?**
-Não. O player memoriza seu ponto de parada e retomará a aula exatamente desse momento quando você retornar.
+**O vídeo mostra "Vídeo indisponível". O que significa?**
+Que esta aula não pôde ser carregada: o vídeo pode ter sido removido ou o endereço cadastrado está com problema. Avise o responsável pelo curso para que o link seja corrigido. Se o endereço do vídeo não pôde ser reconhecido, a lição continua aceitando conclusão manual para não travar seu curso.
 
-**Posso baixar o arquivo PDF da aula?**
-Os materiais em PDF contam com leitor interativo na tela. O download depende das permissões autorizadas pela instituição de ensino para o arquivo.
+**Fechei a página no meio da aula. Perdi meu progresso?**
+Não. O player salva o progresso até o último segundo assistido e retoma a aula exatamente dali quando você volta.
+
+**Avancei direto para o final do vídeo. Por que não concluiu?**
+Porque pular não é assistir. A conclusão considera apenas os segundos realmente reproduzidos, que são os trechos verdes da barra. Volte e assista aos trechos que ficaram faltando para alcançar os 90%.
+
+**O player tem legendas, velocidade de reprodução ou seletor de qualidade?**
+Esses recursos ainda não estão disponíveis. Hoje o player oferece play/pause, barra de progresso com os trechos assistidos, volume, tela cheia e atalhos de teclado.
+
+**Lições em PDF ou texto concluem como?**
+Manualmente: ao terminar a leitura, clique no botão "Marcar como concluída" logo abaixo do material.
 MARKDOWN
     ],
     [

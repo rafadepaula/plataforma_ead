@@ -136,6 +136,30 @@ class CoverageTest extends TestCase
         }
     }
 
+    public function test_video_lesson_article_documents_full_player_inventory(): void
+    {
+        $article = HelpArticle::withoutGlobalScopes()
+            ->whereNull('org_id')
+            ->where('target_page_key', 'classroom.lesson')
+            ->firstOrFail();
+
+        foreach ([
+            'Atalhos de teclado', // keyboard shortcuts table (Espaço/K, setas, M, F)
+            'tela cheia', // fullscreen button + double click
+            '90%', // unique-seconds completion threshold
+            'segundo', // per-second watch accounting and resume
+            'Vídeo indisponível', // degraded state
+            'Marcar como concluída', // manual completion for text/PDF lessons
+            'Lição concluída automaticamente', // auto-completion toast
+        ] as $needle) {
+            $this->assertStringContainsString(
+                $needle,
+                $article->content,
+                "Article [{$article->slug}] must document [{$needle}]."
+            );
+        }
+    }
+
     public function test_seeder_is_idempotent_and_does_not_duplicate_articles(): void
     {
         $countBefore = HelpArticle::withoutGlobalScopes()->whereNull('org_id')->count();
