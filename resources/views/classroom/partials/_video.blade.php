@@ -30,6 +30,8 @@
          data-provider="{{ $lesson->video_provider }}"
          data-video-id="{{ $videoId }}"
          data-video-embed="{{ $embedUrl }}"
+         {{-- Threshold de conclusão configurado na lição (o JS só o espelha). --}}
+         data-required-percent="{{ $lesson->video_completion_percentage ?? 90 }}"
          {{-- "Retomar de onde parou": o PLAYHEAD da última sessão. --}}
          data-resume-seconds="{{ $resumeSeconds ?? 0 }}"
          {{-- Intervalos já assistidos (união do servidor) para o overlay verde do seek. --}}
@@ -139,16 +141,16 @@
 
 {{--
     Indicador de consumo à direita do vídeo: % único assistido (a união dos
-    intervalos, não o playhead) e o threshold de 90% que declara o vídeo
-    assistido. `data-watch-progress` é o hook do `PlayerController`, que
-    reescreve barra e rótulo a cada resposta do endpoint de progresso.
+    intervalos, não o playhead) e o threshold configurado na lição que declara
+    o vídeo assistido. `data-watch-progress` é o hook do `PlayerController`,
+    que reescreve barra e rótulo a cada resposta do endpoint de progresso.
 --}}
 @if($pollsProgress)
     <div class="d-flex align-items-center justify-content-end gap-2 mt-2"
          data-watch-progress
          data-lesson-id="{{ $lesson->id }}">
         <span class="small text-body-secondary" data-watch-progress-text>
-            {{ $watchedPercent }}% assistido · 90% necessário para concluir
+            {{ $watchedPercent }}% assistido · {{ $lesson->video_completion_percentage ?? 90 }}% necessário para concluir
         </span>
         <div class="w-25">
             <x-ui.progress
@@ -163,7 +165,8 @@
 @endif
 
 {{--
-    Só o vídeo reconhecido conclui sozinho a 90%. Sem id de vídeo não existe
+    Só o vídeo reconhecido conclui sozinho no threshold configurado. Sem id de
+    vídeo não existe
     player para medir progresso, então a lição volta a aceitar conclusão
     manual — caso contrário um link quebrado travaria o curso inteiro.
 --}}

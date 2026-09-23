@@ -199,8 +199,11 @@ class LessonController extends Controller
      * handled after the Lesson exists by `syncMedia()`) out of the validated
      * payload, canonicalizes a non-empty `video_url` through the sanitizer
      * of its `video_provider` (detected from the URL itself when the select
-     * came empty) and nulls both video fields out together when the URL is
-     * cleared — a lesson never keeps a provider stamp without a URL.
+     * came empty) and nulls every video field — provider, URL and the
+     * completion threshold — out together when the URL is cleared: a lesson
+     * never keeps a video stamp without a URL. An absent
+     * `video_completion_percentage` key leaves the persisted value untouched,
+     * so clients that do not send the field never reset it.
      *
      * @return array<string, mixed>
      */
@@ -217,6 +220,7 @@ class LessonController extends Controller
         if (blank($data['video_url'] ?? null)) {
             $data['video_url'] = null;
             $data['video_provider'] = null;
+            $data['video_completion_percentage'] = null;
 
             return $data;
         }

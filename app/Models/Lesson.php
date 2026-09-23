@@ -33,6 +33,7 @@ class Lesson extends Model
         'content_text',
         'video_provider',
         'video_url',
+        'video_completion_percentage',
         'pdf_path',
         'image_path',
         'order_index',
@@ -47,6 +48,7 @@ class Lesson extends Model
         return [
             'order_index' => 'integer',
             'is_published' => 'boolean',
+            'video_completion_percentage' => 'integer',
         ];
     }
 
@@ -129,6 +131,20 @@ class Lesson extends Model
     public function hasPlayableVideo(): bool
     {
         return $this->video_id !== null;
+    }
+
+    /**
+     * The auto-completion threshold this lesson's player must reach, as a
+     * fraction (`0.5` = 50%): the per-lesson `video_completion_percentage`
+     * when the lesson sets one, else the legacy 90% default. `NULL` is what
+     * non-video lessons and every pre-migration row carry, so the fallback —
+     * not the column default — is the single authority on the legacy figure.
+     * Handed to `VideoWatchCalculator::reachedCompletion()`, whose comparison
+     * is inclusive (exactly 50% watched with a 50% threshold completes).
+     */
+    public function effectiveVideoThreshold(): float
+    {
+        return (int) ($this->video_completion_percentage ?? 90) / 100;
     }
 
     /**

@@ -17,7 +17,7 @@ const CONTROLS_IDLE_HIDE_MS = 2500;
 const VOLUME_STORAGE_KEY = 'ds-player-volume';
 const MUTED_STORAGE_KEY = 'ds-player-muted';
 
-/** Threshold de conclusão anunciado no indicador de % assistido. */
+/** Threshold de conclusão quando a lição não expõe `data-required-percent`. */
 const REQUIRED_WATCHED_PERCENT = 90;
 
 /**
@@ -44,6 +44,12 @@ export class PlayerController {
         this.embedUrl = container.getAttribute('data-video-embed');
         this.videoHash = container.getAttribute('data-video-hash');
         this.progressUrl = container.getAttribute('data-progress-url');
+        // Threshold de conclusão configurado na lição e espelhado no container
+        // (`data-required-percent`): o servidor é a fonte da verdade, aqui é
+        // só o valor anunciado no indicador de % assistido.
+        this.requiredPercent = this.parseRequiredPercent(
+            container.getAttribute('data-required-percent'),
+        );
         // "Retomar de onde parou": PLAYHEAD exato da última sessão (o
         // servidor manda last_position_seconds; cai para o primeiro segundo
         // não assistido quando não há bookmark). Consumido no boot.
@@ -597,9 +603,22 @@ export class PlayerController {
     }
 
     /**
+     * Threshold de conclusão (% assistido necessário) configurado na lição e
+     * server-rendered no container. Valor ausente ou inválido cai no default.
+     *
+     * @param {string|null} raw Valor de `data-required-percent`
+     * @returns {number}
+     */
+    parseRequiredPercent(raw) {
+        const percent = Number(raw);
+
+        return Number.isFinite(percent) && percent > 0 ? percent : REQUIRED_WATCHED_PERCENT;
+    }
+
+    /**
      * Atualiza o indicador "% assistido · % necessário" que vive ao lado
      * do vídeo (fora do container do player). A porcentagem Necessária é a
-     * mesma do threshold do servidor (90%).
+     * mesma do threshold configurado na lição.
      */
     updateWatchedIndicator(data) {
         const scope = document.querySelector(
@@ -623,7 +642,7 @@ export class PlayerController {
         const label = scope.querySelector('[data-watch-progress-text]');
 
         if (label) {
-            label.textContent = `${percent}% assistido · ${REQUIRED_WATCHED_PERCENT}% necessário para concluir`;
+            label.textContent = `${percent}% assistido · ${this.requiredPercent}% necessário para concluir`;
         }
     }
 

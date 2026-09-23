@@ -26,6 +26,10 @@
     // builder inteiro (regras + questões + opções) vem de old().
     $quiz = $lesson->quiz;
 
+    // Threshold de assistimento do vídeo: o servidor valida 10–100, o valor
+    // vem do banco (default 90) e o old() repõe o que o autor digitou.
+    $videoCompletionPercentage = old('video_completion_percentage', $lesson->video_completion_percentage ?? 90);
+
     $quizInstructions = old('quiz.instructions', $quiz?->instructions);
     $quizMinScore = old('quiz.min_score_percentage', $quiz?->min_score_percentage ?? 70);
     $quizMaxAttempts = old('quiz.max_attempts', $quiz?->max_attempts);
@@ -109,6 +113,17 @@
             hint="O servidor revalida o link no envio: apenas vídeos do YouTube ou Vimeo são aceitos. Use vídeo Público ou Não listado — vídeo Privado do YouTube não reproduz em player incorporado."
             dusk="lesson-video-input"
             preview-dusk="video-preview"
+        />
+
+        <x-ui.input
+            type="number"
+            name="video_completion_percentage"
+            label="% mínima para concluir"
+            min="10"
+            max="100"
+            step="1"
+            hint="Percentual mínimo de assistimento para concluir automaticamente (10–100%)."
+            :value="$videoCompletionPercentage"
         />
     </div>
 

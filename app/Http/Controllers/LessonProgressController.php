@@ -29,7 +29,7 @@ class LessonProgressController extends Controller
      * POST /lessons/{lesson}/complete — manual completion is only valid
      * for text/PDF/image lessons: a `type=quiz` lesson (reserved for
      * 's `SubmitQuizAttemptAction`) or a lesson carrying a PLAYABLE
-     * video (which must reach completion via the 90% video-threshold
+     * video (which must reach completion via the video-threshold
      * endpoint instead) is rejected with a 422.
      *
      * A lesson whose `video_url` cannot be resolved into a video id has no
@@ -72,8 +72,10 @@ class LessonProgressController extends Controller
      *
      * The client reports raw played segments (`[{start, end}]`), never a
      * percentage: they are unioned into `lesson_progress.watched_ranges`
-     * and the 90% threshold reads `watched_unique_seconds` — so a forward
-     * seek cannot inflate progress and replay cannot double-count. Below
+     * and the lesson's threshold (`Lesson::effectiveVideoThreshold()`, the
+     * per-lesson `video_completion_percentage` or the legacy 90%) reads
+     * `watched_unique_seconds` — so a forward seek cannot inflate progress
+     * and replay cannot double-count. Below
      * the threshold the row persists without completing (the one write that
      * bypasses `MarkLessonCompleteAction`, per the learning conventions);
      * at/above it the action completes with `completion_source=video_threshold`.
@@ -106,7 +108,7 @@ class LessonProgressController extends Controller
         ]);
         $uniqueSeconds = $progress->applyWatchedSegments($data['segments'], $durationSeconds);
 
-        if (VideoWatchCalculator::reachedCompletion($uniqueSeconds, $durationSeconds)) {
+        if (VideoWatchCalculator::reachedCompletion($uniqueSeconds, $durationSeconds, $lesson->effectiveVideoThreshold())) {
             // The union is idempotent, so the action re-merging the same
             // batch against the persisted row reproduces exactly the
             // `$uniqueSeconds` computed above — threshold and stored state

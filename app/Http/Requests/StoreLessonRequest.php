@@ -56,6 +56,13 @@ class StoreLessonRequest extends FormRequest
             'pdfs.*' => ['file', 'mimes:pdf', 'max:10240'],
             'video_provider' => ['nullable', Rule::in(VideoUrlSanitizerManager::PROVIDERS)],
             'video_url' => ['nullable', 'url'],
+
+            // Video kind only — the completion threshold of this lesson's
+            // player, on the 0–100 scale. Nullable: lessons without a video
+            // never send the field, and `NULL` keeps the legacy 90% rule
+            // (see `Lesson::effectiveVideoThreshold()`).
+            'video_completion_percentage' => ['nullable', 'integer', 'min:10', 'max:100'],
+
             'is_published' => ['sometimes', 'boolean'],
 
             // Quiz authoring payload (only meaningful when `type = quiz`).

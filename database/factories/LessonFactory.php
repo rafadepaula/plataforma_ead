@@ -116,6 +116,19 @@ class LessonFactory extends Factory
     }
 
     /**
+     * Video lesson with an explicit completion threshold (10–100, on the
+     * 0–100 scale): the lesson auto-completes once that share of its unique
+     * seconds has been watched. `NULL` (the base definition) keeps the
+     * legacy 90% rule — see `Lesson::effectiveVideoThreshold()`.
+     */
+    public function withThreshold(int $percentage): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'video_completion_percentage' => $percentage,
+        ]);
+    }
+
+    /**
      * Multi-file lesson: attaches `LessonMedia` rows after creation
      * (default one image + one PDF; pass counts to customize). Also syncs
      * the legacy `image_path`/`pdf_path` columns to the first attachment of
