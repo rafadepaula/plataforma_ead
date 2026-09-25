@@ -56,6 +56,12 @@ class UpdateLessonRequest extends FormRequest
             // (see `Lesson::effectiveVideoThreshold()`).
             'video_completion_percentage' => ['nullable', 'integer', 'min:10', 'max:100'],
 
+            // Opt-in destrutivo: quando marcado E a `video_url` sanitizada
+            // mudou, `ResetLessonVideoProgressAction` zera o progresso de
+            // todos os alunos neste vídeo (o checkbox só é enviado por
+            // clientes que o renderizam; ausente = manter progresso).
+            'reset_video_progress' => ['nullable', 'boolean'],
+
             'is_published' => ['sometimes', 'boolean'],
 
             // Embedded quiz authoring payload (only meaningful when

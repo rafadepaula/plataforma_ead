@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\ResetLessonVideoProgressAction;
 use App\Actions\SaveQuizForLessonAction;
 use App\Http\Requests\ReorderLessonsRequest;
 use App\Http\Requests\StoreLessonRequest;
@@ -43,6 +44,7 @@ class LessonController extends Controller
         protected FileUploadService $fileUploadService,
         protected VideoUrlSanitizerManager $videoUrlSanitizers,
         protected SaveQuizForLessonAction $saveQuizForLesson,
+        protected ResetLessonVideoProgressAction $resetLessonVideoProgress,
     ) {}
 
     public function index(Module $module): View
@@ -89,6 +91,10 @@ class LessonController extends Controller
     public function update(UpdateLessonRequest $request, Lesson $lesson): RedirectResponse
     {
         $previousType = $lesson->type;
+        // The stored `video_url` is already the sanitizer's canonical form,
+        // so comparing it against the post-update sanitized URL never
+        // yields a false "changed" from a mere `youtu.be` → embed rewrite.
+        $previousVideoUrl = $lesson->video_url;
 
         DB::transaction(function () use ($request, $lesson, $previousType): void {
             $lesson->update($this->validatedAttributes($request));
@@ -104,6 +110,15 @@ class LessonController extends Controller
             }
         });
         $this->syncMedia($request, $lesson);
+
+        // Opt-in destrutivo: só surte efeito quando o checkbox veio marcado
+        // E há uma URL nova de vídeo — limpar a URL (nova = null) nunca
+        // reseta, pois não há vídeo novo a partir do zero.
+        if ($request->boolean('reset_video_progress')
+            && filled($lesson->video_url)
+            && $lesson->video_url !== $previousVideoUrl) {
+            $this->resetLessonVideoProgress->execute($lesson);
+        }
 
         return redirect()->route('modules.lessons.index', $lesson->module)
             ->with('success', 'Lição atualizada com sucesso.');

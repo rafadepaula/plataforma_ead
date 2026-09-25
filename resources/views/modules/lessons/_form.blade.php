@@ -125,6 +125,21 @@
             hint="Percentual mínimo de assistimento para concluir automaticamente (10–100%)."
             :value="$videoCompletionPercentage"
         />
+
+        @if ($lesson->exists)
+            {{--
+                Opt-in destrutivo: o hidden value="0" distingue "desmarcado"
+                de "não enviado" e o servidor só age quando a URL mudou.
+            --}}
+            <input type="hidden" name="reset_video_progress" value="0">
+            <x-ui.checkbox
+                name="reset_video_progress"
+                value="1"
+                label="Resetar progresso dos alunos neste vídeo"
+                help="Ao trocar a URL do vídeo com esta opção marcada, todo o progresso assistido deste vídeo é zerado e a % de conclusão dos cursos pode regredir. Uma confirmação será exibida ao salvar."
+                dusk="lesson-reset-progress-checkbox"
+            />
+        @endif
     </div>
 
     {{--

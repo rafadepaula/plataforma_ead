@@ -53,6 +53,7 @@ export class LessonForm {
         this.bindVideoPreview();
         this.bindFileDrops();
         this.bindPublishHint();
+        this.bindResetProgressConfirm();
     }
 
     /**
@@ -290,6 +291,39 @@ export class LessonForm {
 
         switchInput.addEventListener('change', () => {
             hint.textContent = switchInput.checked ? HINT_PUBLISHED : HINT_UNPUBLISHED;
+        });
+    }
+
+    /**
+     * Confirmação da ação destrutiva "Resetar progresso dos alunos neste
+     * vídeo": se o checkbox estiver marcado, o submit é interceptado e o
+     * `x-ui.confirm-modal` é aberto; o botão de confirmação (type=submit
+     * apontando para o form externo) re-envia o form já confirmado. A
+     * ação continua sendo do lado do servidor opt-in — aqui é só guarda
+     * de UX declarativa.
+     */
+    bindResetProgressConfirm() {
+        const form = document.querySelector('form[data-lesson-form]');
+        const checkbox = form?.querySelector('input[name="reset_video_progress"][value="1"]');
+        const modalEl = document.getElementById('reset-video-progress-modal');
+        const confirmButton = modalEl?.querySelector('[dusk="confirm-reset-progress"]');
+        if (!form || !checkbox || !modalEl || !confirmButton) return;
+
+        let confirmed = false;
+
+        confirmButton.addEventListener('click', () => {
+            confirmed = true;
+        });
+
+        form.addEventListener('submit', (event) => {
+            if (confirmed || !checkbox.checked) return;
+            event.preventDefault();
+            window.bootstrap.Modal.getOrCreateInstance(modalEl).show();
+        });
+
+        // Recomeça a guarda se o gestor fechar o modal sem confirmar.
+        modalEl.addEventListener('hidden.bs.modal', () => {
+            confirmed = false;
         });
     }
 }

@@ -17,7 +17,7 @@
     />
 
     <x-ui.card>
-        <form method="POST" action="{{ route('lessons.update', $lesson) }}" enctype="multipart/form-data" dusk="lesson-form" data-lesson-form>
+        <form method="POST" action="{{ route('lessons.update', $lesson) }}" enctype="multipart/form-data" id="lesson-form" dusk="lesson-form" data-lesson-form>
             @csrf
             @method('PUT')
 
@@ -28,5 +28,18 @@
                 <x-ui.button variant="ghost" href="{{ route('modules.lessons.index', $lesson->module) }}">Cancelar</x-ui.button>
             </x-ui.form-actions>
         </form>
+
+        @if ($lesson->progress()->exists())
+            <x-ui.confirm-modal
+                id="reset-video-progress-modal"
+                title="Resetar progresso dos alunos?"
+                form="lesson-form"
+                confirmLabel="Sim, resetar progresso"
+                variant="danger"
+                confirmDusk="confirm-reset-progress"
+            >
+                Ao salvar com "Resetar progresso dos alunos neste vídeo" marcado e uma nova URL, todo o progresso assistido neste vídeo será apagado e a % de conclusão dos cursos poderá regredir. Esta ação não poderá ser desfeita.
+            </x-ui.confirm-modal>
+        @endif
     </x-ui.card>
 @endsection
